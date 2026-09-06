@@ -1,3 +1,4 @@
+//Esta interfaz describe qué datos exactos van a estar guardados (cifrados/firmados) dentro del token JWT
 export interface JwtPayload {
     sub: number;             // ID del usuario
     email: string;
