@@ -1,25 +1,58 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface';
-// Contiene la lógica profunda de validación del token. 
-// Se encarga de leer el token que envía el cliente, extraer el payload y decidir si el token es legítimo, ha expirado, 
+import { UsuariosService } from '../../usuarios/usuarios.service';
+import { EstadoNegocio } from '../../usuarios/entities/negocio.entity';
+import { Rol } from '../enums/rol.enum';
+// Contiene la lógica profunda de validación del token.
+// Se encarga de leer el token que envía el cliente, extraer el payload y decidir si el token es legítimo, ha expirado,
 // o si el usuario asociado sigue siendo válido en el sistema.
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(private readonly configService: ConfigService) {
-        super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            ignoreExpiration: false,
-            secretOrKey: configService.get<string>('JWT_SECRET') || 'secretoPorDefecto123',
-        });
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly usuariosService: UsuariosService,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey:
+        configService.get<string>('JWT_SECRET') || 'secretoPorDefecto123',
+    });
+  }
+
+  async validate(payload: JwtPayload) {
+    if (!payload || !Number.isInteger(payload.sub) || payload.sub <= 0) {
+      throw new UnauthorizedException('Token no válido');
+    }
+    const usuario = await this.usuariosService.findById(payload.sub);
+
+    if (!usuario || !usuario.activo) {
+      throw new UnauthorizedException('Usuario no válido o inactivo');
     }
 
-    async validate(payload: JwtPayload) {
-        if (!payload || !payload.sub) {
-            throw new UnauthorizedException('Token no válido');
-        }
-        return payload;
+    if (
+      usuario.rol !== Rol.SUPERADMIN &&
+      (!usuario.negocio || usuario.negocio.estado !== EstadoNegocio.ACTIVO)
+    ) {
+      throw new ForbiddenException(
+        'El negocio se encuentra inactivo o suspendido',
+      );
     }
+
+    // Los permisos y el negocio se obtienen de la base de datos, no del token antiguo.
+    return {
+      sub: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      rol: usuario.rol,
+      negocioId: usuario.negocioId,
+    } satisfies JwtPayload;
+  }
 }

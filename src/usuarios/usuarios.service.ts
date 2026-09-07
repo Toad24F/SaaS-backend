@@ -5,22 +5,25 @@ import { Usuario } from './entities/usuario.entity';
 
 @Injectable()
 export class UsuariosService {
-    constructor(
-        @InjectRepository(Usuario)
-        private readonly usuarioRepository: Repository<Usuario>,
-    ) { }
+  constructor(
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
+  ) {}
 
-    // Busca el usuario con los datos de su negocio para validar estado
-    async findByEmailWithNegocio(email: string): Promise<Usuario | null> {
-        return this.usuarioRepository.findOne({
-            where: { email },
-            relations: {
-                negocio: true,
-            },
-        });
-    }
+  // Busca el usuario con los datos de su negocio para validar estado
+  async findByEmailWithNegocio(email: string): Promise<Usuario | null> {
+    return this.usuarioRepository.findOne({
+      where: { email },
+      relations: {
+        negocio: true,
+      },
+    });
+  }
 
-    async findById(id: number): Promise<Usuario | null> {
-        return this.usuarioRepository.findOne({ where: { id } });
-    }
+  async findById(id: number): Promise<Usuario | null> {
+    return this.usuarioRepository.findOne({
+      where: { id },
+      relations: { negocio: true },
+    });
+  }
 }
