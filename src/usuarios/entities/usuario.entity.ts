@@ -7,12 +7,7 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Negocio } from './negocio.entity';
-
-export enum RolUsuario {
-    SUPERADMIN = 'superadmin',
-    ADMIN_NEGOCIO = 'admin_negocio',
-    RECEPCIONISTA = 'recepcionista',
-}
+import { Rol } from '../../auth/enums/rol.enum';
 
 @Entity({ name: 'usuarios' })
 export class Usuario {
@@ -37,9 +32,9 @@ export class Usuario {
 
     @Column({
         type: 'enum',
-        enum: RolUsuario,
+        enum: Rol,
     })
-    rol: RolUsuario;
+    rol: Rol;
 
     @Column({ default: true })
     activo: boolean;
