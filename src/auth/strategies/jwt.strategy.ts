@@ -1,7 +1,7 @@
 import {
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
+    ForbiddenException,
+    Injectable,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -15,44 +15,44 @@ import { Rol } from '../enums/rol.enum';
 // o si el usuario asociado sigue siendo válido en el sistema.
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly usuariosService: UsuariosService,
-  ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('JWT_SECRET') || 'secretoPorDefecto123',
-    });
-  }
-
-  async validate(payload: JwtPayload) {
-    if (!payload || !Number.isInteger(payload.sub) || payload.sub <= 0) {
-      throw new UnauthorizedException('Token no válido');
-    }
-    const usuario = await this.usuariosService.findById(payload.sub);
-
-    if (!usuario || !usuario.activo) {
-      throw new UnauthorizedException('Usuario no válido o inactivo');
-    }
-
-    if (
-      usuario.rol !== Rol.SUPERADMIN &&
-      (!usuario.negocio || usuario.negocio.estado !== EstadoNegocio.ACTIVO)
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly usuariosService: UsuariosService,
     ) {
-      throw new ForbiddenException(
-        'El negocio se encuentra inactivo o suspendido',
-      );
+        super({
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ignoreExpiration: false,
+            secretOrKey:
+                configService.getOrThrow<string>('JWT_SECRET'),
+        });
     }
 
-    // Los permisos y el negocio se obtienen de la base de datos, no del token antiguo.
-    return {
-      sub: usuario.id,
-      email: usuario.email,
-      nombre: usuario.nombre,
-      rol: usuario.rol,
-      negocioId: usuario.negocioId,
-    } satisfies JwtPayload;
-  }
+    async validate(payload: JwtPayload) {
+        if (!payload || !Number.isInteger(payload.sub) || payload.sub <= 0) {
+            throw new UnauthorizedException('Token no válido');
+        }
+        const usuario = await this.usuariosService.findById(payload.sub);
+
+        if (!usuario || !usuario.activo) {
+            throw new UnauthorizedException('Usuario no válido o inactivo');
+        }
+
+        if (
+            usuario.rol !== Rol.SUPERADMIN &&
+            (!usuario.negocio || usuario.negocio.estado !== EstadoNegocio.ACTIVO)
+        ) {
+            throw new ForbiddenException(
+                'El negocio se encuentra inactivo o suspendido',
+            );
+        }
+
+        // Los permisos y el negocio se obtienen de la base de datos, no del token antiguo.
+        return {
+            sub: usuario.id,
+            email: usuario.email,
+            nombre: usuario.nombre,
+            rol: usuario.rol,
+            negocioId: usuario.negocioId,
+        } satisfies JwtPayload;
+    }
 }

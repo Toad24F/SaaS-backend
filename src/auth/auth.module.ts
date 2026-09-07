@@ -7,7 +7,6 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsuariosModule } from '../usuarios/usuarios.module';
-import { StringValue } from 'ms';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -19,9 +18,9 @@ import { StringValue } from 'ms';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') as StringValue,
+          expiresIn: configService.getOrThrow<number>('JWT_EXPIRES_IN'),
         },
       }),
     }),
