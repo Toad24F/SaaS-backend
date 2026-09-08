@@ -9,6 +9,8 @@ import { UsuariosService } from '../usuarios/usuarios.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
+//Aqui es donde se implementa la lógica de negocio relacionada con la autenticación, 
+// como la busqueda de usuarios, verificación de credenciales y la generación de tokens JWT.
 @Injectable()
 export class AuthService {
     constructor(
@@ -41,7 +43,7 @@ export class AuthService {
             }
         }
 
-        // 4. Generar Payload del token
+        // 4. Generar el payload del token JWT
         const payload: JwtPayload = {
             sub: usuario.id,
             email: usuario.email,
@@ -50,6 +52,7 @@ export class AuthService {
             negocioId: usuario.negocioId,
         };
 
+        // 5. Devolver el token JWT y la información del usuario
         return {
             message: 'Inicio de sesión exitoso',
             accessToken: this.jwtService.sign(payload),

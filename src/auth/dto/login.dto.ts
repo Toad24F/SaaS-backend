@@ -1,5 +1,7 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
+// DTO (Data Transfer Object) para el inicio de sesión 
+// Contiene las validaciones de los datos que vamos a recibir en el inicio de sesión.
 export class LoginDto {
     @IsEmail({}, { message: 'El correo electrónico no es válido' })
     @IsNotEmpty({ message: 'El correo es obligatorio' })

@@ -1,7 +1,10 @@
+import { Rol } from '../enums/rol.enum';
+
+//Esta interfaz describe qué datos exactos van a estar guardados (cifrados/firmados) dentro del token JWT
 export interface JwtPayload {
     sub: number;             // ID del usuario
     email: string;
     nombre: string;
-    rol: 'superadmin' | 'admin_negocio' | 'recepcionista';
+    rol: Rol;// Rol del usuario (superadmin, admin_negocio, recepcionista)
     negocioId: number | null; // null si es superadmin
 }
