@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -24,9 +25,20 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
         },
       }),
     }),
+    ThrottlerModule.forRoot({ //Esto sirve para limitar la cantidad de intentos de inicio de sesión en un período de tiempo determinado, protegiendo así contra ataques de fuerza bruta.
+      throttlers: [
+        {
+          ttl: 60_000,
+          limit: 5,
+          blockDuration: 60_000,
+        },
+      ],
+      errorMessage:
+        'Demasiados intentos de inicio de sesión. Intenta de nuevo más tarde.',
+    }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, ThrottlerGuard,],
   exports: [AuthService, JwtAuthGuard, PassportModule],
 })
 export class AuthModule { }
