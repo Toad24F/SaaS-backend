@@ -8,12 +8,19 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { LicenciasModule } from '../licencias/licencias.module';
+import { CodigosModule } from '../codigos/codigos.module';
+import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
 @Module({
   imports: [
+    ConfigModule,
     UsuariosModule,
+    LicenciasModule,
+    CodigosModule,
+    AuditoriaModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

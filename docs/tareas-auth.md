@@ -8,25 +8,25 @@ Todas las tareas están pendientes y ordenadas por dependencia. Las duraciones s
 
 ## 1. Preparación y modelo de datos
 
-- [ ] **T01 — Identificar el bloqueo de Jest** · 15 min · RF: soporte transversal RF-01–40 · Depende de: ninguna.
+- [X] **T01 — Identificar el bloqueo de Jest** · 15 min · RF: soporte transversal RF-01–40 · Depende de: ninguna.
   **Hecho cuando:** se reproduce y documenta el error de carga ESM con una suite mínima, identificando la configuración involucrada.
 
-- [ ] **T02 — Corregir la configuración de pruebas** · 25 min · RF: soporte transversal RF-01–40 · Depende de: T01.
+- [X] **T02 — Corregir la configuración de pruebas** · 25 min · RF: soporte transversal RF-01–40 · Depende de: T01.
   **Hecho cuando:** una prueba que utiliza NestJS carga y ejecuta sus assertions sin errores ESM.
 
-- [ ] **T03 — Completar dependencias de las pruebas existentes** · 20 min · RF: RF-15–16, RF-19 · Depende de: T02.
+- [X] **T03 — Completar dependencias de las pruebas existentes** · 20 min · RF: RF-15–16, RF-19 · Depende de: T02.
   **Hecho cuando:** las suites actuales ejecutan sus casos sin fallar por servicios o repositorios no registrados.
 
-- [ ] **T04 — Aislar la configuración de la base de pruebas** · 20 min · RF: soporte transversal RF-01–40 · Depende de: T02.
+- [X] **T04 — Aislar la configuración de la base de pruebas** · 20 min · RF: soporte transversal RF-01–40 · Depende de: T02.
   **Hecho cuando:** el entorno exige una base exclusiva de pruebas y rechaza conectarse con una configuración no identificada como tal.
 
-- [ ] **T05 — Preparar el ejecutor de integración** · 25 min · RF: RF-03, RF-11, RF-40 · Depende de: T04.
+- [X] **T05 — Preparar el ejecutor de integración** · 25 min · RF: RF-03, RF-11, RF-40 · Depende de: T04.
   **Hecho cuando:** una prueba abre dos conexiones independientes a MariaDB y cierra ambas sin dejar recursos abiertos.
 
-- [ ] **T06 — Preparar reloj y datos de prueba reutilizables** · 20 min · RF: RF-06, RF-10, RF-20, RF-23, RF-28 · Depende de: T03.
+- [X] **T06 — Preparar reloj y datos de prueba reutilizables** · 20 min · RF: RF-06, RF-10, RF-20, RF-23, RF-28 · Depende de: T03.
   **Hecho cuando:** las pruebas pueden fijar el tiempo y generar dos negocios con sus usuarios sin compartir identificadores.
 
-- [ ] **T07 — Declarar los módulos y sus dependencias** · 20 min · RF: RF-01–40 · Depende de: T03.
+- [X] **T07 — Declarar los módulos y sus dependencias** · 20 min · RF: RF-01–40 · Depende de: T03.
   **Hecho cuando:** Auth, Usuarios, Negocios, Licencias, Codigos, Altas y Auditoria pueden componerse sin dependencias circulares.
 
 - [ ] **T08 — Ajustar la entidad Negocio** · 20 min · RF: RF-01–02, RF-09, RF-33–34 · Depende de: T07.
