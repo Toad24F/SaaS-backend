@@ -20,9 +20,9 @@ Desde `backend/`:
 - Consultar los requerimientos y el código existente antes de modificar.
 - Aislar datos por `negocio_id` y validar pertenencia de los registros; no confiar en IDs enviados por el cliente.
 - Solo el superadmin crea negocios y crea, asigna, renueva, suspende y reactiva licencias. El cliente crea su administrador mediante un código de activación de un solo uso y con vencimiento.
-- Admitir licencias manuales sin vencimiento y por período mensual/anual, sin límites de sucursales, servicios o usuarios. La modalidad se elige al crear y no cambia; solo las licencias por período se renuevan.
-- Gestionar la suspensión exclusivamente en la licencia. Pausar o desactivar una licencia significa suspenderla; no hay cancelación definitiva. Conservar cuentas y datos; en licencias por período, congelar el tiempo restante y ajustar el vencimiento al reactivar.
-- La primera habilitación depende de activar al administrador. Renovar no levanta una suspensión. Probar modalidades, vencimientos y transiciones concurrentes sin pérdida ni duplicación de tiempo ni alteración de pertenencia; mantener la auditoría de cambios reales. Los detalles se definen en `spec/spec-auth.md` y `plan.md`.
+- Admitir licencias anuales, sin límites de sucursales, servicios o usuarios. las licencias se renuevan.
+- Gestionar la suspensión exclusivamente en la licencia. Pausar o desactivar una licencia significa suspenderla; no hay cancelación definitiva. Conservar cuentas y datos; en las licencias, congelar el tiempo restante y ajustar el vencimiento al reactivar.
+- La primera habilitación depende de activar al administrador. Renovar no levanta una suspensión. Probar vencimientos y transiciones concurrentes sin pérdida ni duplicación de tiempo ni alteración de pertenencia; mantener la auditoría de cambios reales. Los detalles se definen en `spec/spec-auth.md` y `docs/plan.md`.
 - El portal de reservas es público por negocio; no hay registro libre de negocios.
 - Evitar empalmes de citas, incluso con solicitudes simultáneas.
 - Guardar secretos en variables de entorno y contraseñas como hash.

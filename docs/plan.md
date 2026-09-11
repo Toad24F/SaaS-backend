@@ -1,135 +1,148 @@
-# Plan de autenticación, negocios y licencias
+# Plan de autenticación, negocios y licencias anuales
 
-Lista de ejecución: [Tareas de autenticación, negocios y licencias](tareas-auth.md). Contiene 68 tareas pendientes, estimadas en menos de 30 minutos cada una, con dependencias, RF y criterios verificables de finalización.
+Fuentes: [Constitución](Constitución.md), [spec de autenticación](../spec/spec-auth.md) y [AGENTS.md](../AGENTS.md). Lista de ejecución: [tareas de autenticación](tareas-auth.md).
 
-## 1. Base y alcance
+## 1. Base, alcance y avance existente
 
-Fuentes revisadas: `docs/Constituvio.md` —nombre actual de la constitución—, `spec/spec-auth.md`, entidades del backend y esquema principal `../db/schema.sql`.
+Este plan corresponde a la especificación actual, con cobertura **RF-01–RF-38**. Comprende autenticación, negocios, recepcionistas, activación, licencias y auditoría. Mantiene NestJS, TypeScript, TypeORM y MariaDB/MySQL. Excluye pantallas, pagos, envío automático de códigos e implementación de reservas.
 
-**Se conserva el modelo multi-negocio existente:** cada negocio es un tenant y sus usuarios se relacionan mediante `negocio_id`. No hace falta introducir otra entidad “tenant” ni separar bases de datos por negocio.
+### Decisiones confirmadas
 
-Esta entrega se instalará en **una base nueva**, según la decisión del usuario. No incluye migración de cuentas o negocios anteriores ni autoriza borrar bases existentes.
+- Una base compartida, con aislamiento por `negocio_id`. Conservar datos «en su esquema», como indica la spec, no implica un esquema físico por negocio.
+- Licencias exclusivamente anuales, renovables y sin límites de sucursales, servicios o usuarios.
+- Una operación autorizada antes del vencimiento de sesión puede terminar de forma atómica; las nuevas solicitudes se rechazan. Esta interpretación confirmada de RF-20 evita escrituras parciales, sin interrumpir una operación admitida solo porque expire su sesión.
+- En carreras entre activación y reemisión, prevalece el orden del bloqueo de base de datos y se revalida el estado al obtenerlo. La referencia de la spec a «un milisegundo tarde» se interpreta por ese orden, no por mediciones de llegada HTTP.
+- Instalación en una base nueva, sin borrar ni migrar datos existentes.
+- El superadministrador inicial ya existe. Su recuperación excepcional, múltiples administradores por negocio, cambio de propietario, registro libre de negocios y cancelación definitiva de licencias quedan fuera de alcance.
 
-Comprende autenticación, recepcionistas, alta de negocios, activación, licencias y auditoría. No incluye pantallas, cobros, envío de códigos ni implementación de reservas.
+### Avance aprovechable
 
-**Modalidades de licencia:** manual sin vencimiento y por período mensual/anual, ambas sin límites de sucursales, servicios o usuarios. La modalidad se elige al crear y no cambia. Solo el superadmin suspende y reactiva licencias; suspender congela el tiempo restante de las licencias por período. Pausar o desactivar una licencia significa suspenderla. No hay cancelación definitiva ni suspensión independiente del negocio.
+T01–T07 están completadas como infraestructura de pruebas y composición de módulos. Se conservan; los ajustes derivados del nuevo modelo se registran como trabajo pendiente adicional. Evidencia: [T01–T05](results/resultados-t01-t05.md), [T06](results/resultados-t06.md) y [T07](results/resultados-t07.md). Los informes conservan la numeración histórica de la especificación anterior; no acreditan requisitos nuevos por cambiar su número.
 
-Este documento describe implementación pendiente. La actualización de sus reglas no modifica por sí sola entidades, código ni bases existentes.
+Verificación de la revisión del 2026-09-10: **48 pruebas unitarias, 2 de integración, 1 HTTP, lint y comprobación TypeScript aprobados**. La integración actual comprueba conexiones y la HTTP comprueba el arranque; todavía no acreditan los nuevos flujos funcionales.
 
-## 2. Módulos y responsabilidades
+El backend conserva login/perfil, usuarios y el estado antiguo del negocio. Los módulos de dominio nuevos están declarados, pero todavía requieren operaciones. El SQL de auth preparado también debe adaptarse. Este documento describe implementación pendiente.
 
-| Parte | Responsabilidad y operaciones expuestas | RF cubiertos |
+## 2. Módulos y contratos
+
+| Módulo | Responsabilidad | RF |
 |---|---|---|
-| **Auth**, existente | Conservar inicio de sesión y perfil; añadir cierre, cambio de contraseña y recuperación mediante código. Validar sesión, usuario, activación y licencia manual o por período en cada solicitud, incluyendo suspensión. | RF-15–27, RF-29–30, RF-37 |
-| **Usuarios**, existente | Reservar correos de acceso, mantener roles y pertenencia, consultar recepcionistas propios y desactivarlos. Impedir cuentas administrativas adicionales por negocio. | RF-03, RF-05–07, RF-13, RF-19, RF-22, RF-26 |
-| **Negocios**, nuevo | Mantener identidad y fecha de activación, resolver su identificador público y permitir al superadmin consultar. Alojar la entidad Negocio actualmente situada en Usuarios; retirar su control de suspensión independiente. | RF-01–04, RF-06, RF-30, RF-33–34 |
-| **Licencias**, nuevo | Asignar modalidad y, si corresponde, plan; habilitar, renovar, suspender, reactivar y determinar el acceso comercial. Conservar tiempo durante la suspensión y ajustar el vencimiento al reactivar. | RF-09, RF-14, RF-28–34, RF-36–40 |
-| **Codigos**, nuevo | Emitir, reemplazar, validar y consumir códigos de activación y recuperación. Guardarlos como hashes y devolver el código utilizable únicamente al emitirlo. | RF-08, RF-10–13, RF-17, RF-22–24 |
-| **Altas**, nuevo | Coordinar alta de negocio, invitaciones y activaciones según modalidad y suspensión de licencia. Garantizar que negocio, cuenta pendiente, licencia, código y auditoría cambien como una sola operación. | RF-01–14, RF-27–28, RF-35–37 |
-| **Auditoria**, nuevo | Registrar actor, acción, fecha, modalidad y destino de operaciones sensibles, con fechas anteriores/nuevas. No duplicar transiciones ya aplicadas ni exponer edición o eliminación de eventos. | RF-35, RF-40 |
+| **Auth** | Login, perfil, logout, sesiones persistidas, cambio y recuperación de contraseña; comprobar cuenta y licencia en cada solicitud protegida. | RF-15–27, RF-29–30, RF-33 |
+| **Usuarios** | Correos únicos, cuentas pendientes, roles, pertenencia y consulta/desactivación de recepcionistas propios. | RF-03, RF-05–08, RF-13, RF-15–16, RF-19, RF-26–27 |
+| **Negocios** | Identidad, identificador público único, contacto y activación; consultas administrativas exclusivas del superadmin. | RF-01–04, RF-06, RF-09, RF-30 |
+| **Licencias** | Asignación anual, habilitación, renovación, suspensión, reactivación y política reutilizable de acceso. | RF-02, RF-04, RF-09, RF-14–15, RF-28–38 |
+| **Codigos** | Emisión, reemplazo y consumo de códigos vinculados a cuenta y propósito, con vencimiento y uso único. | RF-08–14, RF-22–24 |
+| **Altas** | Coordinar transaccionalmente alta del negocio, reserva del administrador, invitaciones y activaciones. | RF-01–14, RF-27–28, RF-35 |
+| **Auditoria** | Registrar actor, destino, acción, instante y valores anteriores/nuevos dentro de la misma transacción. | RF-35, RF-38 |
 
-**Dependencias:** Auth y Altas coordinan servicios de dominio. Usuarios, Negocios, Licencias y Codigos no dependen de Auth; reciben el contexto del actor ya autenticado. Auditoria no depende de los módulos anteriores. Esto evita dependencias circulares.
+Se conserva la dirección de dependencias preparada en T07: Auth y Altas coordinan servicios de dominio; estos no dependen de los coordinadores. Auditoria permanece independiente. Los servicios reciben contexto del actor y comparten la transacción de la operación cuando corresponde.
 
-**Contratos compartidos:**
+### Contratos públicos
 
-- El contexto autenticado contiene usuario, rol, negocio y sesión; los permisos se obtienen del estado actual del servidor.
-- Los administradores operan sobre su negocio autenticado. Los identificadores enviados no conceden pertenencia.
-- Activación y recuperación aceptan código y nueva contraseña; la activación también acepta nombre. No permiten elegir correo, rol o negocio.
-- Las respuestas nunca incluyen hashes. Los códigos utilizables aparecen solo en la respuesta de emisión o reemplazo.
-- Los errores distinguen entrada inválida, credenciales inválidas, operación prohibida, conflicto y exceso de intentos. Un recurso ajeno se presenta como no disponible.
-- El alta acepta modalidad manual o por período; el plan mensual/anual es obligatorio solo para la segunda. Suspensión y reactivación operan sobre la licencia; renovación rechaza la modalidad manual. La modalidad no se modifica mediante otras operaciones.
+- Conservar `POST /auth/login` y `GET /auth/profile`; incorporar operaciones de cierre, activación, contraseñas, negocios, recepcionistas y licencias.
+- El alta exige nombre, identificador público y correo del administrador. Asigna automáticamente una licencia anual; no acepta modalidad ni período.
+- Activación recibe código, nombre y contraseña. Recuperación recibe código y contraseña. Ninguna permite elegir correo, rol o negocio.
+- El contexto autenticado contiene usuario, rol, negocio y sesión, obtenidos del estado actual del servidor. El administrador gestiona recepcionistas dentro de su negocio autenticado. Los IDs del cliente nunca conceden pertenencia.
+- Solo el superadmin autoriza recuperación de administradores. La recuperación de recepcionistas desaparece de esta entrega conforme al nuevo RF-22; su cambio de contraseña autenticado permanece.
+- Los códigos utilizables se devuelven únicamente al emitirlos o reemplazarlos. Ninguna respuesta expone hashes.
+- Sesión inválida, cuenta desactivada o licencia bloqueada producen **401** en solicitudes protegidas; permisos insuficientes, **403**; recursos ajenos, **404**; conflictos de estado, **409**; exceso de intentos, **429**; entradas inválidas, **400**. Los errores de credenciales no revelan si existe el correo.
+- Logout permite revocar una sesión reconocida aunque la licencia esté bloqueada. Recuperar contraseña conserva todos los bloqueos existentes y no concede sesión automáticamente.
 
-**Cobertura:** RF-01–08, RF-10, RF-15–17, RF-22–27, RF-31, RF-33–37.
+## 3. Modelo de datos objetivo
 
-## 3. Modelo de datos: qué existe y qué falta
-
-| Entidad | Conservar o incorporar | RF |
+| Entidad | Campos y restricciones principales | RF |
 |---|---|---|
-| **negocios** | Conservar ID, nombre, slug único y contacto. Añadir fecha de activación; su ausencia identifica un negocio pendiente. Retirar del modelo objetivo el estado activo/suspendido independiente; la licencia administra el bloqueo comercial. | RF-01–04, RF-09, RF-14, RF-30–34 |
-| **usuarios** | Conservar relación con negocio, correo único, rol y activo. Añadir fecha de activación. Nombre y contraseña pueden estar ausentes únicamente mientras la cuenta esté pendiente; nunca utilizar contraseñas ficticias. | RF-03, RF-05–08, RF-13, RF-15–16, RF-19, RF-21–27 |
-| **licencias** | Nueva relación uno a uno con negocio: modalidad manual o por período; plan mensual/anual obligatorio solo para la segunda; habilitada_en, vence_en y suspendida_en. Habilitación y vencimiento están vacíos antes de activar; en manual, plan y vencimiento siempre están vacíos. suspendida_en indica una suspensión vigente y registra su inicio. | RF-02, RF-09, RF-14, RF-28–34, RF-36–40 |
-| **codigos_acceso** | Nueva: cuenta destinataria, propósito, hash único, emisión, vencimiento, consumo, invalidación y emisor. Mantener historial de códigos reemplazados. | RF-08–14, RF-22–24, RF-27 |
-| **sesiones** | Nueva: identificador único, usuario, creación, vencimiento y revocación. Permite retirar una sesión o todas las del usuario. | RF-15, RF-18–20, RF-24–25 |
-| **eventos_auditoria** | Nueva: actor, negocio/cuenta/licencia destino, acción, fecha y cambios relevantes, incluidos modalidad, plan y vencimiento anterior/nuevo. Excluir secretos y transiciones duplicadas. | RF-35, RF-40 |
-| **limites_intentos** | Nueva tabla operativa: origen, inicio de ventana, contador y bloqueo hasta. Compartida entre procesos para impedir que reiniciar o distribuir peticiones eluda el límite. | RF-17 |
+| **negocios** | Identidad, slug único, contacto y `activado_en`. Retirar el estado independiente activo/suspendido. | RF-01–04, RF-09, RF-30, RF-33–34 |
+| **usuarios** | Negocio, correo normalizado único globalmente, rol, activo y activación. Nombre y hash ausentes únicamente mientras esté pendiente. Como máximo un administrador por negocio. | RF-03, RF-05–08, RF-13, RF-15–16, RF-19, RF-21–27 |
+| **licencias** | Una por negocio; `habilitada_en`, `vence_en`, `suspendida_en` y fechas de registro. Eliminar modalidad y plan mensual/anual del modelo objetivo. | RF-02, RF-09, RF-14, RF-28–38 |
+| **codigos_acceso** | Cuenta destinataria, propósito, hash único, emisor, emisión, vencimiento, consumo e invalidación. Conservar historial de reemplazos. | RF-08–14, RF-22–24 |
+| **sesiones** | Identificador único, usuario, creación, vencimiento y revocación. | RF-15, RF-18–20, RF-24–25 |
+| **eventos_auditoria** | Actor, negocio/cuenta/licencia afectados, acción, fecha y cambios anteriores/nuevos, sin secretos. | RF-35, RF-38 |
+| **limites_intentos** | Clave por IP, ventana, contador y bloqueo hasta; actualización coordinada entre conexiones. | RF-17 |
 
-**Invariantes:**
+### Invariantes
 
-- Correo normalizado y único globalmente, también para cuentas pendientes. Se reserva al invitar para evitar conflictos durante la activación.
-- Solo el superadmin tiene `negocio_id` vacío. Administradores y recepcionistas siempre pertenecen a un negocio.
-- Como máximo un administrador por negocio, contando cuentas pendientes.
-- Un código pertenece a una cuenta y un propósito; no sirve indistintamente para activar y recuperar.
-- Una cuenta pendiente no inicia sesión. Activarla establece nombre, contraseña y fecha de activación.
-- Suspender, vencer o desactivar no elimina registros.
-- La licencia manual no vence ni se renueva. En modalidad por período, una suspensión conserva tiempo: no se evalúa su vencimiento registrado como si el tiempo siguiera corriendo.
-- La fecha de habilitación distingue una licencia pendiente de una habilitada, incluso si es manual. Reactivar no habilita una licencia pendiente ni activa cuentas.
-- La suspensión pertenece únicamente a la licencia; el usuario conserva su estado activo/inactivo y el negocio su fecha de activación.
-- Las relaciones nuevas deben preservar la pertenencia al negocio; no basta con verificar que los identificadores existan.
+- Solo el superadmin tiene `negocio_id` nulo. Las relaciones deben impedir asociaciones entre negocios distintos.
+- Los correos se normalizan con recorte de espacios y minúsculas y se reservan desde la creación de la cuenta pendiente. La unicidad global y el administrador único por negocio incluyen cuentas pendientes.
+- Antes de activar al administrador, habilitación y vencimiento de licencia permanecen nulos.
+- Una licencia habilitada siempre tiene vencimiento. Su estado vencido se calcula; no depende de un proceso periódico. Una licencia suspendida con tiempo conservado no vence por el paso del tiempo.
+- Cuenta desactivada, licencia suspendida y negocio pendiente son condiciones distintas. Reactivar una licencia no activa cuentas ni negocios.
+- Un código pertenece a una cuenta y a un propósito; activar y recuperar no son intercambiables.
+- Las suspensiones conservan cuentas, configuración y citas.
 
-La cuenta pendiente es una reserva de identidad, sin acceso; la activación completa su alta. Esto evita introducir un segundo registro de correos reservado a invitaciones.
+### Coherencia del esquema
 
-**Coherencia del esquema:** actualizar entidades y esquema principal conjuntamente. No adoptar el esquema del prototipo como fuente adicional. Las relaciones de citas actuales también requieren refuerzo de pertenencia, pero ese cambio se abordará con el módulo de reservas.
+El SQL preparado en `db/schema.sql`, dentro de este backend, será la referencia de esta entrega; `../db/schema.sql` queda como antecedente. Será necesario adaptar el primero, sincronizarlo con entidades y migraciones y versionarlo explícitamente, porque actualmente está ignorado por Git. No se mantendrán dos esquemas normativos para auth.
 
-## 4. Decisiones justificadas y alternativas descartadas
+Las migraciones se aplicarán sobre una base nueva. La sincronización automática quedará deshabilitada en producción. Los refuerzos de pertenencia y exclusión de empalmes de reservas se abordarán con ese módulo. Esta actualización documental no modifica ni ejecuta SQL.
+
+## 4. Decisiones justificadas y reglas de operación
 
 | Decisión | Justificación y alternativa descartada | RF |
 |---|---|---|
-| **Una base compartida con `negocio_id`** | Extiende el diseño existente. Se descarta una base por negocio porque añade administración sin una necesidad establecida. | RF-05–07 |
-| **Cuenta pendiente para reservar el correo** | La misma restricción de unicidad protege altas e invitaciones. Se descartan registros de invitación con correos independientes, que podrían competir con cuentas ya creadas. | RF-02–03, RF-08–13 |
-| **JWT acompañado de sesión persistida** | Conserva la autenticación actual y permite revocación inmediata. Se descarta depender exclusivamente de la caducidad del JWT. No se añaden tokens de renovación. | RF-15, RF-18–20, RF-24–25 |
-| **Estado de acceso evaluado en cada solicitud** | Combina cuenta activa, activación completada y licencia habilitada no suspendida: manual sin vencimiento o por período vigente. Se descarta confiar en permisos antiguos del token o en una tarea periódica que marque vencimientos. | RF-14–15, RF-19, RF-26, RF-29–34, RF-37 |
-| **Transacciones y bloqueo de registros** | Activación, reemplazo de códigos, recuperación, renovación, suspensión y reactivación deben protegerse frente a solicitudes simultáneas. Se descarta “consultar y después guardar” sin coordinación. | RF-03, RF-09–12, RF-23–25, RF-31–35, RF-38–40 |
-| **Contraseñas con bcrypt; códigos aleatorios almacenados como hash** | Mantiene las contraseñas existentes y permite entregar códigos manualmente sin conservarlos utilizables. Se descarta almacenar secretos legibles. No se permitirá truncamiento silencioso de contraseñas. | RF-08, RF-13, RF-21–27, RF-35 |
-| **Meses/años calendario en Chihuahua** | Respeta el período acordado. Se descartan equivalencias de 30 o 365 días. Los instantes se almacenan en UTC y el cálculo calendario utiliza Chihuahua. | RF-20, RF-23, RF-28–31 |
-| **Licencia única con historial en auditoría** | Mantiene una licencia por negocio y evidencia de renovaciones y reactivaciones, sin cancelación definitiva. Se descartan licencias superpuestas o crear una nueva por cada reactivación. No hace falta un catálogo de precios o límites. | RF-28–40 |
-| **Dos modalidades explícitas** | Diferencia acceso indefinido y tiempo contratado. Se descarta simular licencias manuales con fechas lejanas. La modalidad queda fijada al crear. | RF-01–02, RF-36–37 |
-| **Suspensión exclusivamente en la licencia** | Mantiene un solo control administrativo del acceso comercial. Se descartan bloqueos independientes en negocio y licencia. | RF-04, RF-14–15, RF-26, RF-33–34 |
-| **Congelar tiempo durante la suspensión** | Conserva el período pendiente de uso. Se descarta mantener el vencimiento original después de reactivar sin compensar la pausa. | RF-32, RF-38–39 |
-| **Registrar cuándo comenzó la suspensión** | Permite calcular su duración y ajustar el vencimiento una sola vez al reactivar. Se descarta descontar o devolver tiempo mediante procesos diarios. | RF-35, RF-38–40 |
-| **Límite compartido en MariaDB** | Aprovecha la base existente y mantiene cinco intentos conjuntos por minuto para login y validación de códigos. Se descartan contadores solo en memoria y añadir Redis en esta entrega. El sexto intento bloquea un minuto. | RF-17 |
-| **Auditoría dentro de la operación** | Evita cambios sensibles sin evidencia. Si no puede registrarse el evento, la operación no se confirma. Repetir una transición ya aplicada no genera otro evento de cambio. Se descartan logs de aplicación como único historial. | RF-35, RF-40 |
+| **Base compartida por negocio** | Conserva el diseño y la elección confirmada. Se descarta una base por negocio por su coste adicional de conexiones y migraciones. | RF-05–07 |
+| **Licencia anual única** | Representa directamente el nuevo alcance. Se descartan licencias manuales, mensuales y licencias nuevas por cada renovación. | RF-01–02, RF-28–34 |
+| **Cuenta pendiente** | Reserva el correo mediante una única restricción de unicidad. Se descarta un registro independiente de invitaciones que compita con usuarios. | RF-02–03, RF-08–13 |
+| **JWT con sesión persistida** | Permite revocación individual y global inmediata. Se descarta JWT sin persistencia y no se incorporan refresh tokens. | RF-15, RF-18–20, RF-24–25 |
+| **Validación al autorizar cada solicitud** | Aplica el estado actual; una operación admitida termina atómicamente. Se descarta interrumpirla solo porque expire la sesión durante su ejecución. | RF-19–20 |
+| **Transacciones y bloqueos de filas** | Serializan códigos y transiciones de licencia. Se descartan comprobaciones seguidas de escrituras sin coordinación. | RF-03, RF-09–12, RF-23–25, RF-31–38 |
+| **Años calendario en Chihuahua** | Respeta aniversarios y reglas locales. Se descartan 365 días fijos y desplazamientos horarios constantes. | RF-28, RF-31 |
+| **Congelación mediante fechas** | Conservar vencimiento e inicio de suspensión permite devolver exactamente el tiempo pendiente. Se descartan ajustes diarios y contadores redundantes. | RF-32, RF-36–38 |
+| **Suspensión exclusiva de licencia** | Mantiene un único control del bloqueo comercial. Se descartan estados independientes en negocio y licencia. | RF-04, RF-14–15, RF-26, RF-33–34 |
+| **Throttler con almacenamiento compartido** | Reutiliza `@nestjs/throttler`, ya instalado, con contador MariaDB y clave conjunta por IP. Se descartan contadores por ruta, solo en memoria y añadir Redis en esta entrega. | RF-17 |
+| **Hashes y auditoría transaccional** | Mantener bcrypt, evitar truncamiento silencioso y almacenar códigos aleatorios como hashes. Se descartan secretos legibles y logs como única auditoría. | RF-08, RF-13, RF-21–27, RF-35 |
 
-**Reglas de transición:**
+### Transiciones de licencia
 
-- Antes de activar, la licencia está asignada pero no habilitada y no corre el tiempo. Suspenderla impide usar el código; reactivarla retira la suspensión sin iniciar vigencia ni acumular tiempo. La primera activación habilita la licencia y solo en modalidad por período fija vencimiento.
-- El código mantiene sus 48 horas aunque la licencia esté suspendida; si caduca, debe reemitirse. No se extiende junto con el período contratado.
-- Las licencias manuales y las aún no habilitadas no se renuevan. Se rechaza suspender una licencia por período ya vencida que no estuviera suspendida; debe renovarse antes y no recupera tiempo consumido.
-- Renovar una licencia por período habilitada no suspendida añade el período desde el vencimiento vigente o desde el momento actual si ya venció. Renovar durante una suspensión añade el mes/año calendario desde el vencimiento conservado, aunque esa fecha ya haya pasado, sin levantar el bloqueo ni reiniciar suspendida_en.
-- Al suspender una licencia por período vigente se registra suspendida_en y se conserva vence_en; el tiempo disponible deja de consumirse. Una nueva solicitud de suspensión no reemplaza ese inicio.
-- Al reactivar una licencia por período habilitada se desplaza vence_en, incluyendo renovaciones, por el tiempo transcurrido desde suspendida_en y se limpia suspendida_en. Una licencia manual o pendiente solo retira la suspensión, sin crear ni desplazar vencimiento.
-- Reactivar una licencia no suspendida no cambia fechas ni recupera una licencia vencida. Las pausas sucesivas se calculan desde su propio inicio y ninguna repetición duplica tiempo o eventos.
-- Suspender, reactivar y renovar concurrentemente deben equivaler a un orden serial sobre la licencia, sin perder ni duplicar tiempo. El ajuste de fechas y la auditoría se confirman juntos.
-- Recuperar contraseña no reactiva cuentas ni levanta la suspensión o el vencimiento de licencias. El superadmin puede autorizar recuperación de un administrador bloqueado.
-- Logout permite revocar una sesión reconocida aunque el negocio haya quedado bloqueado.
-- Cuando recuperación o cambio de contraseña coincidan con un login, la coordinación por usuario debe impedir que sobreviva una sesión creada con la contraseña anterior.
+- Activar al administrador consume el código, activa cuenta y negocio y habilita un año calendario, todo en una transacción.
+- Suspender antes de activar bloquea el código sin iniciar tiempo. Reactivar solo retira la suspensión; el código sigue venciendo a las 48 horas y debe reemitirse si caducó.
+- Suspender una licencia vigente conserva `vence_en` y registra `suspendida_en` una sola vez. El tiempo disponible queda representado por `vence_en - suspendida_en`. Una licencia vencida debe renovarse antes de suspenderla.
+- Renovar añade un año desde el vencimiento vigente; si ya venció sin suspensión, desde el momento de renovación.
+- Durante la suspensión, renovar añade un año desde el vencimiento conservado, aunque esa fecha haya pasado, sin cambiar el inicio de suspensión ni recuperar acceso.
+- Reactivar una licencia habilitada aplica: **nuevo vencimiento = vencimiento conservado, incluidas renovaciones + duración de la suspensión**. Después limpia la suspensión.
+- Repetir suspensión o reactivación no altera fechas ni duplica auditoría. Renovaciones distintas sí acumulan años; las concurrentes no pueden sobrescribirse.
+- Las licencias pendientes no se renuevan. Reactivar una licencia no suspendida no prolonga su vigencia ni recupera una licencia vencida.
+- Suspender, renovar y reactivar concurrentemente deben equivaler a un orden serial sobre la licencia. Estado, fechas y auditoría se confirman juntos.
 
-**Cobertura:** RF-09–14, RF-18–19, RF-24–26, RF-28–40.
+Los instantes se almacenan en UTC; los años se calculan en `America/Chihuahua`, ajustando al último día cuando el aniversario no exista. Las duraciones de códigos y sesiones son tiempo transcurrido: 48 horas, 30 minutos y una hora, respectivamente. Se rechaza en el instante exacto de expiración, sin período de gracia.
 
-## 5. Estrategia de tests y orden de entrega
+### Códigos, sesiones y auditoría
 
-### Pruebas por comportamiento
+- Activación, reemplazo y consumo revalidan propósito, vigencia y estado aplicable dentro de la transacción. Si la reemisión gana, el código anterior deja de servir; si la activación gana, la reemisión inicial se rechaza porque la cuenta ya fue activada.
+- Cuando login coincida con cambio o recuperación de contraseña, la coordinación por usuario impide que sobreviva una sesión creada con la contraseña anterior.
+- La sesión dura una hora desde su inicio, sin extensión deslizante. Una operación ya autorizada puede confirmar su transacción aunque venza la sesión mientras se ejecuta; cualquier error revierte la operación completa.
+- El sexto intento conjunto de login o validación de códigos bloquea la IP durante un minuto. Los intentos bloqueados no prolongan indefinidamente esa ventana. La clave se comparte entre las rutas protegidas por tasa.
+- Recuperar contraseña no activa cuentas ni levanta suspensión o vencimiento. El superadmin puede autorizar recuperación de un administrador bloqueado.
+- Si falla la auditoría, se revierte la operación sensible. Se registran cambios reales, actor y destino correctos, sin contraseñas, códigos utilizables ni sus hashes.
 
-| Grupo | Escenarios mínimos | RF |
+## 5. Estrategia de tests y ejecución posterior
+
+| Grupo | Escenarios de aceptación | RF |
 |---|---|---|
-| **Altas y permisos** | Roles permitidos/prohibidos; IDs de otro negocio; correo y slug duplicados, también concurrentemente; rollback del alta; invitación y desactivación propias; modalidad elegida al crear e inmutable; plan exigido solo por período. | RF-01–07, RF-13, RF-36 |
-| **Activación** | Código correcto, incorrecto, vencido justo en el límite, consumido y reemplazado; licencia suspendida antes de activar y código que vence durante esa suspensión; reactivación sin iniciar período; dos activaciones simultáneas con un solo resultado; activación frente a reemisión. | RF-08–14, RF-27–28, RF-37 |
-| **Sesiones** | Credenciales válidas e inválidas; cuenta pendiente/inactiva; mensajes uniformes; sexto intento y desbloqueo; logout; caducidad exacta; permisos o licencia cambiados con sesión abierta y bloqueo desde la siguiente solicitud. | RF-15–20, RF-33 |
-| **Contraseñas** | Longitud mínima; contraseña actual incorrecta; emisor autorizado; recuperación propia/ajena; reemplazo y consumo simultáneo; revocación de todas las sesiones; conservación de bloqueos. | RF-21–27 |
-| **Licencias manuales** | Activación; acceso sin vencimiento; suspensión y reactivación sin fechas de período; rechazo de renovación; modalidad inmutable; conservación de datos. | RF-09, RF-30, RF-33–37 |
-| **Licencias por período** | Mensual/anual; fin de mes y 29 de febrero; vencimiento exacto; renovación temprana/tardía; congelación exacta; pausa prolongada más allá del vencimiento registrado; pausas sucesivas; renovación durante pausa sin levantarla; desplazamiento del vencimiento; rechazo de suspensión ya vencida. | RF-28–34, RF-38–39 |
-| **Concurrencia de licencias** | Doble suspensión, doble reactivación y cruces con renovación; un único efecto por transición; equivalencia con ejecución serial; ningún reinicio del inicio de pausa, pérdida o duplicación de tiempo. | RF-31–35, RF-38–40 |
-| **Auditoría** | Actor y destino correctos; modalidad, fechas anteriores/nuevas y cambios de licencia; ausencia de secretos; ningún evento duplicado de transición; rollback al fallar el registro del evento. | RF-35, RF-40 |
+| **Altas y aislamiento** | Roles, recursos ajenos, correos normalizados y slugs duplicados, altas concurrentes, administrador único y rollback completo. | RF-01–07 |
+| **Códigos y activación** | Correcto, incorrecto, vencido en el límite, usado y reemplazado; doble activación; reemisión contra consumo; suspensión previa y activación de recepcionistas bloqueada. | RF-08–14, RF-27–28 |
+| **Sesiones** | Credenciales uniformemente rechazadas; cuenta pendiente/inactiva; logout; revocación; cambios de licencia; vencimiento exacto y operación previamente admitida que termina sin escrituras parciales. | RF-15–20 |
+| **Límite por IP** | Cinco intentos conjuntos, sexto bloqueado, desbloqueo exacto, IP distinta y concurrencia entre conexiones. | RF-17 |
+| **Contraseñas** | Mínimo de 12 caracteres, contraseña actual, emisor autorizado, recuperación reemplazada/usada, revocación global y login concurrente con cambio de contraseña. | RF-21–27 |
+| **Licencias anuales** | Activación, aniversario bisiesto, vencimiento exacto, renovaciones anticipadas/tardías/acumulativas y rechazo de renovación pendiente. | RF-28–31 |
+| **Suspensión y concurrencia** | Pausas prolongadas y sucesivas; renovación suspendida; recuperación exacta del tiempo; doble suspensión/reactivación y cruces con renovación. | RF-32–34, RF-36–38 |
+| **Auditoría y conservación** | Actor y pertenencia correctos, ausencia de secretos, un evento por transición real, rollback si falla auditoría y conservación de datos bloqueados. | RF-26, RF-30, RF-35, RF-38 |
 
-### Niveles y ejecución
+### Niveles de prueba
 
-1. **Restablecer el entorno de pruebas.** Resolver la carga ESM de Jest sin cambiar el stack y completar los dobles de dependencias ausentes. Las cinco suites fallaron durante la revisión anterior; no constituyen evidencia de aceptación.
-2. **Pruebas unitarias.** Reloj controlado para vencimientos; matriz de permisos; política de acceso, períodos y contraseñas. No depender de esperas reales.
-3. **Integración en MariaDB desechable.** Verificar restricciones, persistencia, rollback y concurrencia mediante conexiones independientes. No sustituirlas por SQLite ni por repositorios simulados.
-4. **Pruebas HTTP.** Aplicar las mismas validaciones y protecciones que en la aplicación real. Cubrir alta → activación → login → recepcionista → recuperación → suspensión/reactivación para ambas modalidades, y renovación para licencias por período. Verificar solo superadmin, conservación de bloqueos al recuperar contraseña y rechazo de cambios de modalidad.
-5. **Instalación nueva.** Preparar migraciones iniciales y verificar coherencia con el esquema SQL. Utilizar migraciones en pruebas y producción; conservar sincronización automática únicamente para desarrollo. No conectar las pruebas a la base cotidiana.
+- **Unitarias:** reloj controlado, sin esperas reales, para calendario, códigos, sesiones, permisos y política de acceso.
+- **Integración:** MariaDB desechable con conexiones independientes para restricciones, rollback y carreras. No sustituirlas por SQLite ni repositorios simulados. Ampliar el ejecutor existente para usar entidades y migraciones de la entrega.
+- **HTTP:** los mismos Guards y validaciones de producción; recorrido alta → activación → login → recepcionista → cambio/recuperación de administrador → suspensión/reactivación → renovación. Verificar endpoints protegidos ante bloqueo de cuenta/licencia y las excepciones de logout y administración del superadmin.
+- **Instalación:** migraciones sobre base nueva, ejecución repetida sin reaplicarlas y coherencia con el SQL de referencia. Nunca usar la base cotidiana para estas pruebas.
 
-**Orden de implementación posterior:** entorno de pruebas → modelo y restricciones → licencias/códigos/auditoría → altas y usuarios → sesiones y recuperación → pruebas integrales.
+**Reservas:** la política reutilizable de bloqueo se implementará en esta entrega. Los escenarios de confirmación real de RF-29 y RF-33 permanecerán explícitamente pendientes hasta implementar reservas, incluida su comprobación transaccional de licencia. Terminar una operación por vencimiento de sesión no exime a una futura confirmación de reserva de comprobar la licencia.
 
-**Límite de aceptación de reservas:** RF-29 y RF-33 se prueban ahora sobre la política reutilizable que autoriza operar. Como todavía no existe el backend de reservas, bloquear una confirmación real permanece como integración pendiente; no se declarará ese escenario completo basándose únicamente en pruebas de autenticación.
+### Orden y criterios de finalización
 
-**Finalización:** compilación, lint, pruebas unitarias y de integración aprobados; RF-01–40 vinculados a evidencia o a la limitación anterior; instalación verificada en base nueva y ninguna modificación a datos existentes. La finalización de esta actualización documental requiere coherencia entre especificación, plan, constitución e instrucciones; no implica que las funciones o sus pruebas ya estén implementadas.
+1. Actualizar primero el plan y después las tareas de auth, conservando los identificadores y la evidencia histórica de T01–T07.
+2. Adaptar modelo, SQL, migraciones y fixtures; implementar servicios, casos de uso y contratos HTTP siguiendo las dependencias de la lista de tareas.
+3. Sustituir tareas de modalidades manual/mensual por licencia anual y renovaciones acumulativas; retirar recuperación de recepcionistas y utilizar solo RF de la especificación vigente en los documentos operativos.
+4. Verificar instalación nueva mediante migraciones, sin sincronización automática en producción.
+5. Ejecutar `npm run build`, `npm run lint`, `npm test -- --runInBand`, `npm run test:integration -- --runInBand --detectOpenHandles` y `npm run test:e2e -- --runInBand --detectOpenHandles`; completar una matriz **RF → prueba → resultado o pendiente**.
+
+La actualización documental no implica que las funciones estén implementadas ni autoriza cambios de código o datos. Su finalización exige coherencia entre plan y tareas, cobertura de RF-01–RF-38, conservación del avance existente y declaración explícita de integraciones pendientes.
