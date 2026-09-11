@@ -4,10 +4,10 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { PoliticaContrasenasService } from './services/politica-contrasenas.service';
 
 //Aqui es donde se implementa la lógica de negocio relacionada con la autenticación, 
 // como la busqueda de usuarios, verificación de credenciales y la generación de tokens JWT.
@@ -16,6 +16,7 @@ export class AuthService {
     constructor(
         private readonly usuariosService: UsuariosService,
         private readonly jwtService: JwtService,
+        private readonly politicaContrasenas: PoliticaContrasenasService,
     ) { }
 
     async login(loginDto: LoginDto) {
@@ -33,7 +34,7 @@ export class AuthService {
         }
 
         // 2. Validar contraseña con bcrypt
-        const passwordValida = await bcrypt.compare(
+        const passwordValida = await this.politicaContrasenas.comparar(
             loginDto.password,
             usuario.passwordHash,
         );

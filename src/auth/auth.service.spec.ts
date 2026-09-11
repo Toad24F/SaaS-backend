@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Rol } from './enums/rol.enum';
+import { PoliticaContrasenasService } from './services/politica-contrasenas.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -19,6 +20,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: UsuariosService, useValue: { findByEmailWithNegocio } },
         { provide: JwtService, useValue: { sign } },
+        PoliticaContrasenasService,
       ],
     }).compile();
 

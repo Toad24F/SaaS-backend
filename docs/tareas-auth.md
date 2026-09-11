@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 75 tareas; 22 completadas (T01–T19 y T69–T71) y 53 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 75 tareas; 28 completadas (T01–T25 y T69–T71) y 47 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -80,22 +80,22 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 
 ## 2. Reglas y servicios compartidos
 
-- [ ] **T20 — Centralizar la política de contraseñas** · 20 min · RF: RF-21, RF-27 · Depende de: T06.
+- [X] **T20 — Centralizar la política de contraseñas** · 20 min · RF: RF-21, RF-27 · Depende de: T06. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** pruebas verifican el mínimo de 12 caracteres, hash y comparación, sin truncamiento silencioso.
 
-- [ ] **T21 — Calcular años calendario en Chihuahua** · 25 min · RF: RF-28, RF-31 · Depende de: T06.
+- [X] **T21 — Calcular años calendario en Chihuahua** · 25 min · RF: RF-28, RF-31 · Depende de: T06. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** pruebas de aniversario, fin de mes, 29 de febrero y reglas de America/Chihuahua producen vencimientos correctos almacenados en UTC; las renovaciones sucesivas suman un año desde su base, sin usar 365 días ni offset fijo.
 
-- [ ] **T22 — Definir la política de acceso por licencia** · 25 min · RF: RF-14–15, RF-29–30, RF-33–34 · Depende de: T06, T10, T69.
+- [X] **T22 — Definir la política de acceso por licencia** · 25 min · RF: RF-14–15, RF-29–30, RF-33–34 · Depende de: T06, T10, T69. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** una matriz cubre pendiente, vigente, vencida y suspendida, junto con cuenta activa/activada y negocio activado; una suspensión prolongada no consume el tiempo conservado.
 
-- [ ] **T23 — Registrar auditoría dentro de transacciones** · 20 min · RF: RF-35 · Depende de: T18.
+- [X] **T23 — Registrar auditoría dentro de transacciones** · 20 min · RF: RF-35 · Depende de: T18. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** un evento conserva actor y destino y un fallo de registro provoca rollback de la operación que lo incluye.
 
-- [ ] **T24 — Emitir códigos y mostrar su valor una sola vez** · 25 min · RF: RF-08, RF-13, RF-22–23 · Depende de: T17, T23.
+- [X] **T24 — Emitir códigos y mostrar su valor una sola vez** · 25 min · RF: RF-08, RF-13, RF-22–23 · Depende de: T17, T23. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** activación recibe 48 horas, recuperación 30 minutos y la persistencia contiene únicamente hashes de códigos aleatorios; cada código queda vinculado a destinatario, propósito y emisor y se muestra solo en la respuesta de emisión.
 
-- [ ] **T25 — Validar y consumir códigos** · 25 min · RF: RF-08–11, RF-24 · Depende de: T24.
+- [X] **T25 — Validar y consumir códigos** · 25 min · RF: RF-08–11, RF-24 · Depende de: T24. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** se rechazan propósito incorrecto, vencimiento exacto, invalidación y reutilización; el estado se revalida bajo bloqueo y el consumo comparte la transacción de la operación.
 
 - [ ] **T26 — Reemplazar códigos pendientes** · 20 min · RF: RF-12, RF-23 · Depende de: T25.

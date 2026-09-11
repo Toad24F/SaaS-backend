@@ -14,6 +14,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Sesion } from './entities/sesion.entity';
 import { LimiteIntentos } from './entities/limite-intentos.entity';
+import { PoliticaContrasenasService } from './services/politica-contrasenas.service';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -50,7 +51,13 @@ import { LimiteIntentos } from './entities/limite-intentos.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, ThrottlerGuard,],
-  exports: [AuthService, JwtAuthGuard, PassportModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    ThrottlerGuard,
+    PoliticaContrasenasService,
+  ],
+  exports: [AuthService, JwtAuthGuard, PassportModule, PoliticaContrasenasService],
 })
 export class AuthModule { }
