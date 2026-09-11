@@ -1,7 +1,9 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -17,6 +19,10 @@ export type ValoresAuditoria = Record<string, unknown>;
  * filtrar contraseñas, códigos, hashes y tokens antes de asignar los valores.
  */
 @Entity({ name: 'eventos_auditoria' })
+@Index('idx_auditoria_negocio_fecha', ['negocioId', 'ocurridoEn'])
+@Index('idx_auditoria_actor_fecha', ['actorUsuarioId', 'ocurridoEn'])
+@Check('chk_auditoria_destino', '(usuario_id IS NULL AND licencia_id IS NULL) OR negocio_id IS NOT NULL')
+@Check('chk_auditoria_accion', 'CHAR_LENGTH(TRIM(accion)) > 0')
 export class EventoAuditoria {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: string;
@@ -42,14 +48,20 @@ export class EventoAuditoria {
   usuarioId: number | null;
 
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'usuario_id' })
+  @JoinColumn([
+    { name: 'negocio_id', referencedColumnName: 'negocioId' },
+    { name: 'usuario_id', referencedColumnName: 'id' },
+  ])
   usuario: Usuario | null;
 
   @Column({ name: 'licencia_id', type: 'int', unsigned: true, nullable: true })
   licenciaId: number | null;
 
   @ManyToOne(() => Licencia, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'licencia_id' })
+  @JoinColumn([
+    { name: 'negocio_id', referencedColumnName: 'negocioId' },
+    { name: 'licencia_id', referencedColumnName: 'id' },
+  ])
   licencia: Licencia | null;
 
   @Column({ length: 64 })

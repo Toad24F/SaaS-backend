@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 75 tareas; 16 completadas (T01–T14 y T69–T70) y 59 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 75 tareas; 22 completadas (T01–T19 y T69–T71) y 53 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -60,22 +60,22 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T69 — Adaptar fixtures y pruebas al nuevo modelo** · 25 min · RF: RF-06, RF-14–15, RF-28 · Depende de: T06–T10. · [Evidencia](results/resultados-t13-t14-t69.md)
   **Hecho cuando:** las fixtures en memoria representan negocio activado, cuentas pendientes/activadas y licencia anual con sus estados; las pruebas existentes dejan de depender de EstadoNegocio y mantienen aislamiento. Se conserva T06 completada como antecedente.
 
-- [ ] **T15 — Preparar migración de negocios y usuarios** · 25 min · RF: RF-01–08, RF-13 · Depende de: T05, T09, T70.
+- [X] **T15 — Preparar migración de negocios y usuarios** · 25 min · RF: RF-01–08, RF-13 · Depende de: T05, T09, T70. · [Evidencia](results/resultados-t15-t19.md)
   **Hecho cuando:** la migración inicial crea negocios y usuarios; MariaDB rechaza correos normalizados duplicados, roles sin pertenencia válida y dos administradores del mismo negocio, incluidas cuentas pendientes.
 
-- [ ] **T16 — Preparar migración de licencias** · 20 min · RF: RF-02, RF-09, RF-28, RF-36–38 · Depende de: T10, T15.
+- [X] **T16 — Preparar migración de licencias** · 20 min · RF: RF-02, RF-09, RF-28, RF-36–38 · Depende de: T10, T15. · [Evidencia](results/resultados-t15-t19.md)
   **Hecho cuando:** la base admite una licencia anual por negocio; rechaza habilitación sin vencimiento o vencimiento sin habilitación y fechas de suspensión incompatibles, sin columnas de modalidad o plan.
 
-- [ ] **T17 — Preparar migración de códigos y sesiones** · 25 min · RF: RF-08–12, RF-18–25 · Depende de: T11, T12, T15.
+- [X] **T17 — Preparar migración de códigos y sesiones** · 25 min · RF: RF-08–12, RF-18–25 · Depende de: T11, T12, T15. · [Evidencia](results/resultados-t15-t19.md)
   **Hecho cuando:** las tablas y relaciones se crean y rechazan códigos o sesiones vinculados a cuentas inexistentes; el código conserva propósito, historial y hash único.
 
-- [ ] **T18 — Preparar migración de auditoría e intentos** · 20 min · RF: RF-17, RF-35, RF-38 · Depende de: T13, T14, T16.
+- [X] **T18 — Preparar migración de auditoría e intentos** · 20 min · RF: RF-17, RF-35, RF-38 · Depende de: T13, T14, T16. · [Evidencia](results/resultados-t15-t19.md)
   **Hecho cuando:** ambas tablas se crean con sus restricciones e índices; se rechazan destinos de auditoría incompatibles con su negocio y se coordina un contador por IP.
 
-- [ ] **T71 — Ampliar el ejecutor de integración para persistencia** · 25 min · RF: RF-03, RF-06, RF-11, RF-35, RF-38 · Depende de: T05, T15–T18.
+- [X] **T71 — Ampliar el ejecutor de integración para persistencia** · 25 min · RF: RF-03, RF-06, RF-11, RF-35, RF-38 · Depende de: T05, T15–T18. · [Evidencia](results/resultados-t71.md)
   **Hecho cuando:** las pruebas usan entidades y migraciones de la entrega, IDs asignados por MariaDB y dos conexiones independientes; preparan y limpian exclusivamente sus datos de prueba y cierran conexiones incluso al fallar. T05 permanece completada como infraestructura previa.
 
-- [ ] **T19 — Sincronizar y versionar el SQL de referencia** · 25 min · RF: RF-01–38 · Depende de: T15–T18.
+- [X] **T19 — Sincronizar y versionar el SQL de referencia** · 25 min · RF: RF-01–38 · Depende de: T15–T18. · [Evidencia](results/resultados-t15-t19.md)
   **Hecho cuando:** db/schema.sql dentro del backend refleja las mismas tablas, columnas y restricciones de auth que entidades y migraciones; retira modalidades y ajusta RF. Se modifica la exclusión de Git solo para versionar ese archivo, sin incluir datos ni secretos; ../db/schema.sql queda como antecedente.
 
 ## 2. Reglas y servicios compartidos
