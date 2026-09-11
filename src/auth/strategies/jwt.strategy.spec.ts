@@ -1,7 +1,7 @@
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { EstadoNegocio, Negocio } from '../../usuarios/entities/negocio.entity';
+import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { UsuariosService } from '../../usuarios/usuarios.service';
 import { Rol } from '../enums/rol.enum';
@@ -29,10 +29,11 @@ describe('JwtStrategy', () => {
       rol: Rol.RECEPCIONISTA,
       negocioId: 20,
       activo: true,
+      activadoEn: new Date('2026-09-10T12:00:00Z'),
       passwordHash: 'hash-que-no-debe-exponerse',
       negocio: Object.assign(new Negocio(), {
         id: 20,
-        estado: EstadoNegocio.ACTIVO,
+        activadoEn: new Date('2026-09-10T12:00:00Z'),
       }),
     });
     findById.mockImplementation(async () => usuario);
@@ -60,6 +61,15 @@ describe('JwtStrategy', () => {
     expect(findById).toHaveBeenCalledWith(1);
   });
 
+  it('conserva el identificador de sesión persistida recibido en el JWT', async () => {
+    await expect(strategy.validate({
+      ...payload,
+      sesionId: '5e85643d-04a7-4b5e-8ed4-6a8029a2b673',
+    })).resolves.toMatchObject({
+      sesionId: '5e85643d-04a7-4b5e-8ed4-6a8029a2b673',
+    });
+  });
+
   it('rechaza un usuario eliminado', async () => {
     findById.mockResolvedValue(null);
     await expect(strategy.validate(payload)).rejects.toBeInstanceOf(
@@ -75,9 +85,9 @@ describe('JwtStrategy', () => {
     );
   });
 
-  it('rechaza la siguiente petición cuando se suspende el negocio', async () => {
+  it('rechaza la siguiente petición cuando el negocio queda pendiente', async () => {
     await strategy.validate(payload);
-    usuario.negocio!.estado = EstadoNegocio.SUSPENDIDO;
+    usuario.negocio!.activadoEn = null;
     await expect(strategy.validate(payload)).rejects.toBeInstanceOf(
       ForbiddenException,
     );

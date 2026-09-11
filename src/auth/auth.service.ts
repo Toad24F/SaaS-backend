@@ -21,8 +21,14 @@ export class AuthService {
     async login(loginDto: LoginDto) {
         const usuario = await this.usuariosService.findByEmailWithNegocio(loginDto.email);
 
-        // 1. Validar que el usuario exista y esté activo
-        if (!usuario || !usuario.activo) {
+        // Una cuenta pendiente no tiene credenciales utilizables aunque esté activa.
+        if (
+            !usuario ||
+            !usuario.activo ||
+            usuario.activadoEn === null ||
+            !usuario.nombre ||
+            !usuario.passwordHash
+        ) {
             throw new UnauthorizedException('Credenciales inválidas o usuario inactivo');
         }
 
@@ -36,10 +42,10 @@ export class AuthService {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        // 3. Si no es superadmin, validar que el negocio esté activo (no suspendido)
+        // La suspensión comercial se validará en Licencia; aquí solo se exige activación.
         if (usuario.rol !== 'superadmin') {
-            if (!usuario.negocio || usuario.negocio.estado !== 'activo') {
-                throw new ForbiddenException('El negocio se encuentra inactivo o suspendido');
+            if (!usuario.negocio || usuario.negocio.activadoEn === null) {
+                throw new ForbiddenException('El negocio se encuentra pendiente de activación');
             }
         }
 
