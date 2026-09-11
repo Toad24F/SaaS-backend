@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 75 tareas; 7 completadas (T01–T07) y 68 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 75 tareas; 16 completadas (T01–T14 y T69–T70) y 59 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -33,31 +33,31 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T07 — Declarar los módulos y sus dependencias** · 20 min · RF: RF-01–38 · Depende de: T03.
   **Hecho cuando:** Auth, Usuarios, Negocios, Licencias, Codigos, Altas y Auditoria pueden componerse sin dependencias circulares.
 
-- [ ] **T70 — Preparar configuración de migraciones y producción** · 25 min · RF: soporte transversal RF-01–38 · Depende de: T04, T07.
+- [X] **T70 — Preparar configuración de migraciones y producción** · 25 min · RF: soporte transversal RF-01–38 · Depende de: T04, T07. · [Evidencia](results/resultados-t70.md)
   **Hecho cuando:** existe una configuración DataSource y comandos de migración para la instalación nueva y pruebas, con synchronize deshabilitado en producción y tests; se conserva el aislamiento TEST_DB_* y no se ejecutan migraciones al importar módulos.
 
-- [ ] **T08 — Ajustar la entidad Negocio** · 20 min · RF: RF-01–02, RF-09, RF-33–34 · Depende de: T07.
+- [X] **T08 — Ajustar la entidad Negocio** · 20 min · RF: RF-01–02, RF-09, RF-33–34 · Depende de: T07. · [Evidencia](results/resultados-t08.md)
   **Hecho cuando:** el modelo conserva identidad y contacto, incorpora activación, aloja Negocio en su módulo y deja de administrar una suspensión independiente; se actualizan los imports afectados.
 
-- [ ] **T09 — Representar usuarios pendientes de activación** · 25 min · RF: RF-03, RF-05–08, RF-13, RF-15 · Depende de: T08.
+- [X] **T09 — Representar usuarios pendientes de activación** · 25 min · RF: RF-03, RF-05–08, RF-13, RF-15 · Depende de: T08. · [Evidencia](results/resultados-t09-t12.md)
   **Hecho cuando:** una cuenta pendiente reserva su correo normalizado y puede carecer de nombre y contraseña, sin representarse como activada.
 
-- [ ] **T10 — Definir la entidad Licencia anual** · 25 min · RF: RF-02, RF-09, RF-28–34, RF-36–38 · Depende de: T08.
+- [X] **T10 — Definir la entidad Licencia anual** · 25 min · RF: RF-02, RF-09, RF-28–34, RF-36–38 · Depende de: T08. · [Evidencia](results/resultados-t09-t12.md)
   **Hecho cuando:** se representa una licencia por negocio con habilitación, vencimiento y suspensión, sin modalidad ni plan; habilitación y vencimiento están nulos antes de activar.
 
-- [ ] **T11 — Definir códigos de acceso** · 20 min · RF: RF-08–14, RF-22–24 · Depende de: T09.
+- [X] **T11 — Definir códigos de acceso** · 20 min · RF: RF-08–14, RF-22–24 · Depende de: T09. · [Evidencia](results/resultados-t09-t12.md)
   **Hecho cuando:** el modelo relaciona cuenta, propósito, hash, emisor, expiración, consumo e invalidación sin almacenar el código utilizable.
 
-- [ ] **T12 — Definir sesiones persistidas** · 15 min · RF: RF-15, RF-18–20, RF-24–25 · Depende de: T09.
+- [X] **T12 — Definir sesiones persistidas** · 15 min · RF: RF-15, RF-18–20, RF-24–25 · Depende de: T09. · [Evidencia](results/resultados-t09-t12.md)
   **Hecho cuando:** cada sesión tiene identificador único, usuario, creación, vencimiento y revocación; el JWT puede identificar la sesión persistida.
 
-- [ ] **T13 — Definir eventos de auditoría** · 20 min · RF: RF-35, RF-38 · Depende de: T09, T10.
+- [X] **T13 — Definir eventos de auditoría** · 20 min · RF: RF-35, RF-38 · Depende de: T09, T10. · [Evidencia](results/resultados-t13-t14-t69.md)
   **Hecho cuando:** el modelo admite actor, negocio/cuenta/licencia destino, acción y valores anteriores/nuevos, sin modalidades ni campos para secretos.
 
-- [ ] **T14 — Definir el contador compartido de intentos** · 15 min · RF: RF-17 · Depende de: T07.
+- [X] **T14 — Definir el contador compartido de intentos** · 15 min · RF: RF-17 · Depende de: T07. · [Evidencia](results/resultados-t13-t14-t69.md)
   **Hecho cuando:** se representan IP, ventana, contador y bloqueo hasta, con un único registro coordinable por IP compartido entre login y validación de códigos.
 
-- [ ] **T69 — Adaptar fixtures y pruebas al nuevo modelo** · 25 min · RF: RF-06, RF-14–15, RF-28 · Depende de: T06–T10.
+- [X] **T69 — Adaptar fixtures y pruebas al nuevo modelo** · 25 min · RF: RF-06, RF-14–15, RF-28 · Depende de: T06–T10. · [Evidencia](results/resultados-t13-t14-t69.md)
   **Hecho cuando:** las fixtures en memoria representan negocio activado, cuentas pendientes/activadas y licencia anual con sus estados; las pruebas existentes dejan de depender de EstadoNegocio y mantienen aislamiento. Se conserva T06 completada como antecedente.
 
 - [ ] **T15 — Preparar migración de negocios y usuarios** · 25 min · RF: RF-01–08, RF-13 · Depende de: T05, T09, T70.

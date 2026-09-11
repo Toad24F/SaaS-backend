@@ -9,12 +9,17 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { UsuariosService } from './usuarios/usuarios.service';
 import { Usuario } from './usuarios/entities/usuario.entity';
-import { Negocio } from './usuarios/entities/negocio.entity';
+import { Negocio } from './negocios/entities/negocio.entity';
 import { NegociosModule } from './negocios/negocios.module';
 import { LicenciasModule } from './licencias/licencias.module';
 import { CodigosModule } from './codigos/codigos.module';
 import { AltasModule } from './altas/altas.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
+import { Licencia } from './licencias/entities/licencia.entity';
+import { CodigoAcceso } from './codigos/entities/codigo-acceso.entity';
+import { Sesion } from './auth/entities/sesion.entity';
+import { LimiteIntentos } from './auth/entities/limite-intentos.entity';
+import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
   CodigosModule, AltasModule, AuditoriaModule];
@@ -35,6 +40,11 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       }))
       .overrideProvider(getRepositoryToken(Usuario)).useValue({})
       .overrideProvider(getRepositoryToken(Negocio)).useValue({})
+      .overrideProvider(getRepositoryToken(Licencia)).useValue({})
+      .overrideProvider(getRepositoryToken(CodigoAcceso)).useValue({})
+      .overrideProvider(getRepositoryToken(Sesion)).useValue({})
+      .overrideProvider(getRepositoryToken(LimiteIntentos)).useValue({})
+      .overrideProvider(getRepositoryToken(EventoAuditoria)).useValue({})
       .compile();
     try {
       await modulo.init();

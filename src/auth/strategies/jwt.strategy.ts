@@ -8,7 +8,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { UsuariosService } from '../../usuarios/usuarios.service';
-import { EstadoNegocio } from '../../usuarios/entities/negocio.entity';
 import { Rol } from '../enums/rol.enum';
 // Contiene la lógica profunda de validación del token.
 // Se encarga de leer el token que envía el cliente, extraer el payload y decidir si el token es legítimo, ha expirado,
@@ -33,16 +32,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
         const usuario = await this.usuariosService.findById(payload.sub);
 
-        if (!usuario || !usuario.activo) {
+        if (!usuario || !usuario.activo || usuario.activadoEn === null || !usuario.nombre) {
             throw new UnauthorizedException('Usuario no válido o inactivo');
         }
 
         if (
             usuario.rol !== Rol.SUPERADMIN &&
-            (!usuario.negocio || usuario.negocio.estado !== EstadoNegocio.ACTIVO)
+            (!usuario.negocio || usuario.negocio.activadoEn === null)
         ) {
             throw new ForbiddenException(
-                'El negocio se encuentra inactivo o suspendido',
+                'El negocio se encuentra pendiente de activación',
             );
         }
 
@@ -53,6 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             nombre: usuario.nombre,
             rol: usuario.rol,
             negocioId: usuario.negocioId,
+            ...(payload.sesionId ? { sesionId: payload.sesionId } : {}),
         } satisfies JwtPayload;
     }
 }

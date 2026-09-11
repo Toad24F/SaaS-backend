@@ -20,6 +20,21 @@ describe('Aislamiento de la base de pruebas (T04)', () => {
     });
   });
 
+  it('desactiva cambios automáticos del esquema en producción', () => {
+    expect(getDatabaseOptions({
+      NODE_ENV: 'production',
+      DB_HOST: 'localhost',
+      DB_PORT: '3306',
+      DB_USER: 'citas',
+      DB_PASS: 'secreto',
+      DB_NAME: 'citas',
+    })).toMatchObject({
+      synchronize: false,
+      dropSchema: false,
+      migrationsRun: false,
+    });
+  });
+
   it.each(['TEST_DB_HOST', 'TEST_DB_PORT', 'TEST_DB_USER', 'TEST_DB_PASS',
     'TEST_DB_NAME', 'TEST_DB_CONFIRMED'])('rechaza la ausencia de %s', (clave) => {
     expect(() => getDatabaseOptions({ ...entorno, [clave]: undefined })).toThrow();

@@ -7,7 +7,8 @@ export function getDatabaseOptions(
     return {
       type: 'mariadb', host: env.DB_HOST, port: Number(env.DB_PORT),
       username: env.DB_USER, password: env.DB_PASS, database: env.DB_NAME,
-      autoLoadEntities: true, synchronize: true,
+      autoLoadEntities: true, synchronize: false, dropSchema: false,
+      migrationsRun: false,
     };
   }
 

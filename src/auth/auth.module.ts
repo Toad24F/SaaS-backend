@@ -11,6 +11,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LicenciasModule } from '../licencias/licencias.module';
 import { CodigosModule } from '../codigos/codigos.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Sesion } from './entities/sesion.entity';
+import { LimiteIntentos } from './entities/limite-intentos.entity';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -21,6 +24,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     LicenciasModule,
     CodigosModule,
     AuditoriaModule,
+    // Ambos repositorios son persistencia transversal de autenticación.
+    TypeOrmModule.forFeature([Sesion, LimiteIntentos]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

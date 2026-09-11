@@ -6,8 +6,15 @@ import {
     ManyToOne,
     PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Negocio } from './negocio.entity';
+import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Rol } from '../../auth/enums/rol.enum';
+
+// La misma transformación se aplica a cuentas activas y pendientes para reservar
+// globalmente una única representación de cada correo.
+const normalizadorCorreo = {
+    to: (email: string): string => email.trim().toLowerCase(),
+    from: (email: string): string => email,
+};
 
 @Entity({ name: 'usuarios' })
 export class Usuario {
@@ -21,14 +28,14 @@ export class Usuario {
     @JoinColumn({ name: 'negocio_id' })
     negocio: Negocio | null;
 
-    @Column({ length: 150 })
-    nombre: string;
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    nombre: string | null;
 
-    @Column({ length: 150, unique: true })
+    @Column({ length: 150, unique: true, transformer: normalizadorCorreo })
     email: string;
 
-    @Column({ name: 'password_hash', length: 255 })
-    passwordHash: string;
+    @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
+    passwordHash: string | null;
 
     @Column({
         type: 'enum',
@@ -38,6 +45,10 @@ export class Usuario {
 
     @Column({ default: true })
     activo: boolean;
+
+    // Una cuenta pendiente conserva activo=true, pero no está activada todavía.
+    @Column({ name: 'activado_en', type: 'datetime', nullable: true })
+    activadoEn: Date | null;
 
     @CreateDateColumn({ name: 'creado_en' })
     creadoEn: Date;

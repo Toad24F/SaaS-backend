@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Rol } from './enums/rol.enum';
 
@@ -33,6 +33,7 @@ describe('AuthService', () => {
     findByEmailWithNegocio.mockResolvedValue({
       id: 1, email: 'admin@example.com', nombre: 'Admin', activo: true,
       rol: Rol.SUPERADMIN, negocioId: null,
+      activadoEn: new Date('2026-09-10T12:00:00Z'),
       passwordHash: await bcrypt.hash('contraseña-de-prueba', 4),
     });
     const resultado = await service.login({ email: 'admin@example.com', password: 'contraseña-de-prueba' });
@@ -49,9 +50,50 @@ describe('AuthService', () => {
   });
 
   it('rechaza una contraseña incorrecta', async () => {
-    findByEmailWithNegocio.mockResolvedValue({ activo: true, passwordHash: await bcrypt.hash('correcta', 4) });
+    findByEmailWithNegocio.mockResolvedValue({
+      activo: true,
+      activadoEn: new Date('2026-09-10T12:00:00Z'),
+      nombre: 'Usuario',
+      rol: Rol.SUPERADMIN,
+      passwordHash: await bcrypt.hash('correcta', 4),
+    });
     await expect(service.login({ email: 'admin@example.com', password: 'incorrecta' }))
       .rejects.toBeInstanceOf(UnauthorizedException);
+    expect(sign).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una cuenta pendiente aunque todavía figure activa', async () => {
+    findByEmailWithNegocio.mockResolvedValue({
+      activo: true,
+      activadoEn: null,
+      nombre: null,
+      passwordHash: null,
+    });
+
+    await expect(service.login({
+      email: 'pendiente@example.com',
+      password: 'sin-credencial',
+    })).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(sign).not.toHaveBeenCalled();
+  });
+
+  it('rechaza el acceso de un usuario cuyo negocio sigue pendiente', async () => {
+    findByEmailWithNegocio.mockResolvedValue({
+      id: 2,
+      email: 'admin-negocio@example.com',
+      nombre: 'Admin negocio',
+      activo: true,
+      activadoEn: new Date('2026-09-10T12:00:00Z'),
+      rol: Rol.ADMIN_NEGOCIO,
+      negocioId: 10,
+      negocio: { activadoEn: null },
+      passwordHash: await bcrypt.hash('contraseña-de-prueba', 4),
+    });
+
+    await expect(service.login({
+      email: 'admin-negocio@example.com',
+      password: 'contraseña-de-prueba',
+    })).rejects.toBeInstanceOf(ForbiddenException);
     expect(sign).not.toHaveBeenCalled();
   });
 });
