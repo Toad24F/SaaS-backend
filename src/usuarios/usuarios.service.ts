@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
@@ -44,5 +44,20 @@ export class UsuariosService {
     });
     if (!usuario) throw new NotFoundException('Usuario no disponible.');
     return usuario;
+  }
+
+  async desactivarRecepcionista(actorId: number, usuarioId: number): Promise<void> {
+    await this.usuarioRepository.manager.transaction(async (manager) => {
+      const actor = await manager.getRepository(Usuario).findOneBy({ id: actorId });
+      if (!actor || actor.rol !== Rol.ADMIN_NEGOCIO || actor.negocioId === null) {
+        throw new ForbiddenException('Acceso denegado.');
+      }
+      // La búsqueda compuesta evita revelar o modificar una cuenta de otro tenant.
+      const destino = await manager.getRepository(Usuario).findOneBy({
+        id: usuarioId, negocioId: actor.negocioId, rol: Rol.RECEPCIONISTA,
+      });
+      if (!destino) throw new NotFoundException('Usuario no disponible.');
+      if (destino.activo) await manager.getRepository(Usuario).update(destino.id, { activo: false });
+    });
   }
 }

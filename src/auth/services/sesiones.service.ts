@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, MoreThan, Repository } from 'typeorm';
+import { EntityManager, IsNull, MoreThan, Repository } from 'typeorm';
 import { Sesion } from '../entities/sesion.entity';
 
 const DURACION_SESION_MS = 60 * 60 * 1000;
@@ -43,6 +43,18 @@ export class SesionesService {
 
   async revocarTodas(usuarioId: number, ahora: Date): Promise<void> {
     await this.repositorio.update(
+      { usuarioId, revocadaEn: IsNull() },
+      { revocadaEn: new Date(ahora) },
+    );
+  }
+
+  /** Variante transaccional para que contraseña y revocación confirmen juntas. */
+  async revocarTodasConManager(
+    manager: EntityManager,
+    usuarioId: number,
+    ahora: Date,
+  ): Promise<void> {
+    await manager.getRepository(Sesion).update(
       { usuarioId, revocadaEn: IsNull() },
       { revocadaEn: new Date(ahora) },
     );

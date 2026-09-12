@@ -2,25 +2,42 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { JwtService } from '@nestjs/jwt';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Rol } from './enums/rol.enum';
 import { PoliticaContrasenasService } from './services/politica-contrasenas.service';
+import { SesionesService } from './services/sesiones.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Licencia } from '../licencias/entities/licencia.entity';
+import { PoliticaAccesoLicenciaService } from '../licencias/services/politica-acceso-licencia.service';
+import { RELOJ } from '../comun/reloj';
 
 describe('AuthService', () => {
   let service: AuthService;
   const findByEmailWithNegocio = jest.fn();
   const sign = jest.fn();
+  const crearSesion = jest.fn();
+  const findOneBy = jest.fn();
 
   beforeEach(async () => {
     findByEmailWithNegocio.mockReset();
     sign.mockReset().mockReturnValue('token-de-prueba');
+    crearSesion.mockReset().mockResolvedValue({ id: 'sesion-prueba' });
+    findOneBy.mockReset().mockResolvedValue({
+      habilitadaEn: new Date('2026-09-10T12:00:00Z'),
+      venceEn: new Date('2027-09-10T12:00:00Z'),
+      suspendidaEn: null,
+    });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsuariosService, useValue: { findByEmailWithNegocio } },
         { provide: JwtService, useValue: { sign } },
         PoliticaContrasenasService,
+        PoliticaAccesoLicenciaService,
+        { provide: SesionesService, useValue: { crear: crearSesion, revocar: jest.fn() } },
+        { provide: getRepositoryToken(Licencia), useValue: { findOneBy } },
+        { provide: RELOJ, useValue: { ahora: () => new Date('2026-09-11T12:00:00Z') } },
       ],
     }).compile();
 
@@ -95,7 +112,7 @@ describe('AuthService', () => {
     await expect(service.login({
       email: 'admin-negocio@example.com',
       password: 'contraseña-de-prueba',
-    })).rejects.toBeInstanceOf(ForbiddenException);
+    })).rejects.toBeInstanceOf(UnauthorizedException);
     expect(sign).not.toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtLogoutGuard } from './guards/jwt-logout.guard';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -17,6 +18,8 @@ describe('AuthController', () => {
       // Esta suite prueba el controlador; las protecciones HTTP se prueban por separado.
       .overrideGuard(LimiteIntentosGuard).useValue({ canActivate: () => true })
       .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
+      // El nuevo Guard también se aísla aquí; auth-t45.e2e-spec usa el real.
+      .overrideGuard(JwtLogoutGuard).useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<AuthController>(AuthController);

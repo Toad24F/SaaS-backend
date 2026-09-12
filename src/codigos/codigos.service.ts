@@ -160,6 +160,26 @@ export class CodigosService {
     });
   }
 
+  /** Invalida el código vigente, si existe, y emite el siguiente en el mismo manager. */
+  async emitirInvalidandoAnterior(
+    manager: EntityManager,
+    datos: EmitirCodigo,
+  ): Promise<CodigoEmitido> {
+    const repositorio = manager.getRepository(CodigoAcceso);
+    const anterior = await repositorio.createQueryBuilder('codigo')
+      .setLock('pessimistic_write')
+      .where('codigo.negocioId = :negocioId', { negocioId: datos.negocioId })
+      .andWhere('codigo.usuarioId = :usuarioId', { usuarioId: datos.usuarioId })
+      .andWhere('codigo.proposito = :proposito', { proposito: datos.proposito })
+      .andWhere('codigo.consumidoEn IS NULL AND codigo.invalidadoEn IS NULL')
+      .getOne();
+    if (anterior) {
+      anterior.invalidadoEn = new Date(datos.ahora);
+      await repositorio.save(anterior);
+    }
+    return this.emitir(manager, datos);
+  }
+
   private hash(codigo: string): string {
     return createHash('sha256').update(codigo).digest('hex');
   }

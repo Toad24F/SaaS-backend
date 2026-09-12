@@ -20,6 +20,9 @@ import { RELOJ, RelojSistema } from '../comun/reloj';
 import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
 import { SesionesService } from './services/sesiones.service';
 import { AutorizacionService } from './services/autorizacion.service';
+import { CredencialesService } from './services/credenciales.service';
+import { JwtLogoutGuard } from './guards/jwt-logout.guard';
+import { JwtLogoutStrategy } from './strategies/jwt-logout.strategy';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -53,10 +56,14 @@ import { AutorizacionService } from './services/autorizacion.service';
     AuthService,
     JwtStrategy,
     JwtAuthGuard,
+    // Logout conserva la autenticación de sesión sin aplicar bloqueos comerciales.
+    JwtLogoutGuard,
+    JwtLogoutStrategy,
     LimiteIntentosGuard,
     PoliticaContrasenasService,
     SesionesService,
     AutorizacionService,
+    CredencialesService,
     { provide: RELOJ, useClass: RelojSistema },
     LimiteIntentosStorage,
     // Sustituye el contador en memoria de Throttler por la persistencia compartida.
@@ -70,6 +77,7 @@ import { AutorizacionService } from './services/autorizacion.service';
     PoliticaContrasenasService,
     SesionesService,
     AutorizacionService,
+    CredencialesService,
   ],
 })
 export class AuthModule { }

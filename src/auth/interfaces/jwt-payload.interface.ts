@@ -7,6 +7,6 @@ export interface JwtPayload {
     nombre: string;
     rol: Rol;// Rol del usuario (superadmin, admin_negocio, recepcionista)
     negocioId: number | null; // null si es superadmin
-    // Será obligatorio cuando T28 empiece a persistir cada inicio de sesión.
-    sesionId?: string;
+    // Identifica la sesión persistida para permitir vencimiento y revocación inmediata.
+    sesionId: string;
 }
