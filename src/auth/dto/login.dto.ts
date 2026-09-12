@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 // DTO (Data Transfer Object) para el inicio de sesión 
 // Contiene las validaciones de los datos que vamos a recibir en el inicio de sesión.
@@ -9,6 +9,7 @@ export class LoginDto {
 
     @IsString()
     @IsNotEmpty({ message: 'La contraseña es obligatoria' })
-    @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
+    // Login compara credenciales y responde 401 uniforme; la longitud mínima se
+    // exige al establecer una contraseña mediante la política de contraseñas.
     password: string;
 }

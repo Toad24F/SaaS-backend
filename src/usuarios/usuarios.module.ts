@@ -7,6 +7,6 @@ import { UsuariosService } from './usuarios.service';
   // Negocio se registra desde NegociosModule; Usuarios solo posee su repositorio.
   imports: [TypeOrmModule.forFeature([Usuario])],
   providers: [UsuariosService],
-  exports: [UsuariosService], // Exportamos para que AuthModule pueda usarlo
+  exports: [TypeOrmModule, UsuariosService], // Altas reutiliza el repositorio dentro de su transacción.
 })
 export class UsuariosModule { }

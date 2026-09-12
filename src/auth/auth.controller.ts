@@ -4,7 +4,8 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
+import { JwtLogoutGuard } from './guards/jwt-logout.guard';
 
 @Controller('auth')
 //Este archivo gestiona las peticiones HTTP entrantes.
@@ -13,9 +14,16 @@ export class AuthController {
     //Endpoints
     @Post('login')//ruta para iniciar sesión
     @HttpCode(HttpStatus.OK)
-    @UseGuards(ThrottlerGuard)//protege la ruta, limitando la cantidad de intentos de inicio de sesión en un período de tiempo determinado.
+    @UseGuards(LimiteIntentosGuard)// Comparte por IP el límite con las futuras rutas de validación de códigos.
     login(@Body() loginDto: LoginDto) {
         return this.authService.login(loginDto);
+    }
+    // Retira solo la sesión autenticada; no recibe IDs del cuerpo del cliente.
+    @Post('logout')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(JwtLogoutGuard)
+    async logout(@CurrentUser() user: Pick<JwtPayload, 'sub' | 'sesionId'>): Promise<void> {
+        await this.authService.logout(user);
     }
     @UseGuards(JwtAuthGuard)//protege la ruta, solo los usuarios autenticados pueden acceder a ella.
     @Get('profile')

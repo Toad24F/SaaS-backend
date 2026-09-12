@@ -20,6 +20,7 @@ import { CodigoAcceso } from './codigos/entities/codigo-acceso.entity';
 import { Sesion } from './auth/entities/sesion.entity';
 import { LimiteIntentos } from './auth/entities/limite-intentos.entity';
 import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
+import { AltasService } from './altas/altas.service';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
   CodigosModule, AltasModule, AuditoriaModule];
@@ -52,6 +53,7 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       expect(modulo.get(AuthService)).toBeInstanceOf(AuthService);
       expect(modulo.get(UsuariosService)).toBeInstanceOf(UsuariosService);
       expect(modulo.get(JwtStrategy)).toBeInstanceOf(JwtStrategy);
+      expect(modulo.get(AltasService)).toBeInstanceOf(AltasService);
     } finally {
       await modulo.close();
     }

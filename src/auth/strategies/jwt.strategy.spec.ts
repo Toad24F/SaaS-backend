@@ -1,4 +1,5 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { Negocio } from '../../negocios/entities/negocio.entity';
@@ -7,21 +8,34 @@ import { UsuariosService } from '../../usuarios/usuarios.service';
 import { Rol } from '../enums/rol.enum';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { JwtStrategy } from './jwt.strategy';
+import { SesionesService } from '../services/sesiones.service';
+import { Licencia } from '../../licencias/entities/licencia.entity';
+import { PoliticaAccesoLicenciaService } from '../../licencias/services/politica-acceso-licencia.service';
+import { RELOJ } from '../../comun/reloj';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
   let usuario: Usuario;
   const findById = jest.fn();
+  const esValida = jest.fn();
+  const findLicencia = jest.fn();
   const payload: JwtPayload = {
     sub: 1,
     email: 'anterior@example.com',
     nombre: 'Nombre anterior',
     rol: Rol.ADMIN_NEGOCIO,
     negocioId: 10,
+    sesionId: '5e85643d-04a7-4b5e-8ed4-6a8029a2b673',
   };
 
   beforeEach(async () => {
     findById.mockReset();
+    esValida.mockReset().mockResolvedValue(true);
+    findLicencia.mockReset().mockResolvedValue({
+      habilitadaEn: new Date('2026-09-10T12:00:00Z'),
+      venceEn: new Date('2027-09-10T12:00:00Z'),
+      suspendidaEn: null,
+    });
     usuario = Object.assign(new Usuario(), {
       id: 1,
       email: 'actual@example.com',
@@ -45,6 +59,10 @@ describe('JwtStrategy', () => {
           useValue: new ConfigService({ JWT_SECRET: 'solo-para-pruebas' }),
         },
         { provide: UsuariosService, useValue: { findById } },
+        { provide: SesionesService, useValue: { esValida } },
+        { provide: getRepositoryToken(Licencia), useValue: { findOneBy: findLicencia } },
+        PoliticaAccesoLicenciaService,
+        { provide: RELOJ, useValue: { ahora: () => new Date('2026-09-11T12:00:00Z') } },
       ],
     }).compile();
     strategy = module.get(JwtStrategy);
@@ -57,6 +75,7 @@ describe('JwtStrategy', () => {
       nombre: usuario.nombre,
       rol: Rol.RECEPCIONISTA,
       negocioId: 20,
+      sesionId: payload.sesionId,
     });
     expect(findById).toHaveBeenCalledWith(1);
   });
@@ -77,6 +96,21 @@ describe('JwtStrategy', () => {
     );
   });
 
+  it('rechaza una sesión revocada o vencida antes de consultar la cuenta', async () => {
+    esValida.mockResolvedValue(false);
+    await expect(strategy.validate(payload)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(findById).not.toHaveBeenCalled();
+  });
+
+  it('rechaza con 401 el estado actual suspendido de la licencia', async () => {
+    findLicencia.mockResolvedValue({
+      habilitadaEn: new Date('2026-09-10T12:00:00Z'),
+      venceEn: new Date('2027-09-10T12:00:00Z'),
+      suspendidaEn: new Date('2026-09-11T11:00:00Z'),
+    });
+    await expect(strategy.validate(payload)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
   it('rechaza la siguiente petición cuando se desactiva el usuario', async () => {
     await strategy.validate(payload);
     usuario.activo = false;
@@ -89,7 +123,7 @@ describe('JwtStrategy', () => {
     await strategy.validate(payload);
     usuario.negocio!.activadoEn = null;
     await expect(strategy.validate(payload)).rejects.toBeInstanceOf(
-      ForbiddenException,
+      UnauthorizedException,
     );
   });
 
@@ -97,7 +131,7 @@ describe('JwtStrategy', () => {
     usuario.negocio = null;
     usuario.negocioId = null;
     await expect(strategy.validate(payload)).rejects.toBeInstanceOf(
-      ForbiddenException,
+      UnauthorizedException,
     );
   });
 

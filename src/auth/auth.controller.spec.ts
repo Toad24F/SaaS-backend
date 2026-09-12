@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtLogoutGuard } from './guards/jwt-logout.guard';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -15,8 +16,10 @@ describe('AuthController', () => {
       providers: [{ provide: AuthService, useValue: { login } }],
     })
       // Esta suite prueba el controlador; las protecciones HTTP se prueban por separado.
-      .overrideGuard(ThrottlerGuard).useValue({ canActivate: () => true })
+      .overrideGuard(LimiteIntentosGuard).useValue({ canActivate: () => true })
       .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
+      // El nuevo Guard también se aísla aquí; auth-t45.e2e-spec usa el real.
+      .overrideGuard(JwtLogoutGuard).useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<AuthController>(AuthController);

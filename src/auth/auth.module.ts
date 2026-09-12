@@ -7,13 +7,22 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsuariosModule } from '../usuarios/usuarios.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { LicenciasModule } from '../licencias/licencias.module';
 import { CodigosModule } from '../codigos/codigos.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Sesion } from './entities/sesion.entity';
 import { LimiteIntentos } from './entities/limite-intentos.entity';
+import { PoliticaContrasenasService } from './services/politica-contrasenas.service';
+import { LimiteIntentosStorage } from './services/limite-intentos.storage';
+import { RELOJ, RelojSistema } from '../comun/reloj';
+import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
+import { SesionesService } from './services/sesiones.service';
+import { AutorizacionService } from './services/autorizacion.service';
+import { CredencialesService } from './services/credenciales.service';
+import { JwtLogoutGuard } from './guards/jwt-logout.guard';
+import { JwtLogoutStrategy } from './strategies/jwt-logout.strategy';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -37,20 +46,38 @@ import { LimiteIntentos } from './entities/limite-intentos.entity';
         },
       }),
     }),
-    ThrottlerModule.forRoot({ //Esto sirve para limitar la cantidad de intentos de inicio de sesión en un período de tiempo determinado, protegiendo así contra ataques de fuerza bruta.
-      throttlers: [
-        {
-          ttl: 60_000,
-          limit: 5,
-          blockDuration: 60_000,
-        },
-      ],
-      errorMessage:
-        'Demasiados intentos de inicio de sesión. Intenta de nuevo más tarde.',
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 5, blockDuration: 60_000 }],
+      errorMessage: 'Demasiados intentos. Intenta de nuevo más tarde.',
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, ThrottlerGuard,],
-  exports: [AuthService, JwtAuthGuard, PassportModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    // Logout conserva la autenticación de sesión sin aplicar bloqueos comerciales.
+    JwtLogoutGuard,
+    JwtLogoutStrategy,
+    LimiteIntentosGuard,
+    PoliticaContrasenasService,
+    SesionesService,
+    AutorizacionService,
+    CredencialesService,
+    { provide: RELOJ, useClass: RelojSistema },
+    LimiteIntentosStorage,
+    // Sustituye el contador en memoria de Throttler por la persistencia compartida.
+    { provide: ThrottlerStorage, useExisting: LimiteIntentosStorage },
+  ],
+  exports: [
+    AuthService,
+    JwtAuthGuard,
+    LimiteIntentosGuard,
+    PassportModule,
+    PoliticaContrasenasService,
+    SesionesService,
+    AutorizacionService,
+    CredencialesService,
+  ],
 })
 export class AuthModule { }

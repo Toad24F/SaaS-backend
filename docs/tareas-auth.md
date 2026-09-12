@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 75 tareas; 22 completadas (T01–T19 y T69–T71) y 53 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 75 tareas; 48 completadas (T01–T45 y T69–T71) y 27 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -80,86 +80,86 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 
 ## 2. Reglas y servicios compartidos
 
-- [ ] **T20 — Centralizar la política de contraseñas** · 20 min · RF: RF-21, RF-27 · Depende de: T06.
+- [X] **T20 — Centralizar la política de contraseñas** · 20 min · RF: RF-21, RF-27 · Depende de: T06. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** pruebas verifican el mínimo de 12 caracteres, hash y comparación, sin truncamiento silencioso.
 
-- [ ] **T21 — Calcular años calendario en Chihuahua** · 25 min · RF: RF-28, RF-31 · Depende de: T06.
+- [X] **T21 — Calcular años calendario en Chihuahua** · 25 min · RF: RF-28, RF-31 · Depende de: T06. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** pruebas de aniversario, fin de mes, 29 de febrero y reglas de America/Chihuahua producen vencimientos correctos almacenados en UTC; las renovaciones sucesivas suman un año desde su base, sin usar 365 días ni offset fijo.
 
-- [ ] **T22 — Definir la política de acceso por licencia** · 25 min · RF: RF-14–15, RF-29–30, RF-33–34 · Depende de: T06, T10, T69.
+- [X] **T22 — Definir la política de acceso por licencia** · 25 min · RF: RF-14–15, RF-29–30, RF-33–34 · Depende de: T06, T10, T69. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** una matriz cubre pendiente, vigente, vencida y suspendida, junto con cuenta activa/activada y negocio activado; una suspensión prolongada no consume el tiempo conservado.
 
-- [ ] **T23 — Registrar auditoría dentro de transacciones** · 20 min · RF: RF-35 · Depende de: T18.
+- [X] **T23 — Registrar auditoría dentro de transacciones** · 20 min · RF: RF-35 · Depende de: T18. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** un evento conserva actor y destino y un fallo de registro provoca rollback de la operación que lo incluye.
 
-- [ ] **T24 — Emitir códigos y mostrar su valor una sola vez** · 25 min · RF: RF-08, RF-13, RF-22–23 · Depende de: T17, T23.
+- [X] **T24 — Emitir códigos y mostrar su valor una sola vez** · 25 min · RF: RF-08, RF-13, RF-22–23 · Depende de: T17, T23. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** activación recibe 48 horas, recuperación 30 minutos y la persistencia contiene únicamente hashes de códigos aleatorios; cada código queda vinculado a destinatario, propósito y emisor y se muestra solo en la respuesta de emisión.
 
-- [ ] **T25 — Validar y consumir códigos** · 25 min · RF: RF-08–11, RF-24 · Depende de: T24.
+- [X] **T25 — Validar y consumir códigos** · 25 min · RF: RF-08–11, RF-24 · Depende de: T24. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** se rechazan propósito incorrecto, vencimiento exacto, invalidación y reutilización; el estado se revalida bajo bloqueo y el consumo comparte la transacción de la operación.
 
-- [ ] **T26 — Reemplazar códigos pendientes** · 20 min · RF: RF-12, RF-23 · Depende de: T25.
+- [X] **T26 — Reemplazar códigos pendientes** · 20 min · RF: RF-12, RF-23 · Depende de: T25. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** emitir el reemplazo invalida el anterior sin cambiar destinatario ni iniciar la licencia; usa el bloqueo de cuenta/código compatible con el consumo y rechaza reemisión inicial si la cuenta ya se activó.
 
-- [ ] **T27 — Aplicar el límite compartido de intentos** · 25 min · RF: RF-17 · Depende de: T06, T18.
+- [X] **T27 — Aplicar el límite compartido de intentos** · 25 min · RF: RF-17 · Depende de: T06, T18. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** @nestjs/throttler utiliza almacenamiento MariaDB y una clave conjunta por IP para login y validación de códigos; el sexto intento bloquea un minuto, los bloqueados no prolongan la ventana y otra IP tiene su propio límite.
 
-- [ ] **T28 — Crear y revocar sesiones** · 25 min · RF: RF-18, RF-20, RF-24–25 · Depende de: T06, T17.
+- [X] **T28 — Crear y revocar sesiones** · 25 min · RF: RF-18, RF-20, RF-24–25 · Depende de: T06, T17. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** pruebas verifican duración exacta de una hora desde el inicio, sin extensión deslizante ni refresh tokens, revocación individual y revocación de todas las sesiones de una cuenta.
 
-- [ ] **T29 — Consultar usuarios con pertenencia validada** · 20 min · RF: RF-05–07 · Depende de: T15.
+- [X] **T29 — Consultar usuarios con pertenencia validada** · 20 min · RF: RF-05–07 · Depende de: T15. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** un administrador encuentra sus recepcionistas y recibe recurso no disponible al consultar uno de otro negocio.
 
-- [ ] **T30 — Aplicar permisos por rol** · 20 min · RF: RF-04–07, RF-22 · Depende de: T06, T29.
+- [X] **T30 — Aplicar permisos por rol** · 20 min · RF: RF-04–07, RF-22 · Depende de: T06, T29. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** una matriz prueba operaciones exclusivas del superadmin, operaciones propias del administrador y rechazo del recepcionista; solo superadmin puede autorizar recuperación y solo de cuentas de administrador.
 
 ## 3. Casos de uso
 
-- [ ] **T31 — Crear negocio con licencia y administrador pendiente** · 25 min · RF: RF-01–04, RF-35 · Depende de: T16, T23, T24, T30.
+- [X] **T31 — Crear negocio con licencia y administrador pendiente** · 25 min · RF: RF-01–04, RF-35 · Depende de: T16, T23, T24, T30. · [Evidencia](results/resultados-t31.md)
   **Hecho cuando:** una operación válida crea negocio, administrador pendiente, licencia anual y código con auditoría, rechaza duplicados sin altas parciales y no recibe modalidad ni período.
 
-- [ ] **T32 — Invitar recepcionistas** · 25 min · RF: RF-03, RF-05–07, RF-13 · Depende de: T22, T24, T29, T30.
+- [X] **T32 — Invitar recepcionistas** · 25 min · RF: RF-03, RF-05–07, RF-13 · Depende de: T22, T24, T29, T30. · [Evidencia](results/resultados-t32.md)
   **Hecho cuando:** un administrador autorizado reserva el correo y obtiene un código ligado exclusivamente a su negocio y al rol recepcionista.
 
-- [ ] **T33 — Activar al primer administrador** · 25 min · RF: RF-08–11, RF-14, RF-27–28, RF-35 · Depende de: T20–T25, T31.
+- [X] **T33 — Activar al primer administrador** · 25 min · RF: RF-08–11, RF-14, RF-27–28, RF-35 · Depende de: T20–T25, T31. · [Evidencia](results/resultados-t33-t37.md)
   **Hecho cuando:** establecer nombre y contraseña consume el código, activa cuenta y negocio e inicia un año calendario de licencia en una transacción; una suspensión previa impide la activación.
 
-- [ ] **T34 — Activar recepcionistas** · 20 min · RF: RF-08, RF-10–11, RF-13–14, RF-27 · Depende de: T20, T22, T25, T32.
+- [X] **T34 — Activar recepcionistas** · 20 min · RF: RF-08, RF-10–11, RF-13–14, RF-27 · Depende de: T20, T22, T25, T32. · [Evidencia](results/resultados-t33-t37.md)
   **Hecho cuando:** la cuenta se activa solo con código válido, licencia habilitada, vigente y no suspendida; no cambia correo, negocio, rol ni vigencia de licencia.
 
-- [ ] **T35 — Completar el inicio de sesión** · 25 min · RF: RF-15–16, RF-20 · Depende de: T20, T22, T28, T33.
+- [X] **T35 — Completar el inicio de sesión** · 25 min · RF: RF-15–16, RF-20 · Depende de: T20, T22, T28, T33. · [Evidencia](results/resultados-t33-t37.md)
   **Hecho cuando:** credenciales válidas producen sesión persistida y token; cuentas pendientes, inactivas o sin acceso son rechazadas y los errores de credenciales son uniformes.
 
-- [ ] **T36 — Validar sesión y permisos actuales en JWT** · 25 min · RF: RF-15, RF-19–20, RF-29, RF-33 · Depende de: T22, T28, T35.
+- [X] **T36 — Validar sesión y permisos actuales en JWT** · 25 min · RF: RF-15, RF-19–20, RF-29, RF-33 · Depende de: T22, T28, T35. · [Evidencia](results/resultados-t33-t37.md)
   **Hecho cuando:** cada solicitud protegida consulta sesión, cuenta y licencia actuales; devuelve 401 si sesión está revocada/vencida, cuenta desactivada o licencia bloqueada, usando permisos actuales y sin interrumpir por expiración una operación previamente autorizada.
 
-- [ ] **T37 — Cerrar sesión aunque la licencia esté bloqueada** · 20 min · RF: RF-18, RF-33 · Depende de: T28, T36.
+- [X] **T37 — Cerrar sesión aunque la licencia esté bloqueada** · 20 min · RF: RF-18, RF-33 · Depende de: T28, T36. · [Evidencia](results/resultados-t33-t37.md)
   **Hecho cuando:** logout revoca una sesión reconocida incluso con licencia suspendida, y reutilizarla falla.
 
-- [ ] **T38 — Desactivar recepcionistas propios** · 20 min · RF: RF-05–07, RF-19, RF-30 · Depende de: T29, T30, T36.
+- [X] **T38 — Desactivar recepcionistas propios** · 20 min · RF: RF-05–07, RF-19, RF-30 · Depende de: T29, T30, T36. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** el administrador desactiva únicamente cuentas permitidas, conserva los registros y la siguiente solicitud autenticada del recepcionista desactivado es rechazada.
 
-- [ ] **T39 — Autorizar recuperación de administradores** · 25 min · RF: RF-22–23, RF-26, RF-35 · Depende de: T23, T26, T30.
+- [X] **T39 — Autorizar recuperación de administradores** · 25 min · RF: RF-22–23, RF-26, RF-35 · Depende de: T23, T26, T30. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** solo el superadmin emite recuperación para una cuenta de administrador, incluso desactivada o bloqueada por licencia; rechaza otros emisores y destinatarios, invalida el código anterior y audita sin levantar restricciones.
 
-- [ ] **T40 — Recuperar contraseña y retirar sesiones** · 25 min · RF: RF-23–24, RF-26–27 · Depende de: T20, T25, T28, T39.
+- [X] **T40 — Recuperar contraseña y retirar sesiones** · 25 min · RF: RF-23–24, RF-26–27 · Depende de: T20, T25, T28, T39. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** un código válido cambia la contraseña, se consume y revoca todas las sesiones sin activar cuentas ni levantar restricciones de licencia.
 
-- [ ] **T41 — Cambiar contraseña con sesión iniciada** · 25 min · RF: RF-21, RF-25, RF-27 · Depende de: T20, T28, T36.
+- [X] **T41 — Cambiar contraseña con sesión iniciada** · 25 min · RF: RF-21, RF-25, RF-27 · Depende de: T20, T28, T36. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** se exige la contraseña actual, la nueva cumple la política y todas las sesiones anteriores quedan inutilizables.
 
-- [ ] **T42 — Suspender licencias** · 25 min · RF: RF-04, RF-33, RF-35–36, RF-38 · Depende de: T16, T22, T23, T30.
+- [X] **T42 — Suspender licencias** · 25 min · RF: RF-04, RF-33, RF-35–36, RF-38 · Depende de: T16, T22, T23, T30. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** registra el inicio de suspensión una sola vez y conserva el vencimiento; admite pendientes sin generar tiempo, rechaza licencias vencidas no suspendidas y no duplica eventos al repetir.
 
-- [ ] **T43 — Reactivar licencias** · 25 min · RF: RF-34–35, RF-37–38 · Depende de: T42.
+- [X] **T43 — Reactivar licencias** · 25 min · RF: RF-34–35, RF-37–38 · Depende de: T42. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** para una licencia habilitada suma al vencimiento conservado la duración exacta de suspensión y limpia su inicio; pendientes solo retiran la suspensión; repetir no añade tiempo, activa cuentas ni duplica eventos.
 
-- [ ] **T44 — Renovar licencias anuales** · 25 min · RF: RF-31–32, RF-35, RF-37 · Depende de: T21, T23, T42.
+- [X] **T44 — Renovar licencias anuales** · 25 min · RF: RF-31–32, RF-35, RF-37 · Depende de: T21, T23, T42. · [Evidencia](results/resultados-t38-t44.md)
   **Hecho cuando:** añade un año desde vencimiento vigente, instante actual si venció o vencimiento conservado si suspendida; mantiene suspensión e inicio de pausa, acumula renovaciones y rechaza licencias pendientes.
 
 ## 4. Operaciones HTTP y pruebas de integración
 
-- [ ] **T45 — Exponer login, perfil y logout** · 25 min · RF: RF-15–20 · Depende de: T27, T35–T37.
+- [X] **T45 — Exponer login, perfil y logout** · 25 min · RF: RF-15–20 · Depende de: T27, T35–T37. · [Evidencia](results/resultados-t45.md)
   **Hecho cuando:** conserva POST /auth/login y GET /auth/profile y expone logout; pruebas HTTP verifican respuestas sin hashes, entradas válidas, errores uniformes, bloqueo de intentos y rechazo de tokens revocados o vencidos.
 
 - [ ] **T46 — Exponer activación y recuperación** · 25 min · RF: RF-08–14, RF-17, RF-23–24, RF-27 · Depende de: T27, T33–T34, T40.
