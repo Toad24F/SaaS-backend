@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 75 tareas; 28 completadas (T01–T25 y T69–T71) y 47 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 75 tareas; 33 completadas (T01–T30 y T69–T71) y 42 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -98,19 +98,19 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T25 — Validar y consumir códigos** · 25 min · RF: RF-08–11, RF-24 · Depende de: T24. · [Evidencia](results/resultados-t20-t25.md)
   **Hecho cuando:** se rechazan propósito incorrecto, vencimiento exacto, invalidación y reutilización; el estado se revalida bajo bloqueo y el consumo comparte la transacción de la operación.
 
-- [ ] **T26 — Reemplazar códigos pendientes** · 20 min · RF: RF-12, RF-23 · Depende de: T25.
+- [X] **T26 — Reemplazar códigos pendientes** · 20 min · RF: RF-12, RF-23 · Depende de: T25. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** emitir el reemplazo invalida el anterior sin cambiar destinatario ni iniciar la licencia; usa el bloqueo de cuenta/código compatible con el consumo y rechaza reemisión inicial si la cuenta ya se activó.
 
-- [ ] **T27 — Aplicar el límite compartido de intentos** · 25 min · RF: RF-17 · Depende de: T06, T18.
+- [X] **T27 — Aplicar el límite compartido de intentos** · 25 min · RF: RF-17 · Depende de: T06, T18. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** @nestjs/throttler utiliza almacenamiento MariaDB y una clave conjunta por IP para login y validación de códigos; el sexto intento bloquea un minuto, los bloqueados no prolongan la ventana y otra IP tiene su propio límite.
 
-- [ ] **T28 — Crear y revocar sesiones** · 25 min · RF: RF-18, RF-20, RF-24–25 · Depende de: T06, T17.
+- [X] **T28 — Crear y revocar sesiones** · 25 min · RF: RF-18, RF-20, RF-24–25 · Depende de: T06, T17. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** pruebas verifican duración exacta de una hora desde el inicio, sin extensión deslizante ni refresh tokens, revocación individual y revocación de todas las sesiones de una cuenta.
 
-- [ ] **T29 — Consultar usuarios con pertenencia validada** · 20 min · RF: RF-05–07 · Depende de: T15.
+- [X] **T29 — Consultar usuarios con pertenencia validada** · 20 min · RF: RF-05–07 · Depende de: T15. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** un administrador encuentra sus recepcionistas y recibe recurso no disponible al consultar uno de otro negocio.
 
-- [ ] **T30 — Aplicar permisos por rol** · 20 min · RF: RF-04–07, RF-22 · Depende de: T06, T29.
+- [X] **T30 — Aplicar permisos por rol** · 20 min · RF: RF-04–07, RF-22 · Depende de: T06, T29. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** una matriz prueba operaciones exclusivas del superadmin, operaciones propias del administrador y rechazo del recepcionista; solo superadmin puede autorizar recuperación y solo de cuentas de administrador.
 
 ## 3. Casos de uso

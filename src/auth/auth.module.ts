@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsuariosModule } from '../usuarios/usuarios.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { LicenciasModule } from '../licencias/licencias.module';
 import { CodigosModule } from '../codigos/codigos.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
@@ -15,6 +15,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Sesion } from './entities/sesion.entity';
 import { LimiteIntentos } from './entities/limite-intentos.entity';
 import { PoliticaContrasenasService } from './services/politica-contrasenas.service';
+import { LimiteIntentosStorage } from './services/limite-intentos.storage';
+import { RELOJ, RelojSistema } from '../comun/reloj';
+import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
+import { SesionesService } from './services/sesiones.service';
+import { AutorizacionService } from './services/autorizacion.service';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -38,16 +43,9 @@ import { PoliticaContrasenasService } from './services/politica-contrasenas.serv
         },
       }),
     }),
-    ThrottlerModule.forRoot({ //Esto sirve para limitar la cantidad de intentos de inicio de sesión en un período de tiempo determinado, protegiendo así contra ataques de fuerza bruta.
-      throttlers: [
-        {
-          ttl: 60_000,
-          limit: 5,
-          blockDuration: 60_000,
-        },
-      ],
-      errorMessage:
-        'Demasiados intentos de inicio de sesión. Intenta de nuevo más tarde.',
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 5, blockDuration: 60_000 }],
+      errorMessage: 'Demasiados intentos. Intenta de nuevo más tarde.',
     }),
   ],
   controllers: [AuthController],
@@ -55,9 +53,23 @@ import { PoliticaContrasenasService } from './services/politica-contrasenas.serv
     AuthService,
     JwtStrategy,
     JwtAuthGuard,
-    ThrottlerGuard,
+    LimiteIntentosGuard,
     PoliticaContrasenasService,
+    SesionesService,
+    AutorizacionService,
+    { provide: RELOJ, useClass: RelojSistema },
+    LimiteIntentosStorage,
+    // Sustituye el contador en memoria de Throttler por la persistencia compartida.
+    { provide: ThrottlerStorage, useExisting: LimiteIntentosStorage },
   ],
-  exports: [AuthService, JwtAuthGuard, PassportModule, PoliticaContrasenasService],
+  exports: [
+    AuthService,
+    JwtAuthGuard,
+    LimiteIntentosGuard,
+    PassportModule,
+    PoliticaContrasenasService,
+    SesionesService,
+    AutorizacionService,
+  ],
 })
 export class AuthModule { }

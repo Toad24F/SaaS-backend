@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { DataSource, EntityManager } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
@@ -6,6 +6,7 @@ import {
   CodigoAcceso,
   PropositoCodigoAcceso,
 } from './entities/codigo-acceso.entity';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 
 const DURACION_ACTIVACION_MS = 48 * 60 * 60 * 1000;
 const DURACION_RECUPERACION_MS = 30 * 60 * 1000;
@@ -82,13 +83,26 @@ export class CodigosService {
   ): Promise<T> {
     return dataSource.transaction(async (manager) => {
       const repositorio = manager.getRepository(CodigoAcceso);
-      // El bloqueo serializa consumo y futura reemisión sobre la misma fila.
-      const codigo = await repositorio.createQueryBuilder('codigo')
+      const referencia = await repositorio.createQueryBuilder('codigo')
         .addSelect('codigo.codigoHash')
-        .setLock('pessimistic_write')
         .where('codigo.codigoHash = :codigoHash', {
           codigoHash: this.hash(datos.codigo),
         })
+        .getOne();
+      if (!referencia) throw new BadRequestException(MENSAJE_CODIGO_INVALIDO);
+
+      // Cuenta antes que código mantiene el mismo orden de bloqueo que reemplazar.
+      await manager.getRepository(Usuario).createQueryBuilder('usuario')
+        .setLock('pessimistic_write')
+        .where('usuario.id = :id AND usuario.negocioId = :negocioId', {
+          id: referencia.usuarioId,
+          negocioId: referencia.negocioId,
+        })
+        .getOneOrFail();
+      const codigo = await repositorio.createQueryBuilder('codigo')
+        .addSelect('codigo.codigoHash')
+        .setLock('pessimistic_write')
+        .where('codigo.id = :id', { id: referencia.id })
         .getOne();
       if (
         !codigo ||
@@ -104,6 +118,45 @@ export class CodigosService {
       codigo.consumidoEn = new Date(datos.ahora);
       await repositorio.save(codigo);
       return resultado;
+    });
+  }
+
+  async reemplazar(
+    dataSource: DataSource,
+    datos: EmitirCodigo,
+  ): Promise<CodigoEmitido> {
+    return dataSource.transaction(async (manager) => {
+      const usuario = await manager.getRepository(Usuario)
+        .createQueryBuilder('usuario')
+        .setLock('pessimistic_write')
+        .where('usuario.id = :id AND usuario.negocioId = :negocioId', {
+          id: datos.usuarioId,
+          negocioId: datos.negocioId,
+        })
+        .getOne();
+      if (!usuario) throw new ConflictException('La cuenta no está disponible.');
+      if (
+        datos.proposito !== PropositoCodigoAcceso.RECUPERACION &&
+        usuario.activadoEn !== null
+      ) {
+        throw new ConflictException('La cuenta ya fue activada.');
+      }
+
+      const repositorio = manager.getRepository(CodigoAcceso);
+      const anterior = await repositorio.createQueryBuilder('codigo')
+        .setLock('pessimistic_write')
+        .where('codigo.negocioId = :negocioId', { negocioId: datos.negocioId })
+        .andWhere('codigo.usuarioId = :usuarioId', { usuarioId: datos.usuarioId })
+        .andWhere('codigo.proposito = :proposito', { proposito: datos.proposito })
+        .andWhere('codigo.consumidoEn IS NULL')
+        .andWhere('codigo.invalidadoEn IS NULL')
+        .getOne();
+      if (!anterior) throw new ConflictException('No existe un código pendiente para reemplazar.');
+
+      // Invalidación y nueva emisión comparten la transacción y conservan destinatario.
+      anterior.invalidadoEn = new Date(datos.ahora);
+      await repositorio.save(anterior);
+      return this.emitir(manager, datos);
     });
   }
 

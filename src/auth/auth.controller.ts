@@ -4,7 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
 
 @Controller('auth')
 //Este archivo gestiona las peticiones HTTP entrantes.
@@ -13,7 +13,7 @@ export class AuthController {
     //Endpoints
     @Post('login')//ruta para iniciar sesión
     @HttpCode(HttpStatus.OK)
-    @UseGuards(ThrottlerGuard)//protege la ruta, limitando la cantidad de intentos de inicio de sesión en un período de tiempo determinado.
+    @UseGuards(LimiteIntentosGuard)// Comparte por IP el límite con las futuras rutas de validación de códigos.
     login(@Body() loginDto: LoginDto) {
         return this.authService.login(loginDto);
     }

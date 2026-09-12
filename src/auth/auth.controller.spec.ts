@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 describe('AuthController', () => {
@@ -15,7 +15,7 @@ describe('AuthController', () => {
       providers: [{ provide: AuthService, useValue: { login } }],
     })
       // Esta suite prueba el controlador; las protecciones HTTP se prueban por separado.
-      .overrideGuard(ThrottlerGuard).useValue({ canActivate: () => true })
+      .overrideGuard(LimiteIntentosGuard).useValue({ canActivate: () => true })
       .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
       .compile();
 
