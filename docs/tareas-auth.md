@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 75 tareas; 48 completadas (T01–T45 y T69–T71) y 27 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 75 tareas; 50 completadas (T01–T47 y T69–T71) y 25 pendientes.** Los identificadores se conservan. Las nuevas T69–T75 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -162,10 +162,10 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T45 — Exponer login, perfil y logout** · 25 min · RF: RF-15–20 · Depende de: T27, T35–T37. · [Evidencia](results/resultados-t45.md)
   **Hecho cuando:** conserva POST /auth/login y GET /auth/profile y expone logout; pruebas HTTP verifican respuestas sin hashes, entradas válidas, errores uniformes, bloqueo de intentos y rechazo de tokens revocados o vencidos.
 
-- [ ] **T46 — Exponer activación y recuperación** · 25 min · RF: RF-08–14, RF-17, RF-23–24, RF-27 · Depende de: T27, T33–T34, T40.
+- [X] **T46 — Exponer activación y recuperación** · 25 min · RF: RF-08–14, RF-17, RF-23–24, RF-27 · Depende de: T27, T33–T34, T40. · [Evidencia](results/resultados-t46.md)
   **Hecho cuando:** las rutas aceptan solo código y contraseña, más nombre al activar; comparten límite por IP, rechazan campos de destinatario/rol/negocio y aplican Guards y validaciones equivalentes a producción.
 
-- [ ] **T47 — Exponer alta y consulta administrativa de negocios** · 25 min · RF: RF-01–04, RF-30 · Depende de: T30, T31, T36.
+- [X] **T47 — Exponer alta y consulta administrativa de negocios** · 25 min · RF: RF-01–04, RF-30 · Depende de: T30, T31, T36. · [Evidencia](results/resultados-t47.md)
   **Hecho cuando:** solo superadmin crea o consulta negocios globalmente y puede consultar uno bloqueado sin revelar secretos; el alta asigna licencia anual y rechaza campos de modalidad o período.
 
 - [ ] **T48 — Exponer administración de recepcionistas y reemisión inicial** · 25 min · RF: RF-04–07, RF-12–13, RF-19 · Depende de: T26, T30, T32, T36, T38.

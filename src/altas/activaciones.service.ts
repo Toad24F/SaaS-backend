@@ -30,7 +30,7 @@ export class ActivacionesService {
     private readonly politicaLicencia: PoliticaAccesoLicenciaService,
     private readonly calendario: CalendarioLicenciasService,
     private readonly auditoria: AuditoriaService,
-  ) {}
+  ) { }
 
   async activarAdministrador(datos: ActivarCuenta): Promise<void> {
     const { nombre, passwordHash } = await this.prepararCredenciales(datos);
