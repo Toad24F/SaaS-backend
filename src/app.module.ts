@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation';
 import { getDatabaseOptions } from './config/database.config';
+import { NegociosHttpModule } from './negocios/negocios-http.module';
 
 @Module({
   imports: [
@@ -24,6 +25,8 @@ import { getDatabaseOptions } from './config/database.config';
     AuthModule,
     AltasModule,
     UsuariosModule,
+    // Expone la administración de negocios con sesión y rol de superadmin.
+    NegociosHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -23,6 +23,8 @@ import { AutorizacionService } from './services/autorizacion.service';
 import { CredencialesService } from './services/credenciales.service';
 import { JwtLogoutGuard } from './guards/jwt-logout.guard';
 import { JwtLogoutStrategy } from './strategies/jwt-logout.strategy';
+import { AltasModule } from '../altas/altas.module';
+import { AccesoCodigoController } from './acceso-codigo.controller';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -33,6 +35,8 @@ import { JwtLogoutStrategy } from './strategies/jwt-logout.strategy';
     LicenciasModule,
     CodigosModule,
     AuditoriaModule,
+    // Reutiliza la activación transaccional sin hacer depender Altas de Auth.
+    AltasModule,
     // Ambos repositorios son persistencia transversal de autenticación.
     TypeOrmModule.forFeature([Sesion, LimiteIntentos]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -51,7 +55,7 @@ import { JwtLogoutStrategy } from './strategies/jwt-logout.strategy';
       errorMessage: 'Demasiados intentos. Intenta de nuevo más tarde.',
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AccesoCodigoController],
   providers: [
     AuthService,
     JwtStrategy,

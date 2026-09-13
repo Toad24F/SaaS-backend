@@ -56,7 +56,7 @@ export class AltasService {
     private readonly codigos: CodigosService,
     private readonly auditoria: AuditoriaService,
     private readonly politicaLicencia: PoliticaAccesoLicenciaService,
-  ) {}
+  ) { }
 
   async crearNegocio(datos: CrearNegocio): Promise<AltaNegocioCreada> {
     const nombre = datos.nombre.trim();
