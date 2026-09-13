@@ -125,39 +125,42 @@ export class CodigosService {
     dataSource: DataSource,
     datos: EmitirCodigo,
   ): Promise<CodigoEmitido> {
-    return dataSource.transaction(async (manager) => {
-      const usuario = await manager.getRepository(Usuario)
-        .createQueryBuilder('usuario')
-        .setLock('pessimistic_write')
-        .where('usuario.id = :id AND usuario.negocioId = :negocioId', {
-          id: datos.usuarioId,
-          negocioId: datos.negocioId,
-        })
-        .getOne();
-      if (!usuario) throw new ConflictException('La cuenta no está disponible.');
-      if (
-        datos.proposito !== PropositoCodigoAcceso.RECUPERACION &&
-        usuario.activadoEn !== null
-      ) {
-        throw new ConflictException('La cuenta ya fue activada.');
-      }
+    return dataSource.transaction((manager) => this.reemplazarConManager(manager, datos));
+  }
 
-      const repositorio = manager.getRepository(CodigoAcceso);
-      const anterior = await repositorio.createQueryBuilder('codigo')
-        .setLock('pessimistic_write')
-        .where('codigo.negocioId = :negocioId', { negocioId: datos.negocioId })
-        .andWhere('codigo.usuarioId = :usuarioId', { usuarioId: datos.usuarioId })
-        .andWhere('codigo.proposito = :proposito', { proposito: datos.proposito })
-        .andWhere('codigo.consumidoEn IS NULL')
-        .andWhere('codigo.invalidadoEn IS NULL')
-        .getOne();
-      if (!anterior) throw new ConflictException('No existe un código pendiente para reemplazar.');
+  /** Comparte autorización, bloqueo de cuenta, reemplazo y auditoría en la misma transacción. */
+  async reemplazarConManager(manager: EntityManager, datos: EmitirCodigo): Promise<CodigoEmitido> {
+    const usuario = await manager.getRepository(Usuario)
+      .createQueryBuilder('usuario')
+      .setLock('pessimistic_write')
+      .where('usuario.id = :id AND usuario.negocioId = :negocioId', {
+        id: datos.usuarioId,
+        negocioId: datos.negocioId,
+      })
+      .getOne();
+    if (!usuario) throw new ConflictException('La cuenta no está disponible.');
+    if (
+      datos.proposito !== PropositoCodigoAcceso.RECUPERACION &&
+      usuario.activadoEn !== null
+    ) {
+      throw new ConflictException('La cuenta ya fue activada.');
+    }
 
-      // Invalidación y nueva emisión comparten la transacción y conservan destinatario.
-      anterior.invalidadoEn = new Date(datos.ahora);
-      await repositorio.save(anterior);
-      return this.emitir(manager, datos);
-    });
+    const repositorio = manager.getRepository(CodigoAcceso);
+    const anterior = await repositorio.createQueryBuilder('codigo')
+      .setLock('pessimistic_write')
+      .where('codigo.negocioId = :negocioId', { negocioId: datos.negocioId })
+      .andWhere('codigo.usuarioId = :usuarioId', { usuarioId: datos.usuarioId })
+      .andWhere('codigo.proposito = :proposito', { proposito: datos.proposito })
+      .andWhere('codigo.consumidoEn IS NULL')
+      .andWhere('codigo.invalidadoEn IS NULL')
+      .getOne();
+    if (!anterior) throw new ConflictException('No existe un código pendiente para reemplazar.');
+
+    // Invalidación y nueva emisión comparten la transacción y conservan destinatario.
+    anterior.invalidadoEn = new Date(datos.ahora);
+    await repositorio.save(anterior);
+    return this.emitir(manager, datos);
   }
 
   /** Invalida el código vigente, si existe, y emite el siguiente en el mismo manager. */

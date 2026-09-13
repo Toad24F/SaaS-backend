@@ -9,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation';
 import { getDatabaseOptions } from './config/database.config';
 import { NegociosHttpModule } from './negocios/negocios-http.module';
+import { UsuariosHttpModule } from './usuarios/usuarios-http.module';
 
 @Module({
   imports: [
@@ -27,6 +28,8 @@ import { NegociosHttpModule } from './negocios/negocios-http.module';
     UsuariosModule,
     // Expone la administración de negocios con sesión y rol de superadmin.
     NegociosHttpModule,
+    // Registra la gestión de recepcionistas protegida por negocio y rol.
+    UsuariosHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
