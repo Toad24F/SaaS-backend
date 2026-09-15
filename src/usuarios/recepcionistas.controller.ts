@@ -40,6 +40,14 @@ export class RecepcionistasController {
     return this.usuarios.desactivarRecepcionista(actor.sub, parametros.id, this.reloj.ahora());
   }
 
+  @Post(':id/reactivar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  reactivar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
+    // La reactivación reutiliza la validación de pertenencia transaccional del servicio.
+    // El cuerpo vacío impide que el cliente cambie identidad, negocio o estado de licencia.
+    return this.usuarios.reactivarRecepcionista(actor.sub, parametros.id, this.reloj.ahora());
+  }
+
   private negocioActor(actor: JwtPayload): number {
     if (actor.negocioId === null) throw new ForbiddenException('Negocio no autorizado.');
     return actor.negocioId;

@@ -13,6 +13,7 @@ import { EventoAuditoria } from '../src/auditoria/entities/evento-auditoria.enti
 import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { AltasService, AltaNegocioCreada } from '../src/altas/altas.service';
 import { SesionesService } from '../src/auth/services/sesiones.service';
+import { Sesion } from '../src/auth/entities/sesion.entity';
 import { PoliticaContrasenasService } from '../src/auth/services/politica-contrasenas.service';
 import { Rol } from '../src/auth/enums/rol.enum';
 import { conBaseMigrada } from './support/mariadb';
@@ -80,7 +81,9 @@ async function rechazarRecepcion(ctx: Contexto, token: string | undefined, statu
   // Se construye cada petición al ejecutarla para no reutilizar un puerto cerrado de Supertest.
   const rutas = [() => request(ctx.app.getHttpServer()).get('/recepcionistas'),
     () => request(ctx.app.getHttpServer()).get(`/recepcionistas/${ctx.usuarios[2].id}`),
-    () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/desactivar`).send({})];
+    () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/desactivar`).send({}),
+    // T77 comparte los Guards y debe rechazar exactamente los mismos actores bloqueados.
+    () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/reactivar`).send({})];
   const antes = await estado(ctx.db);
   for (const preparar of rutas) {
     const peticion = preparar();
@@ -90,7 +93,7 @@ async function rechazarRecepcion(ctx: Contexto, token: string | undefined, statu
   expect(await estado(ctx.db)).toEqual(antes);
 }
 
-describe('T48 — recepcionistas y reemisión HTTP', () => {
+describe('T48 y T77 — recepcionistas y reemisión HTTP', () => {
   it('retira la invitación y conserva lista y consulta sin hashes ni códigos', async () => {
     await conHttp(async (ctx) => {
       const { app, db, tokens, usuarios } = ctx;
@@ -118,12 +121,49 @@ describe('T48 — recepcionistas y reemisión HTTP', () => {
     });
   });
 
+  it('T77 reactiva una cuenta propia sin restaurar sesiones ni modificar identidad o licencia', async () => {
+    await conHttp(async ({ app, db, reloj, usuarios, tokens, licencias }) => {
+      const id = usuarios[2].id;
+      const ruta = `/recepcionistas/${id}`;
+      const enviar = () => request(app.getHttpServer()).post(`${ruta}/reactivar`)
+        .auth(tokens[1], { type: 'bearer' }).send({});
+      const licenciaAntes = await db.getRepository(Licencia).findOneByOrFail({ id: licencias[0].id });
+      const usuarioAntes = await db.getRepository(Usuario).findOneByOrFail({ id });
+      const sesionAntes = await db.getRepository(Sesion).findOneByOrFail({ usuarioId: id });
+
+      await request(app.getHttpServer()).post(`${ruta}/desactivar`)
+        .auth(tokens[1], { type: 'bearer' }).send({}).expect(204);
+      const revocada = await db.getRepository(Sesion).findOneByOrFail({ id: sesionAntes.id });
+      expect(revocada.revocadaEn).toEqual(reloj.ahora());
+      const respuesta = await enviar().expect(204);
+      expect(respuesta.body).toEqual({});
+      expect(await db.getRepository(Usuario).findOneByOrFail({ id })).toMatchObject({
+        id, negocioId: usuarioAntes.negocioId, nombre: usuarioAntes.nombre,
+        email: usuarioAntes.email, passwordHash: usuarioAntes.passwordHash,
+        rol: usuarioAntes.rol, activadoEn: usuarioAntes.activadoEn, activo: true,
+      });
+      expect(await db.getRepository(Sesion).findOneByOrFail({ id: sesionAntes.id }))
+        .toMatchObject({ revocadaEn: revocada.revocadaEn });
+      expect(await db.getRepository(Licencia).findOneByOrFail({ id: licencias[0].id }))
+        .toMatchObject({ habilitadaEn: licenciaAntes.habilitadaEn,
+          venceEn: licenciaAntes.venceEn, suspendidaEn: licenciaAntes.suspendidaEn });
+      await request(app.getHttpServer()).get('/auth/profile')
+        .auth(tokens[2], { type: 'bearer' }).expect(401);
+      expect(await db.getRepository(EventoAuditoria).countBy({ accion: 'recepcionista_reactivado' }))
+        .toBe(1);
+      const antesDeRepetir = await estado(db);
+      await enviar().expect(204);
+      expect(await estado(db)).toEqual(antesDeRepetir);
+    });
+  });
+
   it('devuelve 404 para recepción ajena, administradores e IDs inexistentes sin cambios', async () => {
     await conHttp(async ({ app, db, usuarios, tokens }) => {
       const antes = await estado(db);
       for (const id of [usuarios[4].id, usuarios[1].id, 4294967295]) {
         await request(app.getHttpServer()).get(`/recepcionistas/${id}`).auth(tokens[1], { type: 'bearer' }).expect(404);
         await request(app.getHttpServer()).post(`/recepcionistas/${id}/desactivar`).auth(tokens[1], { type: 'bearer' }).send({}).expect(404);
+        await request(app.getHttpServer()).post(`/recepcionistas/${id}/reactivar`).auth(tokens[1], { type: 'bearer' }).send({}).expect(404);
       }
       expect(await estado(db)).toEqual(antes);
     });
@@ -149,11 +189,13 @@ describe('T48 — recepcionistas y reemisión HTTP', () => {
       for (const id of ['abc', '0', '-1', '1.2', '4294967296']) {
         await request(app.getHttpServer()).get(`/recepcionistas/${id}`).auth(tokens[1], { type: 'bearer' }).expect(400);
         await request(app.getHttpServer()).post(`/recepcionistas/${id}/desactivar`).auth(tokens[1], { type: 'bearer' }).send({}).expect(400);
+        await request(app.getHttpServer()).post(`/recepcionistas/${id}/reactivar`).auth(tokens[1], { type: 'bearer' }).send({}).expect(400);
         await request(app.getHttpServer()).post(`/negocios/${id}/reemitir-codigo`).auth(tokens[0], { type: 'bearer' }).send({}).expect(400);
       }
       for (const campo of ['email', 'rol', 'negocioId', 'usuarioId', 'proposito', 'ahora']) {
         await reemitir(ctx, tokens[0], { [campo]: 'no' }).expect(400);
         await request(app.getHttpServer()).post(`/recepcionistas/${usuarios[2].id}/desactivar`).auth(tokens[1], { type: 'bearer' }).send({ [campo]: 'no' }).expect(400);
+        await request(app.getHttpServer()).post(`/recepcionistas/${usuarios[2].id}/reactivar`).auth(tokens[1], { type: 'bearer' }).send({ [campo]: 'no' }).expect(400);
       }
       expect(await estado(db)).toEqual(antes);
     });

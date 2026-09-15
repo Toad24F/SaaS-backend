@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 57 completadas (T01–T50, T69–T71, T76, T80–T82) y 28 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 58 completadas (T01–T50, T69–T71, T76–T77, T80–T82) y 27 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -191,7 +191,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T50 — Exponer suspensión, reactivación y renovación** · 25 min · RF: RF-04, RF-31–38 · Depende de: T36, T42–T44. · [Evidencia](results/resultados-t50.md)
   **Hecho cuando:** solo superadmin ejecuta las operaciones sobre la licencia; conflictos de estado producen 409 y no se exponen selección de modalidad/período, cancelación definitiva ni suspensión del negocio.
 
-- [ ] **T77 — Exponer reactivación de recepcionistas** · 20 min · RF: RF-05–07, RF-39–42 · Depende de: T48, T76.
+- [X] **T77 — Exponer reactivación de recepcionistas** · 20 min · RF: RF-05–07, RF-39–42 · Depende de: T48, T76. · [Evidencia](results/resultados-t77.md)
   **Hecho cuando:** `POST /recepcionistas/:id/reactivar` exige administrador y pertenencia, admite solo cuerpo vacío y responde 204; desactivar y reactivar ocultan recursos ajenos o de otro rol con 404, rechazan entradas inválidas con 400, roles insuficientes con 403 y sesión o licencia bloqueada con 401.
 
 - [ ] **T83 — Exponer alta directa y restablecimiento de recepcionistas** · 25 min · RF: RF-05–07, RF-13, RF-19, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T36, T46, T48, T81–T82.
