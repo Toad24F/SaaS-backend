@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsuariosService } from './usuarios.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Usuario } from './entities/usuario.entity';
+import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 
 describe('UsuariosService', () => {
   let service: UsuariosService;
@@ -16,6 +18,8 @@ describe('UsuariosService', () => {
           provide: getRepositoryToken(Usuario),
           useValue: { findOne },
         },
+        { provide: PoliticaContrasenasService, useValue: {} },
+        { provide: AuditoriaService, useValue: {} },
       ],
     }).compile();
 

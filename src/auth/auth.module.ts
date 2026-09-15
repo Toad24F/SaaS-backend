@@ -84,6 +84,8 @@ import { CredencialesController } from './credenciales.controller';
     SesionesService,
     AutorizacionService,
     CredencialesService,
+    // Los casos de uso HTTP comparten el mismo instante que Guards y sesiones.
+    RELOJ,
   ],
 })
 export class AuthModule { }
