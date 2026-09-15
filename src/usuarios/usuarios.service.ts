@@ -144,6 +144,49 @@ export class UsuariosService {
   }
 
   /**
+   * Bloquea la cuenta propia y confirma hash, revocación y auditoría juntos.
+   * El estado activo y los datos de identidad quedan fuera de esta operación.
+   */
+  async restablecerContrasenaRecepcionista(
+    actorId: number,
+    usuarioId: number,
+    nuevaPassword: string,
+    ahora = new Date(),
+  ): Promise<void> {
+    const passwordHash = await this.contrasenas.generarHash(nuevaPassword);
+    await this.usuarioRepository.manager.transaction(async (manager) => {
+      const actor = await this.buscarActorAdministrador(manager, actorId);
+      const destino = await manager.getRepository(Usuario).createQueryBuilder('usuario')
+        .setLock('pessimistic_write')
+        .where(
+          'usuario.id = :usuarioId AND usuario.negocioId = :negocioId AND usuario.rol = :rol',
+          { usuarioId, negocioId: actor.negocioId, rol: Rol.RECEPCIONISTA },
+        )
+        .getOne();
+      if (!destino) throw new NotFoundException('Usuario no disponible.');
+      this.exigirRecepcionistaCompleto(destino);
+
+      await manager.getRepository(Usuario).update(destino.id, { passwordHash });
+      // Solo las sesiones aún abiertas reciben la nueva fecha; las revocadas se conservan.
+      await manager.getRepository(Sesion).update(
+        { usuarioId: destino.id, revocadaEn: IsNull() },
+        { revocadaEn: new Date(ahora) },
+      );
+      // El evento identifica actor y cuenta sin exponer contraseña ni hash.
+      await this.auditoria.registrar(manager, {
+        operacionId: randomUUID(),
+        actorUsuarioId: actor.id,
+        negocioId: actor.negocioId,
+        usuarioId: destino.id,
+        licenciaId: null,
+        accion: 'recepcionista_contrasena_restablecida',
+        valoresAntes: null,
+        valoresDespues: { sesionesRevocadasEn: ahora.toISOString() },
+      });
+    });
+  }
+
+  /**
    * Serializa la transición sobre la fila destino. Los retornos idempotentes no
    * escriben auditoría; al desactivar, sesiones, cuenta y evento confirman juntos.
    */

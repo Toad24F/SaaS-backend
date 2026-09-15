@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 56 completadas (T01–T50, T69–T71, T76, T80–T81) y 29 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 57 completadas (T01–T50, T69–T71, T76, T80–T82) y 28 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -10,7 +10,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 
 **Reglas confirmadas:** licencia anual automática, aislamiento por negocio_id, suspensión exclusivamente en licencia y recuperación por código autorizada solo por superadmin para administradores. RF-20 permite terminar atómicamente una operación ya autorizada y rechaza las solicitudes nuevas al expirar la sesión. Activación y reemisión se serializan por orden de bloqueo de base de datos. Los recepcionistas se crean completos por su administrador, sin código; desactivar y restablecer revocan sesiones, reactivar conserva credenciales y el restablecimiento de una cuenta desactivada no la reactiva.
 
-**Contratos históricos sustituidos:** T32, T34, T46 y T48 permanecen completadas con su redacción y evidencia originales, pero su invitación y activación de recepcionistas por código dejan de ser el comportamiento objetivo. T80 retiró ese modelo y T81 incorporó el caso de uso de alta directa; T82–T85 completarán su exposición, restablecimiento y pruebas posteriores sin atribuir cobertura retroactiva a las tareas históricas.
+**Contratos históricos sustituidos:** T32, T34, T46 y T48 permanecen completadas con su redacción y evidencia originales, pero su invitación y activación de recepcionistas por código dejan de ser el comportamiento objetivo. T80 retiró ese modelo, T81 incorporó el caso de uso de alta directa y T82 el restablecimiento administrativo; T83–T85 completarán su exposición y pruebas posteriores sin atribuir cobertura retroactiva a las tareas históricas.
 
 ## 1. Preparación y modelo de datos
 
@@ -168,7 +168,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T81 — Crear recepcionistas directamente** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40 · Depende de: T20, T22–T23, T29–T30, T80. · [Evidencia](results/resultados-t76-t81.md)
   **Hecho cuando:** el caso de uso normaliza nombre y correo, valida y hashea la contraseña, deriva negocio y rol del administrador persistido y crea cuenta activa, fecha de activación y auditoría en una sola transacción; no genera códigos y convierte la colisión de correo global en 409 sin alta parcial.
 
-- [ ] **T82 — Restablecer contraseñas de recepcionistas propios** · 25 min · RF: RF-05–07, RF-19, RF-27, RF-35, RF-43–44 · Depende de: T20, T22–T23, T28–T30.
+- [X] **T82 — Restablecer contraseñas de recepcionistas propios** · 25 min · RF: RF-05–07, RF-19, RF-27, RF-35, RF-43–44 · Depende de: T20, T22–T23, T28–T30. · [Evidencia](results/resultados-t82.md)
   **Hecho cuando:** el administrador bloquea y modifica únicamente un recepcionista de su negocio, activo o desactivado; guarda el nuevo hash, revoca todas sus sesiones y audita sin secretos en una transacción, conservando identidad, pertenencia, activación, estado de cuenta y licencia.
 
 ## 4. Operaciones HTTP y pruebas de integración

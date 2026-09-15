@@ -227,3 +227,114 @@ describe('T76 y T81 — casos de uso de recepcionistas', () => {
     });
   });
 });
+
+describe('T82 — restablecimiento administrativo de recepción', () => {
+  it.each([true, false])('restablece cuenta con activo=%s, revoca sesiones y conserva identidad/licencia', async (activo) => {
+    await conBaseMigrada(async (db) => {
+      const tenant = await crearTenant(db, new Date('2026-09-01T18:00:00.000Z'));
+      const ahora = new Date('2026-09-15T18:00:00.000Z');
+      await db.getRepository(Usuario).update(tenant.recepcionista.id, { activo });
+      if (!activo) {
+        // Una licencia suspendida no debe reactivarse por restablecer la contraseña.
+        await db.getRepository(Licencia).update(
+          { negocioId: tenant.negocio.id }, { suspendidaEn: new Date(ahora.getTime() - 60_000) },
+        );
+      }
+      const antes = await db.getRepository(Usuario).findOneByOrFail({ id: tenant.recepcionista.id });
+      const licenciaAntes = await db.getRepository(Licencia).findOneByOrFail({ negocioId: tenant.negocio.id });
+      // Dos sesiones abiertas prueban que la revocación no depende del estado activo de la cuenta.
+      const sesiones = await db.getRepository(Sesion).save([0, 1].map(() => db.getRepository(Sesion).create({
+        usuarioId: antes.id,
+        creadaEn: new Date(ahora.getTime() - 60_000),
+        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        revocadaEn: null,
+      })));
+      const revocadaAntes = new Date(ahora.getTime() - 30_000);
+      const sesionAnterior = await db.getRepository(Sesion).save(db.getRepository(Sesion).create({
+        usuarioId: antes.id,
+        creadaEn: new Date(ahora.getTime() - 60_000),
+        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        revocadaEn: revocadaAntes,
+      }));
+
+      await servicio(db).restablecerContrasenaRecepcionista(
+        tenant.administrador.id, antes.id, 'contraseña-renovada', ahora,
+      );
+
+      const despues = await db.getRepository(Usuario).findOneByOrFail({ id: antes.id });
+      expect(despues).toMatchObject({
+        id: antes.id, negocioId: antes.negocioId, rol: antes.rol, nombre: antes.nombre,
+        email: antes.email, activadoEn: antes.activadoEn, activo,
+      });
+      expect(despues.passwordHash).not.toBe(antes.passwordHash);
+      await expect(new PoliticaContrasenasService().comparar('contraseña-renovada', despues.passwordHash!))
+        .resolves.toBe(true);
+      for (const sesion of sesiones) {
+        expect(await db.getRepository(Sesion).findOneByOrFail({ id: sesion.id }))
+          .toMatchObject({ revocadaEn: ahora });
+      }
+      expect(await db.getRepository(Sesion).findOneByOrFail({ id: sesionAnterior.id }))
+        .toMatchObject({ revocadaEn: revocadaAntes });
+      expect(await db.getRepository(Licencia).findOneByOrFail({ negocioId: tenant.negocio.id }))
+        .toMatchObject({ habilitadaEn: licenciaAntes.habilitadaEn, venceEn: licenciaAntes.venceEn,
+          suspendidaEn: licenciaAntes.suspendidaEn });
+      const evento = await db.getRepository(EventoAuditoria).findOneByOrFail({
+        accion: 'recepcionista_contrasena_restablecida', usuarioId: antes.id,
+      });
+      expect(evento).toMatchObject({ actorUsuarioId: tenant.administrador.id,
+        negocioId: tenant.negocio.id });
+      expect(JSON.stringify(evento)).not.toMatch(/password|hash|contraseña-renovada/i);
+    });
+  });
+
+  it('rechaza actor o destino ajeno, otro rol y contraseña inválida sin cambios', async () => {
+    await conBaseMigrada(async (db) => {
+      const propio = await crearTenant(db, new Date('2026-09-01T18:00:00.000Z'));
+      const ajeno = await crearTenant(db, new Date('2026-09-02T18:00:00.000Z'));
+      const ahora = new Date('2026-09-15T18:00:00.000Z');
+      const usuarios = servicio(db);
+      const hashAntes = propio.recepcionista.passwordHash;
+
+      await expect(usuarios.restablecerContrasenaRecepcionista(
+        propio.recepcionista.id, propio.recepcionista.id, 'contraseña-renovada', ahora,
+      )).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(usuarios.restablecerContrasenaRecepcionista(
+        propio.administrador.id, ajeno.recepcionista.id, 'contraseña-renovada', ahora,
+      )).rejects.toBeInstanceOf(NotFoundException);
+      await expect(usuarios.restablecerContrasenaRecepcionista(
+        propio.administrador.id, propio.administrador.id, 'contraseña-renovada', ahora,
+      )).rejects.toBeInstanceOf(NotFoundException);
+      await expect(usuarios.restablecerContrasenaRecepcionista(
+        propio.administrador.id, propio.recepcionista.id, 'corta', ahora,
+      )).rejects.toBeInstanceOf(BadRequestException);
+
+      expect((await db.getRepository(Usuario).findOneByOrFail({ id: propio.recepcionista.id })).passwordHash)
+        .toBe(hashAntes);
+      expect(await db.getRepository(EventoAuditoria).count()).toBe(0);
+    });
+  });
+
+  it('revierte hash y revocación si falla la auditoría', async () => {
+    await conBaseMigrada(async (db) => {
+      const tenant = await crearTenant(db, new Date('2026-09-01T18:00:00.000Z'));
+      const ahora = new Date('2026-09-15T18:00:00.000Z');
+      const sesion = await db.getRepository(Sesion).save(db.getRepository(Sesion).create({
+        usuarioId: tenant.recepcionista.id,
+        creadaEn: new Date(ahora.getTime() - 60_000),
+        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        revocadaEn: null,
+      }));
+      const auditoria = new AuditoriaService();
+      jest.spyOn(auditoria, 'registrar').mockRejectedValueOnce(new Error('Fallo controlado T82'));
+
+      await expect(servicio(db, auditoria).restablecerContrasenaRecepcionista(
+        tenant.administrador.id, tenant.recepcionista.id, 'contraseña-renovada', ahora,
+      )).rejects.toThrow('Fallo controlado T82');
+      expect((await db.getRepository(Usuario).findOneByOrFail({ id: tenant.recepcionista.id })).passwordHash)
+        .toBe(tenant.recepcionista.passwordHash);
+      expect(await db.getRepository(Sesion).findOneByOrFail({ id: sesion.id }))
+        .toMatchObject({ revocadaEn: null });
+      expect(await db.getRepository(EventoAuditoria).count()).toBe(0);
+    });
+  });
+});
