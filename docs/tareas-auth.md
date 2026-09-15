@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 53 completadas (T01–T50 y T69–T71) y 32 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 54 completadas (T01–T50, T69–T71 y T80) y 31 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -10,7 +10,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 
 **Reglas confirmadas:** licencia anual automática, aislamiento por negocio_id, suspensión exclusivamente en licencia y recuperación por código autorizada solo por superadmin para administradores. RF-20 permite terminar atómicamente una operación ya autorizada y rechaza las solicitudes nuevas al expirar la sesión. Activación y reemisión se serializan por orden de bloqueo de base de datos. Los recepcionistas se crean completos por su administrador, sin código; desactivar y restablecer revocan sesiones, reactivar conserva credenciales y el restablecimiento de una cuenta desactivada no la reactiva.
 
-**Contratos históricos sustituidos:** T32, T34, T46 y T48 permanecen completadas con su redacción y evidencia originales, pero su invitación y activación de recepcionistas por código dejan de ser el comportamiento objetivo. T80–T85 implementarán y probarán el reemplazo sin atribuir cobertura retroactiva a esas tareas.
+**Contratos históricos sustituidos:** T32, T34, T46 y T48 permanecen completadas con su redacción y evidencia originales, pero su invitación y activación de recepcionistas por código dejan de ser el comportamiento objetivo. T80 retiró ese modelo pendiente; T81–T85 implementarán y probarán el alta directa y restablecimiento sin atribuir cobertura retroactiva a las tareas históricas.
 
 ## 1. Preparación y modelo de datos
 
@@ -80,7 +80,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T19 — Sincronizar y versionar el SQL de referencia** · 25 min · RF: RF-01–38 · Depende de: T15–T18. · [Evidencia](results/resultados-t15-t19.md)
   **Hecho cuando:** db/schema.sql dentro del backend refleja las mismas tablas, columnas y restricciones de auth que entidades y migraciones; retira modalidades y ajusta RF. Se modifica la exclusión de Git solo para versionar ese archivo, sin incluir datos ni secretos; ../db/schema.sql queda como antecedente.
 
-- [ ] **T80 — Retirar la activación pendiente de recepcionistas del modelo objetivo** · 25 min · RF: RF-08–13, RF-27, RF-40 · Depende de: T09, T11, T15, T17, T19.
+- [X] **T80 — Retirar la activación pendiente de recepcionistas del modelo objetivo** · 25 min · RF: RF-08–13, RF-27, RF-40 · Depende de: T09, T11, T15, T17, T19. · [Evidencia](results/resultados-t80.md)
   **Hecho cuando:** entidad, migraciones para instalación nueva, `db/schema.sql`, enum, módulos y fixtures ya no admiten `activacion_recepcionista`; las restricciones permiten credenciales nulas solo al primer administrador pendiente y exigen nombre, hash y activación a todo recepcionista. No se migran ni eliminan datos de instalaciones anteriores.
 
 ## 2. Reglas y servicios compartidos

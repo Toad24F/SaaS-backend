@@ -1,6 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-/** T17: historial de códigos de un solo uso y sesiones revocables. */
+/** Instalación nueva: códigos solo para activar admin o recuperar acceso. */
 export class CrearCodigosSesiones1760000002000 implements MigrationInterface {
   name = 'CrearCodigosSesiones1760000002000';
 
@@ -12,7 +12,7 @@ export class CrearCodigosSesiones1760000002000 implements MigrationInterface {
         usuario_id INT UNSIGNED NOT NULL,
         emisor_usuario_id INT UNSIGNED NOT NULL,
         proposito ENUM(
-          'activacion_admin','activacion_recepcionista','recuperacion'
+          'activacion_admin','recuperacion'
         ) NOT NULL,
         codigo_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
         emitido_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),

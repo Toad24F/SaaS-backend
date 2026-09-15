@@ -176,12 +176,12 @@ describe('Migraciones T15–T18 en MariaDB', () => {
       `INSERT INTO codigos_acceso
        (negocio_id, usuario_id, emisor_usuario_id, proposito, codigo_hash, expira_en)
        VALUES (?, ?, ?, 'activacion_recepcionista', ?, DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 48 HOUR))`,
-      [negocioId, usuarioId, emisorId, hash],
+      [negocioId, usuarioId, emisorId, 'd'.repeat(64)],
     )).rejects.toBeDefined();
     await expect(primera.query(
       `INSERT INTO codigos_acceso
        (negocio_id, usuario_id, emisor_usuario_id, proposito, codigo_hash, expira_en)
-       VALUES (?, ?, ?, 'activacion_recepcionista', ?, DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 48 HOUR))`,
+       VALUES (?, ?, ?, 'recuperacion', ?, DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 30 MINUTE))`,
       [negocioId, 2147483647, emisorId, 'c'.repeat(64)],
     )).rejects.toBeDefined();
     await expect(primera.query(

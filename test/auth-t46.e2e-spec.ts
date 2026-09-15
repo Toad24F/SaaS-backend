@@ -21,7 +21,6 @@ const password = 'password-anterior-t46';
 const nuevaPassword = 'password-nueva-t46';
 const rutas = [
   '/auth/activar-administrador',
-  '/auth/activar-recepcionista',
   '/auth/recuperar-contrasena',
 ] as const;
 type Ruta = typeof rutas[number];
@@ -56,7 +55,7 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
       const destinos = {} as Record<Ruta, Destino>;
       // Cada propósito tiene su propia cuenta y negocio para detectar cambios ajenos.
       for (const [indice, ruta] of rutas.entries()) {
-        const recuperacion = indice === 2;
+        const recuperacion = indice === 1;
         const negocio = await db.getRepository(Negocio).save({
           nombre: `Negocio ${indice}`, slug: `negocio-t46-${indice}`,
           emailContacto: `contacto${indice}@example.test`, telefonoContacto: null,
@@ -71,10 +70,10 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
           negocioId: negocio.id, email: `usuario${indice}@example.test`,
           nombre: recuperacion ? 'Admin existente' : null,
           passwordHash: recuperacion ? hash : null,
-          rol: indice === 1 ? Rol.RECEPCIONISTA : Rol.ADMIN_NEGOCIO,
+          rol: Rol.ADMIN_NEGOCIO,
           activo: true, activadoEn: recuperacion ? reloj.ahora() : null,
         });
-        const proposito = [Proposito.ACTIVACION_ADMIN, Proposito.ACTIVACION_RECEPCIONISTA, Proposito.RECUPERACION][indice];
+        const proposito = [Proposito.ACTIVACION_ADMIN, Proposito.RECUPERACION][indice];
         // La recuperación se autoriza por el servicio del superadmin; aún no se expone T49.
         const emitido = recuperacion
           ? await app.get(CredencialesService).autorizarRecuperacion({
@@ -95,7 +94,7 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
 
 function entrada(ruta: Ruta, codigo: string) {
   return { codigo, password: nuevaPassword,
-    ...(ruta === rutas[2] ? {} : { nombre: '  Nombre activado  ' }) };
+    ...(ruta === rutas[1] ? {} : { nombre: '  Nombre activado  ' }) };
 }
 
 // Se compara el estado completo sensible para acreditar rechazos sin efectos parciales.
@@ -110,7 +109,17 @@ async function estado(db: DataSource) {
 }
 
 describe('T46 — activación y recuperación HTTP', () => {
-  it.each([rutas[0], rutas[1]])('%s activa solo la cuenta del código y no permite reutilizarlo', async (ruta) => {
+  it('retira la ruta pública de activación de recepcionistas', async () => {
+    await conHttp(async ({ app, db }) => {
+      const antes = await estado(db);
+      await request(app.getHttpServer()).post('/auth/activar-recepcionista')
+        .send({ codigo: 'retirado', nombre: 'Recepción', password: nuevaPassword })
+        .expect(404);
+      expect(await estado(db)).toEqual(antes);
+    });
+  });
+
+  it.each([rutas[0]])('%s activa solo la cuenta del código y no permite reutilizarlo', async (ruta) => {
     await conHttp(async ({ app, db, reloj, destinos }) => {
       const destino = destinos[ruta];
       const antes = await estado(db);
@@ -143,7 +152,7 @@ describe('T46 — activación y recuperación HTTP', () => {
 
   it.each([false, true])('recupera sin sesión, revoca todas las anteriores y conserva bloqueos=%s', async (bloqueada) => {
     await conHttp(async ({ app, db, reloj, destinos }) => {
-      const destino = destinos[rutas[2]];
+      const destino = destinos[rutas[1]];
       const tokens: string[] = [];
       for (let i = 0; i < 2; i++) {
         const login = await request(app.getHttpServer()).post('/auth/login')
@@ -155,8 +164,8 @@ describe('T46 — activación y recuperación HTTP', () => {
         await db.getRepository(Licencia).update(destino.licencia.id, { suspendidaEn: reloj.ahora() });
       }
       const antes = await estado(db);
-      const respuesta = await request(app.getHttpServer()).post(rutas[2])
-        .send(entrada(rutas[2], destino.codigo)).expect(204);
+      const respuesta = await request(app.getHttpServer()).post(rutas[1])
+        .send(entrada(rutas[1], destino.codigo)).expect(204);
       expect(respuesta.text).toBe('');
       const despues = await estado(db);
       const usuario = despues.usuarios.find((fila) => fila.id === destino.usuario.id)!;
@@ -172,7 +181,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       for (const token of tokens) {
         await request(app.getHttpServer()).get('/auth/profile').auth(token, { type: 'bearer' }).expect(401);
       }
-      await request(app.getHttpServer()).post(rutas[2]).send(entrada(rutas[2], destino.codigo)).expect(400);
+      await request(app.getHttpServer()).post(rutas[1]).send(entrada(rutas[1], destino.codigo)).expect(400);
       expect(await estado(db)).toEqual(despues);
     });
   });
@@ -185,12 +194,12 @@ describe('T46 — activación y recuperación HTTP', () => {
         { ...valido, password: null }, { ...valido, password: 123 },
         { ...valido, password: 'corta' }, { ...valido, password: 'á'.repeat(37) },
       ];
-      if (ruta !== rutas[2]) {
+      if (ruta !== rutas[1]) {
         invalidos.push({ codigo: valido.codigo, password: nuevaPassword },
           ...[null, 123, '   ', 'a'.repeat(151)].map((nombre) => ({ ...valido, nombre })));
       }
       const extras = ['email', 'rol', 'negocioId', 'negocio_id', 'usuarioId', 'destinatarioId', 'proposito', 'ahora'];
-      if (ruta === rutas[2]) extras.push('nombre');
+      if (ruta === rutas[1]) extras.push('nombre');
       const antes = await estado(db);
       for (const body of invalidos) {
         // Se avanza la ventana solo en esta matriz para probar validación, no el límite.
@@ -237,7 +246,7 @@ describe('T46 — activación y recuperación HTTP', () => {
   });
 
   it.each([
-    [rutas[0], 'suspendida'], [rutas[1], 'suspendida'], [rutas[1], 'vencida'],
+    [rutas[0], 'suspendida'],
   ] as const)('%s respeta licencia %s y conserva el código', async (ruta, estadoLicencia) => {
     await conHttp(async ({ app, db, reloj, destinos }) => {
       const destino = destinos[ruta];
@@ -257,6 +266,10 @@ describe('T46 — activación y recuperación HTTP', () => {
       for (const otra of rutas) {
         await request(app.getHttpServer()).post(otra).send(entrada(otra, 'inexistente')).expect(400);
       }
+      await request(app.getHttpServer()).post('/auth/login')
+        .send({ email: 'nadie@example.test', password }).expect(401);
+      // La ruta retirada ya no consume cuota; completar los cinco intentos
+      // con login conserva la verificación del límite compartido.
       await request(app.getHttpServer()).post('/auth/login')
         .send({ email: 'nadie@example.test', password }).expect(401);
       const antes = await estado(db);

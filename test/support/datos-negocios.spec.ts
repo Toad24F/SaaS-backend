@@ -32,16 +32,16 @@ describe('Datos reutilizables de negocios (T06 y T69)', () => {
     expect(await bcrypt.compare(PASSWORD_PRUEBA, usuarios[0].passwordHash)).toBe(true);
   });
 
-  it('incluye cuentas activadas y pendientes junto con licencia anual', async () => {
+  it('mantiene recepción completa y reserva pendiente solo al administrador', async () => {
     const reloj = new RelojPrueba(new Date(fecha));
     const [datos] = await crearDosNegocios(reloj);
 
     expect(datos.negocio.activadoEn?.toISOString()).toBe(fecha);
     expect(datos.administrador.activadoEn?.toISOString()).toBe(fecha);
-    expect(datos.recepcionistaPendiente).toMatchObject({
-      nombre: null,
-      passwordHash: null,
-      activadoEn: null,
+    expect(datos.recepcionista).toMatchObject({
+      nombre: expect.any(String),
+      passwordHash: expect.any(String),
+      activadoEn: expect.any(Date),
       activo: true,
       negocioId: datos.negocio.id,
     });
@@ -79,13 +79,13 @@ describe('Datos reutilizables de negocios (T06 y T69)', () => {
     const [primero, segundo] = await crearDosNegocios(reloj);
     primero.negocio.nombre = 'Modificado';
     primero.administrador.activo = false;
-    primero.recepcionistaPendiente.email = 'modificado@example.test';
+    primero.recepcionista.email = 'modificado@example.test';
     primero.licencia.venceEn!.setUTCFullYear(2035);
     primero.administrador.creadoEn.setUTCFullYear(2030);
     reloj.avanzar(1000);
     expect(segundo.negocio.nombre).not.toBe('Modificado');
     expect(segundo.administrador.activo).toBe(true);
-    expect(segundo.recepcionistaPendiente.email).not.toBe('modificado@example.test');
+    expect(segundo.recepcionista.email).not.toBe('modificado@example.test');
     expect(segundo.licencia.venceEn!.getUTCFullYear()).not.toBe(2035);
     expect(primero.negocio.creadoEn.toISOString()).toBe(fecha);
     expect(primero.recepcionista.creadoEn.toISOString()).toBe(fecha);

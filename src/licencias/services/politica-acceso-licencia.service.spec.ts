@@ -48,10 +48,6 @@ describe('Política de acceso por licencia (T22)', () => {
       licencia(null, null, new Date('2026-01-01Z')),
       ahora,
     )).toBe(false);
-    expect(politica.puedeActivarRecepcionista(
-      licencia(new Date('2026-01-01Z'), new Date('2026-01-02Z')),
-      ahora,
-    )).toBe(false);
   });
 
   it('una suspensión prolongada sigue bloqueada sin consumir ni modificar vencimiento', () => {

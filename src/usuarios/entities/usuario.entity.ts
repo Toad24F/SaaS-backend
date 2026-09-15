@@ -23,7 +23,8 @@ const normalizadorCorreo = {
 @Check('chk_usuarios_rol_negocio', "(rol = 'superadmin' AND negocio_id IS NULL) OR (rol IN ('admin_negocio','recepcionista') AND negocio_id IS NOT NULL)")
 @Check('chk_usuarios_email_normalizado', 'BINARY email = BINARY LOWER(TRIM(email)) AND CHAR_LENGTH(email) > 0')
 @Check('chk_usuarios_activo', 'activo IN (0, 1)')
-@Check('chk_usuarios_activacion', "(activado_en IS NULL AND nombre IS NULL AND password_hash IS NULL) OR (activado_en IS NOT NULL AND nombre IS NOT NULL AND CHAR_LENGTH(TRIM(nombre)) > 0 AND password_hash IS NOT NULL AND CHAR_LENGTH(password_hash) > 0 AND activado_en >= creado_en)")
+// Solo el primer administrador puede reservar correo sin credenciales.
+@Check('chk_usuarios_activacion', "(rol = 'admin_negocio' AND activado_en IS NULL AND nombre IS NULL AND password_hash IS NULL) OR (activado_en IS NOT NULL AND nombre IS NOT NULL AND CHAR_LENGTH(TRIM(nombre)) > 0 AND password_hash IS NOT NULL AND CHAR_LENGTH(password_hash) > 0 AND activado_en >= creado_en)")
 export class Usuario {
     @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
     id: number;

@@ -43,12 +43,14 @@ async function crearUsuario(
   const usuario = await repositorio.save(Object.assign(new Usuario(), {
     negocioId: negocio?.id ?? null,
     negocio,
-    nombre: null,
+    // Solo el primer administrador admite una reserva pendiente de correo.
+    nombre: rol === Rol.ADMIN_NEGOCIO && !activado ? null : `Usuario ${rol}`,
     email: `${randomUUID()}@example.test`,
-    passwordHash: null,
+    passwordHash: rol === Rol.ADMIN_NEGOCIO && !activado ? null : 'hash-de-prueba',
     rol,
     activo: true,
-    activadoEn: null,
+    activadoEn: rol === Rol.ADMIN_NEGOCIO && !activado
+      ? null : new Date(Date.now() + 60_000),
   }));
   if (!activado) return usuario;
   await repositorio.update(usuario.id, {

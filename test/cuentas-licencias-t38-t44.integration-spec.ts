@@ -24,22 +24,29 @@ const contrasenaInicial = 'contraseña-inicial';
 
 async function crearSuperadmin(dataSource: DataSource) {
   return dataSource.getRepository(Usuario).save(Object.assign(new Usuario(), {
-    negocioId: null, negocio: null, nombre: null, email: `${randomUUID()}@example.test`,
-    passwordHash: null, rol: Rol.SUPERADMIN, activo: true, activadoEn: null,
+    negocioId: null, negocio: null, nombre: 'Superadmin', email: `${randomUUID()}@example.test`,
+    passwordHash: 'hash-de-prueba', rol: Rol.SUPERADMIN, activo: true,
+    activadoEn: new Date(Date.now() + 60_000),
   }));
 }
 
 async function crearTenant(dataSource: DataSource) {
+  const hash = await new PoliticaContrasenasService().generarHash(contrasenaInicial);
   const negocio = await dataSource.getRepository(Negocio).save(Object.assign(new Negocio(), {
     nombre: `Tenant ${randomUUID()}`, slug: `tenant-${randomUUID()}`,
     emailContacto: `${randomUUID()}@example.test`, telefonoContacto: null, activadoEn: null,
   }));
-  const crearPendiente = (rol: Rol) => dataSource.getRepository(Usuario).save(Object.assign(new Usuario(), {
-    negocioId: negocio.id, negocio, nombre: null, email: `${randomUUID()}@example.test`,
-    passwordHash: null, rol, activo: true, activadoEn: null,
+  const crearCuenta = (rol: Rol) => dataSource.getRepository(Usuario).save(Object.assign(new Usuario(), {
+    negocioId: negocio.id, negocio,
+    // Recepción ya nace completa; solo el admin admite el estado pendiente.
+    nombre: rol === Rol.RECEPCIONISTA ? 'Recepción' : null,
+    email: `${randomUUID()}@example.test`,
+    passwordHash: rol === Rol.RECEPCIONISTA ? hash : null,
+    rol, activo: true,
+    activadoEn: rol === Rol.RECEPCIONISTA ? new Date(Date.now() + 60_000) : null,
   }));
-  const administrador = await crearPendiente(Rol.ADMIN_NEGOCIO);
-  const recepcionista = await crearPendiente(Rol.RECEPCIONISTA);
+  const administrador = await crearCuenta(Rol.ADMIN_NEGOCIO);
+  const recepcionista = await crearCuenta(Rol.RECEPCIONISTA);
   const licencia = await dataSource.getRepository(Licencia).save(Object.assign(new Licencia(), {
     negocioId: negocio.id, negocio, habilitadaEn: null, venceEn: null, suspendidaEn: null,
   }));
@@ -47,13 +54,10 @@ async function crearTenant(dataSource: DataSource) {
     negocio.creadoEn.getTime(), administrador.creadoEn.getTime(),
     recepcionista.creadoEn.getTime(), licencia.creadoEn.getTime(),
   ) + 1000);
-  const hash = await new PoliticaContrasenasService().generarHash(contrasenaInicial);
   await dataSource.getRepository(Negocio).update(negocio.id, { activadoEn: ahora });
-  for (const usuario of [administrador, recepcionista]) {
-    await dataSource.getRepository(Usuario).update(usuario.id, {
-      nombre: `Activo ${usuario.rol}`, passwordHash: hash, activadoEn: ahora,
-    });
-  }
+  await dataSource.getRepository(Usuario).update(administrador.id, {
+    nombre: `Activo ${administrador.rol}`, passwordHash: hash, activadoEn: ahora,
+  });
   const venceEn = new CalendarioLicenciasService().sumarAnios(ahora);
   await dataSource.getRepository(Licencia).update(licencia.id, { habilitadaEn: ahora, venceEn });
   return {

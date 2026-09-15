@@ -78,8 +78,7 @@ async function estado(db: DataSource) {
 }
 async function rechazarRecepcion(ctx: Contexto, token: string | undefined, status: number) {
   // Se construye cada petición al ejecutarla para no reutilizar un puerto cerrado de Supertest.
-  const rutas = [() => request(ctx.app.getHttpServer()).post('/recepcionistas').send(invitacion),
-    () => request(ctx.app.getHttpServer()).get('/recepcionistas'),
+  const rutas = [() => request(ctx.app.getHttpServer()).get('/recepcionistas'),
     () => request(ctx.app.getHttpServer()).get(`/recepcionistas/${ctx.usuarios[2].id}`),
     () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/desactivar`).send({})];
   const antes = await estado(ctx.db);
@@ -92,21 +91,15 @@ async function rechazarRecepcion(ctx: Contexto, token: string | undefined, statu
 }
 
 describe('T48 — recepcionistas y reemisión HTTP', () => {
-  it('invita al propio negocio, lista y consulta sin hashes ni códigos y rechaza correo duplicado', async () => {
+  it('retira la invitación y conserva lista y consulta sin hashes ni códigos', async () => {
     await conHttp(async (ctx) => {
-      const { app, db, tokens, usuarios, reloj } = ctx;
-      const { body } = await request(app.getHttpServer()).post('/recepcionistas').auth(tokens[1], { type: 'bearer' }).send(invitacion).expect(201);
-      expect(body).toEqual({ usuarioId: expect.any(Number), negocioId: usuarios[1].negocioId,
-        codigo: expect.any(String), expiraEn: new Date(reloj.ahora().getTime() + 48 * 3600000).toISOString() });
-      const nueva = await db.getRepository(Usuario).findOneByOrFail({ id: body.usuarioId });
-      expect(nueva).toMatchObject({ email: 'nueva@example.test', negocioId: usuarios[1].negocioId,
-        rol: Rol.RECEPCIONISTA, nombre: null, passwordHash: null, activadoEn: null });
-      const lista = await request(app.getHttpServer()).get('/recepcionistas').auth(tokens[1], { type: 'bearer' }).expect(200);
-      expect(lista.body).toEqual([publicos(usuarios[2]), publicos(nueva)]);
-      const detalle = await request(app.getHttpServer()).get(`/recepcionistas/${nueva.id}`).auth(tokens[1], { type: 'bearer' }).expect(200);
-      expect(detalle.body).toEqual(publicos(nueva));
+      const { app, db, tokens, usuarios } = ctx;
       const antes = await estado(db);
-      await request(app.getHttpServer()).post('/recepcionistas').auth(tokens[1], { type: 'bearer' }).send(invitacion).expect(409);
+      await request(app.getHttpServer()).post('/recepcionistas').auth(tokens[1], { type: 'bearer' }).send(invitacion).expect(404);
+      const lista = await request(app.getHttpServer()).get('/recepcionistas').auth(tokens[1], { type: 'bearer' }).expect(200);
+      expect(lista.body).toEqual([publicos(usuarios[2])]);
+      const detalle = await request(app.getHttpServer()).get(`/recepcionistas/${usuarios[2].id}`).auth(tokens[1], { type: 'bearer' }).expect(200);
+      expect(detalle.body).toEqual(publicos(usuarios[2]));
       expect(await estado(db)).toEqual(antes);
     });
   });
@@ -149,15 +142,10 @@ describe('T48 — recepcionistas y reemisión HTTP', () => {
     });
   });
 
-  it('valida correo, IDs y rechaza campos de identidad en invitación, desactivación y reemisión', async () => {
+  it('valida IDs y rechaza campos de identidad en desactivación y reemisión', async () => {
     await conHttp(async (ctx) => {
       const { app, db, tokens, usuarios } = ctx;
       const antes = await estado(db);
-      for (const body of [{}, { emailRecepcionista: 1 }, { emailRecepcionista: 'mal' },
-        { emailRecepcionista: `${'a'.repeat(145)}@example.test` },
-        ...['negocioId', 'rol', 'usuarioId', 'actorUsuarioId', 'password'].map((campo) => ({ ...invitacion, [campo]: 'no' }))]) {
-        await request(app.getHttpServer()).post('/recepcionistas').auth(tokens[1], { type: 'bearer' }).send(body).expect(400);
-      }
       for (const id of ['abc', '0', '-1', '1.2', '4294967296']) {
         await request(app.getHttpServer()).get(`/recepcionistas/${id}`).auth(tokens[1], { type: 'bearer' }).expect(400);
         await request(app.getHttpServer()).post(`/recepcionistas/${id}/desactivar`).auth(tokens[1], { type: 'bearer' }).send({}).expect(400);

@@ -26,31 +26,31 @@ async function prepararActores(dataSource: DataSource) {
     Object.assign(new Usuario(), {
       negocioId: null,
       negocio: null,
-      nombre: null,
+      nombre: 'Superadmin',
       email: `${randomUUID()}@example.test`,
-      passwordHash: null,
+      passwordHash: 'hash-de-prueba',
       rol: Rol.SUPERADMIN,
       activo: true,
-      activadoEn: null,
+      activadoEn: new Date(Date.now() + 60_000),
     }),
   );
-  const crearPendiente = (rol: Rol) => dataSource.getRepository(Usuario).save(
+  const crearCuenta = (rol: Rol) => dataSource.getRepository(Usuario).save(
     Object.assign(new Usuario(), {
       negocioId: negocio.id,
       negocio,
-      nombre: null,
+      nombre: rol === Rol.RECEPCIONISTA ? 'Recepción' : null,
       email: `${randomUUID()}@example.test`,
-      passwordHash: null,
+      passwordHash: rol === Rol.RECEPCIONISTA ? 'hash-de-prueba' : null,
       rol,
       activo: true,
-      activadoEn: null,
+      activadoEn: rol === Rol.RECEPCIONISTA ? new Date(Date.now() + 60_000) : null,
     }),
   );
   return {
     negocio,
     actor,
-    administrador: await crearPendiente(Rol.ADMIN_NEGOCIO),
-    recepcionista: await crearPendiente(Rol.RECEPCIONISTA),
+    administrador: await crearCuenta(Rol.ADMIN_NEGOCIO),
+    recepcionista: await crearCuenta(Rol.RECEPCIONISTA),
   };
 }
 
@@ -162,12 +162,12 @@ describe('Auditoría y códigos transaccionales (T23–T25)', () => {
         negocioId: negocio.id,
         usuarioId: recepcionista.id,
         emisorUsuarioId: actor.id,
-        proposito: PropositoCodigoAcceso.ACTIVACION_RECEPCIONISTA,
+        proposito: PropositoCodigoAcceso.RECUPERACION,
         ahora,
       }));
       await expect(servicio.consumir(primera, {
         codigo: conRollback.codigo,
-        proposito: PropositoCodigoAcceso.ACTIVACION_RECEPCIONISTA,
+        proposito: PropositoCodigoAcceso.RECUPERACION,
         ahora,
       }, async (manager) => {
         await manager.update(Usuario, recepcionista.id, {
@@ -179,7 +179,7 @@ describe('Auditoría y códigos transaccionales (T23–T25)', () => {
       })).rejects.toThrow('operación posterior fallida');
       expect((await primera.getRepository(Usuario).findOneByOrFail({
         id: recepcionista.id,
-      })).nombre).toBeNull();
+      })).nombre).toBe('Recepción');
       const codigoRollback = await primera.getRepository(CodigoAcceso)
         .createQueryBuilder('codigo')
         .addSelect('codigo.codigoHash')

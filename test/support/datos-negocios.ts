@@ -13,7 +13,6 @@ export interface DatosNegocio {
   licencia: Licencia;
   administrador: Usuario;
   recepcionista: Usuario;
-  recepcionistaPendiente: Usuario;
 }
 
 export type EstadoLicenciaPrueba =
@@ -51,7 +50,7 @@ function fechasLicencia(estado: EstadoLicenciaPrueba, ahora: Date) {
   };
 }
 
-/** Construye un tenant aislado con cuentas activadas/pendientes y licencia anual. */
+/** Construye un tenant aislado; solo el administrador puede quedar pendiente. */
 function crearDatosNegocio(
   reloj: RelojPrueba,
   passwordHash: string,
@@ -88,8 +87,9 @@ function crearDatosNegocio(
     negocio,
     licencia,
     administrador: crearUsuario(Rol.ADMIN_NEGOCIO, activadoEn !== null),
-    recepcionista: crearUsuario(Rol.RECEPCIONISTA, activadoEn !== null),
-    recepcionistaPendiente: crearUsuario(Rol.RECEPCIONISTA, false),
+    // La matriz de licencia conserva una recepción completa, incluso si el
+    // negocio está pendiente, para que ese bloqueo se pruebe por separado.
+    recepcionista: crearUsuario(Rol.RECEPCIONISTA, true),
   };
 }
 

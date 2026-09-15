@@ -1,13 +1,5 @@
-import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsInt, Max, MaxLength, Min } from 'class-validator';
-
-/** La invitación solo permite el correo; rol y pertenencia se asignan en el servidor. */
-export class InvitarRecepcionistaDto {
-  @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
-  @IsEmail({}, { message: 'El correo del recepcionista no es válido' })
-  @MaxLength(150, { message: 'El correo no puede superar 150 caracteres' })
-  emailRecepcionista: string;
-}
+import { Type } from 'class-transformer';
+import { IsInt, Max, Min } from 'class-validator';
 
 /** Valida el rango de la PK sin otorgar acceso al usuario identificado. */
 export class RecepcionistaIdDto {

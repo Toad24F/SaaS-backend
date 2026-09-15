@@ -20,7 +20,7 @@ export interface ActivarCuenta {
   ahora: Date;
 }
 
-/** Activa únicamente la cuenta ligada al código y comparte su transacción de consumo. */
+/** Solo el primer administrador se activa por código y habilita la licencia. */
 @Injectable()
 export class ActivacionesService {
   constructor(
@@ -68,37 +68,6 @@ export class ActivacionesService {
         negocioId: codigo.negocioId, usuarioId: usuario.id, licenciaId: licencia.id,
         accion: 'administrador_activado', valoresAntes: { activadoEn: null },
         valoresDespues: { activadoEn: datos.ahora.toISOString(), venceEn: venceEn.toISOString() },
-      });
-    });
-  }
-
-  async activarRecepcionista(datos: ActivarCuenta): Promise<void> {
-    const { nombre, passwordHash } = await this.prepararCredenciales(datos);
-    await this.codigos.consumir(this.usuarios.manager.connection, {
-      codigo: datos.codigo,
-      proposito: PropositoCodigoAcceso.ACTIVACION_RECEPCIONISTA,
-      ahora: datos.ahora,
-    }, async (manager, codigo) => {
-      const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });
-      const licencia = await manager.getRepository(Licencia).findOneByOrFail({ negocioId: codigo.negocioId });
-      const negocio = await manager.getRepository(Negocio).findOneByOrFail({ id: codigo.negocioId });
-      if (
-        usuario.rol !== Rol.RECEPCIONISTA || usuario.activadoEn !== null ||
-        negocio.activadoEn === null ||
-        !this.politicaLicencia.puedeActivarRecepcionista(licencia, datos.ahora)
-      ) {
-        throw new BadRequestException('La cuenta no puede activarse.');
-      }
-
-      // Solo completa credenciales; correo, tenant, rol y licencia permanecen intactos.
-      await manager.getRepository(Usuario).update(usuario.id, {
-        nombre, passwordHash, activadoEn: new Date(datos.ahora),
-      });
-      await this.auditoria.registrar(manager, {
-        operacionId: randomUUID(), actorUsuarioId: usuario.id,
-        negocioId: codigo.negocioId, usuarioId: usuario.id, licenciaId: licencia.id,
-        accion: 'recepcionista_activado', valoresAntes: { activadoEn: null },
-        valoresDespues: { activadoEn: datos.ahora.toISOString() },
       });
     });
   }
