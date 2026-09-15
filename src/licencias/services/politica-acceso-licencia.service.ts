@@ -56,10 +56,6 @@ export class PoliticaAccesoLicenciaService {
     return this.estado(licencia, ahora) === EstadoAccesoLicencia.PENDIENTE;
   }
 
-  puedeActivarRecepcionista(licencia: Licencia, ahora: Date): boolean {
-    return this.estado(licencia, ahora) === EstadoAccesoLicencia.VIGENTE;
-  }
-
   puedeAceptarReserva(
     negocioActivado: boolean,
     licencia: Licencia,

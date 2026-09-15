@@ -23,7 +23,7 @@ T01–T07 están completadas como infraestructura de pruebas y composición de m
 
 Verificación histórica de la revisión del 2026-09-10: **48 pruebas unitarias, 2 de integración, 1 HTTP, lint y comprobación TypeScript aprobados**. Esta cifra se conserva como antecedente y no representa la cobertura actual.
 
-Las tareas T01–T50 y T69–T71 constan como completadas en la lista de ejecución. T32, T34, T46 y T48 conservan la evidencia del flujo histórico de invitación y activación de recepcionistas, pero su contrato queda sustituido por T80–T85. La reactivación y los ajustes de desactivación definidos por RF-39–RF-42 permanecen pendientes en T76–T79; esta actualización documental no presenta ninguna de esas funciones nuevas como implementada.
+Las tareas T01–T50, T69–T71 y T80 constan como completadas en la lista de ejecución. T32, T34, T46 y T48 conservan la evidencia del flujo histórico de invitación y activación de recepcionistas; T80 retiró ese modelo para instalaciones nuevas y T81–T85 deben completar su reemplazo por alta directa y restablecimiento. La reactivación y los ajustes de desactivación definidos por RF-39–RF-42 permanecen pendientes en T76–T79; esta actualización documental no presenta ninguna de esas funciones nuevas como implementada.
 
 ## 2. Módulos y contratos
 

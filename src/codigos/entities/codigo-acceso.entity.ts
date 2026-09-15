@@ -11,8 +11,8 @@ import {
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 export enum PropositoCodigoAcceso {
+  // La recepción se crea completa y nunca recibe un código de activación.
   ACTIVACION_ADMIN = 'activacion_admin',
-  ACTIVACION_RECEPCIONISTA = 'activacion_recepcionista',
   RECUPERACION = 'recuperacion',
 }
 

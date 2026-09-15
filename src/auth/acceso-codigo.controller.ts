@@ -6,7 +6,8 @@ import { ActivarCuentaDto, CodigoContrasenaDto } from './dto/acceso-codigo.dto';
 import { LimiteIntentosGuard } from './guards/limite-intentos.guard';
 import { CredencialesService } from './services/credenciales.service';
 
-// Son rutas públicas: el código de un solo uso autoriza la operación. Todas
+// Activar administración y recuperar acceso son las rutas públicas por código.
+// El código de un solo uso autoriza la operación. Ambas rutas
 // consumen la misma cuota por IP que login, incluso si la validación falla.
 @Controller('auth')
 @UseGuards(LimiteIntentosGuard)
@@ -22,16 +23,6 @@ export class AccesoCodigoController {
   activarAdministrador(@Body() datos: ActivarCuentaDto): Promise<void> {
     // El propósito lo determina la ruta y el instante lo aporta el servidor.
     return this.activaciones.activarAdministrador({
-      codigo: datos.codigo, nombre: datos.nombre, password: datos.password,
-      ahora: this.reloj.ahora(),
-    });
-  }
-
-  @Post('activar-recepcionista')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  activarRecepcionista(@Body() datos: ActivarCuentaDto): Promise<void> {
-    // El servicio conserva correo, rol y negocio ligados al código de invitación.
-    return this.activaciones.activarRecepcionista({
       codigo: datos.codigo, nombre: datos.nombre, password: datos.password,
       ahora: this.reloj.ahora(),
     });

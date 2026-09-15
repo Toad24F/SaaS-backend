@@ -24,7 +24,6 @@ describe('Código de acceso (T11)', () => {
     );
     expect(Object.values(PropositoCodigoAcceso)).toEqual([
       'activacion_admin',
-      'activacion_recepcionista',
       'recuperacion',
     ]);
   });

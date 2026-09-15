@@ -9,7 +9,6 @@ import { AutorizacionService } from '../src/auth/services/autorizacion.service';
 import { CodigoAcceso, PropositoCodigoAcceso } from '../src/codigos/entities/codigo-acceso.entity';
 import { CodigosService } from '../src/codigos/codigos.service';
 import { Licencia } from '../src/licencias/entities/licencia.entity';
-import { PoliticaAccesoLicenciaService } from '../src/licencias/services/politica-acceso-licencia.service';
 import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Usuario } from '../src/usuarios/entities/usuario.entity';
 import { conBaseMigrada } from './support/mariadb';
@@ -18,12 +17,12 @@ async function crearSuperadmin(dataSource: DataSource): Promise<Usuario> {
   return dataSource.getRepository(Usuario).save(Object.assign(new Usuario(), {
     negocioId: null,
     negocio: null,
-    nombre: null,
+    nombre: 'Superadmin',
     email: `${randomUUID()}@example.test`,
-    passwordHash: null,
+    passwordHash: 'hash-de-prueba',
     rol: Rol.SUPERADMIN,
     activo: true,
-    activadoEn: null,
+    activadoEn: new Date(Date.now() + 60_000),
   }));
 }
 
@@ -33,7 +32,6 @@ function construirServicio(dataSource: DataSource, auditoria = new AuditoriaServ
     new AutorizacionService(),
     new CodigosService(auditoria),
     auditoria,
-    new PoliticaAccesoLicenciaService(),
   );
 }
 

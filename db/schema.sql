@@ -50,7 +50,8 @@ CREATE TABLE negocios (
 
 -- 2. USUARIOS (RF-03, RF-05 a RF-08, RF-13, RF-15, RF-19, RF-27).
 -- El backend normaliza email con trim + minusculas antes de escribir.
--- El correo queda reservado incluso mientras la cuenta esta pendiente.
+-- Solo el primer admin puede reservar correo pendiente. Recepcion y superadmin
+-- siempre requieren nombre, hash y activacion en la misma escritura.
 -- activo es independiente de activado_en; desactivar no borra la cuenta.
 -- admin_negocio_unico es calculada: no incluirla en INSERT/UPDATE.
 CREATE TABLE usuarios (
@@ -79,7 +80,8 @@ CREATE TABLE usuarios (
   ),
   CONSTRAINT chk_usuarios_activo CHECK (activo IN (0,1)),
   CONSTRAINT chk_usuarios_activacion CHECK (
-    (activado_en IS NULL AND nombre IS NULL AND password_hash IS NULL)
+    (rol = 'admin_negocio' AND activado_en IS NULL
+      AND nombre IS NULL AND password_hash IS NULL)
     OR (
       activado_en IS NOT NULL
       AND nombre IS NOT NULL AND CHAR_LENGTH(TRIM(nombre)) > 0
@@ -149,7 +151,7 @@ CREATE TABLE codigos_acceso (
   negocio_id        INT UNSIGNED NOT NULL,
   usuario_id        INT UNSIGNED NOT NULL,
   emisor_usuario_id INT UNSIGNED NOT NULL,
-  proposito         ENUM('activacion_admin','activacion_recepcionista','recuperacion') NOT NULL,
+  proposito         ENUM('activacion_admin','recuperacion') NOT NULL,
   codigo_hash       CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   emitido_en        DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   expira_en         DATETIME(6) NOT NULL,

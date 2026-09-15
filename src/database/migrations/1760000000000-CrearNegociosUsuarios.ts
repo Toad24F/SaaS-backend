@@ -1,6 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-/** T15: identidad del tenant y cuentas activadas o pendientes. */
+/** Instalación nueva: solo el primer admin admite credenciales pendientes. */
 export class CrearNegociosUsuarios1760000000000 implements MigrationInterface {
   name = 'CrearNegociosUsuarios1760000000000';
 
@@ -50,7 +50,8 @@ export class CrearNegociosUsuarios1760000000000 implements MigrationInterface {
         ),
         CONSTRAINT chk_usuarios_activo CHECK (activo IN (0, 1)),
         CONSTRAINT chk_usuarios_activacion CHECK (
-          (activado_en IS NULL AND nombre IS NULL AND password_hash IS NULL)
+          (rol = 'admin_negocio' AND activado_en IS NULL
+            AND nombre IS NULL AND password_hash IS NULL)
           OR (
             activado_en IS NOT NULL
             AND nombre IS NOT NULL AND CHAR_LENGTH(TRIM(nombre)) > 0
