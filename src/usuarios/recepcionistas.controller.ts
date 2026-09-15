@@ -7,12 +7,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 import { RELOJ, type Reloj } from '../comun/reloj';
-import { RecepcionistaIdDto } from './dto/recepcionistas.dto';
+import { CrearRecepcionistaDto, RecepcionistaIdDto, RestablecerContrasenaRecepcionistaDto } from './dto/recepcionistas.dto';
 import { Usuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
 
 // Cada petición revalida sesión, licencia y rol antes de usar la pertenencia.
-// La antigua invitación POST se retiró; el alta directa corresponde a T81/T83.
+// La antigua invitación POST se sustituyó por el alta directa completa.
 @Controller('recepcionistas')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Rol.ADMIN_NEGOCIO)
@@ -21,6 +21,20 @@ export class RecepcionistasController {
     private readonly usuarios: UsuariosService,
     @Inject(RELOJ) private readonly reloj: Reloj,
   ) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async crear(@Body() datos: CrearRecepcionistaDto, @CurrentUser() actor: JwtPayload) {
+    const creada = await this.usuarios.crearRecepcionista({
+      actorUsuarioId: actor.sub,
+      nombre: datos.nombre,
+      email: datos.emailRecepcionista,
+      password: datos.password,
+      ahora: this.reloj.ahora(),
+    });
+    // Respuesta por lista permitida: nunca serializar el hash de la entidad creada.
+    return this.presentar(creada);
+  }
 
   @Get()
   async listar(@CurrentUser() actor: JwtPayload) {
@@ -46,6 +60,19 @@ export class RecepcionistasController {
     // La reactivación reutiliza la validación de pertenencia transaccional del servicio.
     // El cuerpo vacío impide que el cliente cambie identidad, negocio o estado de licencia.
     return this.usuarios.reactivarRecepcionista(actor.sub, parametros.id, this.reloj.ahora());
+  }
+
+  @Post(':id/restablecer-contrasena')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  restablecerContrasena(
+    @Param() parametros: RecepcionistaIdDto,
+    @Body() datos: RestablecerContrasenaRecepcionistaDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    // El servicio bloquea el destino propio y confirma hash, sesiones y auditoría juntos.
+    return this.usuarios.restablecerContrasenaRecepcionista(
+      actor.sub, parametros.id, datos.nuevaPassword, this.reloj.ahora(),
+    );
   }
 
   private negocioActor(actor: JwtPayload): number {

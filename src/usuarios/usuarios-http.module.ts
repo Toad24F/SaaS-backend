@@ -4,7 +4,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UsuariosModule } from './usuarios.module';
 import { RecepcionistasController } from './recepcionistas.controller';
 
-// T80 retira la dependencia de invitaciones; conserva consulta y desactivación.
+// T80 retiró invitaciones; este módulo expone gestión y credenciales de recepción.
 @Module({
   imports: [AuthModule, UsuariosModule],
   controllers: [RecepcionistasController],

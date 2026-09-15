@@ -81,6 +81,12 @@ async function rechazarRecepcion(ctx: Contexto, token: string | undefined, statu
   // Se construye cada petición al ejecutarla para no reutilizar un puerto cerrado de Supertest.
   const rutas = [() => request(ctx.app.getHttpServer()).get('/recepcionistas'),
     () => request(ctx.app.getHttpServer()).get(`/recepcionistas/${ctx.usuarios[2].id}`),
+    // T83 exige los mismos Guards para crear y restablecer cuentas.
+    () => request(ctx.app.getHttpServer()).post('/recepcionistas').send({
+      emailRecepcionista: 'guard@example.test', nombre: 'Guard', password: 'password-segura-t83',
+    }),
+    () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/restablecer-contrasena`)
+      .send({ nuevaPassword: 'password-nueva-t83' }),
     () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/desactivar`).send({}),
     // T77 comparte los Guards y debe rechazar exactamente los mismos actores bloqueados.
     () => request(ctx.app.getHttpServer()).post(`/recepcionistas/${ctx.usuarios[2].id}/reactivar`).send({})];
@@ -93,12 +99,12 @@ async function rechazarRecepcion(ctx: Contexto, token: string | undefined, statu
   expect(await estado(ctx.db)).toEqual(antes);
 }
 
-describe('T48 y T77 — recepcionistas y reemisión HTTP', () => {
-  it('retira la invitación y conserva lista y consulta sin hashes ni códigos', async () => {
+describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
+  it('rechaza la antigua invitación incompleta y conserva lista y consulta sin hashes ni códigos', async () => {
     await conHttp(async (ctx) => {
       const { app, db, tokens, usuarios } = ctx;
       const antes = await estado(db);
-      await request(app.getHttpServer()).post('/recepcionistas').auth(tokens[1], { type: 'bearer' }).send(invitacion).expect(404);
+      await request(app.getHttpServer()).post('/recepcionistas').auth(tokens[1], { type: 'bearer' }).send(invitacion).expect(400);
       const lista = await request(app.getHttpServer()).get('/recepcionistas').auth(tokens[1], { type: 'bearer' }).expect(200);
       expect(lista.body).toEqual([publicos(usuarios[2])]);
       const detalle = await request(app.getHttpServer()).get(`/recepcionistas/${usuarios[2].id}`).auth(tokens[1], { type: 'bearer' }).expect(200);
@@ -117,6 +123,103 @@ describe('T48 y T77 — recepcionistas y reemisión HTTP', () => {
       await request(app.getHttpServer()).get('/auth/profile').auth(tokens[4], { type: 'bearer' }).expect(200);
       const antes = await estado(db);
       await enviar().expect(204);
+      expect(await estado(db)).toEqual(antes);
+    });
+  });
+
+  it('T83 crea directamente una cuenta propia, activada y pública, sin códigos ni secretos', async () => {
+    await conHttp(async ({ app, db, reloj, usuarios, tokens }) => {
+      const codigosAntes = await db.getRepository(CodigoAcceso).count();
+      const respuesta = await request(app.getHttpServer()).post('/recepcionistas')
+        .auth(tokens[1], { type: 'bearer' }).send({
+          emailRecepcionista: '  NUEVA@EXAMPLE.TEST  ',
+          nombre: '  Nueva   Persona  ', password: 'password-segura-t83',
+        }).expect(201);
+      const creada = await db.getRepository(Usuario).findOneByOrFail({ id: respuesta.body.id });
+      expect(creada).toMatchObject({ negocioId: usuarios[1].negocioId,
+        nombre: 'Nueva Persona', email: 'nueva@example.test', rol: Rol.RECEPCIONISTA,
+        activo: true, activadoEn: reloj.ahora() });
+      await expect(new PoliticaContrasenasService().comparar('password-segura-t83', creada.passwordHash!))
+        .resolves.toBe(true);
+      expect(respuesta.body).toEqual(publicos(creada));
+      expect(JSON.stringify(respuesta.body)).not.toMatch(/password|hash|codigo/i);
+      expect(await db.getRepository(CodigoAcceso).count()).toBe(codigosAntes);
+      const evento = await db.getRepository(EventoAuditoria).findOneByOrFail({
+        accion: 'recepcionista_creado', usuarioId: creada.id,
+      });
+      expect(evento).toMatchObject({ actorUsuarioId: usuarios[1].id,
+        negocioId: usuarios[1].negocioId });
+      expect(JSON.stringify(evento)).not.toMatch(/password|hash|password-segura-t83/i);
+      await request(app.getHttpServer()).post('/auth/activar-recepcionista')
+        .send({ codigo: 'retirado', nombre: 'Recepción', password: 'password-segura-t83' })
+        .expect(404);
+    });
+  });
+
+  it('T83 restablece cuentas activas y desactivadas sin restaurarlas y revoca sus sesiones', async () => {
+    await conHttp(async ({ app, db, reloj, usuarios, tokens, licencias }) => {
+      await db.getRepository(Usuario).update(usuarios[4].id, { activo: false });
+      for (const [actor, destino] of [[1, 2], [3, 4]]) {
+        const usuarioAntes = await db.getRepository(Usuario).findOneByOrFail({ id: usuarios[destino].id });
+        const licenciaAntes = await db.getRepository(Licencia).findOneByOrFail({ id: licencias[actor === 1 ? 0 : 1].id });
+        const sesion = await db.getRepository(Sesion).findOneByOrFail({ usuarioId: usuarioAntes.id });
+        const respuesta = await request(app.getHttpServer())
+          .post(`/recepcionistas/${usuarioAntes.id}/restablecer-contrasena`)
+          .auth(tokens[actor], { type: 'bearer' })
+          .send({ nuevaPassword: 'password-nueva-t83' }).expect(204);
+        expect(respuesta.text).toBe('');
+        const despues = await db.getRepository(Usuario).findOneByOrFail({ id: usuarioAntes.id });
+        expect(despues).toMatchObject({ id: usuarioAntes.id, negocioId: usuarioAntes.negocioId,
+          nombre: usuarioAntes.nombre, email: usuarioAntes.email, rol: usuarioAntes.rol,
+          activadoEn: usuarioAntes.activadoEn, activo: usuarioAntes.activo });
+        expect(despues.passwordHash).not.toBe(usuarioAntes.passwordHash);
+        await expect(new PoliticaContrasenasService().comparar('password-nueva-t83', despues.passwordHash!))
+          .resolves.toBe(true);
+        expect(await db.getRepository(Sesion).findOneByOrFail({ id: sesion.id }))
+          .toMatchObject({ revocadaEn: reloj.ahora() });
+        expect(await db.getRepository(Licencia).findOneByOrFail({ id: licenciaAntes.id }))
+          .toMatchObject({ habilitadaEn: licenciaAntes.habilitadaEn,
+            venceEn: licenciaAntes.venceEn, suspendidaEn: licenciaAntes.suspendidaEn });
+        const evento = await db.getRepository(EventoAuditoria).findOneByOrFail({
+          accion: 'recepcionista_contrasena_restablecida', usuarioId: usuarioAntes.id,
+        });
+        expect(evento).toMatchObject({ actorUsuarioId: usuarios[actor].id,
+          negocioId: usuarioAntes.negocioId });
+        expect(JSON.stringify(evento)).not.toMatch(/password|hash|password-nueva-t83/i);
+      }
+    });
+  });
+
+  it('T83 rechaza entradas inválidas, correo duplicado y restablecimiento ajeno sin mutaciones', async () => {
+    await conHttp(async ({ app, db, usuarios, tokens }) => {
+      const crear = (body: object) => request(app.getHttpServer()).post('/recepcionistas')
+        .auth(tokens[1], { type: 'bearer' }).send(body);
+      const reset = (id: string | number, body: object) => request(app.getHttpServer())
+        .post(`/recepcionistas/${id}/restablecer-contrasena`)
+        .auth(tokens[1], { type: 'bearer' }).send(body);
+      const valido = { emailRecepcionista: 'nuevo@example.test', nombre: 'Nuevo',
+        password: 'password-segura-t83' };
+      const antes = await estado(db);
+      for (const body of [invitacion, { ...valido, nombre: '   ' },
+        { ...valido, emailRecepcionista: 'no-es-correo' },
+        { ...valido, password: 'corta' }, { ...valido, password: 'á'.repeat(37) },
+        { ...valido, negocioId: usuarios[3].negocioId },
+        { ...valido, rol: Rol.ADMIN_NEGOCIO }, { ...valido, codigo: 'prohibido' },
+        { ...valido, emailRecepcionista: usuarios[4].email }]) {
+        await crear(body).expect(body.emailRecepcionista === usuarios[4].email ? 409 : 400);
+      }
+      for (const id of [usuarios[4].id, usuarios[1].id, 4294967295]) {
+        await reset(id, { nuevaPassword: 'password-nueva-t83' }).expect(404);
+      }
+      for (const id of ['abc', '0', '-1', '1.2', '4294967296']) {
+        await reset(id, { nuevaPassword: 'password-nueva-t83' }).expect(400);
+      }
+      for (const body of [{}, { nuevaPassword: 'corta' },
+        { nuevaPassword: 'á'.repeat(37) }, { nuevaPassword: 42 },
+        { nuevaPassword: 'password-nueva-t83', negocioId: usuarios[3].negocioId },
+        { nuevaPassword: 'password-nueva-t83', codigo: 'prohibido' }]) {
+        await reset(usuarios[2].id, body).expect(400);
+      }
       expect(await estado(db)).toEqual(antes);
     });
   });
