@@ -10,6 +10,7 @@ import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
 import { CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
 import { NegociosConsultaService } from './negocios-consulta.service';
+import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 
 // Primero se valida la sesión y su estado actual; después se exige superadmin.
 @Controller('negocios')
@@ -35,6 +36,13 @@ export class NegociosController {
   @Get()
   listar() {
     return this.consultas.listar();
+  }
+
+  @Post(':id/reemitir-codigo')
+  reemitirCodigo(@Param() parametros: NegocioIdDto, @Body() _datos: SinCamposDto, @CurrentUser() usuario: JwtPayload) {
+    // Hereda el rol exclusivo de superadmin; el cuerpo no puede elegir destinatario.
+    return this.altas.reemitirCodigoInicial({ actorUsuarioId: usuario.sub,
+      negocioId: parametros.id, ahora: this.reloj.ahora() });
   }
 
   @Get(':id')

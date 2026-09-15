@@ -25,6 +25,7 @@ import { JwtLogoutGuard } from './guards/jwt-logout.guard';
 import { JwtLogoutStrategy } from './strategies/jwt-logout.strategy';
 import { AltasModule } from '../altas/altas.module';
 import { AccesoCodigoController } from './acceso-codigo.controller';
+import { CredencialesController } from './credenciales.controller';
 
 //se agrupan y declaran los controladores, servicios y estrategias 
 //para que el framework sepa cómo empaquetar la funcionalidad de autenticación
@@ -55,7 +56,8 @@ import { AccesoCodigoController } from './acceso-codigo.controller';
       errorMessage: 'Demasiados intentos. Intenta de nuevo más tarde.',
     }),
   ],
-  controllers: [AuthController, AccesoCodigoController],
+  // Separa el cambio autenticado y la autorización del consumo público de códigos.
+  controllers: [AuthController, AccesoCodigoController, CredencialesController],
   providers: [
     AuthService,
     JwtStrategy,

@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
@@ -22,7 +22,8 @@ export class LicenciasService {
     await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
       if (licencia.suspendidaEn !== null) return;
       if (licencia.venceEn !== null && ahora >= licencia.venceEn) {
-        throw new BadRequestException('Una licencia vencida debe renovarse antes de suspenderse.');
+        // Una entrada válida incompatible con el estado actual es un conflicto (409).
+        throw new ConflictException('Una licencia vencida debe renovarse antes de suspenderse.');
       }
       licencia.suspendidaEn = new Date(ahora);
       await manager.getRepository(Licencia).save(licencia);
@@ -52,7 +53,7 @@ export class LicenciasService {
   async renovar(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
     await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
       if (licencia.habilitadaEn === null || licencia.venceEn === null) {
-        throw new BadRequestException('La licencia pendiente no puede renovarse.');
+        throw new ConflictException('La licencia pendiente no puede renovarse.');
       }
       const anterior = licencia.venceEn;
       const base = licencia.suspendidaEn !== null || ahora < anterior ? anterior : ahora;
@@ -74,7 +75,9 @@ export class LicenciasService {
       if (!actor) throw new ForbiddenException('Acceso denegado.');
       this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_LICENCIA);
       const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
-        .setLock('pessimistic_write').where('licencia.id = :id', { id: licenciaId }).getOneOrFail();
+        .setLock('pessimistic_write').where('licencia.id = :id', { id: licenciaId }).getOne();
+      // La ausencia del recurso es 404; nunca se filtra un error interno de TypeORM.
+      if (!licencia) throw new NotFoundException('Licencia no disponible.');
       await operacion(manager, actor, licencia);
     });
   }

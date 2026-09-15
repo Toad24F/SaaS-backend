@@ -28,6 +28,13 @@ export class UsuariosService {
     });
   }
 
+  /** Consulta administrativa global: su ruta exige superadmin antes de invocarla. */
+  async buscarAdministrador(usuarioId: number): Promise<Usuario> {
+    const usuario = await this.usuarioRepository.findOneBy({ id: usuarioId, rol: Rol.ADMIN_NEGOCIO });
+    if (!usuario) throw new NotFoundException('Administrador no disponible.');
+    return usuario;
+  }
+
   /** Lista exclusivamente cuentas de recepción pertenecientes al tenant recibido. */
   listarRecepcionistas(negocioId: number): Promise<Usuario[]> {
     return this.usuarioRepository.find({

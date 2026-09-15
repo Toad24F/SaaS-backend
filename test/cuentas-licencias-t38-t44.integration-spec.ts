@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { IsNull } from 'typeorm';
 import type { DataSource } from 'typeorm';
@@ -231,13 +231,14 @@ describe('Cuentas y licencias T38–T44', () => {
         .toMatchObject({ habilitadaEn: null, venceEn: null, suspendidaEn: null });
       expect((await primera.getRepository(Usuario).findOneByOrFail({ id: pendiente.administrador.id })).activo)
         .toBe(true);
+      // T50 distingue conflictos de estado (409) de entradas inválidas (400).
       await expect(servicio.renovar(actor.id, pendiente.licencia.id, pendiente.ahora))
-        .rejects.toBeInstanceOf(BadRequestException);
+        .rejects.toBeInstanceOf(ConflictException);
 
       const vencimiento = new Date(vencida.ahora.getTime() - 1);
       await primera.getRepository(Licencia).update(vencida.licencia.id, { venceEn: vencimiento });
       await expect(servicio.suspender(actor.id, vencida.licencia.id, vencida.ahora))
-        .rejects.toBeInstanceOf(BadRequestException);
+        .rejects.toBeInstanceOf(ConflictException);
       await servicio.renovar(actor.id, vencida.licencia.id, vencida.ahora);
       expect((await primera.getRepository(Licencia).findOneByOrFail({ id: vencida.licencia.id })).venceEn)
         .toEqual(new CalendarioLicenciasService().sumarAnios(vencida.ahora));

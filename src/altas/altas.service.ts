@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
@@ -221,5 +222,25 @@ export class AltasService {
       }
       throw error;
     }
+  }
+
+  /** Revalida emisor y destinatario bajo bloqueo sin activar ni modificar la licencia. */
+  async reemitirCodigoInicial(datos: { actorUsuarioId: number; negocioId: number; ahora: Date }) {
+    return this.negocios.manager.transaction(async (manager) => {
+      const actor = await manager.getRepository(Usuario).createQueryBuilder('actor')
+        .setLock('pessimistic_read').where('actor.id = :id', { id: datos.actorUsuarioId }).getOne();
+      if (!actor || actor.rol !== Rol.SUPERADMIN) throw new ForbiddenException('Acceso denegado.');
+      // La cuenta se obtiene por negocio y rol; se bloquea antes de reemplazar su código.
+      const administrador = await manager.getRepository(Usuario).createQueryBuilder('usuario')
+        .setLock('pessimistic_write')
+        .where('usuario.negocioId = :negocioId AND usuario.rol = :rol', {
+          negocioId: datos.negocioId, rol: Rol.ADMIN_NEGOCIO,
+        }).getOne();
+      if (!administrador) throw new NotFoundException('Administrador no disponible.');
+      return this.codigos.reemplazarConManager(manager, {
+        negocioId: datos.negocioId, usuarioId: administrador.id, emisorUsuarioId: actor.id,
+        proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN, ahora: datos.ahora,
+      });
+    });
   }
 }
