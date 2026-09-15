@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -6,7 +6,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
-import { RELOJ, type Reloj } from '../comun/reloj';
 import { RecepcionistaIdDto } from './dto/recepcionistas.dto';
 import { Usuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
@@ -19,7 +18,6 @@ import { UsuariosService } from './usuarios.service';
 export class RecepcionistasController {
   constructor(
     private readonly usuarios: UsuariosService,
-    @Inject(RELOJ) private readonly reloj: Reloj,
   ) {}
 
   @Get()
@@ -36,8 +34,8 @@ export class RecepcionistasController {
   @Post(':id/desactivar')
   @HttpCode(HttpStatus.NO_CONTENT)
   desactivar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
-    // Cuenta, sesiones y auditoría usan el mismo instante que la autenticación.
-    return this.usuarios.desactivarRecepcionista(actor.sub, parametros.id, this.reloj.ahora());
+    // El servicio vuelve a comprobar rol y negocio antes de conservar la cuenta inactiva.
+    return this.usuarios.desactivarRecepcionista(actor.sub, parametros.id);
   }
 
   private negocioActor(actor: JwtPayload): number {
