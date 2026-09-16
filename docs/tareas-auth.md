@@ -165,10 +165,10 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T76 — Implementar transiciones de acceso de recepcionistas** · 25 min · RF: RF-05–07, RF-19, RF-39–42 · Depende de: T23, T28–T30, T36, T38. · [Evidencia](results/resultados-t76-t81.md)
   **Hecho cuando:** desactivar y reactivar bloquean la cuenta destino y solo admiten recepcionistas completos del negocio del administrador; desactivar revoca todas sus sesiones, ambas operaciones conservan identidad y pertenencia, registran únicamente cambios reales y confirman o revierten cuenta, sesiones y auditoría en una sola transacción.
 
-- [X] **T81 — Crear recepcionistas directamente** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40 · Depende de: T20, T22–T23, T29–T30, T80. · [Evidencia](results/resultados-t76-t81.md)
+- [X] **T81 — Crear recepcionistas directamente** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40 · Depende de: T20, T22–T23, T29–T30, T80. · [Evidencia](results/resultados-t76-t81.md) · [Corrección posterior del reloj](results/correccion-reloj-t81-t82.md)
   **Hecho cuando:** el caso de uso normaliza nombre y correo, valida y hashea la contraseña, deriva negocio y rol del administrador persistido y crea cuenta activa, fecha de activación y auditoría en una sola transacción; no genera códigos y convierte la colisión de correo global en 409 sin alta parcial.
 
-- [X] **T82 — Restablecer contraseñas de recepcionistas propios** · 25 min · RF: RF-05–07, RF-19, RF-27, RF-35, RF-43–44 · Depende de: T20, T22–T23, T28–T30. · [Evidencia](results/resultados-t82.md)
+- [X] **T82 — Restablecer contraseñas de recepcionistas propios** · 25 min · RF: RF-05–07, RF-19, RF-27, RF-35, RF-43–44 · Depende de: T20, T22–T23, T28–T30. · [Evidencia](results/resultados-t82.md) · [Corrección posterior del reloj](results/correccion-reloj-t81-t82.md)
   **Hecho cuando:** el administrador bloquea y modifica únicamente un recepcionista de su negocio, activo o desactivado; guarda el nuevo hash, revoca todas sus sesiones y audita sin secretos en una transacción, conservando identidad, pertenencia, activación, estado de cuenta y licencia.
 
 ## 4. Operaciones HTTP y pruebas de integración
