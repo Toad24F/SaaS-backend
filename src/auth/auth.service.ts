@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
 import { Licencia } from '../licencias/entities/licencia.entity';
+import { Negocio } from '../negocios/entities/negocio.entity';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 import { PoliticaAccesoLicenciaService } from '../licencias/services/politica-acceso-licencia.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { LoginDto } from './dto/login.dto';
@@ -69,16 +71,42 @@ export class AuthService {
             }
         }
 
-        // La sesión nace una sola vez; validar solicitudes posteriores no la extiende.
-        const sesion = await this.sesiones.crear(usuario.id, ahora);
+        // Serializa la creación de sesión frente al cambio y recuperación de clave.
+        // Si el hash cambió desde la comparación bcrypt, la clave antigua no crea sesión.
+        const { vigente, sesion } = await this.licencias.manager.transaction(async (manager) => {
+            const vigente = await manager.getRepository(Usuario).createQueryBuilder('usuario')
+                .setLock('pessimistic_write')
+                .where('usuario.id = :id', { id: usuario.id })
+                .getOne();
+            if (!vigente || !vigente.activo || vigente.activadoEn === null ||
+                !vigente.nombre || vigente.passwordHash !== usuario.passwordHash) {
+                throw new UnauthorizedException(MENSAJE_RECHAZO);
+            }
+            if (vigente.rol !== Rol.SUPERADMIN) {
+                const negocio = vigente.negocioId === null ? null
+                    : await manager.getRepository(Negocio).findOneBy({ id: vigente.negocioId });
+                const licencia = vigente.negocioId === null ? null
+                    : await manager.getRepository(Licencia).findOneBy({ negocioId: vigente.negocioId });
+                if (!negocio || !licencia || !this.politicaLicencia.evaluarAccesoUsuario({
+                    cuentaActiva: vigente.activo,
+                    cuentaActivada: vigente.activadoEn !== null,
+                    negocioActivado: negocio.activadoEn !== null,
+                    licencia,
+                    ahora,
+                }).permitido) {
+                    throw new UnauthorizedException(MENSAJE_RECHAZO);
+                }
+            }
+            return { vigente, sesion: await this.sesiones.crearConManager(manager, vigente.id, ahora) };
+        });
 
         // 4. Generar el payload del token JWT
         const payload: JwtPayload = {
-            sub: usuario.id,
-            email: usuario.email,
-            nombre: usuario.nombre,
-            rol: usuario.rol,
-            negocioId: usuario.negocioId,
+            sub: vigente.id,
+            email: vigente.email,
+            nombre: vigente.nombre!,
+            rol: vigente.rol,
+            negocioId: vigente.negocioId,
             sesionId: sesion.id,
         };
 
@@ -87,11 +115,11 @@ export class AuthService {
             message: 'Inicio de sesión exitoso',
             accessToken: this.jwtService.sign(payload),
             usuario: {
-                id: usuario.id,
-                nombre: usuario.nombre,
-                email: usuario.email,
-                rol: usuario.rol,
-                negocioId: usuario.negocioId,
+                id: vigente.id,
+                nombre: vigente.nombre,
+                email: vigente.email,
+                rol: vigente.rol,
+                negocioId: vigente.negocioId,
             },
         };
     }

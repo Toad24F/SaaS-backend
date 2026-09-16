@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 59 completadas (T01–T50, T69–T71, T76–T77, T80–T83) y 26 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 69 completadas (T01–T60, T69–T71, T76–T77, T80–T83) y 16 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -197,34 +197,34 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T83 — Exponer alta directa y restablecimiento de recepcionistas** · 25 min · RF: RF-05–07, RF-13, RF-19, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T36, T46, T48, T81–T82. · [Evidencia](results/resultados-t83.md)
   **Hecho cuando:** `POST /recepcionistas` acepta solo `emailRecepcionista`, `nombre` y `password` y devuelve 201 con la vista pública; `POST /recepcionistas/:id/restablecer-contrasena` acepta solo `nuevaPassword` y devuelve 204; se elimina `POST /auth/activar-recepcionista` y ninguna respuesta expone contraseña, hash o código.
 
-- [ ] **T51 — Probar aislamiento entre dos negocios** · 25 min · RF: RF-04–07, RF-13, RF-22, RF-39–44 · Depende de: T47–T50, T77, T83.
+- [X] **T51 — Probar aislamiento entre dos negocios** · 25 min · RF: RF-04–07, RF-13, RF-22, RF-39–44 · Depende de: T47–T50, T77, T83. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** con dos negocios, altas, consultas, desactivaciones, reactivaciones y restablecimientos ajenos se rechazan sin alterar registros; el alta no puede elegir otro negocio ni rol. Un administrador no autoriza recuperación por código y el recepcionista no administra permisos.
 
-- [ ] **T52 — Probar consumo concurrente de activación** · 25 min · RF: RF-03, RF-09–11, RF-35 · Depende de: T33, T71.
+- [X] **T52 — Probar consumo concurrente de activación** · 25 min · RF: RF-03, RF-09–11, RF-35 · Depende de: T33, T71. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** dos conexiones con el mismo código inicial de administrador producen una única activación, consumo, habilitación de licencia y evento, sin registros parciales.
 
-- [ ] **T53 — Probar reemplazo frente a consumo de código** · 25 min · RF: RF-10–12, RF-23–24 · Depende de: T26, T33, T40, T71.
+- [X] **T53 — Probar reemplazo frente a consumo de código** · 25 min · RF: RF-10–12, RF-23–24 · Depende de: T26, T33, T40, T71. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** se prueban ambos órdenes del bloqueo: reemplazo primero invalida el código anterior; activación primero impide reemisión inicial. Reemplazo/consumo de recuperación se serializan y ningún código invalidado completa una operación posterior.
 
-- [ ] **T54 — Probar login frente a cambio o recuperación de contraseña** · 25 min · RF: RF-15, RF-24–25 · Depende de: T35, T40–T41, T71.
+- [X] **T54 — Probar login frente a cambio o recuperación de contraseña** · 25 min · RF: RF-15, RF-24–25 · Depende de: T35, T40–T41, T71. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** después del cambio no sobrevive una sesión creada concurrentemente mediante la contraseña anterior.
 
-- [ ] **T55 — Probar doble suspensión y doble reactivación** · 25 min · RF: RF-35–38 · Depende de: T42–T43, T71.
+- [X] **T55 — Probar doble suspensión y doble reactivación** · 25 min · RF: RF-35–38 · Depende de: T42–T43, T71. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** operaciones concurrentes no reinician la pausa, duplican tiempo ni generan dos eventos para una misma transición.
 
-- [ ] **T56 — Probar renovaciones concurrentes y cruces de licencia** · 25 min · RF: RF-31–32, RF-35, RF-37–38 · Depende de: T42–T44, T71.
+- [X] **T56 — Probar renovaciones concurrentes y cruces de licencia** · 25 min · RF: RF-31–32, RF-35, RF-37–38 · Depende de: T42–T44, T71. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** dos renovaciones distintas suman dos años sin sobrescribirse; renovación cruzada con suspensión/reactivación produce estado, vencimiento y auditoría equivalentes a un orden serial, sin pérdida ni duplicación de tiempo.
 
-- [ ] **T57 — Probar rollback de operaciones sensibles** · 25 min · RF: RF-03, RF-09, RF-24, RF-35 · Depende de: T31, T33, T40, T42–T44, T71.
+- [X] **T57 — Probar rollback de operaciones sensibles** · 25 min · RF: RF-03, RF-09, RF-24, RF-35 · Depende de: T31, T33, T40, T42–T44, T71. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** fallos provocados antes de confirmar revierten altas, consumo de códigos, cambios de contraseña y modificaciones de licencia junto con su auditoría.
 
-- [ ] **T58 — Probar el recorrido HTTP de licencia anual** · 25 min · RF: RF-01–02, RF-09, RF-15, RF-28, RF-30–34 · Depende de: T45–T50.
+- [X] **T58 — Probar el recorrido HTTP de licencia anual** · 25 min · RF: RF-01–02, RF-09, RF-15, RF-28, RF-30–34 · Depende de: T45–T50. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** alta, activación, login, renovación, suspensión y reactivación funcionan por HTTP con licencia anual; se rechazan modalidades y períodos enviados por el cliente y se conservan los datos durante bloqueos.
 
-- [ ] **T59 — Probar vencimientos y tiempo conservado** · 25 min · RF: RF-28–34, RF-36–37 · Depende de: T45, T46, T50.
+- [X] **T59 — Probar vencimientos y tiempo conservado** · 25 min · RF: RF-28–34, RF-36–37 · Depende de: T45, T46, T50. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** con reloj controlado se verifican vencimiento exacto, renovación anticipada/tardía, pausas sucesivas y prolongadas, renovación suspendida y restitución exacta del tiempo, también alrededor de aniversarios bisiestos.
 
-- [ ] **T60 — Probar suspensión antes de activar** · 20 min · RF: RF-09–12, RF-14, RF-34 · Depende de: T46, T50.
+- [X] **T60 — Probar suspensión antes de activar** · 20 min · RF: RF-09–12, RF-14, RF-34 · Depende de: T46, T50. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** suspender impide activar al primer administrador, su código sigue caducando a las 48 horas y reactivar no inicia vigencia ni rehabilita códigos vencidos.
 
 - [ ] **T72 — Probar expiración durante una operación autorizada** · 25 min · RF: RF-19–20 · Depende de: T36, T57.

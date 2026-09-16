@@ -18,6 +18,7 @@ describe('AuthService', () => {
   const sign = jest.fn();
   const crearSesion = jest.fn();
   const findOneBy = jest.fn();
+  const usuarioBloqueado = jest.fn();
 
   beforeEach(async () => {
     findByEmailWithNegocio.mockReset();
@@ -28,6 +29,11 @@ describe('AuthService', () => {
       venceEn: new Date('2027-09-10T12:00:00Z'),
       suspendidaEn: null,
     });
+    usuarioBloqueado.mockReset().mockImplementation(() => findByEmailWithNegocio.mock.results.at(-1)?.value);
+    // La prueba unitaria simula el manager transaccional; la carrera real se prueba en T54.
+    const manager = { getRepository: () => ({ createQueryBuilder: () => ({
+      setLock: () => ({ where: () => ({ getOne: usuarioBloqueado }) }),
+    }), findOneBy }) };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -35,8 +41,10 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: { sign } },
         PoliticaContrasenasService,
         PoliticaAccesoLicenciaService,
-        { provide: SesionesService, useValue: { crear: crearSesion, revocar: jest.fn() } },
-        { provide: getRepositoryToken(Licencia), useValue: { findOneBy } },
+        { provide: SesionesService, useValue: { crearConManager: crearSesion, revocar: jest.fn() } },
+        { provide: getRepositoryToken(Licencia), useValue: {
+          findOneBy, manager: { transaction: (operacion: (manager: typeof manager) => unknown) => operacion(manager) },
+        } },
         { provide: RELOJ, useValue: { ahora: () => new Date('2026-09-11T12:00:00Z') } },
       ],
     }).compile();
