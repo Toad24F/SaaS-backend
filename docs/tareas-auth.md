@@ -188,7 +188,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T49 — Exponer cambio de contraseña y autorización de recuperación** · 20 min · RF: RF-21–27 · Depende de: T36, T39, T41. · [Evidencia](results/resultados-t49.md)
   **Hecho cuando:** pruebas HTTP verifican contraseña actual, retiro de sesiones y autorización de recuperación exclusiva del superadmin para administradores; no se expone recuperación de recepcionistas.
 
-- [X] **T50 — Exponer suspensión, reactivación y renovación** · 25 min · RF: RF-04, RF-31–38 · Depende de: T36, T42–T44. · [Evidencia](results/resultados-t50.md)
+- [X] **T50 — Exponer suspensión, reactivación y renovación** · 25 min · RF: RF-04, RF-31–38 · Depende de: T36, T42–T44. · [Evidencia](results/resultados-t50.md) · [Corrección posterior de concurrencia](results/correccion-carrera-t50.md)
   **Hecho cuando:** solo superadmin ejecuta las operaciones sobre la licencia; conflictos de estado producen 409 y no se exponen selección de modalidad/período, cancelación definitiva ni suspensión del negocio.
 
 - [X] **T77 — Exponer reactivación de recepcionistas** · 20 min · RF: RF-05–07, RF-39–42 · Depende de: T48, T76. · [Evidencia](results/resultados-t77.md)

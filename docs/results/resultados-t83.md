@@ -33,3 +33,5 @@ Se escribieron los tests antes del código. La primera ejecución focalizada fue
 - `npm run test:e2e -- --runInBand`: 6 suites aprobadas y 1 fallida; 82 pruebas aprobadas y 1 fallida, en dos ejecuciones completas. El fallo es la carrera preexistente de T50 `serializa dobles suspensiones, renovaciones y reactivaciones`: MariaDB devolvió `ER_CHECKREAD` al bloquear una licencia y HTTP respondió 500 en lugar de 204. Falló también aislada con `npm run test:e2e -- --runInBand licencias-t50 -t "serializa dobles"`. Las 18 pruebas del archivo HTTP de recepcionistas pasaron.
 
 T83 queda completada por sus criterios HTTP. La carrera T50 permanece pendiente de corrección; se detiene el trabajo aquí sin modificar licencias ni iniciar T84–T85.
+
+**Nota posterior (2026-09-15):** la carrera T50 descrita arriba fue [corregida y verificada](correccion-carrera-t50.md). El resultado de la suite al cerrar T83 se conserva como evidencia histórica.
