@@ -8,6 +8,8 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Licencia } from './entities/licencia.entity';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
 
+const MAX_INTENTOS_CONFLICTO_VISTA = 3;
+
 /** Serializa suspensión, reactivación y renovación sobre una misma licencia. */
 @Injectable()
 export class LicenciasService {
@@ -70,16 +72,37 @@ export class LicenciasService {
     licenciaId: number,
     operacion: (manager: Repository<Licencia>['manager'], actor: Usuario, licencia: Licencia) => Promise<void>,
   ): Promise<void> {
-    await this.licencias.manager.transaction(async (manager) => {
-      const actor = await manager.getRepository(Usuario).findOneBy({ id: actorId });
-      if (!actor) throw new ForbiddenException('Acceso denegado.');
-      this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_LICENCIA);
-      const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
-        .setLock('pessimistic_write').where('licencia.id = :id', { id: licenciaId }).getOne();
-      // La ausencia del recurso es 404; nunca se filtra un error interno de TypeORM.
-      if (!licencia) throw new NotFoundException('Licencia no disponible.');
-      await operacion(manager, actor, licencia);
-    });
+    for (let intento = 1; intento <= MAX_INTENTOS_CONFLICTO_VISTA; intento++) {
+      try {
+        // Cada intento abre una transacción nueva: nunca reutiliza una vista ni
+        // una entidad de licencia obtenida antes del rollback de MariaDB.
+        await this.licencias.manager.transaction(async (manager) => {
+          const actor = await manager.getRepository(Usuario).findOneBy({ id: actorId });
+          if (!actor) throw new ForbiddenException('Acceso denegado.');
+          this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_LICENCIA);
+          const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
+            .setLock('pessimistic_write').where('licencia.id = :id', { id: licenciaId }).getOne();
+          // La ausencia del recurso es 404; nunca se filtra un error interno de TypeORM.
+          if (!licencia) throw new NotFoundException('Licencia no disponible.');
+          await operacion(manager, actor, licencia);
+        });
+        return;
+      } catch (error) {
+        // ER_CHECKREAD revierte el intento completo; se reevalúa el estado actual.
+        // Cualquier otro error y el último conflicto se entregan al llamador.
+        if (!this.esConflictoDeVista(error) || intento === MAX_INTENTOS_CONFLICTO_VISTA) {
+          throw error;
+        }
+      }
+    }
+  }
+
+  private esConflictoDeVista(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const datos = error as { code?: string; errno?: number;
+      driverError?: { code?: string; errno?: number } };
+    return datos.driverError?.code === 'ER_CHECKREAD' || datos.code === 'ER_CHECKREAD'
+      || datos.driverError?.errno === 1020 || datos.errno === 1020;
   }
 
   private async registrar(

@@ -23,7 +23,7 @@ T01–T07 están completadas como infraestructura de pruebas y composición de m
 
 Verificación histórica de la revisión del 2026-09-10: **48 pruebas unitarias, 2 de integración, 1 HTTP, lint y comprobación TypeScript aprobados**. Esta cifra se conserva como antecedente y no representa la cobertura actual.
 
-Las tareas T01–T50, T69–T71, T76 y T80–T81 constan como completadas en la lista de ejecución. T32, T34, T46 y T48 conservan la evidencia del flujo histórico de invitación y activación de recepcionistas; T80 retiró ese modelo para instalaciones nuevas, T81 incorporó el alta directa y T82–T85 deben completar el restablecimiento, la exposición HTTP y sus pruebas posteriores. T76 implementó las transiciones de acceso; T77–T79 aún deben exponerlas y ampliar su evidencia de persistencia y concurrencia.
+Las tareas T01–T50, T69–T71, T76–T77 y T80–T83 constan como completadas en la lista de ejecución. T32, T34, T46 y T48 conservan la evidencia del flujo histórico de invitación y activación de recepcionistas; T80 retiró ese modelo para instalaciones nuevas, T81 incorporó el alta directa, T82 implementó el restablecimiento administrativo y T83 expuso ambos casos por HTTP. T84–T85 deben completar sus pruebas posteriores. T76 implementó las transiciones de acceso y T77 expuso la reactivación; T78–T79 aún deben ampliar la evidencia de persistencia y concurrencia. El fallo de concurrencia T50 (`ER_CHECKREAD` sobre licencias) detectado al cerrar T83 se corrigió y verificó en la [evidencia posterior](results/correccion-carrera-t50.md).
 
 ## 2. Módulos y contratos
 

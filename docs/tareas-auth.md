@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 56 completadas (T01–T50, T69–T71, T76, T80–T81) y 29 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 59 completadas (T01–T50, T69–T71, T76–T77, T80–T83) y 26 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -10,7 +10,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 
 **Reglas confirmadas:** licencia anual automática, aislamiento por negocio_id, suspensión exclusivamente en licencia y recuperación por código autorizada solo por superadmin para administradores. RF-20 permite terminar atómicamente una operación ya autorizada y rechaza las solicitudes nuevas al expirar la sesión. Activación y reemisión se serializan por orden de bloqueo de base de datos. Los recepcionistas se crean completos por su administrador, sin código; desactivar y restablecer revocan sesiones, reactivar conserva credenciales y el restablecimiento de una cuenta desactivada no la reactiva.
 
-**Contratos históricos sustituidos:** T32, T34, T46 y T48 permanecen completadas con su redacción y evidencia originales, pero su invitación y activación de recepcionistas por código dejan de ser el comportamiento objetivo. T80 retiró ese modelo y T81 incorporó el caso de uso de alta directa; T82–T85 completarán su exposición, restablecimiento y pruebas posteriores sin atribuir cobertura retroactiva a las tareas históricas.
+**Contratos históricos sustituidos:** T32, T34, T46 y T48 permanecen completadas con su redacción y evidencia originales, pero su invitación y activación de recepcionistas por código dejan de ser el comportamiento objetivo. T80 retiró ese modelo, T81 incorporó el caso de uso de alta directa, T82 el restablecimiento administrativo y T83 su exposición HTTP; T84–T85 completarán las pruebas posteriores sin atribuir cobertura retroactiva a las tareas históricas.
 
 ## 1. Preparación y modelo de datos
 
@@ -165,10 +165,10 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T76 — Implementar transiciones de acceso de recepcionistas** · 25 min · RF: RF-05–07, RF-19, RF-39–42 · Depende de: T23, T28–T30, T36, T38. · [Evidencia](results/resultados-t76-t81.md)
   **Hecho cuando:** desactivar y reactivar bloquean la cuenta destino y solo admiten recepcionistas completos del negocio del administrador; desactivar revoca todas sus sesiones, ambas operaciones conservan identidad y pertenencia, registran únicamente cambios reales y confirman o revierten cuenta, sesiones y auditoría en una sola transacción.
 
-- [X] **T81 — Crear recepcionistas directamente** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40 · Depende de: T20, T22–T23, T29–T30, T80. · [Evidencia](results/resultados-t76-t81.md)
+- [X] **T81 — Crear recepcionistas directamente** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40 · Depende de: T20, T22–T23, T29–T30, T80. · [Evidencia](results/resultados-t76-t81.md) · [Corrección posterior del reloj](results/correccion-reloj-t81-t82.md)
   **Hecho cuando:** el caso de uso normaliza nombre y correo, valida y hashea la contraseña, deriva negocio y rol del administrador persistido y crea cuenta activa, fecha de activación y auditoría en una sola transacción; no genera códigos y convierte la colisión de correo global en 409 sin alta parcial.
 
-- [ ] **T82 — Restablecer contraseñas de recepcionistas propios** · 25 min · RF: RF-05–07, RF-19, RF-27, RF-35, RF-43–44 · Depende de: T20, T22–T23, T28–T30.
+- [X] **T82 — Restablecer contraseñas de recepcionistas propios** · 25 min · RF: RF-05–07, RF-19, RF-27, RF-35, RF-43–44 · Depende de: T20, T22–T23, T28–T30. · [Evidencia](results/resultados-t82.md) · [Corrección posterior del reloj](results/correccion-reloj-t81-t82.md)
   **Hecho cuando:** el administrador bloquea y modifica únicamente un recepcionista de su negocio, activo o desactivado; guarda el nuevo hash, revoca todas sus sesiones y audita sin secretos en una transacción, conservando identidad, pertenencia, activación, estado de cuenta y licencia.
 
 ## 4. Operaciones HTTP y pruebas de integración
@@ -188,13 +188,13 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T49 — Exponer cambio de contraseña y autorización de recuperación** · 20 min · RF: RF-21–27 · Depende de: T36, T39, T41. · [Evidencia](results/resultados-t49.md)
   **Hecho cuando:** pruebas HTTP verifican contraseña actual, retiro de sesiones y autorización de recuperación exclusiva del superadmin para administradores; no se expone recuperación de recepcionistas.
 
-- [X] **T50 — Exponer suspensión, reactivación y renovación** · 25 min · RF: RF-04, RF-31–38 · Depende de: T36, T42–T44. · [Evidencia](results/resultados-t50.md)
+- [X] **T50 — Exponer suspensión, reactivación y renovación** · 25 min · RF: RF-04, RF-31–38 · Depende de: T36, T42–T44. · [Evidencia](results/resultados-t50.md) · [Corrección posterior de concurrencia](results/correccion-carrera-t50.md)
   **Hecho cuando:** solo superadmin ejecuta las operaciones sobre la licencia; conflictos de estado producen 409 y no se exponen selección de modalidad/período, cancelación definitiva ni suspensión del negocio.
 
-- [ ] **T77 — Exponer reactivación de recepcionistas** · 20 min · RF: RF-05–07, RF-39–42 · Depende de: T48, T76.
+- [X] **T77 — Exponer reactivación de recepcionistas** · 20 min · RF: RF-05–07, RF-39–42 · Depende de: T48, T76. · [Evidencia](results/resultados-t77.md)
   **Hecho cuando:** `POST /recepcionistas/:id/reactivar` exige administrador y pertenencia, admite solo cuerpo vacío y responde 204; desactivar y reactivar ocultan recursos ajenos o de otro rol con 404, rechazan entradas inválidas con 400, roles insuficientes con 403 y sesión o licencia bloqueada con 401.
 
-- [ ] **T83 — Exponer alta directa y restablecimiento de recepcionistas** · 25 min · RF: RF-05–07, RF-13, RF-19, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T36, T46, T48, T81–T82.
+- [X] **T83 — Exponer alta directa y restablecimiento de recepcionistas** · 25 min · RF: RF-05–07, RF-13, RF-19, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T36, T46, T48, T81–T82. · [Evidencia](results/resultados-t83.md)
   **Hecho cuando:** `POST /recepcionistas` acepta solo `emailRecepcionista`, `nombre` y `password` y devuelve 201 con la vista pública; `POST /recepcionistas/:id/restablecer-contrasena` acepta solo `nuevaPassword` y devuelve 204; se elimina `POST /auth/activar-recepcionista` y ninguna respuesta expone contraseña, hash o código.
 
 - [ ] **T51 — Probar aislamiento entre dos negocios** · 25 min · RF: RF-04–07, RF-13, RF-22, RF-39–44 · Depende de: T47–T50, T77, T83.
