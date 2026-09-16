@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "SaaS de Citas — funcionamiento actual del backend",
+    "quality_profile": "showcase",
+    "viewBox": [1700, 550],
+    "repository": {
+      "url": "https://github.com/Toad24F/SaaS-backend.git",
+      "provider": "github",
+      "revision": "ec1daa38b7480503d039e79410e9d65c6966101d"
+    }
+  },
+  "components": [
+    {
+      "id": "clientes",
+      "type": "external",
+      "label": "Clientes HTTP",
+      "pos": [40, 420],
+      "size": [140, 76]
+    },
+    {
+      "id": "validacion-global",
+      "type": "security",
+      "label": "Entrada global",
+      "pos": [240, 420],
+      "size": [180, 76],
+      "sources": [
+        { "path": "src/main.ts", "line": 5, "label": "bootstrap" }
+      ]
+    },
+    {
+      "id": "controladores",
+      "type": "backend",
+      "label": "Controladores NestJS",
+      "pos": [500, 420],
+      "size": [180, 76],
+      "sources": [
+        { "path": "src/app.module.ts", "line": 18, "label": "módulos HTTP" },
+        { "path": "src/auth/auth.module.ts", "line": 30, "label": "AuthModule" }
+      ]
+    },
+    {
+      "id": "configuracion",
+      "type": "security",
+      "label": "Configuración",
+      "pos": [240, 70],
+      "size": [180, 76],
+      "sources": [
+        { "path": "src/config/env.validation.ts", "line": 1, "label": "validateEnv" },
+        { "path": "src/config/database.config.ts", "line": 1, "label": "TypeORM" }
+      ]
+    },
+    {
+      "id": "auth-publica",
+      "type": "security",
+      "label": "Acceso público controlado",
+      "pos": [500, 70],
+      "size": [180, 78],
+      "sources": [
+        { "path": "src/auth/auth.controller.ts", "line": 10, "label": "login" },
+        { "path": "src/auth/acceso-codigo.controller.ts", "line": 12, "label": "códigos" },
+        { "path": "src/auth/guards/limite-intentos.guard.ts", "line": 10, "label": "cuota IP" }
+      ]
+    },
+    {
+      "id": "seguridad-jwt",
+      "type": "security",
+      "label": "JWT + Guards",
+      "pos": [320, 245],
+      "size": [180, 82],
+      "sources": [
+        { "path": "src/auth/strategies/jwt.strategy.ts", "line": 17, "label": "validación continua" },
+        { "path": "src/auth/strategies/jwt-logout.strategy.ts", "line": 10, "label": "logout aislado" },
+        { "path": "src/auth/guards/roles.guard.ts", "line": 12, "label": "roles" }
+      ]
+    },
+    {
+      "id": "autorizacion-tenant",
+      "type": "security",
+      "label": "Autorización multitenant",
+      "pos": [40, 245],
+      "size": [180, 78],
+      "sources": [
+        { "path": "src/auth/services/autorizacion.service.ts", "line": 1, "label": "permisos" },
+        { "path": "src/usuarios/usuarios.service.ts", "line": 232, "label": "pertenencia" }
+      ]
+    },
+    {
+      "id": "sesiones-licencias",
+      "type": "backend",
+      "label": "Políticas de acceso",
+      "pos": [850, 70],
+      "size": [210, 78],
+      "sources": [
+        { "path": "src/auth/services/sesiones.service.ts", "line": 8, "label": "sesiones 1 h" },
+        { "path": "src/licencias/services/politica-acceso-licencia.service.ts", "line": 25, "label": "política licencia" }
+      ]
+    },
+    {
+      "id": "servicios-dominio",
+      "type": "backend",
+      "label": "Servicios de dominio",
+      "pos": [855, 420],
+      "size": [200, 82],
+      "sources": [
+        { "path": "src/altas/altas.service.ts", "line": 36, "label": "altas" },
+        { "path": "src/licencias/licencias.service.ts", "line": 13, "label": "licencias" },
+        { "path": "src/usuarios/usuarios.service.ts", "line": 28, "label": "usuarios" }
+      ]
+    },
+    {
+      "id": "transacciones-bloqueos",
+      "type": "backend",
+      "label": "Consistencia transaccional",
+      "pos": [1200, 420],
+      "size": [220, 82],
+      "sources": [
+        { "path": "src/codigos/codigos.service.ts", "line": 79, "label": "consumo único" },
+        { "path": "src/licencias/licencias.service.ts", "line": 68, "label": "serialización" },
+        { "path": "src/usuarios/usuarios.service.ts", "line": 147, "label": "cuenta y sesiones" }
+      ]
+    },
+    {
+      "id": "mariadb",
+      "type": "database",
+      "label": "MariaDB / MySQL",
+      "pos": [1540, 420],
+      "size": [160, 82],
+      "sources": [
+        { "path": "db/schema.sql", "line": 1, "label": "esquema" },
+        { "path": "src/database/migrations/1760000000000-CrearNegociosUsuarios.ts", "line": 1, "label": "migraciones" }
+      ]
+    },
+    {
+      "id": "auditoria",
+      "type": "database",
+      "label": "Auditoría",
+      "pos": [1200, 245],
+      "size": [220, 78],
+      "sources": [
+        { "path": "src/auditoria/auditoria.service.ts", "line": 19, "label": "registro atómico" },
+        { "path": "src/auditoria/entities/evento-auditoria.entity.ts", "line": 19, "label": "entidad" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Entrada y autorización",
+      "wraps": ["validacion-global", "controladores", "auth-publica", "seguridad-jwt", "autorizacion-tenant"]
+    },
+    {
+      "kind": "region",
+      "label": "Backend NestJS / TypeORM",
+      "wraps": ["controladores", "configuracion", "auth-publica", "seguridad-jwt", "autorizacion-tenant", "sesiones-licencias", "servicios-dominio", "transacciones-bloqueos", "auditoria"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "peticion-http",
+      "from": "clientes",
+      "to": "validacion-global",
+      "label": "HTTP JSON + JWT",
+      "variant": "emphasis",
+      "labelAt": [210, 510]
+    },
+    {
+      "id": "entrada-validada",
+      "from": "validacion-global",
+      "to": "controladores",
+      "label": "DTO validado",
+      "variant": "security"
+    },
+    {
+      "id": "rutas-publicas",
+      "from": "controladores",
+      "to": "auth-publica",
+      "label": "login y códigos",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [650, 190]
+    },
+    {
+      "id": "rutas-protegidas",
+      "from": "controladores",
+      "to": "seguridad-jwt",
+      "label": "Bearer JWT",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [700, 370]
+    },
+    {
+      "id": "roles-tenant",
+      "from": "seguridad-jwt",
+      "to": "autorizacion-tenant",
+      "label": "rol + negocio actuales",
+      "variant": "security",
+      "labelAt": [290, 230]
+    },
+    {
+      "id": "auth-politicas",
+      "from": "auth-publica",
+      "to": "sesiones-licencias",
+      "label": "credenciales + estado"
+    },
+    {
+      "id": "controladores-dominio",
+      "from": "controladores",
+      "to": "servicios-dominio",
+      "label": "caso de uso"
+    },
+    {
+      "id": "dominio-transaccion",
+      "from": "servicios-dominio",
+      "to": "transacciones-bloqueos",
+      "label": "mutación atómica"
+    },
+    {
+      "id": "persistencia-sql",
+      "from": "transacciones-bloqueos",
+      "to": "mariadb",
+      "label": "SQL transaccional",
+      "variant": "emphasis",
+      "labelAt": [1480, 520]
+    },
+    {
+      "id": "estado-acceso",
+      "from": "sesiones-licencias",
+      "to": "servicios-dominio",
+      "label": "evalúa estado actual",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [955, 250]
+    },
+    {
+      "id": "registro-auditoria",
+      "from": "transacciones-bloqueos",
+      "to": "auditoria",
+      "label": "mismo commit / rollback",
+      "labelAt": [1310, 360]
+    },
+    {
+      "id": "auditoria-sql",
+      "from": "auditoria",
+      "to": "mariadb",
+      "label": "evento inmutable"
+    },
+    {
+      "id": "configura-runtime",
+      "from": "configuracion",
+      "to": "auth-publica",
+      "label": "JWT secret + TTL",
+      "variant": "dashed",
+      "labelAt": [460, 162]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "21 rutas implementadas",
+      "items": [
+        "Auth: GET /; POST /auth/login, /activar-administrador, /recuperar-contrasena, /logout y /cambiar-contrasena; GET /auth/profile; POST /auth/administradores/:id/autorizar-recuperacion.",
+        "SUPERADMIN: POST y GET /negocios; GET /negocios/:id; POST /negocios/:id/reemitir-codigo; POST /licencias/:id/suspender, /reactivar y /renovar.",
+        "ADMIN_NEGOCIO recepción: POST y GET /recepcionistas; GET /recepcionistas/:id; POST /recepcionistas/:id/desactivar, /reactivar y /restablecer-contrasena."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Guards, DTO y contraseñas",
+      "items": [
+        "Entrada: ValidationPipe whitelist/forbid/transform; SinCamposDto vacío; IDs Number enteros 1..4294967295; nombre/email ≤150 e identificador público ≤100 con normalización.",
+        "Seguridad: LimiteIntentosGuard 5/IP/min y bloqueo 1 min; JwtAuthGuard revalida JWT, sesión, cuenta, negocio y licencia; JwtLogoutGuard omite bloqueo comercial; RolesGuard aplica @Roles.",
+        "Claves: ≥12 caracteres, ≤72 bytes UTF-8 y bcrypt cost 12; actor, rol y negocio salen del estado persistido, nunca de IDs o campos del cliente."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Dominio, concurrencia y datos",
+      "items": [
+        "Códigos: hash SHA-256, propósito/destino fijos, 48 h o 30 min, consumo único e invalidación con bloqueo; recepción siempre filtra negocio_id y rol.",
+        "Licencias: pendientes hasta activar admin; año Chihuahua; suspensión congela; reactivación devuelve tiempo; renovación acumula. Mutaciones, sesiones y auditoría son transaccionales, idempotentes y reintentan ER_CHECKREAD.",
+        "Datos: negocios, usuarios, licencias, codigos_acceso, sesiones, limites_intentos y eventos_auditoria; todavía no hay citas, sucursales, servicios ni reservas públicas."
+      ]
+    }
+  ]
+}
