@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 69 completadas (T01–T60, T69–T71, T76–T77, T80–T83) y 16 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 73 completadas (T01–T60, T69–T77, T80–T83) y 12 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -227,16 +227,16 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T60 — Probar suspensión antes de activar** · 20 min · RF: RF-09–12, RF-14, RF-34 · Depende de: T46, T50. · [Evidencia](results/resultados-t51-t60.md)
   **Hecho cuando:** suspender impide activar al primer administrador, su código sigue caducando a las 48 horas y reactivar no inicia vigencia ni rehabilita códigos vencidos.
 
-- [ ] **T72 — Probar expiración durante una operación autorizada** · 25 min · RF: RF-19–20 · Depende de: T36, T57.
+- [X] **T72 — Probar expiración durante una operación autorizada** · 25 min · RF: RF-19–20 · Depende de: T36, T57. · [Evidencia](results/resultados-t72-t75.md)
   **Hecho cuando:** una operación admitida antes de cumplir la hora termina atómicamente aunque expire la sesión durante su ejecución; una nueva solicitud se rechaza con 401 en el límite exacto y un fallo de la operación revierte todas sus escrituras.
 
-- [ ] **T73 — Probar límite conjunto por IP y concurrencia** · 25 min · RF: RF-17 · Depende de: T27, T45–T46, T71.
+- [X] **T73 — Probar límite conjunto por IP y concurrencia** · 25 min · RF: RF-17 · Depende de: T27, T45–T46, T71. · [Evidencia](results/resultados-t72-t75.md)
   **Hecho cuando:** login, activación del administrador y recuperación por código comparten los cinco intentos; solicitudes concurrentes por la misma IP no eluden el límite, el sexto bloquea un minuto sin prolongación por intentos bloqueados, otra IP permanece independiente y se verifica el desbloqueo exacto.
 
-- [ ] **T74 — Probar altas concurrentes con identidad duplicada** · 25 min · RF: RF-01–03, RF-35 · Depende de: T31, T47, T71.
+- [X] **T74 — Probar altas concurrentes con identidad duplicada** · 25 min · RF: RF-01–03, RF-35 · Depende de: T31, T47, T71. · [Evidencia](results/resultados-t72-t75.md)
   **Hecho cuando:** dos altas con slug o correo normalizado duplicado aceptan como máximo una; no quedan negocio, licencia, cuenta, código ni auditoría de un alta rechazada, incluidos correos distintos solo en mayúsculas o espacios.
 
-- [ ] **T75 — Probar bloqueos en todos los endpoints protegidos** · 25 min · RF: RF-04–07, RF-14–16, RF-18–19, RF-26, RF-29–30, RF-33–34, RF-39–44 · Depende de: T45–T50, T71, T77, T83.
+- [X] **T75 — Probar bloqueos en todos los endpoints protegidos** · 25 min · RF: RF-04–07, RF-14–16, RF-18–19, RF-26, RF-29–30, RF-33–34, RF-39–44 · Depende de: T45–T50, T71, T77, T83. · [Evidencia](results/resultados-t72-t75.md)
   **Hecho cuando:** una matriz de rutas, incluidas alta, desactivación, reactivación y restablecimiento de recepcionistas, verifica 401 tras desactivar la cuenta, suspender o vencer la licencia con sesión abierta, 403 por rol y 404 por recurso ajeno. También verifica logout con licencia bloqueada y gestión del superadmin; recuperar o restablecer contraseñas conserva bloqueos. No acredita confirmaciones de reservas reales.
 
 - [ ] **T78 — Probar persistencia y concurrencia de acceso de recepcionistas** · 25 min · RF: RF-39–42 · Depende de: T71, T76.
