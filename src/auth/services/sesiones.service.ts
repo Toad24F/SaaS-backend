@@ -23,6 +23,17 @@ export class SesionesService {
     return this.repositorio.save(sesion);
   }
 
+  /** Inserta la sesión con el mismo manager que bloqueó y revalidó la cuenta. */
+  crearConManager(manager: EntityManager, usuarioId: number, ahora: Date): Promise<Sesion> {
+    const repositorio = manager.getRepository(Sesion);
+    return repositorio.save(repositorio.create({
+      usuarioId,
+      creadaEn: new Date(ahora),
+      expiraEn: new Date(ahora.getTime() + DURACION_SESION_MS),
+      revocadaEn: null,
+    }));
+  }
+
   async esValida(sesionId: string, usuarioId: number, ahora: Date): Promise<boolean> {
     // La lectura no actualiza fechas: comprobar una sesión nunca extiende su vida.
     const sesion = await this.repositorio.findOneBy({
