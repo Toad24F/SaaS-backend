@@ -100,6 +100,57 @@ async function rechazarRecepcion(ctx: Contexto, token: string | undefined, statu
 }
 
 describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
+  it('T79 exige sesión nueva tras reactivar y nunca recupera el token anterior', async () => {
+    await conHttp(async ({ app, db, reloj, usuarios, tokens }) => {
+      const id = usuarios[2].id;
+      const ruta = `/recepcionistas/${id}`;
+      const admin = tokens[1];
+      const tokenAnterior = tokens[2];
+      const sesionAnterior = await db.getRepository(Sesion).findOneByOrFail({ usuarioId: id });
+      // Desactivar revoca la sesión antigua; reactivar solo cambia el acceso de la cuenta.
+      await request(app.getHttpServer()).post(`${ruta}/desactivar`)
+        .auth(admin, { type: 'bearer' }).send({}).expect(204);
+      await request(app.getHttpServer()).post(`${ruta}/reactivar`)
+        .auth(admin, { type: 'bearer' }).send({}).expect(204);
+      await request(app.getHttpServer()).get('/auth/profile')
+        .auth(tokenAnterior, { type: 'bearer' }).expect(401);
+      const nuevaSesion = await request(app.getHttpServer()).post('/auth/login')
+        .send({ email: usuarios[2].email, password: 'password-segura-t48' }).expect(200);
+      await request(app.getHttpServer()).get('/auth/profile')
+        .auth(nuevaSesion.body.accessToken, { type: 'bearer' }).expect(200);
+      await request(app.getHttpServer()).get('/auth/profile')
+        .auth(tokenAnterior, { type: 'bearer' }).expect(401);
+      await request(app.getHttpServer()).post(`${ruta}/reactivar`)
+        .auth(admin, { type: 'bearer' }).send({}).expect(204);
+      expect(await db.getRepository(EventoAuditoria).countBy({ accion: 'recepcionista_reactivado' })).toBe(1);
+      expect((await db.getRepository(Sesion).findOneByOrFail({ id: sesionAnterior.id })).revocadaEn)
+        .toEqual(reloj.ahora());
+    });
+  });
+
+  it('T85 protege alta y restablecimiento ante licencia o administrador bloqueados', async () => {
+    await conHttp(async ({ app, db, reloj, usuarios, tokens, licencias }) => {
+      const crear = () => request(app.getHttpServer()).post('/recepcionistas')
+        .auth(tokens[1], { type: 'bearer' }).send({ emailRecepcionista: 'bloqueada-t85@example.test',
+          nombre: 'Bloqueada T85', password: 'password-segura-t85' });
+      const reset = () => request(app.getHttpServer())
+        .post(`/recepcionistas/${usuarios[2].id}/restablecer-contrasena`)
+        .auth(tokens[1], { type: 'bearer' }).send({ nuevaPassword: 'password-nueva-t85' });
+      const antes = await estado(db);
+      await db.getRepository(Usuario).update(usuarios[1].id, { activo: false });
+      await crear().expect(401); await reset().expect(401);
+      await db.getRepository(Usuario).update(usuarios[1].id, { activo: true });
+      await db.getRepository(Licencia).update(licencias[0].id, { suspendidaEn: reloj.ahora() });
+      await crear().expect(401); await reset().expect(401);
+      reloj.avanzar(1000); // El vencimiento debe ser posterior a la habilitación SQL.
+      await db.getRepository(Licencia).update(licencias[0].id, { suspendidaEn: null, venceEn: reloj.ahora() });
+      await crear().expect(401); await reset().expect(401);
+      expect(await db.getRepository(Usuario).findOneBy({ email: 'bloqueada-t85@example.test' })).toBeNull();
+      expect((await db.getRepository(Usuario).findOneByOrFail({ id: usuarios[2].id })).passwordHash)
+        .toBe(usuarios[2].passwordHash);
+      expect(await db.getRepository(EventoAuditoria).count()).toBe(antes.auditoria.length);
+    });
+  });
   it('rechaza la antigua invitación incompleta y conserva lista y consulta sin hashes ni códigos', async () => {
     await conHttp(async (ctx) => {
       const { app, db, tokens, usuarios } = ctx;
