@@ -23,12 +23,18 @@ describe('Flujos de sesión T35 y T37', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     crear.mockResolvedValue({ id: 'sesion-1', expiraEn: new Date(ahora.getTime() + 3600000) });
+    // Solo el test unitario usa este manager doble; integración cubre bloqueos reales.
+    const manager = { getRepository: () => ({ createQueryBuilder: () => ({
+      setLock: () => ({ where: () => ({ getOne: () => findByEmailWithNegocio.mock.results.at(-1)?.value }) }),
+    }), findOneBy }) };
     const modulo = await Test.createTestingModule({ providers: [
       AuthService,
       { provide: UsuariosService, useValue: { findByEmailWithNegocio } },
       { provide: JwtService, useValue: { sign } },
-      { provide: SesionesService, useValue: { crear, revocar } },
-      { provide: getRepositoryToken(Licencia), useValue: { findOneBy } },
+      { provide: SesionesService, useValue: { crearConManager: crear, revocar } },
+      { provide: getRepositoryToken(Licencia), useValue: {
+        findOneBy, manager: { transaction: (operacion: (manager: typeof manager) => unknown) => operacion(manager) },
+      } },
       { provide: RELOJ, useValue: { ahora: () => new Date(ahora) } as RelojSistema },
       PoliticaContrasenasService,
       PoliticaAccesoLicenciaService,
@@ -45,7 +51,7 @@ describe('Flujos de sesión T35 y T37', () => {
     });
     await expect(servicio.login({ email: 'root@example.test', password: 'contraseña-segura' }))
       .resolves.toMatchObject({ accessToken: 'jwt-con-sesion' });
-    expect(crear).toHaveBeenCalledWith(1, ahora);
+    expect(crear).toHaveBeenCalledWith(expect.anything(), 1, ahora);
     expect(sign).toHaveBeenCalledWith(expect.objectContaining({ sesionId: 'sesion-1' }));
   });
 
