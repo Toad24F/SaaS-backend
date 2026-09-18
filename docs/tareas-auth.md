@@ -2,7 +2,7 @@
 
 Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constitución](Constitución.md).
 
-**Estado: 85 tareas; 73 completadas (T01–T60, T69–T77, T80–T83) y 12 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
+**Estado: 85 tareas; 77 completadas (T01–T60, T69–T85) y 8 pendientes.** Los identificadores se conservan. Las nuevas T69–T85 se ubican por dependencia, por lo que el orden numérico no siempre coincide con el orden de ejecución. Las duraciones son estimaciones de trabajo activo inferiores a 30 minutos; si una tarea requiere más tiempo, se subdivide sin marcarla parcialmente completada.
 
 **Alcance:** implementación posterior de backend sobre base nueva, con datos desechables exclusivos para pruebas. Sin borrar bases existentes, implementar pantallas o construir reservas. La actualización de esta lista es documental: no ejecuta las tareas pendientes ni acredita sus criterios.
 
@@ -239,16 +239,16 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 - [X] **T75 — Probar bloqueos en todos los endpoints protegidos** · 25 min · RF: RF-04–07, RF-14–16, RF-18–19, RF-26, RF-29–30, RF-33–34, RF-39–44 · Depende de: T45–T50, T71, T77, T83. · [Evidencia](results/resultados-t72-t75.md)
   **Hecho cuando:** una matriz de rutas, incluidas alta, desactivación, reactivación y restablecimiento de recepcionistas, verifica 401 tras desactivar la cuenta, suspender o vencer la licencia con sesión abierta, 403 por rol y 404 por recurso ajeno. También verifica logout con licencia bloqueada y gestión del superadmin; recuperar o restablecer contraseñas conserva bloqueos. No acredita confirmaciones de reservas reales.
 
-- [ ] **T78 — Probar persistencia y concurrencia de acceso de recepcionistas** · 25 min · RF: RF-39–42 · Depende de: T71, T76.
+- [X] **T78 — Probar persistencia y concurrencia de acceso de recepcionistas** · 25 min · RF: RF-39–42 · Depende de: T71, T76. · [Evidencia](results/resultados-t78-t85.md)
   **Hecho cuando:** dos conexiones prueban repeticiones y solicitudes opuestas serializadas sin estados intermedios ni eventos duplicados; desactivar revoca todas las sesiones, reactivar no las rehabilita y un fallo provocado revierte conjuntamente cuenta, sesiones y auditoría.
 
-- [ ] **T79 — Probar el contrato HTTP de reactivación** · 25 min · RF: RF-05–07, RF-19, RF-39–42 · Depende de: T77–T78.
+- [X] **T79 — Probar el contrato HTTP de reactivación** · 25 min · RF: RF-05–07, RF-19, RF-39–42 · Depende de: T77–T78. · [Evidencia](results/resultados-t78-t85.md)
   **Hecho cuando:** pruebas HTTP cubren reactivación propia, repetición idempotente, inicio de sesión nuevo, recurso ajeno o de otro rol, ID y cuerpo inválidos, roles insuficientes, sesión o licencia bloqueada y rechazo permanente de tokens anteriores.
 
-- [ ] **T84 — Probar persistencia, concurrencia y rollback del nuevo flujo** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T71, T80–T82.
+- [X] **T84 — Probar persistencia, concurrencia y rollback del nuevo flujo** · 25 min · RF: RF-03, RF-05–07, RF-13, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T71, T80–T82. · [Evidencia](results/resultados-t78-t85.md)
   **Hecho cuando:** integración MariaDB demuestra alta completa sin código, hash válido, auditoría sin secretos, aislamiento y rollback; dos altas con el mismo correo aceptan como máximo una. El restablecimiento activo o desactivado revoca todas las sesiones y conserva estado e identidad aun ante fallos provocados.
 
-- [ ] **T85 — Probar los contratos HTTP de alta y restablecimiento** · 25 min · RF: RF-05–07, RF-13, RF-19, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T83–T84.
+- [X] **T85 — Probar los contratos HTTP de alta y restablecimiento** · 25 min · RF: RF-05–07, RF-13, RF-19, RF-27, RF-35, RF-40, RF-43–44 · Depende de: T83–T84. · [Evidencia](results/resultados-t78-t85.md)
   **Hecho cuando:** pruebas HTTP verifican entrada y respuesta exactas, 201/204, normalización, política de contraseña, correo duplicado, campos extra, roles y estados de licencia, recursos ajenos y cuenta activa o desactivada; confirman que la ruta de activación de recepción ya no existe y que no se filtran secretos ni códigos.
 
 ## 5. Instalación, verificación y cierre
