@@ -31,16 +31,15 @@ export class AuthService {
         @Inject(RELOJ) private readonly reloj: Reloj,
     ) { }
 
-    async login(loginDto: LoginDto) {
-        const usuario = await this.usuariosService.findByEmailWithNegocio(loginDto.email);
-
+    async login(loginDto: LoginDto) {//metodopara iniciar sesion
+        const usuario = await this.usuariosService.findByEmailWithNegocio(loginDto.email);//busca el usuario por el correo
         // Una cuenta pendiente no tiene credenciales utilizables aunque esté activa.
         if (
-            !usuario ||
-            !usuario.activo ||
-            usuario.activadoEn === null ||
-            !usuario.nombre ||
-            !usuario.passwordHash
+            !usuario ||//verifica si el usuario existe
+            !usuario.activo ||//verifica si el usuario está activo
+            usuario.activadoEn === null ||//verifica si el usuario ha sido activado
+            !usuario.nombre ||//verifica si el usuario tiene un nombre
+            !usuario.passwordHash//verifica si el usuario tiene un hash de contraseña
         ) {
             throw new UnauthorizedException(MENSAJE_RECHAZO);
         }
@@ -52,18 +51,18 @@ export class AuthService {
         );
 
         if (!passwordValida) {
-            throw new UnauthorizedException(MENSAJE_RECHAZO);
+            throw new UnauthorizedException(MENSAJE_RECHAZO);//si la contraseña no es valida, lanza una excepción de no autorizado
         }
 
         const ahora = this.reloj.ahora();
-        if (usuario.rol !== Rol.SUPERADMIN) {
+        if (usuario.rol !== Rol.SUPERADMIN) {//si el rol del usuario no es superadmin, verifica la licencia y el negocio
             const licencia = usuario.negocioId === null
                 ? null
-                : await this.licencias.findOneBy({ negocioId: usuario.negocioId });
-            if (!usuario.negocio || !licencia || !this.politicaLicencia.evaluarAccesoUsuario({
-                cuentaActiva: usuario.activo,
-                cuentaActivada: usuario.activadoEn !== null,
-                negocioActivado: usuario.negocio.activadoEn !== null,
+                : await this.licencias.findOneBy({ negocioId: usuario.negocioId });//busca la licencia del negocio del usuario
+            if (!usuario.negocio || !licencia || !this.politicaLicencia.evaluarAccesoUsuario({//evalua si el usuario tiene acceso al negocio y a la licencia
+                cuentaActiva: usuario.activo,//verifica si la cuenta del usuario está activa
+                cuentaActivada: usuario.activadoEn !== null,//verifica si la cuenta del usuario ha sido activada
+                negocioActivado: usuario.negocio.activadoEn !== null,//verifica si el negocio del usuario ha sido activado
                 licencia,
                 ahora,
             }).permitido) {
@@ -75,19 +74,19 @@ export class AuthService {
         // Si el hash cambió desde la comparación bcrypt, la clave antigua no crea sesión.
         const { vigente, sesion } = await this.licencias.manager.transaction(async (manager) => {
             const vigente = await manager.getRepository(Usuario).createQueryBuilder('usuario')
-                .setLock('pessimistic_write')
+                .setLock('pessimistic_write')//bloquea la fila del usuario para evitar cambios concurrentes
                 .where('usuario.id = :id', { id: usuario.id })
                 .getOne();
             if (!vigente || !vigente.activo || vigente.activadoEn === null ||
                 !vigente.nombre || vigente.passwordHash !== usuario.passwordHash) {
-                throw new UnauthorizedException(MENSAJE_RECHAZO);
+                throw new UnauthorizedException(MENSAJE_RECHAZO);//si el usuario no es válido, lanza una excepción de no autorizado
             }
-            if (vigente.rol !== Rol.SUPERADMIN) {
+            if (vigente.rol !== Rol.SUPERADMIN) {//si el rol del usuario no es superadmin, verifica la licencia y el negocio
                 const negocio = vigente.negocioId === null ? null
                     : await manager.getRepository(Negocio).findOneBy({ id: vigente.negocioId });
                 const licencia = vigente.negocioId === null ? null
                     : await manager.getRepository(Licencia).findOneBy({ negocioId: vigente.negocioId });
-                if (!negocio || !licencia || !this.politicaLicencia.evaluarAccesoUsuario({
+                if (!negocio || !licencia || !this.politicaLicencia.evaluarAccesoUsuario({//verifica si el usuario tiene acceso al negocio y a la licencia
                     cuentaActiva: vigente.activo,
                     cuentaActivada: vigente.activadoEn !== null,
                     negocioActivado: negocio.activadoEn !== null,
@@ -97,7 +96,7 @@ export class AuthService {
                     throw new UnauthorizedException(MENSAJE_RECHAZO);
                 }
             }
-            return { vigente, sesion: await this.sesiones.crearConManager(manager, vigente.id, ahora) };
+            return { vigente, sesion: await this.sesiones.crearConManager(manager, vigente.id, ahora) };//crea una nueva sesión para el usuario
         });
 
         // 4. Generar el payload del token JWT

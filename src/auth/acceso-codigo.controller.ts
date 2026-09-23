@@ -16,9 +16,9 @@ export class AccesoCodigoController {
     private readonly activaciones: ActivacionesService,
     private readonly credenciales: CredencialesService,
     @Inject(RELOJ) private readonly reloj: Reloj,
-  ) {}
+  ) { }
 
-  @Post('activar-administrador')
+  @Post('activar-administrador')//expone la ruta para activar la cuenta de administrador
   @HttpCode(HttpStatus.NO_CONTENT)
   activarAdministrador(@Body() datos: ActivarCuentaDto): Promise<void> {
     // El propósito lo determina la ruta y el instante lo aporta el servidor.
@@ -28,7 +28,7 @@ export class AccesoCodigoController {
     });
   }
 
-  @Post('recuperar-contrasena')
+  @Post('recuperar-contrasena')//expone la ruta para recuperar la contraseña de un usuario con un código de recuperación
   @HttpCode(HttpStatus.NO_CONTENT)
   recuperarContrasena(@Body() datos: CodigoContrasenaDto): Promise<void> {
     // Consumo, cambio y revocación se confirman juntos; no se devuelve una sesión.
