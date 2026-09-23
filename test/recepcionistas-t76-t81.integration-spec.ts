@@ -107,6 +107,7 @@ describe('T76 y T81 — casos de uso de recepcionistas', () => {
         rol: Rol.RECEPCIONISTA,
         activo: true,
         activadoEn: ahora,
+        creadoEn: ahora,
       });
       expect(creada.passwordHash).not.toBe(passwordInicial);
       await expect(new PoliticaContrasenasService().comparar('contraseña-segura', creada.passwordHash!))

@@ -21,7 +21,7 @@ export class CredencialesService {
     private readonly contrasenas: PoliticaContrasenasService,
     private readonly sesiones: SesionesService,
     private readonly auditoria: AuditoriaService,
-  ) {}
+  ) { }
 
   async autorizarRecuperacion(datos: {
     actorUsuarioId: number; administradorId: number; ahora: Date;
@@ -48,20 +48,20 @@ export class CredencialesService {
   }
 
   async recuperarContrasena(datos: { codigo: string; nuevaPassword: string; ahora: Date }): Promise<void> {
-    const passwordHash = await this.contrasenas.generarHash(datos.nuevaPassword);
+    const passwordHash = await this.contrasenas.generarHash(datos.nuevaPassword);// La validación de la política de contraseñas se hace en generarHash.
     await this.codigos.consumir(this.usuarios.manager.connection, {
-      codigo: datos.codigo, proposito: PropositoCodigoAcceso.RECUPERACION, ahora: datos.ahora,
+      codigo: datos.codigo, proposito: PropositoCodigoAcceso.RECUPERACION, ahora: datos.ahora,// La validación de la vigencia y el propósito del código se hace en consumir.
     }, async (manager, codigo) => {
-      const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });
+      const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });// El código de recuperación solo se emite para administradores activos y activados.
       if (usuario.rol !== Rol.ADMIN_NEGOCIO || usuario.activadoEn === null) {
         throw new BadRequestException('La cuenta no puede recuperar contraseña.');
       }
-      await manager.getRepository(Usuario).update(usuario.id, { passwordHash });
-      await this.sesiones.revocarTodasConManager(manager, usuario.id, datos.ahora);
+      await manager.getRepository(Usuario).update(usuario.id, { passwordHash });// Se actualiza el hash de la contraseña.
+      await this.sesiones.revocarTodasConManager(manager, usuario.id, datos.ahora);// Todas las sesiones, incluida la actual, se invalidan con el cambio.
     });
   }
 
-  async cambiarContrasena(datos: {
+  async cambiarContrasena(datos: {// El cambio de contraseña requiere la contraseña actual y revoca todas las sesiones, incluida la actual.
     usuarioId: number; passwordActual: string; nuevaPassword: string; ahora: Date;
   }): Promise<void> {
     const passwordHash = await this.contrasenas.generarHash(datos.nuevaPassword);

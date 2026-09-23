@@ -34,7 +34,7 @@ export interface CodigoEmitido {
 /** Emite y consume códigos sin persistir ni auditar nunca el valor utilizable. */
 @Injectable()
 export class CodigosService {
-  constructor(private readonly auditoria: AuditoriaService) {}
+  constructor(private readonly auditoria: AuditoriaService) { }
 
   async emitir(
     manager: EntityManager,
@@ -81,6 +81,7 @@ export class CodigosService {
     datos: ConsumirCodigo,
     operacion: (manager: EntityManager, codigo: CodigoAcceso) => Promise<T>,
   ): Promise<T> {
+    //busca el codigo con el hash del codigo que se le pasa, si no lo encuentra lanza un error
     return dataSource.transaction(async (manager) => {
       const repositorio = manager.getRepository(CodigoAcceso);
       const referencia = await repositorio.createQueryBuilder('codigo')
@@ -93,7 +94,7 @@ export class CodigosService {
 
       // Cuenta antes que código mantiene el mismo orden de bloqueo que reemplazar.
       await manager.getRepository(Usuario).createQueryBuilder('usuario')
-        .setLock('pessimistic_write')
+        .setLock('pessimistic_write')//bloquea el registro de usuario para que no se pueda modificar mientras se consume el codigo
         .where('usuario.id = :id AND usuario.negocioId = :negocioId', {
           id: referencia.usuarioId,
           negocioId: referencia.negocioId,
@@ -101,22 +102,22 @@ export class CodigosService {
         .getOneOrFail();
       const codigo = await repositorio.createQueryBuilder('codigo')
         .addSelect('codigo.codigoHash')
-        .setLock('pessimistic_write')
+        .setLock('pessimistic_write')//bloquea el registro de codigo para que no se pueda modificar mientras se consume
         .where('codigo.id = :id', { id: referencia.id })
         .getOne();
       if (
         !codigo ||
-        codigo.proposito !== datos.proposito ||
-        codigo.consumidoEn !== null ||
-        codigo.invalidadoEn !== null ||
-        datos.ahora.getTime() >= codigo.expiraEn.getTime()
+        codigo.proposito !== datos.proposito ||//verifica que el proposito del codigo sea el correcto
+        codigo.consumidoEn !== null ||//verifica que el codigo no haya sido consumido
+        codigo.invalidadoEn !== null ||//verifica que el codigo no haya sido invalidado
+        datos.ahora.getTime() >= codigo.expiraEn.getTime()//verifica que el codigo no haya expirado
       ) {
         throw new BadRequestException(MENSAJE_CODIGO_INVALIDO);
       }
-
+      //ejecuta la operacion que se le pasa como parametro, que puede ser activar administrador o recuperar contrasena
       const resultado = await operacion(manager, codigo);
-      codigo.consumidoEn = new Date(datos.ahora);
-      await repositorio.save(codigo);
+      codigo.consumidoEn = new Date(datos.ahora);//marca el codigo como consumido
+      await repositorio.save(codigo);//guarda el codigo consumido en la base de datos
       return resultado;
     });
   }

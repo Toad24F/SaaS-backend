@@ -25,8 +25,8 @@ export class CalendarioLicenciasService {
     hourCycle: 'h23',
   });
 
-  sumarAnios(baseUtc: Date, cantidad = 1): Date {
-    if (!Number.isInteger(cantidad) || cantidad < 1 || !Number.isFinite(baseUtc.getTime())) {
+  sumarAnios(baseUtc: Date, cantidad = 1): Date {//suma años a la fecha base en UTC y devuelve la nueva fecha en UTC
+    if (!Number.isInteger(cantidad) || cantidad < 1 || !Number.isFinite(baseUtc.getTime())) {//verifica que la cantidad de años sea un número entero positivo y que la fecha base sea válida
       throw new BadRequestException('La fecha y la cantidad de años deben ser válidas.');
     }
     const origen = this.partes(baseUtc);
@@ -47,13 +47,13 @@ export class CalendarioLicenciasService {
       );
       candidato += diferencia;
       if (diferencia === 0) {
-        return new Date(candidato + baseUtc.getUTCMilliseconds());
+        return new Date(candidato + baseUtc.getUTCMilliseconds());//devuelve la nueva fecha en UTC con los milisegundos de la fecha base
       }
     }
     throw new BadRequestException('No fue posible resolver el aniversario en Chihuahua.');
   }
 
-  private partes(fecha: Date): PartesLocales {
+  private partes(fecha: Date): PartesLocales {//devuelve las partes de la fecha en la zona horaria de Chihuahua
     const valores = Object.fromEntries(
       this.formato.formatToParts(fecha)
         .filter(({ type }) => type !== 'literal')
@@ -62,7 +62,7 @@ export class CalendarioLicenciasService {
     return valores;
   }
 
-  private comoUtc(partes: PartesLocales): number {
+  private comoUtc(partes: PartesLocales): number {//devuelve la fecha en UTC a partir de las partes de la fecha en la zona horaria de Chihuahua
     return Date.UTC(
       partes.year,
       partes.month - 1,

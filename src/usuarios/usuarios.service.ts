@@ -83,6 +83,7 @@ export class UsuariosService {
       throw new BadRequestException('Nombre y correo son obligatorios.');
     }
     const passwordHash = await this.contrasenas.generarHash(datos.password);
+    const creadaEn = new Date(datos.ahora);
 
     try {
       return await this.usuarioRepository.manager.transaction(async (manager) => {
@@ -95,7 +96,11 @@ export class UsuariosService {
           passwordHash,
           rol: Rol.RECEPCIONISTA,
           activo: true,
-          activadoEn: new Date(datos.ahora),
+          // El alta es directa: creación y activación ocurren en el mismo instante.
+          // No se deja creado_en al DEFAULT de MariaDB porque podría quedar unos
+          // milisegundos después y violar chk_usuarios_activacion.
+          activadoEn: creadaEn,
+          creadoEn: creadaEn,
         }));
 
         // La evidencia excluye deliberadamente contraseña y hash.

@@ -34,36 +34,36 @@ export class ActivacionesService {
 
   async activarAdministrador(datos: ActivarCuenta): Promise<void> {
     const { nombre, passwordHash } = await this.prepararCredenciales(datos);
-    await this.codigos.consumir(this.usuarios.manager.connection, {
+    await this.codigos.consumir(this.usuarios.manager.connection, {//consume el codigo de activacion y ejecuta la operacion de activacion de administrador
       codigo: datos.codigo,
       proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN,
       ahora: datos.ahora,
     }, async (manager, codigo) => {
-      const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });
-      const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
-        .setLock('pessimistic_write')
+      const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });//busca el usuario con el id de usuario si no lo encuentra lanza un error
+      const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')//consulta la licencia del negocio con el id de negocio del codigo, si no lo encuentra lanza un error
+        .setLock('pessimistic_write')//bloquea el registro de licencia para que no se pueda modificar mientras se consume el codigo
         .where('licencia.negocioId = :negocioId', { negocioId: codigo.negocioId })
         .getOneOrFail();
       if (
-        usuario.rol !== Rol.ADMIN_NEGOCIO ||
-        usuario.activadoEn !== null ||
-        !this.politicaLicencia.puedeActivarAdministrador(licencia, datos.ahora)
+        usuario.rol !== Rol.ADMIN_NEGOCIO ||//verifica que el rol del usuario sea admin_negocio
+        usuario.activadoEn !== null ||//verifica que el usuario no este activado
+        !this.politicaLicencia.puedeActivarAdministrador(licencia, datos.ahora)//verifica que la licencia pueda activar un administrador|
       ) {
         throw new BadRequestException('La cuenta no puede activarse.');
       }
 
-      const venceEn = this.calendario.sumarAnios(datos.ahora);
+      const venceEn = this.calendario.sumarAnios(datos.ahora);//calcula la fecha de vencimiento de la licencia sumando un año a la fecha actual
       // Cuenta, negocio y primer año cambian juntos o se revierten juntos.
-      await manager.getRepository(Usuario).update(usuario.id, {
+      await manager.getRepository(Usuario).update(usuario.id, {//actualiza el usuario con el nombre, hash de la contraseña y la fecha de activacion
         nombre, passwordHash, activadoEn: new Date(datos.ahora),
       });
-      await manager.getRepository(Negocio).update(codigo.negocioId, {
+      await manager.getRepository(Negocio).update(codigo.negocioId, {//actualiza el negocio con la fecha de activacion
         activadoEn: new Date(datos.ahora),
       });
-      await manager.getRepository(Licencia).update(licencia.id, {
+      await manager.getRepository(Licencia).update(licencia.id, {//actualiza la licencia con la fecha de habilitacion y la fecha de vencimiento
         habilitadaEn: new Date(datos.ahora), venceEn,
       });
-      await this.auditoria.registrar(manager, {
+      await this.auditoria.registrar(manager, {//registra la auditoria de la activacion del administrador
         operacionId: randomUUID(), actorUsuarioId: usuario.id,
         negocioId: codigo.negocioId, usuarioId: usuario.id, licenciaId: licencia.id,
         accion: 'administrador_activado', valoresAntes: { activadoEn: null },

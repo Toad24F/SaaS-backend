@@ -3,15 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, IsNull, MoreThan, Repository } from 'typeorm';
 import { Sesion } from '../entities/sesion.entity';
 
-const DURACION_SESION_MS = 60 * 60 * 1000;
+const DURACION_SESION_MS = 12 * 60 * 60 * 1000;
 
-/** Administra sesiones persistidas de una hora, sin renovación deslizante. */
+/** Administra sesiones persistidas de 12hrs, sin renovación deslizante. */
 @Injectable()
 export class SesionesService {
   constructor(
     @InjectRepository(Sesion)
     private readonly repositorio: Repository<Sesion>,
-  ) {}
+  ) { }
 
   crear(usuarioId: number, ahora: Date): Promise<Sesion> {
     const sesion = this.repositorio.create({
@@ -28,8 +28,8 @@ export class SesionesService {
     const repositorio = manager.getRepository(Sesion);
     return repositorio.save(repositorio.create({
       usuarioId,
-      creadaEn: new Date(ahora),
-      expiraEn: new Date(ahora.getTime() + DURACION_SESION_MS),
+      creadaEn: new Date(ahora),//establece la fecha de creación de la sesión
+      expiraEn: new Date(ahora.getTime() + DURACION_SESION_MS),//establece la fecha de expiración de la sesión
       revocadaEn: null,
     }));
   }
