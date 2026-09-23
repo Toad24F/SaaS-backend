@@ -112,7 +112,7 @@ describe('T49 — cambio y autorización de recuperación HTTP', () => {
   it.each(['ausente', 'revocada', 'vencida', 'suspendida', 'licencia-vencida', 'inactiva'])('bloquea cambio con condición %s', async (condicion) => {
     await conHttp(async (ctx) => {
       if (condicion === 'revocada') await ctx.app.get(SesionesService).revocarTodas(ctx.usuarios[1].id, ctx.reloj.ahora());
-      if (condicion === 'vencida') ctx.reloj.avanzar(3600000);
+      if (condicion === 'vencida') ctx.reloj.avanzar(12 * 60 * 60 * 1000);
       if (condicion === 'suspendida') await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { suspendidaEn: ctx.reloj.ahora() });
       if (condicion === 'licencia-vencida') {
         // El vencimiento debe ser posterior a la habilitación, aun al probar su límite exacto.

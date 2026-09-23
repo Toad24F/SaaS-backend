@@ -186,7 +186,7 @@ describe('T50 — administración HTTP de licencias', () => {
   it.each(['ausente', 'revocada', 'vencida'])('exige sesión de superadmin: %s', async condicion => {
     await conHttp(async (ctx) => {
       if (condicion === 'revocada') await ctx.app.get(SesionesService).revocarTodas(ctx.usuarios[0].id, ctx.reloj.ahora());
-      if (condicion === 'vencida') ctx.reloj.avanzar(3600000);
+      if (condicion === 'vencida') ctx.reloj.avanzar(12 * 60 * 60 * 1000);
       const antes = await estado(ctx.db);
       for (const accion of acciones) {
         if (condicion === 'ausente') await request(ctx.app.getHttpServer()).post(`/licencias/${ctx.licencias[0].id}/${accion}`).send({}).expect(401);

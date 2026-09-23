@@ -199,7 +199,8 @@ CREATE TABLE sesiones (
   INDEX idx_sesiones_expiracion (expira_en),
   CONSTRAINT fk_sesiones_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
   CONSTRAINT chk_sesiones_expiracion CHECK (
-    expira_en = DATE_ADD(creada_en, INTERVAL 1 HOUR)
+    -- La sesión y el JWT vencen juntos después de una ventana fija de 12 horas.
+    expira_en = DATE_ADD(creada_en, INTERVAL 12 HOUR)
   ),
   CONSTRAINT chk_sesiones_revocacion CHECK (
     revocada_en IS NULL OR revocada_en >= creada_en

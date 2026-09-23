@@ -18,7 +18,8 @@ function usuarios(db: DataSource, auditoria = new AuditoriaService()) {
 async function sesion(db: DataSource, usuarioId: number, ahora: Date) {
   return db.getRepository(Sesion).save(db.getRepository(Sesion).create({
     usuarioId, creadaEn: new Date(ahora.getTime() - 60_000),
-    expiraEn: new Date(ahora.getTime() + 3_540_000), revocadaEn: null,
+    // creadaEn queda un minuto antes; 43 140 000 ms completan 12 horas exactas.
+    expiraEn: new Date(ahora.getTime() + 43_140_000), revocadaEn: null,
   }));
 }
 

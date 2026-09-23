@@ -66,7 +66,8 @@ export class CrearCodigosSesiones1760000002000 implements MigrationInterface {
         CONSTRAINT fk_sesiones_usuario FOREIGN KEY (usuario_id)
           REFERENCES usuarios(id),
         CONSTRAINT chk_sesiones_expiracion CHECK (
-          expira_en = DATE_ADD(creada_en, INTERVAL 1 HOUR)
+          -- Mantiene el contrato persistido alineado con el JWT y el servicio.
+          expira_en = DATE_ADD(creada_en, INTERVAL 12 HOUR)
         ),
         CONSTRAINT chk_sesiones_revocacion CHECK (
           revocada_en IS NULL OR revocada_en >= creada_en

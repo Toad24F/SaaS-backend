@@ -52,7 +52,7 @@ Decisiones acordadas:
 - **RF-17.** Si se supera el límite de cinco intentos de acceso o validación de códigos por minuto desde una misma dirección IP, el sistema (a nivel de backend mediante herramientas de limitación de tasa como `@nestjs/throttle`) deberá bloquear nuevos intentos de ese origen durante un minuto.
 - **RF-18.** Cuando un usuario cierre sesión, el sistema deberá impedir que ese token/sesión vuelva a utilizarse.
 - **RF-19.** En cada validación de solicitud a la API (mediante Guards o middleware), el sistema deberá verificar el estado actual de la cuenta y la licencia. Si la cuenta es desactivada o la licencia se vence/suspende, el sistema deberá denegar el acceso inmediatamente con un error 401, incluso si el usuario tenía una sesión previamente iniciada.
-- **RF-20.** Cuando una sesión cumpla una hora desde su inicio, el backend deberá rechazar cualquier nueva solicitud exigiendo un nuevo inicio de sesión, sin almacenar mutaciones de datos que hayan quedado a la mitad al momento de expirar.
+- **RF-20.** Cuando una sesión cumpla 12 horas desde su inicio, el backend deberá rechazar cualquier nueva solicitud exigiendo un nuevo inicio de sesión, sin almacenar mutaciones de datos que hayan quedado a la mitad al momento de expirar.
 
 ### Cambio y recuperación de contraseña
 
@@ -109,7 +109,7 @@ Defaults para cerrar las decisiones no consultadas:
 - El administrador conoce la contraseña que asigna al crear o restablecer una cuenta; la API no la devuelve y el recepcionista no está obligado a cambiarla en su primer acceso.
 - La implementación objetivo parte de una base nueva y no migra, elimina ni completa automáticamente recepcionistas pendientes que pudieran existir en instalaciones anteriores.
 - Condiciones de carrera entre activación y reemisión de código invalidan la transacción que llegue un milisegundo tarde, priorizando el bloqueo en base de datos.
-- Se adoptan sesiones de una hora, recuperación de 30 minutos y contraseñas de al menos 12 caracteres.
+- Se adoptan sesiones de 12 horas, recuperación de 30 minutos y contraseñas de al menos 12 caracteres.
 
 Fuera de alcance: cobros y facturación de licencias, pagos de citas, registro público de negocios, envío automático de códigos, acceso social, autenticación multifactor, múltiples administradores por negocio, cambio de propietario, y cancelación definitiva de licencias.
 

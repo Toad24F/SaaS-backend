@@ -162,7 +162,7 @@ describe('T47 — administración HTTP de negocios', () => {
         const payload = ctx.app.get(JwtService).verify(token);
         await ctx.db.getRepository(Sesion).update(payload.sesionId, { revocadaEn: ctx.reloj.ahora() });
       } else {
-        ctx.reloj.avanzar(3600000);
+        ctx.reloj.avanzar(12 * 60 * 60 * 1000);
       }
       await rechazarRutas(ctx, token, 401);
     });

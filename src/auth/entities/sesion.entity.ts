@@ -14,7 +14,8 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 @Entity({ name: 'sesiones' })
 @Index('idx_sesiones_usuario', ['usuarioId', 'revocadaEn', 'expiraEn'])
 @Index('idx_sesiones_expiracion', ['expiraEn'])
-@Check('chk_sesiones_expiracion', 'expira_en = DATE_ADD(creada_en, INTERVAL 1 HOUR)')
+// La entidad documenta la misma ventana fija de 12 horas que instala la migración.
+@Check('chk_sesiones_expiracion', 'expira_en = DATE_ADD(creada_en, INTERVAL 12 HOUR)')
 @Check('chk_sesiones_revocacion', 'revocada_en IS NULL OR revocada_en >= creada_en')
 export class Sesion {
   @PrimaryGeneratedColumn('uuid')

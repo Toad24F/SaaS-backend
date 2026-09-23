@@ -81,7 +81,7 @@ describe('T72 — expiración durante una operación autorizada', () => {
         }), new Promise((_, rechazar) => {
           temporizador = setTimeout(() => rechazar(new Error('No llegó al caso de uso T72.')), 15_000);
         })]);
-        reloj.avanzar(1); // Exactamente una hora desde el inicio de la sesión.
+        reloj.avanzar(1); // Cruza exactamente el límite de 12 horas de la sesión.
         continuar(); // La operación ya autorizada puede completar o revertir su transacción.
         const respuesta = await solicitud;
         expect(respuesta.status).toBe(fallar ? 500 : 201);

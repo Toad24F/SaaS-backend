@@ -5,7 +5,7 @@ import { Sesion } from '../entities/sesion.entity';
 
 const DURACION_SESION_MS = 12 * 60 * 60 * 1000;
 
-/** Administra sesiones persistidas de 12hrs, sin renovación deslizante. */
+/** Administra sesiones persistidas durante 12 horas, sin renovación deslizante. */
 @Injectable()
 export class SesionesService {
   constructor(
@@ -28,8 +28,10 @@ export class SesionesService {
     const repositorio = manager.getRepository(Sesion);
     return repositorio.save(repositorio.create({
       usuarioId,
-      creadaEn: new Date(ahora),//establece la fecha de creación de la sesión
-      expiraEn: new Date(ahora.getTime() + DURACION_SESION_MS),//establece la fecha de expiración de la sesión
+      // Ambas fechas parten del mismo reloj para satisfacer la restricción SQL
+      // exacta y evitar diferencias entre el proceso y el DEFAULT de MariaDB.
+      creadaEn: new Date(ahora),
+      expiraEn: new Date(ahora.getTime() + DURACION_SESION_MS),
       revocadaEn: null,
     }));
   }

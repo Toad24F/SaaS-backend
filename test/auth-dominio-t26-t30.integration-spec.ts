@@ -135,7 +135,7 @@ describe('Dominio de autenticación T26–T30', () => {
     });
   });
 
-  it('T28 conserva una hora exacta y permite revocar una sesión o todas las de la cuenta', async () => {
+  it('T28 conserva 12 horas exactas y permite revocar una sesión o todas las de la cuenta', async () => {
     await conBaseMigrada(async (primera) => {
       const { negocio } = await crearNegocio(primera, 'Sesiones');
       const usuario = await crearUsuario(primera, Rol.ADMIN_NEGOCIO, negocio, true);
@@ -144,16 +144,16 @@ describe('Dominio de autenticación T26–T30', () => {
       const primeraSesion = await sesiones.crear(usuario.id, inicio);
       const segundaSesion = await sesiones.crear(usuario.id, inicio);
 
-      expect(primeraSesion.expiraEn).toEqual(new Date('2026-09-11T15:00:00.000Z'));
+      expect(primeraSesion.expiraEn).toEqual(new Date('2026-09-12T02:00:00.000Z'));
       await expect(sesiones.esValida(
         primeraSesion.id,
         usuario.id,
-        new Date('2026-09-11T14:59:59.999Z'),
+        new Date('2026-09-12T01:59:59.999Z'),
       )).resolves.toBe(true);
       await expect(sesiones.esValida(
         primeraSesion.id,
         usuario.id,
-        new Date('2026-09-11T15:00:00.000Z'),
+        new Date('2026-09-12T02:00:00.000Z'),
       )).resolves.toBe(false);
       expect((await primera.getRepository(Sesion).findOneByOrFail({ id: primeraSesion.id })).expiraEn)
         .toEqual(primeraSesion.expiraEn);

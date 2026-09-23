@@ -150,8 +150,8 @@ describe('T45 — login, perfil y logout HTTP', () => {
         await enviar().auth(`${body.accessToken}alterado`, { type: 'bearer' }).expect(401);
         await enviar().auth(vencido, { type: 'bearer' }).expect(401);
       }
-      // El reloj de dominio comprueba el límite de la sesión sin esperar una hora real.
-      reloj.avanzar(3599999);
+      // El reloj de dominio comprueba el límite de 12 horas sin una espera real.
+      reloj.avanzar(12 * 60 * 60 * 1000 - 1);
       await request(app.getHttpServer()).get('/auth/profile').auth(body.accessToken, { type: 'bearer' }).expect(200);
       reloj.avanzar(1);
       await request(app.getHttpServer()).get('/auth/profile').auth(body.accessToken, { type: 'bearer' }).expect(401);
