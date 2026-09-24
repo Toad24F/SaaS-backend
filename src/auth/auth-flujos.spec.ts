@@ -22,7 +22,10 @@ describe('Flujos de sesión T35 y T37', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    crear.mockResolvedValue({ id: 'sesion-1', expiraEn: new Date(ahora.getTime() + 3600000) });
+    crear.mockResolvedValue({
+      id: 'sesion-1',
+      expiraEn: new Date(ahora.getTime() + 12 * 60 * 60 * 1000),
+    });
     // Solo el test unitario usa este manager doble; integración cubre bloqueos reales.
     const manager = { getRepository: () => ({ createQueryBuilder: () => ({
       setLock: () => ({ where: () => ({ getOne: () => findByEmailWithNegocio.mock.results.at(-1)?.value }) }),

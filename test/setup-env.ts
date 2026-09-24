@@ -14,4 +14,5 @@ if (existsSync(archivo)) {
 }
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'clave-aislada-exclusivamente-para-tests';
-process.env.JWT_EXPIRES_IN = '1h';
+// El JWT y la sesión persistida comparten la misma ventana fija de 12 horas.
+process.env.JWT_EXPIRES_IN = '12h';

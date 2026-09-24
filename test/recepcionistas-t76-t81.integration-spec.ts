@@ -182,7 +182,7 @@ describe('T76 y T81 — casos de uso de recepcionistas', () => {
       const sesion = await db.getRepository(Sesion).save(db.getRepository(Sesion).create({
         usuarioId: tenant.recepcionista.id,
         creadaEn: new Date(desactivacion.getTime() - 60_000),
-        expiraEn: new Date(desactivacion.getTime() + 3_540_000),
+        expiraEn: new Date(desactivacion.getTime() + 43_140_000),
         revocadaEn: null,
       }));
       const identidad = { nombre: tenant.recepcionista.nombre, email: tenant.recepcionista.email,
@@ -224,7 +224,7 @@ describe('T76 y T81 — casos de uso de recepcionistas', () => {
       const sesion = await db.getRepository(Sesion).save(db.getRepository(Sesion).create({
         usuarioId: propio.recepcionista.id,
         creadaEn: new Date(ahora.getTime() - 60_000),
-        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        expiraEn: new Date(ahora.getTime() + 43_140_000),
         revocadaEn: null,
       }));
       jest.spyOn(auditoria, 'registrar').mockRejectedValueOnce(new Error('Fallo controlado T76'));
@@ -258,14 +258,14 @@ describe('T82 — restablecimiento administrativo de recepción', () => {
       const sesiones = await db.getRepository(Sesion).save([0, 1].map(() => db.getRepository(Sesion).create({
         usuarioId: antes.id,
         creadaEn: new Date(ahora.getTime() - 60_000),
-        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        expiraEn: new Date(ahora.getTime() + 43_140_000),
         revocadaEn: null,
       })));
       const revocadaAntes = new Date(ahora.getTime() - 30_000);
       const sesionAnterior = await db.getRepository(Sesion).save(db.getRepository(Sesion).create({
         usuarioId: antes.id,
         creadaEn: new Date(ahora.getTime() - 60_000),
-        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        expiraEn: new Date(ahora.getTime() + 43_140_000),
         revocadaEn: revocadaAntes,
       }));
 
@@ -333,7 +333,7 @@ describe('T82 — restablecimiento administrativo de recepción', () => {
       const sesion = await db.getRepository(Sesion).save(db.getRepository(Sesion).create({
         usuarioId: tenant.recepcionista.id,
         creadaEn: new Date(ahora.getTime() - 60_000),
-        expiraEn: new Date(ahora.getTime() + 3_540_000),
+        expiraEn: new Date(ahora.getTime() + 43_140_000),
         revocadaEn: null,
       }));
       const auditoria = new AuditoriaService();

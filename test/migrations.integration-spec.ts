@@ -186,13 +186,13 @@ describe('Migraciones T15–T18 en MariaDB', () => {
     )).rejects.toBeDefined();
     await expect(primera.query(
       `INSERT INTO sesiones (id, usuario_id, expira_en)
-       VALUES (?, ?, DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 1 HOUR))`,
+       VALUES (?, ?, DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 12 HOUR))`,
       [randomUUID(), 2147483647],
     )).rejects.toBeDefined();
     await expect(primera.query(
       `INSERT INTO sesiones (id, usuario_id, creada_en, expira_en)
        VALUES (?, ?, @sesion_ahora := UTC_TIMESTAMP(6),
-        DATE_ADD(@sesion_ahora, INTERVAL 1 HOUR))`,
+        DATE_ADD(@sesion_ahora, INTERVAL 12 HOUR))`,
       [randomUUID(), usuarioId],
     )).resolves.toBeDefined();
   });

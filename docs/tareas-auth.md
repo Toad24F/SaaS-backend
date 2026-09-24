@@ -110,7 +110,7 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
   **Hecho cuando:** @nestjs/throttler utiliza almacenamiento MariaDB y una clave conjunta por IP para login y validación de códigos; el sexto intento bloquea un minuto, los bloqueados no prolongan la ventana y otra IP tiene su propio límite.
 
 - [X] **T28 — Crear y revocar sesiones** · 25 min · RF: RF-18, RF-20, RF-24–25 · Depende de: T06, T17. · [Evidencia](results/resultados-t26-t30.md)
-  **Hecho cuando:** pruebas verifican duración exacta de una hora desde el inicio, sin extensión deslizante ni refresh tokens, revocación individual y revocación de todas las sesiones de una cuenta.
+  **Hecho cuando:** pruebas verifican duración exacta de 12 horas desde el inicio, sin extensión deslizante ni refresh tokens, revocación individual y revocación de todas las sesiones de una cuenta.
 
 - [X] **T29 — Consultar usuarios con pertenencia validada** · 20 min · RF: RF-05–07 · Depende de: T15. · [Evidencia](results/resultados-t26-t30.md)
   **Hecho cuando:** un administrador encuentra sus recepcionistas y recibe recurso no disponible al consultar uno de otro negocio.
@@ -253,28 +253,28 @@ Basado en [plan.md](plan.md), [spec-auth.md](../spec/spec-auth.md) y [Constituci
 
 ## 5. Instalación, verificación y cierre
 
-- [ ] **T61 — Verificar instalación desde cero** · 25 min · RF: RF-01–44 · Depende de: T50, T70–T71, T80.
+- [X] **T61 — Verificar instalación desde cero** · 25 min · RF: RF-01–44 · Depende de: T50, T70–T71, T80. · [Evidencia](results/resultados-t61.md)
   **Hecho cuando:** las migraciones se aplican en una base nueva desechable, la aplicación inicia sin sincronización en producción y una segunda ejecución no reaplica migraciones; no se ejecuta CREATE DATABASE contra una base existente ni se modifica la base cotidiana.
 
-- [ ] **T62 — Verificar compilación** · 15 min · RF: soporte transversal RF-01–44 · Depende de: T51–T61, T72–T85.
+- [X] **T62 — Verificar compilación** · 15 min · RF: soporte transversal RF-01–44 · Depende de: T51–T61, T72–T85. · [Evidencia](results/resultados-t62-t65.md)
   **Hecho cuando:** `npm run build` termina correctamente; cualquier corrección necesaria queda resuelta y comprobada antes de marcar la tarea.
 
-- [ ] **T63 — Verificar lint** · 15 min · RF: soporte transversal RF-01–44 · Depende de: T62.
+- [X] **T63 — Verificar lint** · 15 min · RF: soporte transversal RF-01–44 · Depende de: T62. · [Evidencia](results/resultados-t62-t65.md)
   **Hecho cuando:** `npm run lint` termina sin errores.
 
-- [ ] **T64 — Ejecutar la suite unitaria completa** · 20 min · RF: RF-01–44 · Depende de: T63.
+- [X] **T64 — Ejecutar la suite unitaria completa** · 20 min · RF: RF-01–44 · Depende de: T63. · [Evidencia](results/resultados-t62-t65.md)
   **Hecho cuando:** todas las pruebas unitarias ejecutan sus casos y pasan, sin ocultar fallos mediante exclusiones.
 
-- [ ] **T65 — Ejecutar integración y pruebas HTTP completas** · 25 min · RF: RF-01–44 · Depende de: T64.
+- [X] **T65 — Ejecutar integración y pruebas HTTP completas** · 25 min · RF: RF-01–44 · Depende de: T64. · [Evidencia](results/resultados-t62-t65.md)
   **Hecho cuando:** las suites pasan sobre MariaDB desechable, incluyen las carreras previstas y cierran sus conexiones.
 
-- [ ] **T66 — Completar la matriz RF → evidencia** · 20 min · RF: RF-01–44 · Depende de: T65.
+- [X] **T66 — Completar la matriz RF → evidencia** · 20 min · RF: RF-01–44 · Depende de: T65. · [Matriz](matriz-rf-evidencia.md) · [Evidencia](results/resultados-t66-t68.md)
   **Hecho cuando:** cada RF señala pruebas concretas y resultados; RF-29 y RF-33 distinguen la política de acceso comprobada de la integración de reservas pendiente.
 
-- [ ] **T67 — Actualizar las referencias documentales** · 15 min · RF: soporte documental RF-01–44 · Depende de: T66.
+- [X] **T67 — Actualizar las referencias documentales** · 15 min · RF: soporte documental RF-01–44 · Depende de: T66. · [Evidencia](results/resultados-t66-t68.md)
   **Hecho cuando:** plan y tareas enlazan la Constitución vigente, usan RF-01–RF-44, conservan las decisiones confirmadas sobre sesión y concurrencia y documentan los comandos; los informes históricos no se reescriben ni presentan como aceptación de RF nuevos.
 
-- [ ] **T68 — Revisar alcance y entregar resultados** · 15 min · RF: RF-01–44 · Depende de: T67.
+- [X] **T68 — Revisar alcance y entregar resultados** · 15 min · RF: RF-01–44 · Depende de: T67. · [Evidencia](results/resultados-t66-t68.md)
   **Hecho cuando:** el resumen identifica cambios, verificaciones y pendientes, confirma que no se tocaron datos existentes y no presenta las reservas reales como implementadas.
 
 **Pendiente externo al alcance:** integrar la comprobación de licencia en la confirmación transaccional de reservas cuando exista ese módulo. No marcar completos esos escenarios de RF-29 y RF-33 únicamente por superar las pruebas de autenticación.

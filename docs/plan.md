@@ -11,6 +11,7 @@ Este plan corresponde a la especificación actual, con cobertura **RF-01–RF-44
 - Una base compartida, con aislamiento por `negocio_id`. Conservar datos «en su esquema», como indica la spec, no implica un esquema físico por negocio.
 - Licencias exclusivamente anuales, renovables y sin límites de sucursales, servicios o usuarios.
 - Una operación autorizada antes del vencimiento de sesión puede terminar de forma atómica; las nuevas solicitudes se rechazan. Esta interpretación confirmada de RF-20 evita escrituras parciales, sin interrumpir una operación admitida solo porque expire su sesión.
+- La sesión y el JWT comparten una ventana fija de 12 horas, sin renovación deslizante ni refresh token.
 - En carreras entre activación y reemisión, prevalece el orden del bloqueo de base de datos y se revalida el estado al obtenerlo. La referencia de la spec a «un milisegundo tarde» se interpreta por ese orden, no por mediciones de llegada HTTP.
 - El administrador crea directamente a cada recepcionista con nombre, correo y contraseña. La cuenta queda activa de inmediato, sin código ni cambio obligatorio en el primer acceso; rol y pertenencia se derivan de la sesión.
 - Desactivar y reactivar recepcionistas solo aplica a cuentas completas. Desactivar revoca todas sus sesiones; reactivar conserva sus credenciales y exige iniciar sesión nuevamente. Restablecer la contraseña también revoca sesiones, admite cuentas activas o desactivadas y nunca las reactiva. Las transiciones se auditan sin secretos.
@@ -23,7 +24,7 @@ T01–T07 están completadas como infraestructura de pruebas y composición de m
 
 Verificación histórica de la revisión del 2026-09-10: **48 pruebas unitarias, 2 de integración, 1 HTTP, lint y comprobación TypeScript aprobados**. Esta cifra se conserva como antecedente y no representa la cobertura actual.
 
-Las tareas T01–T60 y T69–T85 constan como completadas en la lista de ejecución. T51–T60 añadieron pruebas de aislamiento, concurrencia, rollback y recorridos HTTP; T54 detectó y corrigió una carrera entre login y cambio/recuperación de contraseña, documentada en [sus resultados](results/resultados-t51-t60.md). [T72–T75](results/resultados-t72-t75.md) verificaron expiración de sesión durante una operación, límite conjunto por IP, altas duplicadas concurrentes y bloqueos HTTP; T75 no acredita confirmaciones de reservas reales. T32, T34, T46 y T48 conservan la evidencia del flujo histórico de invitación y activación de recepcionistas; T80 retiró ese modelo para instalaciones nuevas, T81 incorporó el alta directa, T82 implementó el restablecimiento administrativo y T83 expuso ambos casos por HTTP. [T78–T79 y T84–T85](results/resultados-t78-t85.md) completaron las pruebas de persistencia, concurrencia, rollback y contratos HTTP del flujo de recepción. T76 implementó las transiciones de acceso y T77 expuso la reactivación. El fallo de concurrencia T50 (`ER_CHECKREAD` sobre licencias) detectado al cerrar T83 se corrigió y verificó en la [evidencia posterior](results/correccion-carrera-t50.md).
+Las tareas T01–T68 y T69–T85 constan como completadas en la lista de ejecución. T51–T60 añadieron pruebas de aislamiento, concurrencia, rollback y recorridos HTTP; T54 detectó y corrigió una carrera entre login y cambio/recuperación de contraseña, documentada en [sus resultados](results/resultados-t51-t60.md). [T61](results/resultados-t61.md) verificó instalación nueva y [T62–T65](results/resultados-t62-t65.md) cerraron compilación, lint y suites completas. La [matriz RF → evidencia](matriz-rf-evidencia.md) registra la cobertura vigente y mantiene explícitamente pendientes las confirmaciones de reservas de RF-29 y RF-33. [T72–T75](results/resultados-t72-t75.md) verificaron expiración de sesión durante una operación, límite conjunto por IP, altas duplicadas concurrentes y bloqueos HTTP; T75 no acredita confirmaciones de reservas reales. T32, T34, T46 y T48 conservan la evidencia del flujo histórico de invitación y activación de recepcionistas; T80 retiró ese modelo para instalaciones nuevas, T81 incorporó el alta directa, T82 implementó el restablecimiento administrativo y T83 expuso ambos casos por HTTP. [T78–T79 y T84–T85](results/resultados-t78-t85.md) completaron las pruebas de persistencia, concurrencia, rollback y contratos HTTP del flujo de recepción. T76 implementó las transiciones de acceso y T77 expuso la reactivación. El fallo de concurrencia T50 (`ER_CHECKREAD` sobre licencias) detectado al cerrar T83 se corrigió y verificó en la [evidencia posterior](results/correccion-carrera-t50.md).
 
 ## 2. Módulos y contratos
 
@@ -116,13 +117,13 @@ Las migraciones se aplicarán sobre una base nueva. La sincronización automáti
 - Las licencias pendientes no se renuevan. Reactivar una licencia no suspendida no prolonga su vigencia ni recupera una licencia vencida.
 - Suspender, renovar y reactivar concurrentemente deben equivaler a un orden serial sobre la licencia. Estado, fechas y auditoría se confirman juntos.
 
-Los instantes se almacenan en UTC; los años se calculan en `America/Chihuahua`, ajustando al último día cuando el aniversario no exista. Las duraciones de códigos y sesiones son tiempo transcurrido: 48 horas, 30 minutos y una hora, respectivamente. Se rechaza en el instante exacto de expiración, sin período de gracia.
+Los instantes se almacenan en UTC; los años se calculan en `America/Chihuahua`, ajustando al último día cuando el aniversario no exista. Las duraciones de códigos y sesiones son tiempo transcurrido: 48 horas, 30 minutos y 12 horas, respectivamente. Se rechaza en el instante exacto de expiración, sin período de gracia.
 
 ### Códigos, sesiones y auditoría
 
 - La activación del primer administrador, el reemplazo y el consumo revalidan propósito, vigencia y estado aplicable dentro de la transacción. Si la reemisión gana, el código anterior deja de servir; si la activación gana, la reemisión inicial se rechaza porque la cuenta ya fue activada.
 - Cuando login coincida con cambio o recuperación de contraseña, la coordinación por usuario impide que sobreviva una sesión creada con la contraseña anterior.
-- La sesión dura una hora desde su inicio, sin extensión deslizante. Una operación ya autorizada puede confirmar su transacción aunque venza la sesión mientras se ejecuta; cualquier error revierte la operación completa.
+- La sesión dura 12 horas desde su inicio, sin extensión deslizante. Una operación ya autorizada puede confirmar su transacción aunque venza la sesión mientras se ejecuta; cualquier error revierte la operación completa.
 - El sexto intento conjunto de login o validación de códigos bloquea la IP durante un minuto. Los intentos bloqueados no prolongan indefinidamente esa ventana. La clave se comparte entre las rutas protegidas por tasa.
 - Recuperar contraseña no activa cuentas ni levanta suspensión o vencimiento. El superadmin puede autorizar recuperación de un administrador bloqueado.
 - Restablecer la contraseña de un recepcionista bloquea su fila, reemplaza el hash y revoca todas sus sesiones atómicamente; conserva su estado activo o desactivado y no modifica negocio ni licencia.
@@ -158,5 +159,10 @@ Los instantes se almacenan en UTC; los años se calculan en `America/Chihuahua`,
 3. Sustituir el flujo histórico de invitación y activación de recepcionistas por alta directa y restablecimiento administrativo, conservando sus evidencias como antecedente y utilizando solo RF vigentes en las tareas nuevas.
 4. Verificar instalación nueva mediante migraciones, sin sincronización automática en producción.
 5. Ejecutar `npm run build`, `npm run lint`, `npm test -- --runInBand`, `npm run test:integration -- --runInBand --detectOpenHandles` y `npm run test:e2e -- --runInBand --detectOpenHandles`; completar una matriz **RF → prueba → resultado o pendiente**.
+
+Resultado final: [matriz RF → evidencia](matriz-rf-evidencia.md) y
+[cierre T66–T68](results/resultados-t66-t68.md). Los comandos se ejecutan desde
+`backend/`; integración y e2e requieren `.env.test.local` apuntando a una base
+exclusiva y confirmada mediante `TEST_DB_CONFIRMED`.
 
 La actualización documental no implica que las funciones estén implementadas ni autoriza cambios de código o datos. Su finalización exige coherencia entre plan y tareas, cobertura de RF-01–RF-44, conservación del avance existente y declaración explícita de integraciones pendientes.

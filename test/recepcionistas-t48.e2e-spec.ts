@@ -330,7 +330,7 @@ describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
   it.each(['ausente', 'revocada', 'vencida', 'suspendida'])('aplica 401 a recepción con sesión/cuenta %s', async (condicion) => {
     await conHttp(async (ctx) => {
       if (condicion === 'revocada') await ctx.app.get(SesionesService).revocarTodas(ctx.usuarios[1].id, ctx.reloj.ahora());
-      if (condicion === 'vencida') ctx.reloj.avanzar(3600000);
+      if (condicion === 'vencida') ctx.reloj.avanzar(12 * 60 * 60 * 1000);
       if (condicion === 'suspendida') await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { suspendidaEn: ctx.reloj.ahora() });
       await rechazarRecepcion(ctx, condicion === 'ausente' ? undefined : ctx.tokens[1], 401);
     });
