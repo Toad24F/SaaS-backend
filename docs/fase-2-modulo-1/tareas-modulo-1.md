@@ -4,40 +4,42 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **140 tareas pendientes**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **136 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
-- Las cuatro primeras tareas recogen decisiones todavía abiertas en el plan. Preparar una propuesta no equivale a obtener aprobación. Una instalación con datos necesita además su propio plan de conversión aprobado y ensayado antes del despliegue.
+- Las cuatro primeras decisiones fueron confirmadas por el usuario y su [evidencia T001–T004](resultados-t001-t004.md) explica el cierre. Una instalación futura con datos necesitaría su propio plan de conversión aprobado y ensayado antes del despliegue.
 - Esta lista describe implementación futura: al crearla no se escribe código de aplicación, no se ejecutan migraciones ni pruebas de aplicación y ninguna tarea se da por completada.
 - Mantener las evidencias históricas de fase 1. No incorporar pantallas, reservas/citas reales, ranuras, Ventana libre, Agenda compacta, traslados configurables, pagos, WhatsApp ni PDF. En **RF-88**, aquí se verifica selección/oferta vacía; el rechazo de citas reales queda para la integración futura.
 - Trabajar con bases temporales comprobadas, reloj controlado y transporte de correo local/falso; ninguna tarea de prueba autoriza modificar la base cotidiana ni enviar correos a destinatarios reales. Una verificación externa de entrega requiere configuración y autorización de su entorno.
 
 ## 1. Decisiones y preparación
 
-- [ ] **M1-T001 — Cerrar el dominio permitido del cupo** · 10 min · RF-20–RF-24
+- [x] **M1-T001 — Cerrar el dominio permitido del cupo** · 10 min · RF-20–RF-24
 
   Dependencias: ninguna.
 
   Hecho cuando: la decisión del usuario sobre admitir o rechazar cupo cero queda registrada en plan y spec con ejemplos de valores válidos e inválidos; sin respuesta, la tarea permanece pendiente.
 
-- [ ] **M1-T002 — Cerrar la política de horas locales ambiguas** · 20 min · RF-44–RF-47, RF-58–RF-61
+- [x] **M1-T002 — Cerrar la política de horas locales ambiguas** · 20 min · RF-44–RF-47, RF-58–RF-61
 
   Dependencias: ninguna.
 
   Hecho cuando: el usuario confirma el tratamiento de horas inexistentes o repetidas y de recurrencias afectadas, con ejemplos verificables documentados; no se asume una política por defecto.
 
-- [ ] **M1-T003 — Precisar el historial que impide eliminar** · 15 min · RF-66–RF-68
+- [x] **M1-T003 — Precisar el historial que impide eliminar** · 15 min · RF-66–RF-68
 
   Dependencias: ninguna.
 
   Hecho cuando: queda confirmada y documentada la elegibilidad de un registro con auditoría técnica de alta pero sin uso operativo, sin autorizar eliminar evidencias.
 
-- [ ] **M1-T004 — Confirmar el destino de instalación** · 15 min · RF-06–RF-19, RF-69–RF-79
+- [x] **M1-T004 — Confirmar el destino de instalación** · 15 min · RF-06–RF-19, RF-69–RF-79
 
   Dependencias: ninguna.
 
   Hecho cuando: se documenta si se usará base nueva o datos existentes; si hay datos, la conversión queda como trabajo separado obligatorio antes del despliegue y no se autorizan borrados.
+
+  Evidencia común T001–T004: [decisiones, ejemplos y verificaciones](resultados-t001-t004.md).
 
 - [ ] **M1-T005 — Fijar los contratos HTTP que faltan** · 25 min · RF-06–RF-88
 
@@ -876,5 +878,4 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
   Dependencias: M1-T138, M1-T139.
 
   Hecho cuando: los 88 RF y 27 criterios quedan revisados con evidencias reales y alcance explícito; se consignan pendientes de despliegue/conversión sin declararlos completados y se excluyen frontend, reservas, modos de agenda, pagos, WhatsApp y PDF.
-
 

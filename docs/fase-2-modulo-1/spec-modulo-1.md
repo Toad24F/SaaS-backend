@@ -16,6 +16,15 @@ Se conservan las reglas compatibles de autenticación, sesiones, recuperación d
 
 Los identificadores RF siguientes pertenecen a esta especificación.
 
+## Precisiones confirmadas para los casos límite
+
+<!-- Estas precisiones concretan los RF; los ejemplos son casos de aceptación y no pruebas ya ejecutadas del nuevo comportamiento. -->
+
+- **M1-T001, RF-20–RF-24 — Cupo.** Cupo mínimo: 1. El valor inicial es 1; 1 y 2 válidos, 0 inválido, -1 inválido y 1.5 inválido. Un negocio puede tener 0 sucursales activas con límite 1. No se permite reducir el límite por debajo del número de activas.
+- **M1-T002, RF-44–RF-47 y RF-58–RF-61 — Hora local.** Las horas inexistentes y repetidas por cambio de huso se rechazan sin elegir una ocurrencia ni moverlas. En `America/New_York`, `2026-03-08 02:30` es inexistente y `2026-11-01 01:30` es repetida; una excepción fechada o bloqueo horario que las incluya se rechaza íntegramente. Una franja semanal previamente válida omite solo la ocurrencia recurrente afectada, sin desplazarla, y sigue vigente en los demás días; también se omite si cruza la discontinuidad. La consulta debe mostrar la omisión. Los bloqueos de días completos se interpretan por límites de fecha, sin horas explícitas.
+- **M1-T003, RF-66–RF-68 — Historial.** La auditoría técnica de alta de un registro sin relaciones ni uso operativo no impide el borrado físico y se conserva. Un servicio recién creado, nunca seleccionado ni modificado, es elegible; uno con selección, horario u otro historial operativo debe desactivarse. No se borra auditoría para volver elegible un registro.
+- **M1-T004, RF-06–RF-19 y RF-69–RF-79 — Instalación.** El destino confirmado es una base nueva. La aceptación aplica las migraciones históricas y luego las nuevas en una base temporal. La conversión de datos existentes queda como trabajo separado si alguna vez se requiere: exige diagnóstico, plan aprobado y ensayo sobre copia; no autoriza actualizar o borrar datos de una instalación cotidiana.
+
 ## Requisitos funcionales en EARS
 
 ### 1. Permisos y aislamiento
