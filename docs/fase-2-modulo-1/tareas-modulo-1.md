@@ -4,11 +4,11 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **136 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **131 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
-- Las cuatro primeras decisiones fueron confirmadas por el usuario y su [evidencia T001–T004](resultados-t001-t004.md) explica el cierre. Una instalación futura con datos necesitaría su propio plan de conversión aprobado y ensayado antes del despliegue.
+- Las cuatro primeras decisiones fueron confirmadas por el usuario y su [evidencia T001–T004](resultados-tareas/resultados-t001-t004.md) explica el cierre. Una instalación futura con datos necesitaría su propio plan de conversión aprobado y ensayado antes del despliegue.
 - Esta lista describe implementación futura: al crearla no se escribe código de aplicación, no se ejecutan migraciones ni pruebas de aplicación y ninguna tarea se da por completada.
 - Mantener las evidencias históricas de fase 1. No incorporar pantallas, reservas/citas reales, ranuras, Ventana libre, Agenda compacta, traslados configurables, pagos, WhatsApp ni PDF. En **RF-88**, aquí se verifica selección/oferta vacía; el rechazo de citas reales queda para la integración futura.
 - Trabajar con bases temporales comprobadas, reloj controlado y transporte de correo local/falso; ninguna tarea de prueba autoriza modificar la base cotidiana ni enviar correos a destinatarios reales. Una verificación externa de entrega requiere configuración y autorización de su entorno.
@@ -39,37 +39,39 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Hecho cuando: se documenta si se usará base nueva o datos existentes; si hay datos, la conversión queda como trabajo separado obligatorio antes del despliegue y no se autorizan borrados.
 
-  Evidencia común T001–T004: [decisiones, ejemplos y verificaciones](resultados-t001-t004.md).
+  Evidencia común T001–T004: [decisiones, ejemplos y verificaciones](resultados-tareas/resultados-t001-t004.md).
 
-- [ ] **M1-T005 — Fijar los contratos HTTP que faltan** · 25 min · RF-06–RF-88
+- [x] **M1-T005 — Fijar los contratos HTTP que faltan** · 25 min · RF-06–RF-88
 
   Dependencias: ninguna.
 
   Hecho cuando: el plan enumera rutas y operaciones nuevas, entradas mínimas, permisos y errores; se conserva activación con correo, último guardado válido y ningún código utilizable en respuestas.
 
-- [ ] **M1-T006 — Extender fixtures de dos negocios y cuatro roles** · 25 min · RF-01–RF-05, RF-29–RF-30
+- [x] **M1-T006 — Extender fixtures de dos negocios y cuatro roles** · 25 min · RF-01–RF-05, RF-29–RF-30
 
   Dependencias: ninguna.
 
   Hecho cuando: las factorías de datos de prueba describen Profesional, invitación sin cuenta y recursos de dos negocios con IDs independientes y reloj controlado; su persistencia se conectará conforme existan las migraciones.
 
-- [ ] **M1-T007 — Preparar carreras deterministas de prueba** · 20 min · RF-11–RF-13, RF-23, RF-47, RF-53, RF-79
+- [x] **M1-T007 — Preparar carreras deterministas de prueba** · 20 min · RF-11–RF-13, RF-23, RF-47, RF-53, RF-79
 
   Dependencias: M1-T006.
 
   Hecho cuando: una prueba de soporte coordina dos conexiones mediante barreras y cierra los recursos sin sleeps arbitrarios ni acceso a la base cotidiana.
 
-- [ ] **M1-T008 — Declarar composición de módulos nuevos** · 25 min · RF-20–RF-65, RF-86–RF-88
+- [x] **M1-T008 — Declarar composición de módulos nuevos** · 25 min · RF-20–RF-65, RF-86–RF-88
 
   Dependencias: ninguna.
 
   Hecho cuando: Sucursales, Servicios, Profesionales, Horarios, Bloqueos y Correos se componen en una prueba Nest, sin dependencias circulares ni envío automático durante tests.
 
-- [ ] **M1-T009 — Ampliar rol y matriz de permisos** · 25 min · RF-01–RF-05, RF-29–RF-30, RF-63–RF-64
+- [x] **M1-T009 — Ampliar rol y matriz de permisos** · 25 min · RF-01–RF-05, RF-29–RF-30, RF-63–RF-64
 
   Dependencias: M1-T006.
 
   Hecho cuando: pruebas de política permiten los casos de administrador/Profesional y rechazan recepción, recursos ajenos y cambios del Profesional sobre otras personas.
+
+  Evidencia común T005–T009: [contratos, soporte, permisos y resultados de pruebas](resultados-tareas/resultados-t005-t009.md).
 
 - [ ] **M1-T010 — Definir orden común de bloqueos** · 20 min · RF-11–RF-13, RF-23–RF-26, RF-47, RF-51–RF-53, RF-79
 
@@ -878,4 +880,3 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
   Dependencias: M1-T138, M1-T139.
 
   Hecho cuando: los 88 RF y 27 criterios quedan revisados con evidencias reales y alcance explícito; se consignan pendientes de despliegue/conversión sin declararlos completados y se excluyen frontend, reservas, modos de agenda, pagos, WhatsApp y PDF.
-

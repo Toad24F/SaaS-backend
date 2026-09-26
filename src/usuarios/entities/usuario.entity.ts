@@ -47,7 +47,8 @@ export class Usuario {
 
     @Column({
         type: 'enum',
-        enum: Rol,
+        // Mantiene el metadato TypeORM alineado con el SQL de fase 1 hasta T14–T15.
+        enum: [Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA],
     })
     rol: Rol;
 

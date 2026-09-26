@@ -45,7 +45,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
       const hash = await new PoliticaContrasenasService().generarHash(password);
       const usuarios = {} as Record<Rol, Usuario>;
       const tokens = {} as Record<Rol, string>;
-      for (const rol of Object.values(Rol)) {
+      // T47 cubre los roles persistidos de fase 1; Profesional se migrará en T14–T15.
+      for (const rol of [Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA]) {
         usuarios[rol] = await db.getRepository(Usuario).save({
           negocioId: rol === Rol.SUPERADMIN ? null : negocio.id, nombre: rol,
           email: `${rol}@example.test`, rol, activo: true, activadoEn: reloj.ahora(), passwordHash: hash,

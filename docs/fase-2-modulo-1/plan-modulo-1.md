@@ -158,21 +158,36 @@ Antes de cada intento, revalidar código, destinatario y vencimiento o la versi�
 - Deduplicar avisos por licencia y versión de vencimiento. Cambiar vencimiento cancela pendientes obsoletos; no borra historial de envíos confirmados.
 - La lectura de vigencia no concede un bypass al bloqueo. Usuarios de negocio la consultan mientras su acceso sea válido; el superadmin puede consultar licencias de negocios bloqueados.
 
-### 5.5 Superficie HTTP prevista
+### 5.5 Superficie HTTP prevista — M1-T005
 
-Mantener las convenciones actuales y el contexto de negocio derivado de la sesión. Las rutas siguientes concretan interfaces del plan, no implementan endpoints.
+<!-- Contratos para implementación posterior: las rutas nuevas de esta tabla todavía no son endpoints operativos. -->
 
-| Operación | Contrato previsto | RF |
-|---|---|---|
-| Alta de negocio | Ampliar POST /negocios con RFC y límite opcional; devolver negocio, licencia y estado de envío, sin administrador creado ni código utilizable. | RF-06–RF-08, RF-14, RF-17, RF-20 |
-| Activación y destinatario | Ampliar POST /auth/activar-administrador con correo; conservar ruta de reemisión; añadir corrección de correo pendiente y consulta/reintento de envío para superadmin. | RF-09–RF-19 |
-| Sucursales y servicios | Crear, consultar, modificar, desactivar, reactivar y eliminar cuando proceda; cupo modificable solo por superadmin. | RF-20–RF-28, RF-66–RF-68 |
-| Profesionales | Cuenta completa y perfil, lectura, cambios permitidos, estado y asignaciones; selección mediante GET/PUT /profesionales/:id/servicios con conjunto vacío permitido. | RF-29–RF-36, RF-66–RF-68, RF-86–RF-88 |
-| Horario semanal | GET/PUT /profesionales/:id/horario; representación completa con filas y estado; errores con identificador o índice de fila, campo y motivo. | RF-37–RF-54 |
-| Excepciones y bloqueos | Gestión por Profesional/fecha/sucursal y gestión de bloqueos con alcance y permisos; lectura de intervalos de atención por rango, sin slots ni citas. | RF-44–RF-47, RF-55–RF-65 |
-| Licencia | Conservar suspender/reactivar/renovar; consulta propia de vigencia y consulta de superadmin con fechas, estado de suspensión y tiempo restante. | RF-69–RF-85 |
+Mantener las convenciones actuales. Salvo rutas públicas indicadas, el negocio se deriva de la sesión y todo ID de ruta o cuerpo se valida contra esa pertenencia. En las tablas, `admin_negocio` significa el administrador del negocio propio y `Profesional` significa únicamente el titular de su perfil. El superadmin administra negocios, cupos y licencias, no horarios ni catálogos de un negocio. Los campos no enumerados se rechazan.
 
-Usar los códigos actuales: 400 datos inválidos, 401 acceso/sesión no disponible, 403 rol insuficiente, 404 recurso ajeno o inexistente, 409 conflicto de estado/cupo/horario, 429 límite de intentos. Las respuestas nunca incluyen contraseñas, hashes o códigos. No modificar el contrato de recuperación de recepción ni introducir recuperación por código para profesionales.
+| Método y ruta | Entrada mínima / respuesta | Permiso y errores específicos | RF |
+|---|---|---|---|
+| POST /negocios (ampliar) | `nombre`, `slug`, `rfc`, `correoAdministrador`; `limiteSucursales` opcional, entero desde 1. Devuelve negocio, licencia pendiente y estado del envío, sin usuario administrador. | superadmin; 400 campos/cupo, 409 slug o correo reservado. | RF-06–RF-08, RF-13–RF-14, RF-20 |
+| POST /auth/activar-administrador (ampliar) | Público: `negocioId`, `correo`, `codigo`, `nombre`, `password`; devuelve cuenta completa y estado de activación, ningún código utilizable. | 400 entrada, 409 código, destinatario, vigencia o estado inválido; nunca crea cuenta parcial. | RF-09–RF-11 |
+| POST /negocios/:id/reemitir-codigo (conservar) | Sin cuerpo; devuelve metadatos de nuevo envío y caducidad, no el código. | superadmin; 404 negocio, 409 invitación ya activada. | RF-12, RF-15, RF-18 |
+| PATCH /negocios/:id/correo-administrador | `correo` nuevo; devuelve destinatario y estado de nueva emisión, sin código. | superadmin; 404 negocio, 409 activado o correo reservado. | RF-12–RF-13, RF-18 |
+| GET /negocios/:id/envios y POST /negocios/:id/reintentar-envio | Consulta estados/intentos; reintento recibe `envioId` y devuelve estado pendiente/confirmado, nunca contenido ni código. | superadmin; 404 negocio/envío, 409 envío obsoleto o confirmado. | RF-17–RF-19 |
+| PUT /negocios/:id/limite-sucursales | `limiteSucursales` entero desde 1; devuelve límite y total de activas. | superadmin; 400 dominio, 404 negocio, 409 reducción bajo activas. | RF-20, RF-22–RF-24 |
+| GET /sucursales, GET /sucursales/:id y POST /sucursales | Lectura filtrada; alta con `nombre`, `direccion`, `telefono`, `zonaHoraria`; `urlGoogleMaps`, `notasLlegada` opcionales. | admin_negocio; 400 datos/zona, 404 ajeno, 409 cupo. | RF-21–RF-23 |
+| PATCH /sucursales/:id, POST /sucursales/:id/desactivar, POST /sucursales/:id/reactivar y DELETE /sucursales/:id | Edición de datos permitidos; transiciones y borrado sin cuerpo; devuelve estado o 204 al borrar. | admin_negocio; 404 ajeno, 409 cupo, conflicto de horario o historial. | RF-25–RF-26, RF-66–RF-68 |
+| GET /servicios, GET /servicios/:id y POST /servicios | Lectura filtrada; alta con `nombre`, `costo` decimal no negativo y `duracionMinutos` entero positivo. | admin_negocio; 400 datos, 404 ajeno. | RF-27–RF-28 |
+| PATCH /servicios/:id, POST /servicios/:id/desactivar, POST /servicios/:id/reactivar y DELETE /servicios/:id | Edición de campos de catálogo; transiciones/borrado sin cuerpo, 204 al borrar. | admin_negocio; 404 ajeno, 409 historial o relaciones al borrar. | RF-34, RF-66–RF-68 |
+| GET /profesionales, GET /profesionales/:id y POST /profesionales | Lectura filtrada; alta con `nombre`, `correo`, `password`; crea cuenta completa y perfil activo. | admin_negocio; 400 datos/contraseña, 404 ajeno, 409 correo reservado. | RF-29–RF-30 |
+| PATCH /profesionales/:id, POST /profesionales/:id/desactivar, POST /profesionales/:id/reactivar y DELETE /profesionales/:id | Edición permitida, cambio de estado y borrado sin cuerpo; no devuelve hash, 204 al borrar. | admin_negocio; 404 ajeno, 409 historial o relaciones al borrar. | RF-35–RF-36, RF-66–RF-68 |
+| GET /profesionales/:id/sucursales y PUT /profesionales/:id/sucursales | `sucursalIds` como conjunto completo; devuelve asignaciones del mismo negocio. | admin_negocio; 400 IDs, 404 perfil/sucursal ajena, 409 horario incompatible. | RF-25–RF-26, RF-31 |
+| GET /profesionales/:id/servicios y PUT /profesionales/:id/servicios | `servicioIds` como conjunto completo, incluido `[]`; devuelve catálogo con selección y estado activo. | admin_negocio o Profesional propio; 400 IDs, 404 perfil/servicio ajeno, 409 selección nueva inactiva. | RF-32–RF-34, RF-86–RF-88 |
+| GET /profesionales/:id/horario y PUT /profesionales/:id/horario | PUT recibe `franjas[]` completas con ID/índice, día, sucursal, horas, descanso y activo; devuelve semana guardada. Prevalece el último guardado válido como reemplazo íntegro. | admin_negocio o Profesional propio; 400 campos, 404 sucursal ajena, 409 empalme con índice de franja, campo y motivo. | RF-37–RF-54 |
+| GET /profesionales/:id/excepciones y PUT /profesionales/:id/excepciones/:fecha y DELETE /profesionales/:id/excepciones/:fecha | PUT recibe `sucursalId` y `franjas[]` completas para la fecha local; `[]` cierra ese día; DELETE retira el reemplazo. | admin_negocio o Profesional propio; 400 fecha/hora, 404 perfil/sucursal ajena, 409 empalme. | RF-44–RF-47 |
+| GET /bloqueos, POST /bloqueos, PATCH /bloqueos/:id y DELETE /bloqueos/:id | Alta/edición con `motivo`, `tipo`, `fechaInicio`, `fechaFin`, alcance personal/equipo y sucursal/todas; horas inicial/final ambas presentes o ambas ausentes. Lectura con filtros autorizados. | admin_negocio para su equipo; Profesional para bloqueos individuales que lo afectan. 400 intervalo, 404 ajeno, 403 alcance colectivo u otra persona. | RF-55–RF-64 |
+| GET /profesionales/:id/atencion | `desde`, `hasta` como fechas; devuelve intervalos efectivos y omisiones por huso, sin ranuras ni citas. | admin_negocio o Profesional propio; 400 rango, 404 perfil ajeno. | RF-44–RF-50, RF-61–RF-65 |
+| POST /licencias/:id/suspender, POST /licencias/:id/reactivar y POST /licencias/:id/renovar (conservar) | Sin cuerpo; devuelve estado, vencimiento, bloqueo previsto y remanente aplicable. | superadmin; 404 licencia, 409 transición no permitida. | RF-69–RF-79 |
+| GET /licencias/mi-vigencia y GET /licencias/:id/vigencia | Sin cuerpo; devuelve estado, `ahora`, vencimiento aplicable, bloqueo programado y tiempo restante en días, horas y minutos. | Primera: usuario de negocio con acceso vigente; segunda: superadmin. 401 acceso vencido/bloqueado, 404 licencia ajena o inexistente. | RF-83–RF-85 |
+
+Errores comunes: 400 datos inválidos, 401 acceso/sesión no disponible, 403 rol insuficiente, 404 recurso ajeno o inexistente, 409 conflicto de estado/cupo/horario, 429 límite de intentos. La respuesta de una semana inválida incluye índice de franja o ID estable, campo y motivo, sin alterar el último guardado válido. Ninguna respuesta, log o evento contiene contraseñas, hashes ni ningún código utilizable. La activación siempre exige correo y código. No modificar la recuperación de recepción ni introducir recuperación por código para profesionales.
 
 ## 6. Persistencia, compatibilidad y secuencia
 
