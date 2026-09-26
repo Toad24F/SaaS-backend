@@ -11,8 +11,7 @@ import {
 import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Rol } from '../../auth/enums/rol.enum';
 
-// La misma transformación se aplica a cuentas activas y pendientes para reservar
-// globalmente una única representación de cada correo.
+// Normaliza el correo de la cuenta; la reserva compartida verifica su correspondencia.
 const normalizadorCorreo = {
     to: (email: string): string => email.trim().toLowerCase(),
     from: (email: string): string => email,
@@ -20,10 +19,11 @@ const normalizadorCorreo = {
 
 @Entity({ name: 'usuarios' })
 @Index('uq_usuarios_negocio_id', ['negocioId', 'id'], { unique: true })
-@Check('chk_usuarios_rol_negocio', "(rol = 'superadmin' AND negocio_id IS NULL) OR (rol IN ('admin_negocio','recepcionista') AND negocio_id IS NOT NULL)")
+@Index('uq_usuarios_id_email', ['id', 'email'], { unique: true })
+@Check('chk_usuarios_rol_negocio', "(rol = 'superadmin' AND negocio_id IS NULL) OR (rol IN ('admin_negocio','recepcionista','profesional') AND negocio_id IS NOT NULL)")
 @Check('chk_usuarios_email_normalizado', 'BINARY email = BINARY LOWER(TRIM(email)) AND CHAR_LENGTH(email) > 0')
 @Check('chk_usuarios_activo', 'activo IN (0, 1)')
-// Solo el primer administrador puede reservar correo sin credenciales.
+// Compatibilidad temporal con el alta de fase 1; Profesional siempre exige cuenta completa.
 @Check('chk_usuarios_activacion', "(rol = 'admin_negocio' AND activado_en IS NULL AND nombre IS NULL AND password_hash IS NULL) OR (activado_en IS NOT NULL AND nombre IS NOT NULL AND CHAR_LENGTH(TRIM(nombre)) > 0 AND password_hash IS NOT NULL AND CHAR_LENGTH(password_hash) > 0 AND activado_en >= creado_en)")
 export class Usuario {
     @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
@@ -47,15 +47,14 @@ export class Usuario {
 
     @Column({
         type: 'enum',
-        // Mantiene el metadato TypeORM alineado con el SQL de fase 1 hasta T14–T15.
-        enum: [Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA],
+        enum: [Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA, Rol.PROFESIONAL],
     })
     rol: Rol;
 
     @Column({ default: true })
     activo: boolean;
 
-    // Una cuenta pendiente conserva activo=true, pero no está activada todavía.
+    // Activación y credenciales son obligatorias para Profesional.
     @Column({ name: 'activado_en', type: 'datetime', precision: 6, nullable: true })
     activadoEn: Date | null;
 

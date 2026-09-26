@@ -12,6 +12,7 @@ export enum EstadoAltaAdministrador {
 @Entity({ name: 'altas_administrador' })
 @Index('uq_altas_administrador_negocio', ['negocioId'], { unique: true })
 @Index('uq_altas_administrador_negocio_id', ['negocioId', 'id'], { unique: true })
+@Index('uq_altas_id_correo', ['id', 'correo'], { unique: true })
 @Check('chk_altas_correo',
   'BINARY correo = BINARY LOWER(TRIM(correo)) AND CHAR_LENGTH(correo) > 0')
 @Check('chk_altas_estado',

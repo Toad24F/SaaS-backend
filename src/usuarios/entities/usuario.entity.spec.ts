@@ -43,10 +43,10 @@ describe('Usuario pendiente de activación (T09)', () => {
     });
   });
 
-  it('mantiene el enum SQL de fase 1 hasta la migración de Profesional', () => {
-    // La política ya conoce Profesional; la columna persistida cambia en T14–T15.
+  it('incluye Profesional en el enum persistido de fase 2', () => {
+    // La nueva migración lleva esta misma lista de roles a MariaDB.
     expect(columna('rol')?.options.enum).toEqual([
-      Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA,
+      Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA, Rol.PROFESIONAL,
     ]);
   });
 });

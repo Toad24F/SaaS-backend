@@ -26,14 +26,22 @@ export class CorreoAcceso {
   altaAdministradorId: number | null;
 
   @ManyToOne(() => AltaAdministrador, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'alta_administrador_id' })
+  // La FK compuesta obliga a usar el correo de la invitación titular.
+  @JoinColumn([
+    { name: 'alta_administrador_id', referencedColumnName: 'id' },
+    { name: 'correo', referencedColumnName: 'correo' },
+  ])
   altaAdministrador: AltaAdministrador | null;
 
   @Column({ name: 'usuario_id', type: 'int', unsigned: true, nullable: true })
   usuarioId: number | null;
 
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'usuario_id' })
+  // La transferencia a una cuenta conserva la misma dirección reservada.
+  @JoinColumn([
+    { name: 'usuario_id', referencedColumnName: 'id' },
+    { name: 'correo', referencedColumnName: 'email' },
+  ])
   usuario: Usuario | null;
 
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })

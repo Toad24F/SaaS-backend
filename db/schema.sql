@@ -521,3 +521,39 @@ CREATE TABLE correos_acceso (
     OR (alta_administrador_id IS NULL AND usuario_id IS NOT NULL)
   )
 ) ENGINE=InnoDB;
+
+-- FASE 2, MODULO 1: CUENTAS Y DESTINOS DE AUDITORIA (M1-T014 a M1-T016).
+-- Aplica despues del tramo de identidad pendiente; el administrador historico
+-- conserva su estado pendiente hasta reemplazar el alta en M1-T035.
+ALTER TABLE usuarios DROP CONSTRAINT chk_usuarios_rol_negocio;
+ALTER TABLE usuarios MODIFY COLUMN rol
+  ENUM('superadmin','admin_negocio','recepcionista','profesional') NOT NULL;
+ALTER TABLE usuarios ADD CONSTRAINT chk_usuarios_rol_negocio CHECK (
+  (rol = 'superadmin' AND negocio_id IS NULL)
+  OR (rol IN ('admin_negocio','recepcionista','profesional') AND negocio_id IS NOT NULL)
+);
+ALTER TABLE usuarios ADD UNIQUE KEY uq_usuarios_id_email (id, email);
+ALTER TABLE altas_administrador ADD UNIQUE KEY uq_altas_id_correo (id, correo);
+-- Las FKs compuestas impiden reservar un correo distinto al del titular.
+ALTER TABLE correos_acceso
+  ADD CONSTRAINT fk_correos_acceso_usuario_correo FOREIGN KEY (usuario_id, correo)
+    REFERENCES usuarios(id, email),
+  ADD CONSTRAINT fk_correos_acceso_alta_correo FOREIGN KEY (alta_administrador_id, correo)
+    REFERENCES altas_administrador(id, correo);
+
+ALTER TABLE eventos_auditoria DROP CONSTRAINT chk_auditoria_destino;
+ALTER TABLE eventos_auditoria
+  ADD COLUMN alta_administrador_id INT UNSIGNED NULL,
+  ADD COLUMN recurso_tipo VARCHAR(32) NULL,
+  ADD COLUMN recurso_id INT UNSIGNED NULL,
+  ADD CONSTRAINT fk_auditoria_alta FOREIGN KEY (negocio_id, alta_administrador_id)
+    REFERENCES altas_administrador(negocio_id, id),
+  ADD CONSTRAINT chk_auditoria_destino CHECK (
+    (usuario_id IS NULL AND licencia_id IS NULL AND alta_administrador_id IS NULL
+      AND recurso_tipo IS NULL) OR negocio_id IS NOT NULL
+  ),
+  ADD CONSTRAINT chk_auditoria_recurso CHECK (
+    (recurso_tipo IS NULL AND recurso_id IS NULL)
+    OR (recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo')
+      AND recurso_id IS NOT NULL AND recurso_id > 0)
+  );

@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **127 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **124 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -103,23 +103,25 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia común T011–T013: [entidades, migración y resultados de pruebas](resultados-tareas/resultados-t011-t013.md).
 
-- [ ] **M1-T014 — Ajustar cuenta completa y rol Profesional** · 25 min · RF-09, RF-29–RF-30, RF-35–RF-36
+- [x] **M1-T014 — Ajustar cuenta completa y rol Profesional** · 25 min · RF-09, RF-29–RF-30, RF-35–RF-36
 
   Dependencias: M1-T009, M1-T012.
 
   Hecho cuando: el modelo acepta Profesional con negocio y credenciales completas, conserva un admin por negocio y define la correspondencia con la reserva de correo.
 
-- [ ] **M1-T015 — Migrar restricciones de cuenta** · 25 min · RF-09, RF-13, RF-29–RF-30
+- [x] **M1-T015 — Migrar restricciones de cuenta** · 25 min · RF-09, RF-13, RF-29–RF-30
 
   Dependencias: M1-T014, M1-T013.
 
   Hecho cuando: MariaDB acepta las nuevas cuentas completas y rechaza roles/pertenencias inválidos y dos administradores del mismo negocio en pruebas aisladas.
 
-- [ ] **M1-T016 — Extender destinos de auditoría** · 25 min · RF-09–RF-13, RF-19, RF-66–RF-79
+- [x] **M1-T016 — Extender destinos de auditoría** · 25 min · RF-09–RF-13, RF-19, RF-66–RF-79
 
   Dependencias: M1-T012.
 
   Hecho cuando: se registran destinos de altas pendientes y dominios nuevos sin usuario administrador ficticio ni secretos; pruebas rechazan destinos de otro negocio.
+
+  Evidencia común T014–T016: [modelo, migraciones y resultados de pruebas](resultados-tareas/resultados-t014-t016.md).
 
 - [ ] **M1-T017 — Implementar reserva y transferencia de correo** · 25 min · RF-09–RF-13, RF-30
 

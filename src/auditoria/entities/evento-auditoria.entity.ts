@@ -11,6 +11,7 @@ import {
 import { Licencia } from '../../licencias/entities/licencia.entity';
 import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { AltaAdministrador } from '../../altas/entities/alta-administrador.entity';
 
 export type ValoresAuditoria = Record<string, unknown>;
 
@@ -21,7 +22,8 @@ export type ValoresAuditoria = Record<string, unknown>;
 @Entity({ name: 'eventos_auditoria' })
 @Index('idx_auditoria_negocio_fecha', ['negocioId', 'ocurridoEn'])
 @Index('idx_auditoria_actor_fecha', ['actorUsuarioId', 'ocurridoEn'])
-@Check('chk_auditoria_destino', '(usuario_id IS NULL AND licencia_id IS NULL) OR negocio_id IS NOT NULL')
+@Check('chk_auditoria_destino', '(usuario_id IS NULL AND licencia_id IS NULL AND alta_administrador_id IS NULL AND recurso_tipo IS NULL) OR negocio_id IS NOT NULL')
+@Check('chk_auditoria_recurso', "(recurso_tipo IS NULL AND recurso_id IS NULL) OR (recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo') AND recurso_id IS NOT NULL AND recurso_id > 0)")
 @Check('chk_auditoria_accion', 'CHAR_LENGTH(TRIM(accion)) > 0')
 export class EventoAuditoria {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
@@ -63,6 +65,24 @@ export class EventoAuditoria {
     { name: 'licencia_id', referencedColumnName: 'id' },
   ])
   licencia: Licencia | null;
+
+  // La FK compuesta impide auditar un alta que pertenezca a otro negocio.
+  @Column({ name: 'alta_administrador_id', type: 'int', unsigned: true, nullable: true })
+  altaAdministradorId: number | null;
+
+  @ManyToOne(() => AltaAdministrador, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([
+    { name: 'negocio_id', referencedColumnName: 'negocioId' },
+    { name: 'alta_administrador_id', referencedColumnName: 'id' },
+  ])
+  altaAdministrador: AltaAdministrador | null;
+
+  // Reserva una referencia tipada para dominios cuyas tablas llegan después.
+  @Column({ name: 'recurso_tipo', type: 'varchar', length: 32, nullable: true })
+  recursoTipo: string | null;
+
+  @Column({ name: 'recurso_id', type: 'int', unsigned: true, nullable: true })
+  recursoId: number | null;
 
   @Column({ length: 64 })
   accion: string;

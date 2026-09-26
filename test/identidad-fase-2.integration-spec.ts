@@ -4,7 +4,7 @@ describe('M1-T013: migración incremental de identidad en MariaDB temporal', () 
   it('añade columnas y tablas sin tocar las cuatro migraciones históricas', async () => {
     await conBaseMigrada(async (db) => {
       const migraciones = await db.query('SELECT name FROM migrations ORDER BY id');
-      expect(migraciones).toHaveLength(5);
+      expect(migraciones).toHaveLength(7);
       expect(migraciones[4].name).toContain('IdentidadPendiente');
       const columnas = await db.query(`SELECT COLUMN_NAME AS nombre FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'negocios'`);
@@ -76,14 +76,15 @@ describe('M1-T013: migración incremental de identidad en MariaDB temporal', () 
 
   it('revierte solo la migración nueva y permite aplicarla otra vez', async () => {
     await conBaseMigrada(async (db) => {
-      await db.undoLastMigration();
+      // Retrocede también las dos migraciones dependientes antes de identidad.
+      for (let indice = 0; indice < 3; indice += 1) await db.undoLastMigration();
       const tablas = await db.query(`SELECT TABLE_NAME AS nombre FROM information_schema.TABLES
         WHERE TABLE_SCHEMA = DATABASE()`);
       const nombres = tablas.map((fila: { nombre: string }) => fila.nombre);
       expect(nombres).toContain('usuarios');
       expect(nombres).not.toContain('altas_administrador');
       expect(nombres).not.toContain('correos_acceso');
-      expect(await db.runMigrations()).toHaveLength(1);
+      expect(await db.runMigrations()).toHaveLength(3);
     });
   });
 });
