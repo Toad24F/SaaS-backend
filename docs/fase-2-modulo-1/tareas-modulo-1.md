@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **131 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **127 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -73,31 +73,35 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia común T005–T009: [contratos, soporte, permisos y resultados de pruebas](resultados-tareas/resultados-t005-t009.md).
 
-- [ ] **M1-T010 — Definir orden común de bloqueos** · 20 min · RF-11–RF-13, RF-23–RF-26, RF-47, RF-51–RF-53, RF-79
+- [x] **M1-T010 — Definir orden común de bloqueos** · 20 min · RF-11–RF-13, RF-23–RF-26, RF-47, RF-51–RF-53, RF-79
 
   Dependencias: ninguna.
 
   Hecho cuando: el plan registra un orden consistente por recurso e ID para identidad, negocio, licencia y perfiles; los casos de cruce no requieren adquirir los mismos recursos en orden inverso.
 
+  Evidencia: [orden, casos de cruce y resultados de pruebas](resultados-tareas/resultados-t010.md).
+
 ## 2. Identidad y persistencia inicial
 
-- [ ] **M1-T011 — Extender entidad de negocio** · 20 min · RF-06–RF-08, RF-20–RF-24
+- [x] **M1-T011 — Extender entidad de negocio** · 20 min · RF-06–RF-08, RF-20–RF-24
 
   Dependencias: M1-T001.
 
   Hecho cuando: la entidad incluye RFC no único, destinatario y cupo predeterminado 1, con validadores para la decisión de cupo confirmada.
 
-- [ ] **M1-T012 — Representar alta pendiente y reserva de correo** · 25 min · RF-08–RF-13
+- [x] **M1-T012 — Representar alta pendiente y reserva de correo** · 25 min · RF-08–RF-13
 
   Dependencias: M1-T011.
 
   Hecho cuando: las entidades modelan invitación sin usuario y correo normalizado con titular exclusivo pendiente o cuenta; no requieren credenciales ficticias.
 
-- [ ] **M1-T013 — Migrar negocios, invitaciones y reservas** · 25 min · RF-06–RF-13, RF-20
+- [x] **M1-T013 — Migrar negocios, invitaciones y reservas** · 25 min · RF-06–RF-13, RF-20
 
   Dependencias: M1-T012, M1-T004.
 
   Hecho cuando: una base temporal aplica las nuevas tablas/columnas y restricciones de unicidad sin reescribir las migraciones históricas; los datos reales no se convierten.
+
+  Evidencia común T011–T013: [entidades, migración y resultados de pruebas](resultados-tareas/resultados-t011-t013.md).
 
 - [ ] **M1-T014 — Ajustar cuenta completa y rol Profesional** · 25 min · RF-09, RF-29–RF-30, RF-35–RF-36
 

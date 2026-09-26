@@ -118,6 +118,36 @@ Antes de cada intento, revalidar código, destinatario y vencimiento o la versi�
 
 ## 5. Flujos, concurrencia y contratos
 
+### 5.0 Orden común de bloqueos — M1-T010
+
+<!-- Esta tabla es el contrato de adquisición para casos de uso futuros; el helper ordena claves, pero aún no bloquea filas ni sustituye las transacciones existentes. -->
+
+Antes de adquirir bloqueos pesimistas, reunir los recursos afectados a partir de una lectura preliminar, normalizar y deduplicar claves y ordenarlos con `ordenarRecursosBloqueo`. Adquirirlos **uno por uno**, nunca con una consulta cuyo orden efectivo dependa del optimizador. Dentro de cada tipo usar **ID ascendente**; para correos usar el valor normalizado en orden lexicográfico ascendente. Si una operación descubre un recurso anterior en el orden después de haber bloqueado uno posterior, abortar y reintentar toda la transacción con el conjunto completo. Un reintento abre transacción nueva y no reutiliza entidades obtenidas antes del rollback.
+
+| Prioridad | Recurso / clave | Uso previsto |
+|---|---|---|
+| 0 | `correo`: dirección normalizada | Reserva global de identidad; dos correos se toman en orden de clave. Una dirección nueva compite mediante la restricción única, sin suponer que se puede bloquear una fila inexistente. |
+| 1 | `alta`: ID de invitación pendiente | Activación, corrección del destinatario y reemisión. |
+| 2 | `usuario`: ID de cuenta | Cuenta existente o actor que requiera bloqueo de escritura; una lectura de autorización no sustituye su revalidación. |
+| 3 | `codigo`: ID de emisión | Consumo, sustitución e invalidación de código. |
+| 4 | `negocio`: ID del tenant | Cupo, altas/reactivaciones de sucursal y cambios de calendario o estado relacionados. |
+| 5 | `licencia`: ID de licencia | Activación, suspensión, renovación y reactivación comercial. |
+| 6 | `sucursal`: ID de sucursal | Cambios de estado, zona y horarios que la afecten. |
+| 7 | `servicio`: ID de servicio | Selecciones y estados del catálogo que afecten perfiles. |
+| 8 | `perfil`: ID de Profesional | Semana, excepciones, bloqueos, asignaciones y servicios propios. Varios perfiles se toman por ID ascendente. |
+
+Después de adquirir el último bloqueo se deben **revalidar** rol, pertenencia, correo destinatario, estados, cupo y conflictos con los datos actuales; una lectura preliminar no autoriza la escritura. La auditoría y los envíos pendientes se registran dentro de la misma transacción después de validar, sin abrir una ruta inversa hacia los recursos anteriores. Si la restricción única, una clave foránea o MariaDB detectan un conflicto de vista/deadlock, revertir y repetir de forma acotada desde el comienzo o devolver conflicto sin cambios parciales.
+
+| Cruce futuro | Orden de recursos compartidos | Motivo de ausencia de inversión |
+|---|---|---|
+| Activación frente a corrección o reemisión | `correo → alta → codigo`; si requieren negocio/licencia, siguen después. | El código no se bloquea antes de la invitación en ninguno de los dos recorridos. |
+| Activación frente a suspensión, renovación o reactivación | `negocio → licencia`. | La activación obtiene identidad primero; las transiciones comerciales comienzan en negocio y ninguna vuelve a identidad después de licencia. |
+| Alta/reactivación de sucursal frente a cambio de cupo | `negocio → sucursal` cuando hay sucursal. | El cambio de límite termina tras negocio; la reactivación continúa a recursos posteriores. |
+| Reactivación de sucursal frente a guardado de horario/excepción | `negocio → sucursal → perfil`, cada conjunto por ID ascendente. | Ambos revalidan los perfiles afectados después de la sucursal, aunque uno reciba primero el ID del perfil. |
+| Selección de servicios frente a cambio de estado del servicio | `negocio → servicio → perfil` cuando se requiere el perfil. | Ninguno vuelve al catálogo después de bloquear el perfil. |
+
+Este contrato guía las próximas implementaciones; las operaciones históricas de fase 1 conservan sus pruebas actuales y se adaptarán cuando participen en los flujos nuevos. La función ordena claves, no adquiere bloqueos de base de datos ni acredita por sí sola ausencia de deadlocks en producción.
+
 ### 5.1 Alta y activación — RF-06–RF-19
 
 1. Validar superadmin, normalizar correo y reservarlo de manera única.

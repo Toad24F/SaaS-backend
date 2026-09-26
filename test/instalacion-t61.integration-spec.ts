@@ -35,7 +35,8 @@ describe('T61 — instalación desde cero', () => {
         // migraciones pendientes, sin recrear tablas ni modificar datos.
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const historial = await segunda.query('SELECT COUNT(*) AS total FROM migrations');
-        expect(Number(historial[0].total)).toBe(4);
+        // Cuatro migraciones históricas más identidad pendiente de fase 2.
+        expect(Number(historial[0].total)).toBe(5);
       } finally {
         await app?.close();
         process.env.TEST_DB_NAME = entornoAnterior.TEST_DB_NAME;

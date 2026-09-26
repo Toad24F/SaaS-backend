@@ -9,7 +9,8 @@
 --
 -- Cambios: negocios y usuarios; nuevas licencias, codigos_acceso, sesiones,
 -- eventos_auditoria y limites_intentos. Las otras 10 tablas se conservan.
--- Las tablas de autenticacion coinciden con las migraciones T15 a T18.
+-- Las tablas de autenticacion parten de las migraciones T15 a T18; el tramo
+-- incremental de identidad de fase 2 se aplica al final de este script.
 --
 -- Este DDL no sustituye la autorizacion ni las transacciones del backend:
 -- * Solo superadmin administra licencias, que siempre son anuales.
@@ -453,4 +454,70 @@ CREATE TABLE notificaciones_whatsapp (
   CONSTRAINT fk_nw_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE,
   CONSTRAINT fk_nw_cita    FOREIGN KEY (cita_id)    REFERENCES citas(id)    ON DELETE CASCADE,
   INDEX idx_nw_negocio (negocio_id)
+) ENGINE=InnoDB;
+
+-- FASE 2, MODULO 1: IDENTIDAD PENDIENTE (M1-T011 a M1-T013).
+-- Estas sentencias reproducen el resultado de la migracion incremental nueva;
+-- RFC y destinatario siguen anulables hasta sustituir el alta historica.
+ALTER TABLE negocios
+  ADD COLUMN rfc VARCHAR(13) NULL,
+  ADD COLUMN correo_administrador VARCHAR(150) NULL,
+  ADD COLUMN limite_sucursales_activas INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_negocios_cupo CHECK (limite_sucursales_activas >= 1),
+  ADD CONSTRAINT chk_negocios_rfc CHECK (rfc IS NULL OR CHAR_LENGTH(TRIM(rfc)) > 0),
+  ADD CONSTRAINT chk_negocios_correo_administrador CHECK (
+    correo_administrador IS NULL OR (
+      BINARY correo_administrador = BINARY LOWER(TRIM(correo_administrador))
+      AND CHAR_LENGTH(correo_administrador) > 0
+    )
+  );
+
+-- La invitacion pendiente existe sin usuario ni credenciales incompletas.
+CREATE TABLE altas_administrador (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  correo VARCHAR(150) NOT NULL,
+  estado ENUM('pendiente','activada') NOT NULL DEFAULT 'pendiente',
+  usuario_creado_id INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  activado_en DATETIME(6) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_altas_administrador_negocio (negocio_id),
+  UNIQUE KEY uq_altas_administrador_negocio_id (negocio_id, id),
+  CONSTRAINT fk_altas_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id),
+  CONSTRAINT fk_altas_usuario FOREIGN KEY (negocio_id, usuario_creado_id)
+    REFERENCES usuarios(negocio_id, id),
+  CONSTRAINT chk_altas_correo CHECK (
+    BINARY correo = BINARY LOWER(TRIM(correo)) AND CHAR_LENGTH(correo) > 0
+  ),
+  CONSTRAINT chk_altas_estado CHECK (
+    (estado = 'pendiente' AND usuario_creado_id IS NULL AND activado_en IS NULL)
+    OR (estado = 'activada' AND usuario_creado_id IS NOT NULL
+      AND activado_en IS NOT NULL AND activado_en >= creado_en)
+  )
+) ENGINE=InnoDB;
+
+-- El correo tiene un titular exclusivo; las altas de cuentas existentes se
+-- conectaran a esta autoridad comun en M1-T017 y M1-T018.
+CREATE TABLE correos_acceso (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  correo VARCHAR(150) NOT NULL,
+  alta_administrador_id INT UNSIGNED NULL,
+  usuario_id INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_correos_acceso_correo (correo),
+  UNIQUE KEY uq_correos_acceso_alta (alta_administrador_id),
+  UNIQUE KEY uq_correos_acceso_usuario (usuario_id),
+  CONSTRAINT fk_correos_acceso_alta FOREIGN KEY (alta_administrador_id)
+    REFERENCES altas_administrador(id),
+  CONSTRAINT fk_correos_acceso_usuario FOREIGN KEY (usuario_id)
+    REFERENCES usuarios(id),
+  CONSTRAINT chk_correos_acceso_correo CHECK (
+    BINARY correo = BINARY LOWER(TRIM(correo)) AND CHAR_LENGTH(correo) > 0
+  ),
+  CONSTRAINT chk_correos_acceso_titular CHECK (
+    (alta_administrador_id IS NOT NULL AND usuario_id IS NULL)
+    OR (alta_administrador_id IS NULL AND usuario_id IS NOT NULL)
+  )
 ) ENGINE=InnoDB;
