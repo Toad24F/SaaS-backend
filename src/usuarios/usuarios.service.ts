@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { ReservaCorreoService } from '../altas/reserva-correo.service';
 import { Sesion } from '../auth/entities/sesion.entity';
 import { Rol } from '../auth/enums/rol.enum';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
@@ -30,6 +31,7 @@ export class UsuariosService {
     private readonly usuarioRepository: Repository<Usuario>,
     private readonly contrasenas: PoliticaContrasenasService = new PoliticaContrasenasService(),
     private readonly auditoria: AuditoriaService = new AuditoriaService(),
+    private readonly reservas: ReservaCorreoService = new ReservaCorreoService(),
   ) {}
 
   // Busca el usuario con los datos de su negocio para validar estado.
@@ -102,6 +104,11 @@ export class UsuariosService {
           activadoEn: creadaEn,
           creadoEn: creadaEn,
         }));
+
+        // Cuenta y reserva comparten commit: una invitación competidora revierte ambas.
+        await this.reservas.reservarUsuario(manager, {
+          usuarioId: recepcionista.id, negocioId: actor.negocioId, correo: email,
+        });
 
         // La evidencia excluye deliberadamente contraseña y hash.
         await this.auditoria.registrar(manager, {

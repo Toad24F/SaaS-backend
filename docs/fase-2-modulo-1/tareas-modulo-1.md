@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **124 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **121 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -123,23 +123,25 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia común T014–T016: [modelo, migraciones y resultados de pruebas](resultados-tareas/resultados-t014-t016.md).
 
-- [ ] **M1-T017 — Implementar reserva y transferencia de correo** · 25 min · RF-09–RF-13, RF-30
+- [x] **M1-T017 — Implementar reserva y transferencia de correo** · 25 min · RF-09–RF-13, RF-30
 
   Dependencias: M1-T015, M1-T010.
 
   Hecho cuando: reservar, transferir a cuenta y liberar por corrección operan en la transacción recibida; la unicidad normalizada se mantiene y un fallo revierte la operación.
 
-- [ ] **M1-T018 — Integrar reserva en altas de cuentas existentes** · 25 min · RF-13, RF-29–RF-30
+- [x] **M1-T018 — Integrar reserva en altas de cuentas existentes** · 25 min · RF-13, RF-29–RF-30
 
   Dependencias: M1-T017.
 
   Hecho cuando: las altas existentes de recepción y superadmin usan la misma autoridad de correo sin cambiar sus permisos ni permitir correos reservados por invitaciones.
 
-- [ ] **M1-T019 — Probar competencia por el mismo correo** · 25 min · RF-11–RF-13, RF-30
+- [x] **M1-T019 — Probar competencia por el mismo correo** · 25 min · RF-11–RF-13, RF-30
 
   Dependencias: M1-T018, M1-T007.
 
   Hecho cuando: dos altas con correo equivalente, o cuenta contra invitación, aceptan un solo titular y no dejan datos parciales del intento rechazado.
+
+  Evidencia común T017–T019: [reserva, carreras y resultados de pruebas](resultados-tareas/resultados-t017-t019.md).
 
 ## 3. Códigos y correo durable
 

@@ -29,8 +29,10 @@ export class LimiteIntentosStorage implements ThrottlerStorage {
       throw new Error('El origen del límite de intentos no es válido.');
     }
 
-    // Un duplicado solo puede aparecer cuando dos conexiones crean la misma IP.
-    for (let intento = 0; intento < 2; intento += 1) {
+    // La primera inserción concurrente puede producir duplicado o deadlock;
+    // cada reintento abre una transacción nueva y relee el contador confirmado.
+    const maxIntentos = 8;
+    for (let intento = 0; intento < maxIntentos; intento += 1) {
       try {
         return await this.repositorio.manager.transaction(async (manager) => {
           const repo = manager.getRepository(LimiteIntentos);
@@ -72,8 +74,10 @@ export class LimiteIntentosStorage implements ThrottlerStorage {
           return this.resultado(fila, ahora, ttl);
         });
       } catch (error) {
-        const codigo = (error as { code?: string }).code;
-        if (codigo !== 'ER_DUP_ENTRY' || intento === 1) throw error;
+        const codigo = (error as { driverError?: { code?: string } }).driverError?.code
+          ?? (error as { code?: string }).code;
+        if (!['ER_DUP_ENTRY', 'ER_LOCK_DEADLOCK'].includes(codigo ?? '') ||
+          intento === maxIntentos - 1) throw error;
       }
     }
     throw new Error('No fue posible actualizar el límite de intentos.');
