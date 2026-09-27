@@ -1,5 +1,6 @@
 import { getMetadataArgsStorage } from 'typeorm';
 import { Usuario } from './usuario.entity';
+import { Rol } from '../../auth/enums/rol.enum';
 
 describe('Usuario pendiente de activación (T09)', () => {
   const columna = (propiedad: keyof Usuario) =>
@@ -40,5 +41,12 @@ describe('Usuario pendiente de activación (T09)', () => {
       activadoEn: null,
       activo: true,
     });
+  });
+
+  it('incluye Profesional en el enum persistido de fase 2', () => {
+    // La nueva migración lleva esta misma lista de roles a MariaDB.
+    expect(columna('rol')?.options.enum).toEqual([
+      Rol.SUPERADMIN, Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA, Rol.PROFESIONAL,
+    ]);
   });
 });

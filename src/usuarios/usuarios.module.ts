@@ -4,12 +4,13 @@ import { Usuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
+import { ReservaCorreoService } from '../altas/reserva-correo.service';
 
 @Module({
   // Negocio se registra desde NegociosModule; Usuarios solo posee su repositorio.
   imports: [TypeOrmModule.forFeature([Usuario]), AuditoriaModule],
   // El alta directa comparte la política bcrypt y la auditoría transaccional.
-  providers: [UsuariosService, PoliticaContrasenasService],
+  providers: [UsuariosService, PoliticaContrasenasService, ReservaCorreoService],
   exports: [TypeOrmModule, UsuariosService], // Altas reutiliza el repositorio dentro de su transacción.
 })
 export class UsuariosModule { }

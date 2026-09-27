@@ -11,6 +11,12 @@ import { getDatabaseOptions } from './config/database.config';
 import { NegociosHttpModule } from './negocios/negocios-http.module';
 import { UsuariosHttpModule } from './usuarios/usuarios-http.module';
 import { LicenciasHttpModule } from './licencias/licencias-http.module';
+import { SucursalesModule } from './sucursales/sucursales.module';
+import { ServiciosModule } from './servicios/servicios.module';
+import { ProfesionalesModule } from './profesionales/profesionales.module';
+import { HorariosModule } from './horarios/horarios.module';
+import { BloqueosModule } from './bloqueos/bloqueos.module';
+import { CorreosModule } from './correos/correos.module';
 
 @Module({
   imports: [
@@ -33,6 +39,13 @@ import { LicenciasHttpModule } from './licencias/licencias-http.module';
     UsuariosHttpModule,
     // Expone las transiciones de licencia exclusivamente al superadmin.
     LicenciasHttpModule,
+    // Declara los dominios nuevos sin procesos ni envíos al inicializar la app.
+    SucursalesModule,
+    ServiciosModule,
+    ProfesionalesModule,
+    HorariosModule,
+    BloqueosModule,
+    CorreosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

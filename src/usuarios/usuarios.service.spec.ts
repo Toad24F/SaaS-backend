@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Usuario } from './entities/usuario.entity';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { ReservaCorreoService } from '../altas/reserva-correo.service';
 
 describe('UsuariosService', () => {
   let service: UsuariosService;
@@ -20,6 +21,8 @@ describe('UsuariosService', () => {
         },
         { provide: PoliticaContrasenasService, useValue: {} },
         { provide: AuditoriaService, useValue: {} },
+        // La consulta de sesión no usa reservas, pero Nest requiere su dependencia.
+        { provide: ReservaCorreoService, useValue: {} },
       ],
     }).compile();
 

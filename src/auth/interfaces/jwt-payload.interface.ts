@@ -5,7 +5,7 @@ export interface JwtPayload {
     sub: number;             // ID del usuario
     email: string;
     nombre: string;
-    rol: Rol;// Rol del usuario (superadmin, admin_negocio, recepcionista)
+    rol: Rol;// Rol del usuario, incluido Profesional cuando exista su cuenta persistida.
     negocioId: number | null; // null si es superadmin
     // Identifica la sesión persistida para permitir vencimiento y revocación inmediata.
     sesionId: string;

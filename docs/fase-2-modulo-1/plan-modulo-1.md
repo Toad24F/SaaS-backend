@@ -45,7 +45,7 @@ Los nombres siguientes son propuestas de persistencia para la implementación; n
 
 | Entidad | Datos, relaciones e invariantes | RF |
 |---|---|---|
-| negocios | Mantener id, nombre, slug único y activado_en; añadir rfc no único, correo_administrador y limite_sucursales_activas con valor inicial 1. El correo inicial es el destinatario pendiente; después de activar, la cuenta administradora es la referencia para enviar avisos. | RF-06–RF-09, RF-12, RF-20–RF-24, RF-80 |
+| negocios | Mantener id, nombre, slug único y activado_en; añadir rfc no único, correo_administrador y limite_sucursales_activas con valor inicial y mínimo 1. El correo inicial es el destinatario pendiente; después de activar, la cuenta administradora es la referencia para enviar avisos. | RF-06–RF-09, RF-12, RF-20–RF-24, RF-80 |
 | altas_administrador | Una alta inicial por negocio: negocio_id, correo normalizado, estado pendiente/activada, usuario_creado_id opcional y fechas. Representa una invitación, no un usuario. Conserva el vínculo con los códigos históricos. | RF-08–RF-13 |
 | correos_acceso | Registro compartido con correo normalizado único y titular exclusivo: alta pendiente o cuenta. El traspaso de titular se realiza al activar. Todas las altas de cuentas, incluidas recepción y superadmin, deben participar en esta reserva para impedir duplicados entre tablas. | RF-09–RF-13, RF-29–RF-30 |
 | usuarios | Mantener identidad, sesión y credenciales actuales; añadir rol profesional. Las nuevas cuentas requieren nombre, hash y activación completos. Conservar como máximo un administrador por negocio y correo de acceso único global. | RF-01–RF-05, RF-09, RF-29–RF-30, RF-35–RF-36 |
@@ -75,7 +75,7 @@ La unicidad entre invitaciones y cuentas no se obtiene mediante dos comprobacion
 - Las franjas inactivas aceptan datos faltantes, pero no IDs ajenos, tipos incorrectos u horas fuera del dominio admitido.
 - Representar horas locales como minutos de 0 a 1440: 1440 solo representa fin de día. Esto permite 22:00–24:00 y 00:00–02:00 sin intervalos nocturnos implícitos.
 - No usar borrado en cascada para eliminar sucursales, servicios o profesionales con relaciones o historial. Eliminar una franja o bloqueo es una operación distinta, permitida y auditada.
-- Antes del borrado físico comprobar relaciones e historial y dejar las claves foráneas como última defensa. Nunca borrar auditoría para hacer elegible un registro: si el historial existente lo impide, responder conflicto y ofrecer desactivación.
+- Antes del borrado físico comprobar relaciones e historial operativo y dejar las claves foráneas como última defensa. La auditoría técnica de alta de un registro nunca usado no impide el borrado y se conserva; nunca borrar auditoría para hacer elegible un registro. Si hay uso o relaciones, responder conflicto y ofrecer desactivación.
 
 ### Licencia y tiempo — RF-69–RF-85
 
@@ -97,13 +97,13 @@ Conservar una licencia por negocio, habilitada_en y vence_en. Incorporar suspens
 | D02 — Activación | Alta pendiente independiente y creación completa del usuario al activar; reservar correo en un registro común. | Usuario sin contraseña o comprobar correos en tablas separadas: incumple la spec o deja carreras de duplicidad. | RF-08–RF-13, RF-29–RF-30 |
 | D03 — Entrega de correo | Guardar el envío pendiente junto con el cambio de dominio y procesarlo después del commit, mediante adaptador de correo. | Enviar antes de confirmar o dentro de la transacción de negocio: puede entregar un código de un alta revertida o mantener bloqueos durante fallos externos. | RF-14–RF-19, RF-80–RF-82 |
 | D04 — Código recuperable para envío | Derivar el valor entregable mediante HMAC-SHA-256 con clave secreta versionada y nonce aleatorio de alta entropía por emisión; persistir hash, nonce, versión y contexto inmutable. Así un reintento puede reconstruir el mismo valor sin guardar código en claro. | Persistir el código en la cola, incluso dentro del cuerpo del correo, o perderlo al reiniciar: contradice el almacenamiento como hash o impide reintentos durables. | RF-14–RF-19 |
-| D05 — Cupo | Contar sucursales activas y serializar altas, reactivaciones y cambios del límite sobre el negocio. | Validación solo en frontend, o contar sin coordinar escritura: permite exceder el límite bajo concurrencia. | RF-20–RF-26 |
+| D05 — Cupo | Contar sucursales activas; aceptar solo límites enteros desde 1 y serializar altas, reactivaciones y cambios del límite sobre el negocio. | Validación solo en frontend, o contar sin coordinar escritura: permite exceder el límite bajo concurrencia. | RF-20–RF-26 |
 | D06 — Perfil y oferta | Usuario completo más perfil personal; selecciones muchos a muchos y oferta derivada de estados actuales. | Credenciales duplicadas en personal, listas de IDs en texto o marcar inactiva la cuenta al vaciar servicios: pierde integridad o cambia permisos indebidamente. | RF-29–RF-36, RF-86–RF-88 |
 | D07 — Calendario local | Persistir recurrencias locales y zona IANA; comparar instantes para fechas concretas y separar intervalos de asignación de intervalos de atención. | Guardar un desplazamiento UTC fijo o descontar descansos antes de detectar empalmes: falla con cambios de zona o permite trabajar en otra sucursal durante un descanso. | RF-37–RF-50, RF-61 |
 | D08 — Guardado semanal | Reemplazo transaccional completo, último guardado válido según orden serial de confirmación; identificadores de fila para errores y consulta. | Merge automático, guardado parcial o rechazo por versión anterior: no corresponde a la decisión del usuario sobre el último guardado válido. | RF-51–RF-54 |
 | D09 — Bloqueos | Guardar intervalos separados y aplicar la unión de restricciones; alcance individual/colectivo independiente de quién lo creó. | Fusionarlos destructivamente o limitar toda edición al creador: quitar uno perdería restricciones o negaría permisos acordados. | RF-55–RF-65 |
 | D10 — Suspensión exacta | Resolver acceso con reloj y fechas en cada solicitud; congelar desde el bloqueo efectivo. Un proceso periódico solo materializa estado y auditoría. | Depender del proceso periódico para negar acceso o congelar desde que ese proceso despierte: prolonga acceso o pierde tiempo. | RF-69–RF-79, RF-83–RF-85 |
-| D11 — Borrado | Desactivación conservadora y eliminación física solo cuando no existen impedimentos de relación o historial. | Borrado en cascada o eliminación de evidencias para permitirlo: incumple conservación de datos. | RF-66–RF-68 |
+| D11 — Borrado | Desactivación conservadora y eliminación física solo cuando no existen relaciones ni historial operativo; la auditoría técnica de alta aislada se conserva y no impide el borrado. | Borrado en cascada o eliminación de evidencias para permitirlo: incumple conservación de datos. | RF-66–RF-68 |
 | D12 — Límites del módulo | Entregar oferta y calendario consultables para uso futuro, sin implementar creación de citas ni modos de agenda. | Incorporar reservas para demostrar RF-88 completo: amplía la entrega previamente excluida. | RF-33–RF-34, RF-50, RF-65, RF-88 |
 
 Las decisiones técnicas no añaden nuevas facultades de usuario. El proveedor de correo, sus credenciales y el remitente son configuración de despliegue; ningún test automatizado debe enviar a destinatarios reales.
@@ -117,6 +117,36 @@ La bandeja registra aceptación del transporte, no garantiza lectura ni llegada 
 Antes de cada intento, revalidar código, destinatario y vencimiento o la versión actual de la licencia. Reemplazar un código o corregir correo invalida también los envíos pendientes anteriores. Un correo ya transmitido no puede retirarse, pero su código invalidado no sirve.
 
 ## 5. Flujos, concurrencia y contratos
+
+### 5.0 Orden común de bloqueos — M1-T010
+
+<!-- Esta tabla es el contrato de adquisición para casos de uso futuros; el helper ordena claves, pero aún no bloquea filas ni sustituye las transacciones existentes. -->
+
+Antes de adquirir bloqueos pesimistas, reunir los recursos afectados a partir de una lectura preliminar, normalizar y deduplicar claves y ordenarlos con `ordenarRecursosBloqueo`. Adquirirlos **uno por uno**, nunca con una consulta cuyo orden efectivo dependa del optimizador. Dentro de cada tipo usar **ID ascendente**; para correos usar el valor normalizado en orden lexicográfico ascendente. Si una operación descubre un recurso anterior en el orden después de haber bloqueado uno posterior, abortar y reintentar toda la transacción con el conjunto completo. Un reintento abre transacción nueva y no reutiliza entidades obtenidas antes del rollback.
+
+| Prioridad | Recurso / clave | Uso previsto |
+|---|---|---|
+| 0 | `correo`: dirección normalizada | Reserva global de identidad; dos correos se toman en orden de clave. Una dirección nueva compite mediante la restricción única, sin suponer que se puede bloquear una fila inexistente. |
+| 1 | `alta`: ID de invitación pendiente | Activación, corrección del destinatario y reemisión. |
+| 2 | `usuario`: ID de cuenta | Cuenta existente o actor que requiera bloqueo de escritura; una lectura de autorización no sustituye su revalidación. |
+| 3 | `codigo`: ID de emisión | Consumo, sustitución e invalidación de código. |
+| 4 | `negocio`: ID del tenant | Cupo, altas/reactivaciones de sucursal y cambios de calendario o estado relacionados. |
+| 5 | `licencia`: ID de licencia | Activación, suspensión, renovación y reactivación comercial. |
+| 6 | `sucursal`: ID de sucursal | Cambios de estado, zona y horarios que la afecten. |
+| 7 | `servicio`: ID de servicio | Selecciones y estados del catálogo que afecten perfiles. |
+| 8 | `perfil`: ID de Profesional | Semana, excepciones, bloqueos, asignaciones y servicios propios. Varios perfiles se toman por ID ascendente. |
+
+Después de adquirir el último bloqueo se deben **revalidar** rol, pertenencia, correo destinatario, estados, cupo y conflictos con los datos actuales; una lectura preliminar no autoriza la escritura. La auditoría y los envíos pendientes se registran dentro de la misma transacción después de validar, sin abrir una ruta inversa hacia los recursos anteriores. Si la restricción única, una clave foránea o MariaDB detectan un conflicto de vista/deadlock, revertir y repetir de forma acotada desde el comienzo o devolver conflicto sin cambios parciales.
+
+| Cruce futuro | Orden de recursos compartidos | Motivo de ausencia de inversión |
+|---|---|---|
+| Activación frente a corrección o reemisión | `correo → alta → codigo`; si requieren negocio/licencia, siguen después. | El código no se bloquea antes de la invitación en ninguno de los dos recorridos. |
+| Activación frente a suspensión, renovación o reactivación | `negocio → licencia`. | La activación obtiene identidad primero; las transiciones comerciales comienzan en negocio y ninguna vuelve a identidad después de licencia. |
+| Alta/reactivación de sucursal frente a cambio de cupo | `negocio → sucursal` cuando hay sucursal. | El cambio de límite termina tras negocio; la reactivación continúa a recursos posteriores. |
+| Reactivación de sucursal frente a guardado de horario/excepción | `negocio → sucursal → perfil`, cada conjunto por ID ascendente. | Ambos revalidan los perfiles afectados después de la sucursal, aunque uno reciba primero el ID del perfil. |
+| Selección de servicios frente a cambio de estado del servicio | `negocio → servicio → perfil` cuando se requiere el perfil. | Ninguno vuelve al catálogo después de bloquear el perfil. |
+
+Este contrato guía las próximas implementaciones; las operaciones históricas de fase 1 conservan sus pruebas actuales y se adaptarán cuando participen en los flujos nuevos. La función ordena claves, no adquiere bloqueos de base de datos ni acredita por sí sola ausencia de deadlocks en producción.
 
 ### 5.1 Alta y activación — RF-06–RF-19
 
@@ -158,21 +188,36 @@ Antes de cada intento, revalidar código, destinatario y vencimiento o la versi�
 - Deduplicar avisos por licencia y versión de vencimiento. Cambiar vencimiento cancela pendientes obsoletos; no borra historial de envíos confirmados.
 - La lectura de vigencia no concede un bypass al bloqueo. Usuarios de negocio la consultan mientras su acceso sea válido; el superadmin puede consultar licencias de negocios bloqueados.
 
-### 5.5 Superficie HTTP prevista
+### 5.5 Superficie HTTP prevista — M1-T005
 
-Mantener las convenciones actuales y el contexto de negocio derivado de la sesión. Las rutas siguientes concretan interfaces del plan, no implementan endpoints.
+<!-- Contratos para implementación posterior: las rutas nuevas de esta tabla todavía no son endpoints operativos. -->
 
-| Operación | Contrato previsto | RF |
-|---|---|---|
-| Alta de negocio | Ampliar POST /negocios con RFC y límite opcional; devolver negocio, licencia y estado de envío, sin administrador creado ni código utilizable. | RF-06–RF-08, RF-14, RF-17, RF-20 |
-| Activación y destinatario | Ampliar POST /auth/activar-administrador con correo; conservar ruta de reemisión; añadir corrección de correo pendiente y consulta/reintento de envío para superadmin. | RF-09–RF-19 |
-| Sucursales y servicios | Crear, consultar, modificar, desactivar, reactivar y eliminar cuando proceda; cupo modificable solo por superadmin. | RF-20–RF-28, RF-66–RF-68 |
-| Profesionales | Cuenta completa y perfil, lectura, cambios permitidos, estado y asignaciones; selección mediante GET/PUT /profesionales/:id/servicios con conjunto vacío permitido. | RF-29–RF-36, RF-66–RF-68, RF-86–RF-88 |
-| Horario semanal | GET/PUT /profesionales/:id/horario; representación completa con filas y estado; errores con identificador o índice de fila, campo y motivo. | RF-37–RF-54 |
-| Excepciones y bloqueos | Gestión por Profesional/fecha/sucursal y gestión de bloqueos con alcance y permisos; lectura de intervalos de atención por rango, sin slots ni citas. | RF-44–RF-47, RF-55–RF-65 |
-| Licencia | Conservar suspender/reactivar/renovar; consulta propia de vigencia y consulta de superadmin con fechas, estado de suspensión y tiempo restante. | RF-69–RF-85 |
+Mantener las convenciones actuales. Salvo rutas públicas indicadas, el negocio se deriva de la sesión y todo ID de ruta o cuerpo se valida contra esa pertenencia. En las tablas, `admin_negocio` significa el administrador del negocio propio y `Profesional` significa únicamente el titular de su perfil. El superadmin administra negocios, cupos y licencias, no horarios ni catálogos de un negocio. Los campos no enumerados se rechazan.
 
-Usar los códigos actuales: 400 datos inválidos, 401 acceso/sesión no disponible, 403 rol insuficiente, 404 recurso ajeno o inexistente, 409 conflicto de estado/cupo/horario, 429 límite de intentos. Las respuestas nunca incluyen contraseñas, hashes o códigos. No modificar el contrato de recuperación de recepción ni introducir recuperación por código para profesionales.
+| Método y ruta | Entrada mínima / respuesta | Permiso y errores específicos | RF |
+|---|---|---|---|
+| POST /negocios (ampliar) | `nombre`, `slug`, `rfc`, `correoAdministrador`; `limiteSucursales` opcional, entero desde 1. Devuelve negocio, licencia pendiente y estado del envío, sin usuario administrador. | superadmin; 400 campos/cupo, 409 slug o correo reservado. | RF-06–RF-08, RF-13–RF-14, RF-20 |
+| POST /auth/activar-administrador (ampliar) | Público: `negocioId`, `correo`, `codigo`, `nombre`, `password`; devuelve cuenta completa y estado de activación, ningún código utilizable. | 400 entrada, 409 código, destinatario, vigencia o estado inválido; nunca crea cuenta parcial. | RF-09–RF-11 |
+| POST /negocios/:id/reemitir-codigo (conservar) | Sin cuerpo; devuelve metadatos de nuevo envío y caducidad, no el código. | superadmin; 404 negocio, 409 invitación ya activada. | RF-12, RF-15, RF-18 |
+| PATCH /negocios/:id/correo-administrador | `correo` nuevo; devuelve destinatario y estado de nueva emisión, sin código. | superadmin; 404 negocio, 409 activado o correo reservado. | RF-12–RF-13, RF-18 |
+| GET /negocios/:id/envios y POST /negocios/:id/reintentar-envio | Consulta estados/intentos; reintento recibe `envioId` y devuelve estado pendiente/confirmado, nunca contenido ni código. | superadmin; 404 negocio/envío, 409 envío obsoleto o confirmado. | RF-17–RF-19 |
+| PUT /negocios/:id/limite-sucursales | `limiteSucursales` entero desde 1; devuelve límite y total de activas. | superadmin; 400 dominio, 404 negocio, 409 reducción bajo activas. | RF-20, RF-22–RF-24 |
+| GET /sucursales, GET /sucursales/:id y POST /sucursales | Lectura filtrada; alta con `nombre`, `direccion`, `telefono`, `zonaHoraria`; `urlGoogleMaps`, `notasLlegada` opcionales. | admin_negocio; 400 datos/zona, 404 ajeno, 409 cupo. | RF-21–RF-23 |
+| PATCH /sucursales/:id, POST /sucursales/:id/desactivar, POST /sucursales/:id/reactivar y DELETE /sucursales/:id | Edición de datos permitidos; transiciones y borrado sin cuerpo; devuelve estado o 204 al borrar. | admin_negocio; 404 ajeno, 409 cupo, conflicto de horario o historial. | RF-25–RF-26, RF-66–RF-68 |
+| GET /servicios, GET /servicios/:id y POST /servicios | Lectura filtrada; alta con `nombre`, `costo` decimal no negativo y `duracionMinutos` entero positivo. | admin_negocio; 400 datos, 404 ajeno. | RF-27–RF-28 |
+| PATCH /servicios/:id, POST /servicios/:id/desactivar, POST /servicios/:id/reactivar y DELETE /servicios/:id | Edición de campos de catálogo; transiciones/borrado sin cuerpo, 204 al borrar. | admin_negocio; 404 ajeno, 409 historial o relaciones al borrar. | RF-34, RF-66–RF-68 |
+| GET /profesionales, GET /profesionales/:id y POST /profesionales | Lectura filtrada; alta con `nombre`, `correo`, `password`; crea cuenta completa y perfil activo. | admin_negocio; 400 datos/contraseña, 404 ajeno, 409 correo reservado. | RF-29–RF-30 |
+| PATCH /profesionales/:id, POST /profesionales/:id/desactivar, POST /profesionales/:id/reactivar y DELETE /profesionales/:id | Edición permitida, cambio de estado y borrado sin cuerpo; no devuelve hash, 204 al borrar. | admin_negocio; 404 ajeno, 409 historial o relaciones al borrar. | RF-35–RF-36, RF-66–RF-68 |
+| GET /profesionales/:id/sucursales y PUT /profesionales/:id/sucursales | `sucursalIds` como conjunto completo; devuelve asignaciones del mismo negocio. | admin_negocio; 400 IDs, 404 perfil/sucursal ajena, 409 horario incompatible. | RF-25–RF-26, RF-31 |
+| GET /profesionales/:id/servicios y PUT /profesionales/:id/servicios | `servicioIds` como conjunto completo, incluido `[]`; devuelve catálogo con selección y estado activo. | admin_negocio o Profesional propio; 400 IDs, 404 perfil/servicio ajeno, 409 selección nueva inactiva. | RF-32–RF-34, RF-86–RF-88 |
+| GET /profesionales/:id/horario y PUT /profesionales/:id/horario | PUT recibe `franjas[]` completas con ID/índice, día, sucursal, horas, descanso y activo; devuelve semana guardada. Prevalece el último guardado válido como reemplazo íntegro. | admin_negocio o Profesional propio; 400 campos, 404 sucursal ajena, 409 empalme con índice de franja, campo y motivo. | RF-37–RF-54 |
+| GET /profesionales/:id/excepciones y PUT /profesionales/:id/excepciones/:fecha y DELETE /profesionales/:id/excepciones/:fecha | PUT recibe `sucursalId` y `franjas[]` completas para la fecha local; `[]` cierra ese día; DELETE retira el reemplazo. | admin_negocio o Profesional propio; 400 fecha/hora, 404 perfil/sucursal ajena, 409 empalme. | RF-44–RF-47 |
+| GET /bloqueos, POST /bloqueos, PATCH /bloqueos/:id y DELETE /bloqueos/:id | Alta/edición con `motivo`, `tipo`, `fechaInicio`, `fechaFin`, alcance personal/equipo y sucursal/todas; horas inicial/final ambas presentes o ambas ausentes. Lectura con filtros autorizados. | admin_negocio para su equipo; Profesional para bloqueos individuales que lo afectan. 400 intervalo, 404 ajeno, 403 alcance colectivo u otra persona. | RF-55–RF-64 |
+| GET /profesionales/:id/atencion | `desde`, `hasta` como fechas; devuelve intervalos efectivos y omisiones por huso, sin ranuras ni citas. | admin_negocio o Profesional propio; 400 rango, 404 perfil ajeno. | RF-44–RF-50, RF-61–RF-65 |
+| POST /licencias/:id/suspender, POST /licencias/:id/reactivar y POST /licencias/:id/renovar (conservar) | Sin cuerpo; devuelve estado, vencimiento, bloqueo previsto y remanente aplicable. | superadmin; 404 licencia, 409 transición no permitida. | RF-69–RF-79 |
+| GET /licencias/mi-vigencia y GET /licencias/:id/vigencia | Sin cuerpo; devuelve estado, `ahora`, vencimiento aplicable, bloqueo programado y tiempo restante en días, horas y minutos. | Primera: usuario de negocio con acceso vigente; segunda: superadmin. 401 acceso vencido/bloqueado, 404 licencia ajena o inexistente. | RF-83–RF-85 |
+
+Errores comunes: 400 datos inválidos, 401 acceso/sesión no disponible, 403 rol insuficiente, 404 recurso ajeno o inexistente, 409 conflicto de estado/cupo/horario, 429 límite de intentos. La respuesta de una semana inválida incluye índice de franja o ID estable, campo y motivo, sin alterar el último guardado válido. Ninguna respuesta, log o evento contiene contraseñas, hashes ni ningún código utilizable. La activación siempre exige correo y código. No modificar la recuperación de recepción ni introducir recuperación por código para profesionales.
 
 ## 6. Persistencia, compatibilidad y secuencia
 
@@ -241,15 +286,15 @@ Mantener reloj fijo, barreras explícitas para carreras y conexión real a la ba
 
 El cierre requiere una matriz RF → caso → resultado/evidencia, cobertura de los 27 criterios de finalización de la spec y declaración expresa del alcance futuro. Una prueba deshabilitada, un servicio simulado o un requisito no ejercitado no cuentan como aceptación de su integración.
 
-## 8. Precisiones pendientes antes de implementar sus casos límite
+## 8. Decisiones confirmadas para M1-T001–M1-T004
 
-Estas cuestiones no se resuelven inventando reglas en el código ni modificando silenciosamente la spec. No impiden preparar el resto del módulo, pero requieren cerrar la decisión correspondiente antes de su implementación:
+<!-- Estas reglas son criterios de diseño futuros; documentarlas no acredita que el backend ya las implemente. -->
 
-| Punto no fijado en la spec | Propuesta para confirmar y motivo | RF afectados |
+| Tarea | Decisión confirmada y ejemplos verificables | RF afectados |
 |---|---|---|
-| Valores explícitos del cupo | Entero positivo, predeterminado 1. Confirmar si también debe admitirse 0; el valor por defecto acordado no resuelve ese caso. | RF-20–RF-24 |
-| Horas locales inexistentes o repetidas por cambios de huso | Definir una política visible de rechazo/desambiguación y su efecto sobre recurrencias antes de elegir la resolución temporal. No desplazar horarios silenciosamente ni afirmar validez perpetua probando solo una semana. | RF-44–RF-47, RF-58–RF-61 |
-| Alcance de “historial” para eliminación | La interpretación conservadora rechaza si hay historial o relaciones, incluida auditoría vinculada; confirmar si la auditoría técnica de creación debe impedir por sí sola el borrado de un registro nunca utilizado. No eliminar evidencia para forzar elegibilidad. | RF-66–RF-68 |
-| Instalaciones previas con datos | Identificar si se desplegará sobre base nueva o datos a conservar. Si hay datos, preparar conversión específica de administradores incompletos y códigos, completar RFC por fuente válida y preservar tiempos de licencias ya suspendidas. | RF-06–RF-19, RF-69–RF-79 |
+| M1-T001 | Cupo mínimo: 1 sucursal activa autorizada. El valor predeterminado es 1; 1 y 2 válidos, 0 inválido, -1 inválido y 1.5 inválido. El límite no exige tener una sucursal activa: con cupo 1 puede haber 0 activas. Una reducción por debajo de las activas sigue rechazada. | RF-20–RF-24 |
+| M1-T002 | Rechazar horas locales inexistentes y repetidas, sin desambiguación automática. En `America/New_York`, `2026-03-08 02:30` no existe y `2026-11-01 01:30` ocurre dos veces: una excepción o bloqueo con esas horas se rechaza completo. Si una franja semanal ya guardada cae en el cambio de huso, se omite únicamente la ocurrencia recurrente afectada, sin desplazarla; las demás fechas conservan la franja. También se omite si el intervalo cruza la discontinuidad, aunque sus extremos existan. Un bloqueo de días completos usa límites de fecha y no contiene horas locales explícitas. La consulta debe identificar la omisión para no aparentar atención disponible. | RF-44–RF-47, RF-58–RF-61 |
+| M1-T003 | La auditoría técnica de alta de un registro sin uso ni relaciones operativas no impide el borrado físico y se conserva. Por ejemplo, un servicio recién creado y nunca seleccionado puede borrarse conservando su evento de alta; un servicio seleccionado o con cambios operativos se desactiva en vez de borrarse. No se eliminan evidencias para habilitar el borrado. | RF-66–RF-68 |
+| M1-T004 | El destino de instalación de fase 2 es una base nueva. Se aplican migraciones históricas y después las nuevas sobre base desechable de aceptación; no se actualiza ni borra la base cotidiana. La conversión de datos existentes, si se necesitara más adelante, es un trabajo separado que requiere diagnóstico, plan aprobado y ensayo sobre copia antes de desplegarse. | RF-06–RF-19, RF-69–RF-79 |
 
 El transporte y remitente de correo, las credenciales y el entorno de entrega se proporcionarán como configuración antes de validar envíos fuera de pruebas. No se incorporan valores secretos ni se contrata un servicio desde este plan.

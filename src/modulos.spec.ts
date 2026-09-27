@@ -21,6 +21,8 @@ import { Sesion } from './auth/entities/sesion.entity';
 import { LimiteIntentos } from './auth/entities/limite-intentos.entity';
 import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 import { AltasService } from './altas/altas.service';
+import { AltaAdministrador } from './altas/entities/alta-administrador.entity';
+import { CorreoAcceso } from './altas/entities/correo-acceso.entity';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
   CodigosModule, AltasModule, AuditoriaModule];
@@ -46,6 +48,9 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       .overrideProvider(getRepositoryToken(Sesion)).useValue({})
       .overrideProvider(getRepositoryToken(LimiteIntentos)).useValue({})
       .overrideProvider(getRepositoryToken(EventoAuditoria)).useValue({})
+      // El alta incorpora dos repositorios nuevos, también simulados sin conexión.
+      .overrideProvider(getRepositoryToken(AltaAdministrador)).useValue({})
+      .overrideProvider(getRepositoryToken(CorreoAcceso)).useValue({})
       .compile();
     try {
       await modulo.init();

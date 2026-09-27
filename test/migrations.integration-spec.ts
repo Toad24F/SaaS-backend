@@ -234,8 +234,9 @@ describe('Migraciones T15–T18 en MariaDB', () => {
     expect(resultados.filter(({ status }) => status === 'rejected')).toHaveLength(1);
   });
 
-  it('revierte las cuatro migraciones sin dejar tablas del modelo', async () => {
-    for (let indice = 0; indice < 4; indice += 1) {
+  it('revierte las siete migraciones sin dejar tablas del modelo', async () => {
+    // Se revierten primero las extensiones para conservar la cadena de FKs.
+    for (let indice = 0; indice < 7; indice += 1) {
       await primera.undoLastMigration({ transaction: 'each' });
     }
     const tablas = await primera.query(
