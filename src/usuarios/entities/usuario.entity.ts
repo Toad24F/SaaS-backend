@@ -42,6 +42,10 @@ export class Usuario {
     @Column({ length: 150, unique: true, transformer: normalizadorCorreo })
     email: string;
 
+    // La recuperación vincula el código a la versión actual del correo.
+    @Column({ name: 'correo_version', type: 'int', unsigned: true, default: 1 })
+    correoVersion: number;
+
     @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
     passwordHash: string | null;
 

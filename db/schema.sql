@@ -557,3 +557,52 @@ ALTER TABLE eventos_auditoria
     OR (recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo')
       AND recurso_id IS NOT NULL AND recurso_id > 0)
   );
+
+-- FASE 2, MODULO 1: CODIGOS POR INVITACION Y CLAVE VERSIONADA (T020–T024).
+-- El codigo utilizable se deriva fuera de MariaDB; solo se guarda su hash.
+ALTER TABLE altas_administrador
+  ADD COLUMN correo_version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_altas_correo_version CHECK (correo_version >= 1);
+ALTER TABLE usuarios
+  ADD COLUMN correo_version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_usuarios_correo_version CHECK (correo_version >= 1);
+ALTER TABLE codigos_acceso DROP FOREIGN KEY fk_codigos_destinatario;
+ALTER TABLE codigos_acceso
+  MODIFY COLUMN usuario_id INT UNSIGNED NULL,
+  ADD COLUMN alta_administrador_id INT UNSIGNED NULL,
+  ADD COLUMN destinatario_version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD COLUMN emision_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  ADD COLUMN nonce CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  ADD COLUMN clave_version INT UNSIGNED NULL,
+  ADD COLUMN correo_destinatario VARCHAR(150) NULL,
+  ADD COLUMN legado_fase_1 BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD UNIQUE KEY uq_codigos_alta_proposito
+    (alta_administrador_id, proposito, vigente_unico),
+  ADD UNIQUE KEY uq_codigos_emision (emision_id),
+  ADD INDEX idx_codigos_alta (negocio_id, alta_administrador_id),
+  ADD CONSTRAINT fk_codigos_destinatario FOREIGN KEY (negocio_id, usuario_id)
+    REFERENCES usuarios(negocio_id, id),
+  ADD CONSTRAINT fk_codigos_alta FOREIGN KEY (negocio_id, alta_administrador_id)
+    REFERENCES altas_administrador(negocio_id, id);
+-- Se marca el respaldo histórico antes de comprobar los destinos nuevos.
+UPDATE codigos_acceso SET legado_fase_1 = 1;
+ALTER TABLE codigos_acceso
+  ADD CONSTRAINT chk_codigos_destino CHECK (
+    (proposito = 'activacion_admin' AND alta_administrador_id IS NOT NULL
+      AND usuario_id IS NULL AND legado_fase_1 = 0)
+    OR (proposito = 'recuperacion' AND usuario_id IS NOT NULL
+      AND alta_administrador_id IS NULL)
+    OR (proposito = 'activacion_admin' AND usuario_id IS NOT NULL
+      AND alta_administrador_id IS NULL AND legado_fase_1 = 1)
+  ),
+  ADD CONSTRAINT chk_codigos_derivacion CHECK (
+    (legado_fase_1 = 1 AND emision_id IS NULL AND nonce IS NULL
+      AND clave_version IS NULL AND correo_destinatario IS NULL)
+    OR (legado_fase_1 = 0 AND emision_id IS NOT NULL AND nonce IS NOT NULL
+      AND clave_version IS NOT NULL AND correo_destinatario IS NOT NULL)
+  ),
+  ADD CONSTRAINT chk_codigos_version CHECK (destinatario_version >= 1
+    AND (clave_version IS NULL OR clave_version >= 1)),
+  ADD CONSTRAINT chk_codigos_correo CHECK (correo_destinatario IS NULL OR
+    (BINARY correo_destinatario = BINARY LOWER(TRIM(correo_destinatario))
+      AND CHAR_LENGTH(correo_destinatario) > 0));

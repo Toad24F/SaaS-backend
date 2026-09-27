@@ -97,6 +97,7 @@ export class AltasService {
           usuarioId: administrador.id,
           emisorUsuarioId: actor.id,
           proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN,
+          legadoFase1: true,
           ahora: datos.ahora,
         });
 
@@ -151,6 +152,7 @@ export class AltasService {
       return this.codigos.reemplazarConManager(manager, {
         negocioId: datos.negocioId, usuarioId: administrador.id, emisorUsuarioId: actor.id,
         proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN, ahora: datos.ahora,
+        legadoFase1: true,
       });
     });
   }

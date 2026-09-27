@@ -39,6 +39,8 @@ export class ActivacionesService {
       proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN,
       ahora: datos.ahora,
     }, async (manager, codigo) => {
+      // Este controlador histórico solo procesa códigos ligados a cuenta.
+      if (codigo.usuarioId === null) throw new BadRequestException('Código inválido o no disponible.');
       const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });//busca el usuario con el id de usuario si no lo encuentra lanza un error
       const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')//consulta la licencia del negocio con el id de negocio del codigo, si no lo encuentra lanza un error
         .setLock('pessimistic_write')//bloquea el registro de licencia para que no se pueda modificar mientras se consume el codigo

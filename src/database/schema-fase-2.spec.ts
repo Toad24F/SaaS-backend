@@ -29,4 +29,14 @@ describe('M1-T013: SQL de entrega de identidad pendiente', () => {
     expect(sql).toContain('ADD COLUMN alta_administrador_id');
     expect(sql).toContain('chk_auditoria_recurso');
   });
+
+  it('incluye la octava migración de códigos después de la invitación', () => {
+    // El script de referencia replica destinatarios, versiones y unicidad SQL.
+    expect(sql.indexOf('CREATE TABLE altas_administrador')).toBeLessThan(
+      sql.indexOf('ADD CONSTRAINT fk_codigos_alta'),
+    );
+    expect(sql).toContain('ADD COLUMN destinatario_version');
+    expect(sql).toContain('uq_codigos_alta_proposito');
+    expect(sql).toContain('chk_codigos_derivacion');
+  });
 });

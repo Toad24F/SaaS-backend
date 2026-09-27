@@ -35,6 +35,8 @@ export class CredencialesService {
       const codigo = await this.codigos.emitirInvalidandoAnterior(manager, {
         negocioId: destino.negocioId, usuarioId: destino.id,
         emisorUsuarioId: actor.id, proposito: PropositoCodigoAcceso.RECUPERACION,
+        // Este controlador aún devuelve el código de fase 1; T040 lo enviará.
+        legadoFase1: true,
         ahora: datos.ahora,
       });
       // La autorización se audita sin cambiar activo, activación ni licencia.
@@ -52,6 +54,8 @@ export class CredencialesService {
     await this.codigos.consumir(this.usuarios.manager.connection, {
       codigo: datos.codigo, proposito: PropositoCodigoAcceso.RECUPERACION, ahora: datos.ahora,// La validación de la vigencia y el propósito del código se hace en consumir.
     }, async (manager, codigo) => {
+      // Recuperación siempre tiene cuenta, incluso mientras convive con la activación por invitación.
+      if (codigo.usuarioId === null) throw new BadRequestException('Código inválido o no disponible.');
       const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });// El código de recuperación solo se emite para administradores activos y activados.
       if (usuario.rol !== Rol.ADMIN_NEGOCIO || usuario.activadoEn === null) {
         throw new BadRequestException('La cuenta no puede recuperar contraseña.');

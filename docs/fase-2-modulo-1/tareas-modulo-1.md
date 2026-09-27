@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **121 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **116 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -145,35 +145,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 3. Códigos y correo durable
 
-- [ ] **M1-T020 — Separar destinatarios de activación y recuperación** · 25 min · RF-08–RF-16
+- [x] **M1-T020 — Separar destinatarios de activación y recuperación** · 25 min · RF-08–RF-16
 
   Dependencias: M1-T012.
 
   Hecho cuando: CodigoAcceso admite exactamente un destino según propósito: invitación para activación o cuenta para recuperación, con versión de destinatario y hash.
 
-- [ ] **M1-T021 — Migrar destinatarios y vigencia de códigos** · 25 min · RF-10–RF-16
+- [x] **M1-T021 — Migrar destinatarios y vigencia de códigos** · 25 min · RF-10–RF-16
 
   Dependencias: M1-T020, M1-T013.
 
   Hecho cuando: la base temporal rechaza combinaciones de propósito/destino inválidas, pertenencias cruzadas y más de un código vigente por destino y propósito.
 
-- [ ] **M1-T022 — Preparar derivación y versiones de clave** · 25 min · RF-14–RF-19
+- [x] **M1-T022 — Preparar derivación y versiones de clave** · 25 min · RF-14–RF-19
 
   Dependencias: M1-T020.
 
   Hecho cuando: pruebas reproducen el mismo código para la misma emisión, diferencian nonce/propósito/destinatario y comprueban que solo se persisten hash y metadatos no secretos.
 
-- [ ] **M1-T023 — Adaptar emisión y reemplazo de códigos** · 25 min · RF-12, RF-14–RF-16
+- [x] **M1-T023 — Adaptar emisión y reemplazo de códigos** · 25 min · RF-12, RF-14–RF-16
 
   Dependencias: M1-T021, M1-T022, M1-T016, M1-T010.
 
   Hecho cuando: emitir asigna 48 horas o 30 minutos según propósito y reemplazar invalida el anterior sin iniciar licencia ni exponer código en auditoría.
 
-- [ ] **M1-T024 — Adaptar validación y consumo único** · 25 min · RF-09–RF-11, RF-15–RF-16
+- [x] **M1-T024 — Adaptar validación y consumo único** · 25 min · RF-09–RF-11, RF-15–RF-16
 
   Dependencias: M1-T023.
 
   Hecho cuando: consumir comprueba hash, propósito, destinatario, expiración y estado bajo bloqueo; el consumo y la operación asociada se revierten juntos ante un fallo.
+
+  Evidencia común T020–T024: [modelo, migración, servicio y pruebas](resultados-tareas/resultados-t020-t024.md).
 
 - [ ] **M1-T025 — Definir bandeja de envíos** · 25 min · RF-14–RF-19, RF-80–RF-82
 
