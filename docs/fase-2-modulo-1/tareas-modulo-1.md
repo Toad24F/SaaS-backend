@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **111 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **106 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -213,35 +213,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T029: [encolado transaccional, flujo y pruebas](resultados-tareas/resultados-t029.md).
 
-- [ ] **M1-T030 — Coordinar toma de envíos entre procesadores** · 25 min · RF-17–RF-18, RF-81
+- [x] **M1-T030 — Coordinar toma de envíos entre procesadores** · 25 min · RF-17–RF-18, RF-81
 
   Dependencias: M1-T029, M1-T007.
 
   Hecho cuando: dos procesadores no toman simultáneamente un envío disponible y un arrendamiento vencido puede recuperarse tras caída.
 
-- [ ] **M1-T031 — Revalidar códigos antes de enviarlos** · 25 min · RF-14–RF-19
+- [x] **M1-T031 — Revalidar códigos antes de enviarlos** · 25 min · RF-14–RF-19
 
   Dependencias: M1-T030, M1-T024, M1-T027.
 
   Hecho cuando: el emisor reconstruye transitoriamente el código y descarta vencidos, consumidos, invalidados o destinatarios sustituidos sin ampliar su vigencia.
 
-- [ ] **M1-T032 — Registrar resultados y reintentos** · 25 min · RF-17–RF-19, RF-81
+- [x] **M1-T032 — Registrar resultados y reintentos** · 25 min · RF-17–RF-19, RF-81
 
   Dependencias: M1-T031.
 
   Hecho cuando: se persisten resultado sanitizado y próximo intento; los confirmados no se reenvían y el reinicio conserva el trabajo pendiente.
 
-- [ ] **M1-T033 — Probar fallos y recuperación de entrega** · 25 min · RF-14–RF-19
+- [x] **M1-T033 — Probar fallos y recuperación de entrega** · 25 min · RF-14–RF-19
 
   Dependencias: M1-T032, M1-T028.
 
   Hecho cuando: pruebas cubren timeout, reinicio y caída tras aceptación; documentan posible duplicación de transporte sin consumo doble del código ni secretos persistidos.
 
-- [ ] **M1-T034 — Exponer estado y reintento autorizado** · 25 min · RF-02, RF-17–RF-19
+- [x] **M1-T034 — Exponer estado y reintento autorizado** · 25 min · RF-02, RF-17–RF-19
 
   Dependencias: M1-T005, M1-T032, M1-T009.
 
   Hecho cuando: el superadmin consulta y solicita reintento sin recibir el código; otros roles se rechazan y un pendiente no se presenta como entregado.
+
+  Evidencia T030–T034: [procesador, recuperación, gestión autorizada, flujo y pruebas](resultados-tareas/resultados-t030-t034.md).
 
 ## 4. Negocios y activación
 

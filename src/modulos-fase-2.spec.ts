@@ -11,6 +11,7 @@ import { TransporteCorreoSmtp } from './correos/transporte-correo-smtp';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EnvioCorreo } from './correos/entities/envio-correo.entity';
 import { BandejaCorreoService } from './correos/bandeja-correo.service';
+import { ProcesadorCorreoService } from './correos/procesador-correo.service';
 
 const modulos: Type<unknown>[] = [SucursalesModule, ServiciosModule,
   ProfesionalesModule, HorariosModule, BloqueosModule, CorreosModule];
@@ -22,6 +23,7 @@ describe('M1-T008: composición inicial de fase 2', () => {
       .mockRejectedValue(new Error('Entrega inesperada durante el arranque.'));
     // Solo sustituye la persistencia; el registro real de la entidad sigue siendo obligatorio.
     const modulo = await Test.createTestingModule({ imports: modulos })
+      .overrideProvider(ProcesadorCorreoService).useValue({})
       .overrideProvider(getRepositoryToken(EnvioCorreo)).useValue({}).compile();
     try {
       await modulo.init();
