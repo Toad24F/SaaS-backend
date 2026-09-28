@@ -26,10 +26,11 @@ export class NegociosController {
   @Post()
   crear(@Body() datos: CrearNegocioDto, @CurrentUser() usuario: JwtPayload) {
     // Actor y hora salen del servidor. El servicio asigna la licencia anual y
-    // devuelve el código una sola vez dentro del resultado del alta atómica.
+    // devuelve referencias de invitación y envío pendiente, sin cuenta ni código.
     return this.altas.crearNegocio({
       actorUsuarioId: usuario.sub, ahora: this.reloj.ahora(), nombre: datos.nombre,
       identificadorPublico: datos.identificadorPublico, emailAdministrador: datos.emailAdministrador,
+      rfc: datos.rfc, limiteSucursales: datos.limiteSucursales,
     });
   }
 

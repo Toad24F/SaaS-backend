@@ -12,11 +12,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AltaAdministrador } from './entities/alta-administrador.entity';
 import { CorreoAcceso } from './entities/correo-acceso.entity';
 import { ReservaCorreoService } from './reserva-correo.service';
+import { CorreosModule } from '../correos/correos.module';
 
 @Module({
   // Registra los destinos nuevos para que autoLoadEntities resuelva sus relaciones.
   imports: [TypeOrmModule.forFeature([AltaAdministrador, CorreoAcceso]),
-    UsuariosModule, NegociosModule, LicenciasModule, CodigosModule, AuditoriaModule],
+    UsuariosModule, NegociosModule, LicenciasModule, CodigosModule, AuditoriaModule, CorreosModule],
   providers: [AltasService, ActivacionesService, AutorizacionService,
     PoliticaContrasenasService, ReservaCorreoService],
   exports: [AltasService, ActivacionesService, ReservaCorreoService],

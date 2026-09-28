@@ -16,24 +16,33 @@ import { PropositoCodigoAcceso } from '../codigos/entities/codigo-acceso.entity'
 import { Licencia } from '../licencias/entities/licencia.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { isEmail } from 'class-validator';
+import { AltaAdministrador, EstadoAltaAdministrador } from './entities/alta-administrador.entity';
+import { ReservaCorreoService } from './reserva-correo.service';
+import { BandejaCorreoService } from '../correos/bandeja-correo.service';
+import { CodigoAcceso } from '../codigos/entities/codigo-acceso.entity';
+import { EstadoEnvioCorreo } from '../correos/entities/envio-correo.entity';
 
 export interface CrearNegocio {
   actorUsuarioId: number;
   nombre: string;
   identificadorPublico: string;
   emailAdministrador: string;
+  rfc: string;
+  limiteSucursales?: number;
   ahora: Date;
 }
 
 export interface AltaNegocioCreada {
   negocioId: number;
-  administradorId: number;
+  altaAdministradorId: number;
   licenciaId: number;
-  codigo: string;
+  envioId: string;
+  estadoEnvio: EstadoEnvioCorreo;
   expiraEn: Date;
 }
 
-/** Coordina el alta del negocio; recepción ya no reserva cuentas por código. */
+/** Confirma la invitación y su entrega pendiente sin crear cuentas incompletas. */
 @Injectable()
 export class AltasService {
   constructor(
@@ -42,14 +51,22 @@ export class AltasService {
     private readonly autorizacion: AutorizacionService,
     private readonly codigos: CodigosService,
     private readonly auditoria: AuditoriaService,
+    private readonly reservaCorreo: ReservaCorreoService,
+    private readonly bandejaCorreo: BandejaCorreoService,
   ) { }
 
   async crearNegocio(datos: CrearNegocio): Promise<AltaNegocioCreada> {
-    const nombre = datos.nombre.trim();
-    const slug = datos.identificadorPublico.trim().toLowerCase();
-    const email = datos.emailAdministrador.trim().toLowerCase();
-    if (!nombre || !slug || !email) {
-      throw new BadRequestException('Nombre, identificador y correo son obligatorios.');
+    // Valida también llamadas internas: no depende exclusivamente de los DTO HTTP.
+    const nombre = typeof datos.nombre === 'string' ? datos.nombre.trim() : '';
+    const slug = typeof datos.identificadorPublico === 'string' ? datos.identificadorPublico.trim().toLowerCase() : '';
+    const email = typeof datos.emailAdministrador === 'string' ? datos.emailAdministrador.trim().toLowerCase() : '';
+    const rfc = typeof datos.rfc === 'string' ? datos.rfc.trim().toUpperCase() : '';
+    const limiteSucursales = datos.limiteSucursales === undefined ? 1 : datos.limiteSucursales;
+    if (!nombre || nombre.length > 150 || !slug || slug.length > 100 ||
+      !isEmail(email) || email.length > 150 || !rfc || rfc.length > 13 ||
+      !Number.isInteger(limiteSucursales) || limiteSucursales < 1 || limiteSucursales > 4294967295 ||
+      !(datos.ahora instanceof Date) || !Number.isFinite(datos.ahora.getTime())) {
+      throw new BadRequestException('Identidad del negocio, correo, RFC, cupo o fecha inválidos.');
     }
 
     try {
@@ -60,13 +77,16 @@ export class AltasService {
           .setLock('pessimistic_read')
           .where('usuario.id = :id', { id: datos.actorUsuarioId })
           .getOne();
-        if (!actor) throw new ForbiddenException('Acceso denegado.');
+        if (!actor || !actor.activo || actor.activadoEn === null) throw new ForbiddenException('Acceso denegado.');
         this.autorizacion.exigir(actor.rol, Permiso.CREAR_NEGOCIO);
 
         const negocio = await manager.getRepository(Negocio).save(
           manager.getRepository(Negocio).create({
             nombre,
             slug,
+            rfc,
+            correoAdministrador: email,
+            limiteSucursalesActivas: limiteSucursales,
             // El correo inicial del administrador funciona también como contacto.
             emailContacto: email,
             telefonoContacto: null,
@@ -81,24 +101,34 @@ export class AltasService {
             suspendidaEn: null,
           }),
         );
-        const administrador = await manager.getRepository(Usuario).save(
-          manager.getRepository(Usuario).create({
+        // La invitación es el destinatario inicial. La cuenta se creará al activar (T037).
+        const alta = await manager.getRepository(AltaAdministrador).save(
+          manager.getRepository(AltaAdministrador).create({
             negocioId: negocio.id,
-            nombre: null,
-            email,
-            passwordHash: null,
-            rol: Rol.ADMIN_NEGOCIO,
-            activo: true,
+            correo: email,
+            correoVersion: 1,
+            estado: EstadoAltaAdministrador.PENDIENTE,
+            usuarioCreadoId: null,
             activadoEn: null,
           }),
         );
+        // Reserva, emisión y bandeja usan el mismo manager: cualquier fallo revierte el conjunto.
+        await this.reservaCorreo.reservarAlta(manager, {
+          altaId: alta.id, negocioId: negocio.id, correo: email,
+        });
         const codigo = await this.codigos.emitir(manager, {
           negocioId: negocio.id,
-          usuarioId: administrador.id,
+          altaAdministradorId: alta.id,
           emisorUsuarioId: actor.id,
           proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN,
-          legadoFase1: true,
           ahora: datos.ahora,
+        });
+        // Obtiene la referencia persistida por su invitación exclusiva, sin exponer el valor.
+        const referencia = await manager.getRepository(CodigoAcceso).findOneByOrFail({
+          negocioId: negocio.id, altaAdministradorId: alta.id,
+        });
+        const envio = await this.bandejaCorreo.encolarCodigo(manager, {
+          negocioId: negocio.id, codigoAccesoId: referencia.id, ahora: datos.ahora,
         });
 
         // Registra IDs y estado, nunca el código utilizable ni su hash.
@@ -106,7 +136,8 @@ export class AltasService {
           operacionId: randomUUID(),
           actorUsuarioId: actor.id,
           negocioId: negocio.id,
-          usuarioId: administrador.id,
+          usuarioId: null,
+          altaAdministradorId: alta.id,
           licenciaId: licencia.id,
           accion: 'negocio_creado',
           valoresAntes: null,
@@ -115,14 +146,16 @@ export class AltasService {
             identificadorPublico: negocio.slug,
             licenciaAnualHabilitada: false,
             administradorActivado: false,
+            limiteSucursales,
           },
         });
 
         return {
           negocioId: negocio.id,
-          administradorId: administrador.id,
+          altaAdministradorId: alta.id,
           licenciaId: licencia.id,
-          codigo: codigo.codigo,
+          envioId: envio.id,
+          estadoEnvio: envio.estado,
           expiraEn: codigo.expiraEn,
         };
       });

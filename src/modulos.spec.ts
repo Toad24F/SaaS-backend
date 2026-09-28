@@ -23,9 +23,12 @@ import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 import { AltasService } from './altas/altas.service';
 import { AltaAdministrador } from './altas/entities/alta-administrador.entity';
 import { CorreoAcceso } from './altas/entities/correo-acceso.entity';
+import { EnvioCorreo } from './correos/entities/envio-correo.entity';
+import { ProcesadorCorreoService } from './correos/procesador-correo.service';
+import { CorreosModule } from './correos/correos.module';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
-  CodigosModule, AltasModule, AuditoriaModule];
+  CodigosModule, AltasModule, AuditoriaModule, CorreosModule];
 
 function dependencias(modulo: Type<unknown>): Type<unknown>[] {
   const imports = Reflect.getMetadata(MODULE_METADATA.IMPORTS, modulo) ?? [];
@@ -36,7 +39,7 @@ function dependencias(modulo: Type<unknown>): Type<unknown>[] {
 }
 
 describe('Composición de módulos (T07; soporte RF-01–40)', () => {
-  it('compone los siete módulos desde Auth y Altas sin conectar a la base', async () => {
+  it('compone Auth, Altas y su bandeja de correo sin conectar a la base', async () => {
     const modulo = await Test.createTestingModule({ imports: [AuthModule, AltasModule] })
       .overrideProvider(ConfigService).useValue(new ConfigService({
         JWT_SECRET: 'clave-exclusiva-de-pruebas-modulares', JWT_EXPIRES_IN: 3600,
@@ -51,6 +54,9 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       // El alta incorpora dos repositorios nuevos, también simulados sin conexión.
       .overrideProvider(getRepositoryToken(AltaAdministrador)).useValue({})
       .overrideProvider(getRepositoryToken(CorreoAcceso)).useValue({})
+      // T035 incorpora Correos: evita abrir conexión para el procesador bajo demanda.
+      .overrideProvider(getRepositoryToken(EnvioCorreo)).useValue({})
+      .overrideProvider(ProcesadorCorreoService).useValue({})
       .compile();
     try {
       await modulo.init();

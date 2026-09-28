@@ -1,8 +1,21 @@
 import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsInt, IsNotEmpty, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 /** El alta solo admite identidad del negocio y correo del administrador pendiente. */
 export class CrearNegocioDto {
+  // El alta del dominio exige RFC; el cupo opcional usa 1 como valor inicial.
+  @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(13)
+  rfc: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(4294967295)
+  limiteSucursales?: number;
+
   @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El nombre es obligatorio' })

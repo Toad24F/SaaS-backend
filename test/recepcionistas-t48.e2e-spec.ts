@@ -11,7 +11,8 @@ import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { CodigoAcceso } from '../src/codigos/entities/codigo-acceso.entity';
 import { EventoAuditoria } from '../src/auditoria/entities/evento-auditoria.entity';
 import { AuditoriaService } from '../src/auditoria/auditoria.service';
-import { AltasService, AltaNegocioCreada } from '../src/altas/altas.service';
+import { AltaNegocioHistorica as AltaNegocioCreada } from './support/altas-historicas';
+import { servicios } from './support/escenarios-t51-t60';
 import { SesionesService } from '../src/auth/services/sesiones.service';
 import { Sesion } from '../src/auth/entities/sesion.entity';
 import { PoliticaContrasenasService } from '../src/auth/services/politica-contrasenas.service';
@@ -56,7 +57,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
         tokens.push(app.get(JwtService).sign({ sub: usuario.id, sesionId: sesion.id,
           rol: usuario.rol, negocioId: usuario.negocioId, email: usuario.email, nombre: usuario.nombre }));
       }
-      const pendiente = await app.get(AltasService).crearNegocio({ actorUsuarioId: usuarios[0].id,
+      // Estado histórico para reemisión: no representa el alta nueva sin cuenta de T035.
+      const pendiente = await servicios(db).altas.crearNegocio({ actorUsuarioId: usuarios[0].id,
         nombre: 'Pendiente', identificadorPublico: 'pendiente', emailAdministrador: 'pendiente@example.test', ahora: reloj.ahora() });
       await ejecutar({ app, db, reloj, usuarios, tokens, licencias, pendiente });
     } finally { await app.close(); }

@@ -12,7 +12,7 @@ import { CalendarioLicenciasService } from '../src/licencias/services/calendario
 import { Usuario } from '../src/usuarios/entities/usuario.entity';
 import { conBaseMigrada } from './support/mariadb';
 import { RelojPrueba } from './support/reloj';
-import { crearActivo, crearSuperadmin, fechaSegura, PASSWORD_T51_T60 } from './support/escenarios-t51-t60';
+import { crearActivo, crearSuperadmin, fechaSegura, PASSWORD_T51_T60, servicios } from './support/escenarios-t51-t60';
 
 type Contexto = { app: INestApplication; db: DataSource; reloj: RelojPrueba;
   superadmin: Usuario; token: string };
@@ -90,7 +90,8 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       for (const campo of ['modalidad', 'periodo']) {
         await post(app, '/negocios', token, { ...alta, [campo]: 'mensual' }).expect(400);
       }
-      const creado = await post(app, '/negocios', token, alta).expect(201);
+      // Fixture fase 1 para probar activación/licencias; el alta nueva se cubre en T035.
+      const creado = { body: await servicios(db).altas.crearNegocio({ ...alta, actorUsuarioId: superadmin.id, ahora: reloj.ahora() }) };
       const pendiente = await db.getRepository(Licencia).findOneByOrFail({ id: creado.body.licenciaId });
       expect(pendiente).toMatchObject({ habilitadaEn: null, venceEn: null });
       reloj.avanzar(1000);
@@ -166,10 +167,10 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
 
   it('T60 suspensión previa bloquea activación, código caduca y reactivar no inicia licencia', async () => {
     await conHttp(async ({ app, db, reloj, superadmin, token }) => {
-      const creado = await post(app, '/negocios', token, {
+      const creado = { body: await servicios(db).altas.crearNegocio({ actorUsuarioId: superadmin.id, ahora: reloj.ahora(),
         nombre: 'Pendiente suspendido', identificadorPublico: 'pendiente-t60',
         emailAdministrador: 'pendiente-t60@example.test',
-      }).expect(201);
+      }) };
       await post(app, `/licencias/${creado.body.licenciaId}/suspender`, token).expect(204);
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({
         codigo: creado.body.codigo, nombre: 'Pendiente', password: PASSWORD_T51_T60,
