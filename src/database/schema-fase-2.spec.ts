@@ -39,4 +39,16 @@ describe('M1-T013: SQL de entrega de identidad pendiente', () => {
     expect(sql).toContain('uq_codigos_alta_proposito');
     expect(sql).toContain('chk_codigos_derivacion');
   });
+
+  it('refleja la bandeja sin cuerpo y con referencias de negocio', () => {
+    // El SQL autónomo mantiene el mismo orden de FK que la migración incremental.
+    expect(sql.indexOf('ADD UNIQUE KEY uq_codigos_negocio_id')).toBeLessThan(
+      sql.indexOf('CREATE TABLE envios_correo'),
+    );
+    expect(sql).toContain('uq_envios_clave_dedupe');
+    expect(sql).toContain('fk_envios_codigo');
+    expect(sql).toContain('fk_envios_licencia');
+    expect(sql).toContain('chk_envios_arrendamiento');
+    expect(sql).not.toContain('cuerpo_correo');
+  });
 });

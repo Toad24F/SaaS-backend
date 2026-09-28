@@ -24,6 +24,8 @@ export enum PropositoCodigoAcceso {
 })
 @Index('uq_codigos_alta_proposito', ['altaAdministradorId', 'proposito', 'vigenteUnico'], { unique: true })
 @Index('uq_codigos_emision', ['emisionId'], { unique: true })
+// La bandeja comprueba que el código referido pertenece al mismo negocio.
+@Index('uq_codigos_negocio_id', ['negocioId', 'id'], { unique: true })
 @Index('idx_codigos_destinatario', ['negocioId', 'usuarioId'])
 @Index('idx_codigos_alta', ['negocioId', 'altaAdministradorId'])
 @Index('idx_codigos_expiracion', ['expiraEn'])

@@ -36,7 +36,7 @@ describe('T61 — instalación desde cero', () => {
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const historial = await segunda.query('SELECT COUNT(*) AS total FROM migrations');
         // Cuatro históricas y cuatro incrementales hasta los códigos de invitación.
-        expect(Number(historial[0].total)).toBe(8);
+        expect(Number(historial[0].total)).toBe(9);
       } finally {
         await app?.close();
         process.env.TEST_DB_NAME = entornoAnterior.TEST_DB_NAME;

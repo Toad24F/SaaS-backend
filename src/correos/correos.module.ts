@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
 
-// La composición no inicia un transporte: la bandeja y el adaptador llegarán en T025–T033.
+// La entidad y el contrato de transporte no inician envíos; T028–T033 conectarán el ejecutor.
 @Module({})
 export class CorreosModule {}
