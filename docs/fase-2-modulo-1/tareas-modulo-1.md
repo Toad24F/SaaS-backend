@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **104 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **101 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -263,23 +263,25 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T036: [identidad, rollback, fallos de entrega, flujo y pruebas](resultados-tareas/resultados-t036.md).
 
-- [ ] **M1-T037 — Crear la cuenta al activar** · 25 min · RF-09–RF-11
+- [x] **M1-T037 — Crear la cuenta al activar** · 25 min · RF-09–RF-11
 
   Dependencias: M1-T035, M1-T024, M1-T014.
 
   Hecho cuando: correo y código válidos crean la cuenta completa, transfieren reserva, consumen código e inician negocio/licencia una sola vez dentro de la transacción.
 
-- [ ] **M1-T038 — Corregir destinatario antes de activar** · 25 min · RF-12–RF-13, RF-18
+- [x] **M1-T038 — Corregir destinatario antes de activar** · 25 min · RF-12–RF-13, RF-18
 
   Dependencias: M1-T037.
 
   Hecho cuando: el superadmin cambia al correo disponible, invalida código y envío anteriores y encola uno nuevo; no puede corregir una invitación ya activada.
 
-- [ ] **M1-T039 — Adaptar reemisión a invitaciones** · 20 min · RF-12, RF-15, RF-18
+- [x] **M1-T039 — Adaptar reemisión a invitaciones** · 20 min · RF-12, RF-15, RF-18
 
   Dependencias: M1-T038.
 
   Hecho cuando: reemisión mantiene destinatario y negocio, renueva las 48 horas del nuevo código, anula el anterior y no inicia la licencia.
+
+  Evidencia T037–T039: [activación, corrección, reemisión, flujo y pruebas](resultados-tareas/resultados-t037-t039.md).
 
 - [ ] **M1-T040 — Enviar recuperación de administrador por correo** · 25 min · RF-14, RF-16, RF-19
 
