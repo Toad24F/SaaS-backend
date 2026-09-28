@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **113 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **111 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -197,17 +197,21 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia común T025–T027: [bandeja, transporte y resultados de pruebas](resultados-tareas/resultados-t025-t027.md).
 
-- [ ] **M1-T028 — Configurar adaptador de entrega real** · 25 min · RF-14, RF-17, RF-19
+- [x] **M1-T028 — Configurar adaptador de entrega real** · 25 min · RF-14, RF-17, RF-19
 
   Dependencias: M1-T027.
 
   Hecho cuando: el adaptador obtiene remitente y credenciales de configuración, falla claramente si faltan y pasa su contrato con transporte local/controlado sin guardar secretos en el repositorio.
 
-- [ ] **M1-T029 — Encolar correo con la operación de dominio** · 20 min · RF-14–RF-19
+  Evidencia T028: [adaptador, configuración, flujo y pruebas](resultados-tareas/resultados-t028.md).
+
+- [x] **M1-T029 — Encolar correo con la operación de dominio** · 20 min · RF-14–RF-19
 
   Dependencias: M1-T026.
 
   Hecho cuando: crear el envío usa la transacción del llamador; rollback elimina el pendiente y no se contacta al transporte antes del commit.
+
+  Evidencia T029: [encolado transaccional, flujo y pruebas](resultados-tareas/resultados-t029.md).
 
 - [ ] **M1-T030 — Coordinar toma de envíos entre procesadores** · 25 min · RF-17–RF-18, RF-81
 
