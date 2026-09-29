@@ -17,6 +17,7 @@ import { ProfesionalesModule } from './profesionales/profesionales.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { BloqueosModule } from './bloqueos/bloqueos.module';
 import { CorreosModule } from './correos/correos.module';
+import { CorreosHttpModule } from './correos/correos-http.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { CorreosModule } from './correos/correos.module';
     HorariosModule,
     BloqueosModule,
     CorreosModule,
+    CorreosHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

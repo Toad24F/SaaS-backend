@@ -1,3 +1,6 @@
+import { CodigosService } from '../src/codigos/codigos.service';
+import { derivadorPrueba } from './support/invitaciones-fase-2';
+import { codigoDelEnvio } from './support/credenciales-prueba';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
@@ -12,7 +15,8 @@ import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { CodigoAcceso } from '../src/codigos/entities/codigo-acceso.entity';
 import { EventoAuditoria } from '../src/auditoria/entities/evento-auditoria.entity';
 import { AuditoriaService } from '../src/auditoria/auditoria.service';
-import { AltasService, AltaNegocioCreada } from '../src/altas/altas.service';
+import { AltaNegocioHistorica as AltaNegocioCreada } from './support/altas-historicas';
+import { servicios } from './support/escenarios-t51-t60';
 import { SesionesService } from '../src/auth/services/sesiones.service';
 import { PoliticaContrasenasService } from '../src/auth/services/politica-contrasenas.service';
 import { Rol } from '../src/auth/enums/rol.enum';
@@ -27,6 +31,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
   await conBaseMigrada(async (db) => {
     const reloj = new RelojPrueba(new Date(Date.now() + 60000));
     const modulo = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CodigosService).useFactory({ inject: [AuditoriaService],
+        factory: (auditoria: AuditoriaService) => new CodigosService(auditoria, derivadorPrueba) })
       .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
     const app = modulo.createNestApplication();
     // Se conservan los Guards reales y las opciones de ValidationPipe de producción.
@@ -56,7 +62,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
         tokens.push(app.get(JwtService).sign({ sub: usuario.id, sesionId: sesion.id,
           rol: usuario.rol, negocioId: usuario.negocioId, email: usuario.email, nombre: usuario.nombre }));
       }
-      const pendiente = await app.get(AltasService).crearNegocio({ actorUsuarioId: usuarios[0].id,
+      // Estado histórico para credenciales: la invitación nueva se cubre en T035.
+      const pendiente = await servicios(db).altas.crearNegocio({ actorUsuarioId: usuarios[0].id,
         nombre: 'Pendiente', identificadorPublico: 'pendiente', emailAdministrador: 'pendiente@example.test', ahora: reloj.ahora() });
       await ejecutar({ app, db, reloj, usuarios, tokens, licencias, pendiente });
     } finally { await app.close(); }
@@ -133,10 +140,12 @@ describe('T49 — cambio y autorización de recuperación HTTP', () => {
       await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { suspendidaEn: ctx.reloj.ahora() });
       const antes = await estado(ctx.db);
       const primero = await autorizar(ctx).expect(201);
+      const codigoPrimero = await codigoDelEnvio(ctx.db, primero.body.envioId);
       ctx.reloj.avanzar(1000);
       const segundo = await autorizar(ctx).expect(201);
-      expect(segundo.body).toEqual({ codigo: expect.any(String), expiraEn: new Date(ctx.reloj.ahora().getTime() + 1800000).toISOString() });
-      expect(segundo.body.codigo).not.toBe(primero.body.codigo);
+      const codigoSegundo = await codigoDelEnvio(ctx.db, segundo.body.envioId);
+      expect(segundo.body).toEqual({ negocioId: ctx.usuarios[1].negocioId, administradorId: ctx.usuarios[1].id, envioId: expect.any(String), estadoEnvio: 'pendiente', expiraEn: new Date(ctx.reloj.ahora().getTime() + 1800000).toISOString() });
+      expect(codigoSegundo).not.toBe(codigoPrimero);
       const emitido = await estado(ctx.db);
       expect(emitido.usuarios).toEqual(antes.usuarios);
       expect(emitido.licencias).toEqual(antes.licencias);
@@ -145,9 +154,9 @@ describe('T49 — cambio y autorización de recuperación HTTP', () => {
       expect(eventos).toHaveLength(2);
       expect(eventos[0]).toMatchObject({ actorUsuarioId: ctx.usuarios[0].id, usuarioId: ctx.usuarios[1].id, negocioId: ctx.usuarios[1].negocioId });
       const recuperar = (codigo: string) => request(ctx.app.getHttpServer()).post('/auth/recuperar-contrasena').send({ codigo, password: cambio.nuevaPassword });
-      await recuperar(primero.body.codigo).expect(400);
-      await recuperar(segundo.body.codigo).expect(204);
-      await recuperar(segundo.body.codigo).expect(400);
+      await recuperar(codigoPrimero).expect(400);
+      await recuperar(codigoSegundo).expect(204);
+      await recuperar(codigoSegundo).expect(400);
       const despues = await estado(ctx.db);
       expect(despues.licencias).toEqual(antes.licencias);
       expect(despues.usuarios.find(u => u.id === ctx.usuarios[1].id)?.activo).toBe(false);

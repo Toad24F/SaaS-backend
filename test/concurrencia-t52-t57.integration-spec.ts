@@ -1,3 +1,4 @@
+import { derivadorPrueba } from './support/invitaciones-fase-2';
 import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { IsNull } from 'typeorm';
@@ -430,7 +431,7 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
       try {
         // Inyectar el fallo tras actualizar el hash demuestra rollback del consumo.
         const credenciales = new CredencialesService(primera.getRepository(Usuario),
-          new CodigosService(auditoria), new AutorizacionService(),
+          new CodigosService(auditoria, derivadorPrueba), new AutorizacionService(),
           new PoliticaContrasenasService(), sesiones, auditoria);
         await expect(credenciales.recuperarContrasena({
           codigo: recuperacion.codigo, nuevaPassword: 'password-nueva-t57',
@@ -447,7 +448,7 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
         .mockRejectedValueOnce(new Error('Fallo controlado T57'));
       try {
         const credenciales = new CredencialesService(primera.getRepository(Usuario),
-          new CodigosService(auditoria), new AutorizacionService(),
+          new CodigosService(auditoria, derivadorPrueba), new AutorizacionService(),
           new PoliticaContrasenasService(), sesionesCambio, auditoria);
         await expect(credenciales.cambiarContrasena({
           usuarioId: pendiente.administradorId, passwordActual: PASSWORD_T51_T60,

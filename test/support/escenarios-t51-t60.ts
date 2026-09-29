@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { ActivacionesService } from '../../src/altas/activaciones.service';
-import { AltasService } from '../../src/altas/altas.service';
+import { AltasHistoricasFixture as AltasService } from './altas-historicas';
+import { AltasService as AltasDominioService } from '../../src/altas/altas.service';
+import { ReservaCorreoService } from '../../src/altas/reserva-correo.service';
+import { BandejaCorreoService } from '../../src/correos/bandeja-correo.service';
 import { AuditoriaService } from '../../src/auditoria/auditoria.service';
 import { Rol } from '../../src/auth/enums/rol.enum';
 import { AutorizacionService } from '../../src/auth/services/autorizacion.service';
@@ -16,23 +19,31 @@ import { CalendarioLicenciasService } from '../../src/licencias/services/calenda
 import { PoliticaAccesoLicenciaService } from '../../src/licencias/services/politica-acceso-licencia.service';
 import { Negocio } from '../../src/negocios/entities/negocio.entity';
 import { Usuario } from '../../src/usuarios/entities/usuario.entity';
+import { derivadorPrueba } from './invitaciones-fase-2';
+import { credencialesDePrueba } from './credenciales-prueba';
 
 export const PASSWORD_T51_T60 = 'password-segura-t51';
 
 /** Construye servicios reales vinculados a la conexión recibida, sin mocks de persistencia. */
 export function servicios(db: DataSource, auditoria = new AuditoriaService()) {
   const politica = new PoliticaContrasenasService();
-  const codigos = new CodigosService(auditoria);
+  const codigos = new CodigosService(auditoria, derivadorPrueba);
   const autorizacion = new AutorizacionService();
   const calendario = new CalendarioLicenciasService();
   const sesiones = new SesionesService(db.getRepository(Sesion));
+  const fixtureAlta = new AltasService(db.getRepository(Negocio), autorizacion, codigos, auditoria);
+  const altasDominio = new AltasDominioService(db.getRepository(Negocio), autorizacion,
+    codigos, auditoria, new ReservaCorreoService(), new BandejaCorreoService());
   return {
     auditoria, codigos, sesiones,
-    altas: new AltasService(db.getRepository(Negocio), autorizacion, codigos, auditoria),
+    // Solo la preparación del alta histórica usa fixture; reemisión sigue probando producción.
+    altas: { crearNegocio: fixtureAlta.crearNegocio.bind(fixtureAlta),
+      reemitirCodigoInicial: altasDominio.reemitirCodigoInicial.bind(altasDominio) },
     activaciones: new ActivacionesService(db.getRepository(Usuario), codigos, politica,
       new PoliticaAccesoLicenciaService(), calendario, auditoria),
-    credenciales: new CredencialesService(db.getRepository(Usuario), codigos, autorizacion,
-      politica, sesiones, auditoria),
+    // Reconstruye solo en la fixture el código que la API entrega por correo.
+    credenciales: credencialesDePrueba(db, new CredencialesService(db.getRepository(Usuario), codigos, autorizacion,
+      politica, sesiones, auditoria)),
     licencias: new LicenciasService(db.getRepository(Licencia), autorizacion, calendario, auditoria),
   };
 }
@@ -50,7 +61,7 @@ export async function crearSuperadmin(db: DataSource, ahora = fechaSegura()) {
   });
 }
 
-/** Alta pendiente por el caso de uso real: licencia y administrador nacen sin vigencia. */
+/** Fixture histórica de fase 1; no acredita el alta nueva sin cuenta de T035. */
 export async function crearPendiente(db: DataSource, actorId: number, ahora = fechaSegura()) {
   const alta = await servicios(db).altas.crearNegocio({
     actorUsuarioId: actorId, nombre: `Negocio ${randomUUID()}`,

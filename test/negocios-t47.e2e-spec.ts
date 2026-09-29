@@ -15,8 +15,13 @@ import { Rol } from '../src/auth/enums/rol.enum';
 import { PoliticaContrasenasService } from '../src/auth/services/politica-contrasenas.service';
 import { conBaseMigrada } from './support/mariadb';
 import { RelojPrueba } from './support/reloj';
+import { CodigosService } from '../src/codigos/codigos.service';
+import { DerivadorCodigo } from '../src/codigos/derivador-codigo';
+import { AuditoriaService } from '../src/auditoria/auditoria.service';
+import { AltaAdministrador } from '../src/altas/entities/alta-administrador.entity';
+import { EnvioCorreo } from '../src/correos/entities/envio-correo.entity';
 
-const alta = { nombre: '  Clínica nueva  ', identificadorPublico: ' Clinica-Nueva ', emailAdministrador: ' NUEVO@EXAMPLE.TEST ' };
+const alta = { nombre: '  Clínica nueva  ', identificadorPublico: ' Clinica-Nueva ', emailAdministrador: ' NUEVO@EXAMPLE.TEST ', rfc: 'ABC010101AB1' };
 type Contexto = {
   app: INestApplication; db: DataSource; reloj: RelojPrueba; negocio: Negocio;
   licencia: Licencia; usuarios: Record<Rol, Usuario>; tokens: Record<Rol, string>;
@@ -27,6 +32,9 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
   await conBaseMigrada(async (db) => {
     const reloj = new RelojPrueba(new Date(Date.now() + 60000));
     const modulo = await Test.createTestingModule({ imports: [AppModule] })
+      // Derivación real con clave aislada: no depende de .env ni contacta SMTP.
+      .overrideProvider(CodigosService).useValue(new CodigosService(new AuditoriaService(),
+        new DerivadorCodigo({ 1: 'clave-aislada-http-t035-123456789012345' }, 1)))
       .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
     const app = modulo.createNestApplication();
     // Son las mismas opciones de validación global que main.ts.
@@ -67,15 +75,15 @@ function crear(app: INestApplication, token: string, body: object = alta) {
 }
 
 // La lista explícita de campos detecta filtraciones de hash, sesiones o códigos.
-function vista(negocio: Negocio, licencia: Licencia, admin: Usuario) {
+function vista(negocio: Negocio, licencia: Licencia, admin: Usuario | null) {
   return {
     id: negocio.id, nombre: negocio.nombre, identificadorPublico: negocio.slug,
     emailContacto: negocio.emailContacto, telefonoContacto: negocio.telefonoContacto,
     activadoEn: negocio.activadoEn?.toISOString() ?? null, creadoEn: negocio.creadoEn.toISOString(),
     licencia: { id: licencia.id, habilitadaEn: licencia.habilitadaEn?.toISOString() ?? null,
       venceEn: licencia.venceEn?.toISOString() ?? null, suspendidaEn: licencia.suspendidaEn?.toISOString() ?? null },
-    administrador: { id: admin.id, email: admin.email, activo: admin.activo,
-      activadoEn: admin.activadoEn?.toISOString() ?? null },
+    administrador: admin ? { id: admin.id, email: admin.email, activo: admin.activo,
+      activadoEn: admin.activadoEn?.toISOString() ?? null } : null,
   };
 }
 
@@ -106,27 +114,30 @@ async function rechazarRutas(ctx: Contexto, token: string | undefined, status: n
 }
 
 describe('T47 — administración HTTP de negocios', () => {
-  it('crea el alta anual pendiente y consulta globalmente sin volver a mostrar el código', async () => {
+  it('T035 crea invitación y envío pendiente sin cuenta ni código, y consulta sin administrador', async () => {
     await conHttp(async ({ app, db, reloj, tokens }) => {
       const token = tokens[Rol.SUPERADMIN];
       const { body } = await crear(app, token).expect(201);
-      expect(body).toEqual({ negocioId: expect.any(Number), administradorId: expect.any(Number),
-        licenciaId: expect.any(Number), codigo: expect.any(String),
+      expect(body).toEqual({ negocioId: expect.any(Number), altaAdministradorId: expect.any(Number),
+        licenciaId: expect.any(Number), envioId: expect.any(String), estadoEnvio: 'pendiente',
         expiraEn: new Date(reloj.ahora().getTime() + 48 * 3600000).toISOString() });
       const negocio = await db.getRepository(Negocio).findOneByOrFail({ id: body.negocioId });
       const licencia = await db.getRepository(Licencia).findOneByOrFail({ id: body.licenciaId });
-      const admin = await db.getRepository(Usuario).findOneByOrFail({ id: body.administradorId });
+      expect(await db.getRepository(Usuario).countBy({ negocioId: negocio.id })).toBe(0);
       expect(negocio).toMatchObject({ nombre: 'Clínica nueva', slug: 'clinica-nueva', activadoEn: null });
       expect(licencia).toMatchObject({ negocioId: negocio.id, habilitadaEn: null, venceEn: null, suspendidaEn: null });
-      expect(admin).toMatchObject({ negocioId: negocio.id, email: 'nuevo@example.test',
-        rol: Rol.ADMIN_NEGOCIO, nombre: null, passwordHash: null, activadoEn: null });
+      expect(await db.getRepository(AltaAdministrador).findOneByOrFail({ id: body.altaAdministradorId }))
+        .toMatchObject({ negocioId: negocio.id, correo: 'nuevo@example.test', estado: 'pendiente', usuarioCreadoId: null });
+      expect(await db.getRepository(EnvioCorreo).findOneByOrFail({ id: body.envioId }))
+        .toMatchObject({ negocioId: negocio.id, estado: 'pendiente', intentos: 0 });
       const detalle = await request(app.getHttpServer()).get(`/negocios/${negocio.id}`).auth(token, { type: 'bearer' }).expect(200);
-      expect(detalle.body).toEqual(vista(negocio, licencia, admin));
+      expect(detalle.body).toEqual(vista(negocio, licencia, null));
       const lista = await request(app.getHttpServer()).get('/negocios').auth(token, { type: 'bearer' }).expect(200);
       expect(lista.body).toHaveLength(2);
       expect(lista.body[1]).toEqual(detalle.body);
-      expect(JSON.stringify(lista.body)).not.toContain(body.codigo);
-      expect((await db.getRepository(CodigoAcceso).findOneByOrFail({ usuarioId: admin.id })).consumidoEn).toBeNull();
+      expect(body).not.toHaveProperty('codigo');
+      expect(body).not.toHaveProperty('administradorId');
+      expect((await db.getRepository(CodigoAcceso).findOneByOrFail({ altaAdministradorId: body.altaAdministradorId })).consumidoEn).toBeNull();
     });
   });
 
@@ -177,13 +188,14 @@ describe('T47 — administración HTTP de negocios', () => {
     });
   });
 
-  it('valida los tres campos de alta y rechaza modalidad, período e identidad enviada por el cliente', async () => {
+  it('valida identidad, RFC y cupo de alta y rechaza campos extra', async () => {
     await conHttp(async ({ app, db, tokens }) => {
       const antes = await estado(db);
-      const invalidos = [{}, ...['nombre', 'identificadorPublico', 'emailAdministrador'].flatMap((campo) =>
+      const invalidos = [{}, ...['nombre', 'identificadorPublico', 'emailAdministrador', 'rfc'].flatMap((campo) =>
         [null, 123, '   '].map((valor) => ({ ...alta, [campo]: valor }))),
         { ...alta, nombre: 'a'.repeat(151) }, { ...alta, identificadorPublico: 'a'.repeat(101) },
-        { ...alta, emailAdministrador: 'no-es-correo' }, { ...alta, emailAdministrador: `${'a'.repeat(145)}@example.test` }];
+        { ...alta, emailAdministrador: 'no-es-correo' }, { ...alta, emailAdministrador: `${'a'.repeat(145)}@example.test` },
+        { ...alta, rfc: 'a'.repeat(14) }, ...[0, -1, 1.5, '2', 4294967296, null].map((limiteSucursales) => ({ ...alta, limiteSucursales }))];
       for (const body of invalidos) await crear(app, tokens[Rol.SUPERADMIN], body).expect(400);
       for (const campo of ['modalidad', 'periodo', 'plan', 'rol', 'actorUsuarioId', 'negocioId', 'ahora']) {
         const respuesta = await crear(app, tokens[Rol.SUPERADMIN], { ...alta, [campo]: 'no-permitido' }).expect(400);

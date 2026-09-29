@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **121 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **96 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -145,159 +145,177 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 3. Códigos y correo durable
 
-- [ ] **M1-T020 — Separar destinatarios de activación y recuperación** · 25 min · RF-08–RF-16
+- [x] **M1-T020 — Separar destinatarios de activación y recuperación** · 25 min · RF-08–RF-16
 
   Dependencias: M1-T012.
 
   Hecho cuando: CodigoAcceso admite exactamente un destino según propósito: invitación para activación o cuenta para recuperación, con versión de destinatario y hash.
 
-- [ ] **M1-T021 — Migrar destinatarios y vigencia de códigos** · 25 min · RF-10–RF-16
+- [x] **M1-T021 — Migrar destinatarios y vigencia de códigos** · 25 min · RF-10–RF-16
 
   Dependencias: M1-T020, M1-T013.
 
   Hecho cuando: la base temporal rechaza combinaciones de propósito/destino inválidas, pertenencias cruzadas y más de un código vigente por destino y propósito.
 
-- [ ] **M1-T022 — Preparar derivación y versiones de clave** · 25 min · RF-14–RF-19
+- [x] **M1-T022 — Preparar derivación y versiones de clave** · 25 min · RF-14–RF-19
 
   Dependencias: M1-T020.
 
   Hecho cuando: pruebas reproducen el mismo código para la misma emisión, diferencian nonce/propósito/destinatario y comprueban que solo se persisten hash y metadatos no secretos.
 
-- [ ] **M1-T023 — Adaptar emisión y reemplazo de códigos** · 25 min · RF-12, RF-14–RF-16
+- [x] **M1-T023 — Adaptar emisión y reemplazo de códigos** · 25 min · RF-12, RF-14–RF-16
 
   Dependencias: M1-T021, M1-T022, M1-T016, M1-T010.
 
   Hecho cuando: emitir asigna 48 horas o 30 minutos según propósito y reemplazar invalida el anterior sin iniciar licencia ni exponer código en auditoría.
 
-- [ ] **M1-T024 — Adaptar validación y consumo único** · 25 min · RF-09–RF-11, RF-15–RF-16
+- [x] **M1-T024 — Adaptar validación y consumo único** · 25 min · RF-09–RF-11, RF-15–RF-16
 
   Dependencias: M1-T023.
 
   Hecho cuando: consumir comprueba hash, propósito, destinatario, expiración y estado bajo bloqueo; el consumo y la operación asociada se revierten juntos ante un fallo.
 
-- [ ] **M1-T025 — Definir bandeja de envíos** · 25 min · RF-14–RF-19, RF-80–RF-82
+  Evidencia común T020–T024: [modelo, migración, servicio y pruebas](resultados-tareas/resultados-t020-t024.md).
+
+- [x] **M1-T025 — Definir bandeja de envíos** · 25 min · RF-14–RF-19, RF-80–RF-82
 
   Dependencias: M1-T020.
 
   Hecho cuando: la entidad contiene deduplicación, estado, intentos, próxima ejecución, arrendamiento y referencia de dominio, sin cuerpo persistido con código utilizable.
 
-- [ ] **M1-T026 — Migrar la bandeja de correo** · 20 min · RF-14–RF-19, RF-80–RF-82
+- [x] **M1-T026 — Migrar la bandeja de correo** · 20 min · RF-14–RF-19, RF-80–RF-82
 
   Dependencias: M1-T025, M1-T021.
 
   Hecho cuando: una base temporal impide duplicar la clave de envío y conserva estados e intentos tras reconectar.
 
-- [ ] **M1-T027 — Definir adaptador y transporte controlado** · 20 min · RF-14, RF-17, RF-19, RF-81
+- [x] **M1-T027 — Definir adaptador y transporte controlado** · 20 min · RF-14, RF-17, RF-19, RF-81
 
   Dependencias: M1-T008.
 
   Hecho cuando: el adaptador de pruebas simula aceptación, rechazo y timeout y captura solo en memoria; ninguna prueba envía a destinatarios reales.
 
-- [ ] **M1-T028 — Configurar adaptador de entrega real** · 25 min · RF-14, RF-17, RF-19
+  Evidencia común T025–T027: [bandeja, transporte y resultados de pruebas](resultados-tareas/resultados-t025-t027.md).
+
+- [x] **M1-T028 — Configurar adaptador de entrega real** · 25 min · RF-14, RF-17, RF-19
 
   Dependencias: M1-T027.
 
   Hecho cuando: el adaptador obtiene remitente y credenciales de configuración, falla claramente si faltan y pasa su contrato con transporte local/controlado sin guardar secretos en el repositorio.
 
-- [ ] **M1-T029 — Encolar correo con la operación de dominio** · 20 min · RF-14–RF-19
+  Evidencia T028: [adaptador, configuración, flujo y pruebas](resultados-tareas/resultados-t028.md).
+
+- [x] **M1-T029 — Encolar correo con la operación de dominio** · 20 min · RF-14–RF-19
 
   Dependencias: M1-T026.
 
   Hecho cuando: crear el envío usa la transacción del llamador; rollback elimina el pendiente y no se contacta al transporte antes del commit.
 
-- [ ] **M1-T030 — Coordinar toma de envíos entre procesadores** · 25 min · RF-17–RF-18, RF-81
+  Evidencia T029: [encolado transaccional, flujo y pruebas](resultados-tareas/resultados-t029.md).
+
+- [x] **M1-T030 — Coordinar toma de envíos entre procesadores** · 25 min · RF-17–RF-18, RF-81
 
   Dependencias: M1-T029, M1-T007.
 
   Hecho cuando: dos procesadores no toman simultáneamente un envío disponible y un arrendamiento vencido puede recuperarse tras caída.
 
-- [ ] **M1-T031 — Revalidar códigos antes de enviarlos** · 25 min · RF-14–RF-19
+- [x] **M1-T031 — Revalidar códigos antes de enviarlos** · 25 min · RF-14–RF-19
 
   Dependencias: M1-T030, M1-T024, M1-T027.
 
   Hecho cuando: el emisor reconstruye transitoriamente el código y descarta vencidos, consumidos, invalidados o destinatarios sustituidos sin ampliar su vigencia.
 
-- [ ] **M1-T032 — Registrar resultados y reintentos** · 25 min · RF-17–RF-19, RF-81
+- [x] **M1-T032 — Registrar resultados y reintentos** · 25 min · RF-17–RF-19, RF-81
 
   Dependencias: M1-T031.
 
   Hecho cuando: se persisten resultado sanitizado y próximo intento; los confirmados no se reenvían y el reinicio conserva el trabajo pendiente.
 
-- [ ] **M1-T033 — Probar fallos y recuperación de entrega** · 25 min · RF-14–RF-19
+- [x] **M1-T033 — Probar fallos y recuperación de entrega** · 25 min · RF-14–RF-19
 
   Dependencias: M1-T032, M1-T028.
 
   Hecho cuando: pruebas cubren timeout, reinicio y caída tras aceptación; documentan posible duplicación de transporte sin consumo doble del código ni secretos persistidos.
 
-- [ ] **M1-T034 — Exponer estado y reintento autorizado** · 25 min · RF-02, RF-17–RF-19
+- [x] **M1-T034 — Exponer estado y reintento autorizado** · 25 min · RF-02, RF-17–RF-19
 
   Dependencias: M1-T005, M1-T032, M1-T009.
 
   Hecho cuando: el superadmin consulta y solicita reintento sin recibir el código; otros roles se rechazan y un pendiente no se presenta como entregado.
 
+  Evidencia T030–T034: [procesador, recuperación, gestión autorizada, flujo y pruebas](resultados-tareas/resultados-t030-t034.md).
+
 ## 4. Negocios y activación
 
-- [ ] **M1-T035 — Reemplazar el alta con invitación sin usuario** · 25 min · RF-06–RF-08, RF-13–RF-14, RF-20
+- [x] **M1-T035 — Reemplazar el alta con invitación sin usuario** · 25 min · RF-06–RF-08, RF-13–RF-14, RF-20
 
   Dependencias: M1-T017, M1-T023, M1-T029, M1-T016.
 
   Hecho cuando: el servicio confirma negocio, licencia pendiente, invitación, reserva, código y envío en conjunto; no crea Usuario para el administrador.
 
-- [ ] **M1-T036 — Probar alta y rollback conjunto** · 25 min · RF-06–RF-08, RF-13, RF-17, RF-20
+  Evidencia T035: [alta sin cuenta, flujo, archivos y pruebas](resultados-tareas/resultados-t035.md).
+
+- [x] **M1-T036 — Probar alta y rollback conjunto** · 25 min · RF-06–RF-08, RF-13, RF-17, RF-20
 
   Dependencias: M1-T035.
 
   Hecho cuando: RFC repetido se acepta, correo/slug duplicados se rechazan y fallos inyectados no dejan altas parciales; fallo de correo conserva el negocio pendiente.
 
-- [ ] **M1-T037 — Crear la cuenta al activar** · 25 min · RF-09–RF-11
+  Evidencia T036: [identidad, rollback, fallos de entrega, flujo y pruebas](resultados-tareas/resultados-t036.md).
+
+- [x] **M1-T037 — Crear la cuenta al activar** · 25 min · RF-09–RF-11
 
   Dependencias: M1-T035, M1-T024, M1-T014.
 
   Hecho cuando: correo y código válidos crean la cuenta completa, transfieren reserva, consumen código e inician negocio/licencia una sola vez dentro de la transacción.
 
-- [ ] **M1-T038 — Corregir destinatario antes de activar** · 25 min · RF-12–RF-13, RF-18
+- [x] **M1-T038 — Corregir destinatario antes de activar** · 25 min · RF-12–RF-13, RF-18
 
   Dependencias: M1-T037.
 
   Hecho cuando: el superadmin cambia al correo disponible, invalida código y envío anteriores y encola uno nuevo; no puede corregir una invitación ya activada.
 
-- [ ] **M1-T039 — Adaptar reemisión a invitaciones** · 20 min · RF-12, RF-15, RF-18
+- [x] **M1-T039 — Adaptar reemisión a invitaciones** · 20 min · RF-12, RF-15, RF-18
 
   Dependencias: M1-T038.
 
   Hecho cuando: reemisión mantiene destinatario y negocio, renueva las 48 horas del nuevo código, anula el anterior y no inicia la licencia.
 
-- [ ] **M1-T040 — Enviar recuperación de administrador por correo** · 25 min · RF-14, RF-16, RF-19
+  Evidencia T037–T039: [activación, corrección, reemisión, flujo y pruebas](resultados-tareas/resultados-t037-t039.md).
+
+- [x] **M1-T040 — Enviar recuperación de administrador por correo** · 25 min · RF-14, RF-16, RF-19
 
   Dependencias: M1-T029, M1-T024, M1-T018.
 
   Hecho cuando: la recuperación autorizada conserva 30 minutos y los bloqueos previos, entrega por correo y no introduce códigos para recepción o Profesional.
 
-- [ ] **M1-T041 — Actualizar HTTP de alta y activación** · 25 min · RF-06–RF-19, RF-20
+- [x] **M1-T041 — Actualizar HTTP de alta y activación** · 25 min · RF-06–RF-19, RF-20
 
   Dependencias: M1-T005, M1-T039, M1-T040.
 
   Hecho cuando: los DTO exigen RFC/correo según operación y respuestas no incluyen usuario pendiente ni código; errores y roles se verifican por HTTP.
 
-- [ ] **M1-T042 — Probar activación frente a activación** · 20 min · RF-09–RF-11
+- [x] **M1-T042 — Probar activación frente a activación** · 20 min · RF-09–RF-11
 
   Dependencias: M1-T037, M1-T007.
 
   Hecho cuando: dos conexiones consumen el mismo código y solo una crea cuenta, inicia licencia y audita, sin registros parciales.
 
-- [ ] **M1-T043 — Probar activación frente a reemplazo** · 25 min · RF-10–RF-13, RF-18
+- [x] **M1-T043 — Probar activación frente a reemplazo** · 25 min · RF-10–RF-13, RF-18
 
   Dependencias: M1-T039, M1-T038, M1-T007.
 
   Hecho cuando: ambos órdenes entre activación, reemisión y corrección respetan el ganador del bloqueo; ningún código o correo sustituido activa después.
 
-- [ ] **M1-T044 — Probar invalidaciones y secretos por HTTP** · 25 min · RF-09–RF-19
+- [x] **M1-T044 — Probar invalidaciones y secretos por HTTP** · 25 min · RF-09–RF-19
 
   Dependencias: M1-T041, M1-T042, M1-T043.
 
   Hecho cuando: correo distinto, código vencido/usado/sustituido y entradas extra se rechazan sin activar; ninguna respuesta o log de los recorridos contiene secretos.
 
 ## 5. Licencias y control de acceso
+
+  Evidencia T040–T044: [recuperación, HTTP, concurrencia, archivos y resultados](resultados-tareas/resultados-t040-t044.md).
 
 - [ ] **M1-T045 — Ampliar los estados persistidos de licencia** · 25 min · RF-69–RF-79, RF-82–RF-85
 

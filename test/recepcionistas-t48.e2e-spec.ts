@@ -1,3 +1,6 @@
+import { CodigosService } from '../src/codigos/codigos.service';
+import { derivadorPrueba } from './support/invitaciones-fase-2';
+import { codigoDelEnvio } from './support/credenciales-prueba';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
@@ -20,13 +23,15 @@ import { conBaseMigrada } from './support/mariadb';
 import { RelojPrueba } from './support/reloj';
 
 type Contexto = { app: INestApplication; db: DataSource; reloj: RelojPrueba;
-  usuarios: Usuario[]; tokens: string[]; licencias: Licencia[]; pendiente: AltaNegocioCreada };
+  usuarios: Usuario[]; tokens: string[]; licencias: Licencia[]; pendiente: AltaNegocioCreada & { codigo: string; correo: string } };
 
 // Usuarios 0=superadmin, 1/2=admin y recepción A, 3/4=admin y recepción B.
 async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
   await conBaseMigrada(async (db) => {
     const reloj = new RelojPrueba(new Date(Date.now() + 60000));
     const modulo = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CodigosService).useFactory({ inject: [AuditoriaService],
+        factory: (auditoria: AuditoriaService) => new CodigosService(auditoria, derivadorPrueba) })
       .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
     const app = modulo.createNestApplication();
     // Se conservan los Guards reales y las opciones de ValidationPipe de producción.
@@ -56,8 +61,10 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
         tokens.push(app.get(JwtService).sign({ sub: usuario.id, sesionId: sesion.id,
           rol: usuario.rol, negocioId: usuario.negocioId, email: usuario.email, nombre: usuario.nombre }));
       }
-      const pendiente = await app.get(AltasService).crearNegocio({ actorUsuarioId: usuarios[0].id,
-        nombre: 'Pendiente', identificadorPublico: 'pendiente', emailAdministrador: 'pendiente@example.test', ahora: reloj.ahora() });
+      // Invitación real sin usuario; el secreto permanece exclusivamente en memoria de prueba.
+      const alta = await app.get(AltasService).crearNegocio({ actorUsuarioId: usuarios[0].id,
+        nombre: 'Pendiente', rfc: 'AAA010101AAA', identificadorPublico: 'pendiente', emailAdministrador: 'pendiente@example.test', ahora: reloj.ahora() });
+      const pendiente = { ...alta, codigo: await codigoDelEnvio(db, alta.envioId), correo: 'pendiente@example.test' };
       await ejecutar({ app, db, reloj, usuarios, tokens, licencias, pendiente });
     } finally { await app.close(); }
   });
@@ -362,19 +369,19 @@ describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
       const antes = await estado(db);
       reloj.avanzar(60000);
       const { body } = await reemitir(ctx).expect(201);
-      expect(body).toEqual({ codigo: expect.any(String), expiraEn: new Date(reloj.ahora().getTime() + 48 * 3600000).toISOString() });
-      expect(body.codigo).not.toBe(pendiente.codigo);
+      expect(body).toEqual({ negocioId: pendiente.negocioId, altaAdministradorId: pendiente.altaAdministradorId, envioId: expect.any(String), estadoEnvio: 'pendiente', expiraEn: new Date(reloj.ahora().getTime() + 48 * 3600000).toISOString() });
+      expect(await codigoDelEnvio(db, body.envioId)).not.toBe(pendiente.codigo);
       const despues = await estado(db);
       expect(despues.usuarios).toEqual(antes.usuarios);
       expect(despues.negocios).toEqual(antes.negocios);
       expect(despues.licencias).toEqual(antes.licencias);
-      const codigos = despues.codigos.filter((codigo) => codigo.usuarioId === pendiente.administradorId);
+      const codigos = despues.codigos.filter((codigo) => codigo.altaAdministradorId === pendiente.altaAdministradorId);
       expect(codigos).toHaveLength(2);
       expect(codigos[0].invalidadoEn).toEqual(reloj.ahora());
-      expect(codigos[1]).toMatchObject({ usuarioId: pendiente.administradorId, negocioId: pendiente.negocioId,
+      expect(codigos[1]).toMatchObject({ usuarioId: null, altaAdministradorId: pendiente.altaAdministradorId, negocioId: pendiente.negocioId,
         emisorUsuarioId: ctx.usuarios[0].id, consumidoEn: null, invalidadoEn: null });
       await request(app.getHttpServer()).post('/auth/activar-administrador')
-        .send({ codigo: pendiente.codigo, nombre: 'Admin', password: 'password-nueva-t48' }).expect(400);
+        .send({ codigo: pendiente.codigo, correo: pendiente.correo, negocioId: pendiente.negocioId, nombre: 'Admin', password: 'password-nueva-t48' }).expect(409);
       expect(await estado(db)).toEqual(despues);
     });
   });

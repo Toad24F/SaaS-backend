@@ -2,6 +2,12 @@ import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { AltasService } from '../src/altas/altas.service';
+import { DerivadorCodigo } from '../src/codigos/derivador-codigo';
+import { ReservaCorreoService } from '../src/altas/reserva-correo.service';
+import { AltaAdministrador } from '../src/altas/entities/alta-administrador.entity';
+import { CorreoAcceso } from '../src/altas/entities/correo-acceso.entity';
+import { BandejaCorreoService } from '../src/correos/bandeja-correo.service';
+import { EnvioCorreo } from '../src/correos/entities/envio-correo.entity';
 import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { EventoAuditoria } from '../src/auditoria/entities/evento-auditoria.entity';
 import { Rol } from '../src/auth/enums/rol.enum';
@@ -30,13 +36,15 @@ function construirServicio(dataSource: DataSource, auditoria = new AuditoriaServ
   return new AltasService(
     dataSource.getRepository(Negocio),
     new AutorizacionService(),
-    new CodigosService(auditoria),
+    new CodigosService(auditoria, new DerivadorCodigo({ 1: 'clave-aislada-regresion-t035-1234567890' }, 1)),
     auditoria,
+    new ReservaCorreoService(),
+    new BandejaCorreoService(),
   );
 }
 
-describe('Alta atómica de negocio (T31)', () => {
-  it('crea negocio pendiente, licencia anual sin habilitar, administrador, código y auditoría', async () => {
+describe('Alta atómica de negocio (T31 adaptada a M1-T035)', () => {
+  it('crea negocio pendiente, licencia anual sin habilitar, invitación, código y auditoría', async () => {
     await conBaseMigrada(async (primera) => {
       const actor = await crearSuperadmin(primera);
       const servicio = construirServicio(primera);
@@ -47,14 +55,16 @@ describe('Alta atómica de negocio (T31)', () => {
         nombre: '  Clínica del Centro  ',
         identificadorPublico: ' Clinica-Centro ',
         emailAdministrador: ' ADMIN@EJEMPLO.TEST ',
+        rfc: 'ABC010101AB1',
         ahora,
       });
 
       expect(resultado).toEqual({
         negocioId: expect.any(Number),
-        administradorId: expect.any(Number),
+        altaAdministradorId: expect.any(Number),
         licenciaId: expect.any(Number),
-        codigo: expect.any(String),
+        envioId: expect.any(String),
+        estadoEnvio: 'pendiente',
         expiraEn: new Date('2026-09-14T16:00:00.000Z'),
       });
       await expect(primera.getRepository(Negocio).findOneByOrFail({ id: resultado.negocioId }))
@@ -65,14 +75,14 @@ describe('Alta atómica de negocio (T31)', () => {
           telefonoContacto: null,
           activadoEn: null,
         });
-      await expect(primera.getRepository(Usuario).findOneByOrFail({ id: resultado.administradorId }))
+      // El destinatario pendiente es una invitación; no hay cuenta sin contraseña.
+      expect(await primera.getRepository(Usuario).countBy({ negocioId: resultado.negocioId })).toBe(0);
+      await expect(primera.getRepository(AltaAdministrador).findOneByOrFail({ id: resultado.altaAdministradorId }))
         .resolves.toMatchObject({
           negocioId: resultado.negocioId,
-          email: 'admin@ejemplo.test',
-          rol: Rol.ADMIN_NEGOCIO,
-          nombre: null,
-          passwordHash: null,
-          activo: true,
+          correo: 'admin@ejemplo.test',
+          estado: 'pendiente',
+          usuarioCreadoId: null,
           activadoEn: null,
         });
       await expect(primera.getRepository(Licencia).findOneByOrFail({ id: resultado.licenciaId }))
@@ -83,7 +93,7 @@ describe('Alta atómica de negocio (T31)', () => {
           suspendidaEn: null,
         });
       await expect(primera.getRepository(CodigoAcceso).findOneByOrFail({
-        usuarioId: resultado.administradorId,
+        altaAdministradorId: resultado.altaAdministradorId,
         proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN,
       })).resolves.toMatchObject({ negocioId: resultado.negocioId });
 
@@ -96,7 +106,7 @@ describe('Alta atómica de negocio (T31)', () => {
         'negocio_creado',
       ]);
       expect(eventos.every(({ actorUsuarioId }) => actorUsuarioId === actor.id)).toBe(true);
-      expect(JSON.stringify(eventos)).not.toContain(resultado.codigo);
+      expect(resultado).not.toHaveProperty('codigo');
       expect(JSON.stringify(eventos)).not.toContain('password');
     });
   });
@@ -113,6 +123,7 @@ describe('Alta atómica de negocio (T31)', () => {
         nombre: 'Negocio existente',
         identificadorPublico: 'negocio-existente',
         emailAdministrador: 'existente@example.test',
+        rfc: 'ABC010101AB1',
         ahora: new Date('2026-09-12T17:00:00.000Z'),
       };
       await servicio.crearNegocio(base);
@@ -122,6 +133,9 @@ describe('Alta atómica de negocio (T31)', () => {
         primera.getRepository(Licencia).count(),
         primera.getRepository(CodigoAcceso).count(),
         primera.getRepository(EventoAuditoria).count(),
+        primera.getRepository(AltaAdministrador).count(),
+        primera.getRepository(CorreoAcceso).count(),
+        primera.getRepository(EnvioCorreo).count(),
       ]);
 
       await expect(servicio.crearNegocio({
@@ -135,6 +149,9 @@ describe('Alta atómica de negocio (T31)', () => {
         primera.getRepository(Licencia).count(),
         primera.getRepository(CodigoAcceso).count(),
         primera.getRepository(EventoAuditoria).count(),
+        primera.getRepository(AltaAdministrador).count(),
+        primera.getRepository(CorreoAcceso).count(),
+        primera.getRepository(EnvioCorreo).count(),
       ])).resolves.toEqual(cantidadesAntes);
     });
   });
@@ -147,6 +164,7 @@ describe('Alta atómica de negocio (T31)', () => {
         nombre: 'Alta revertida',
         identificadorPublico: 'alta-revertida',
         emailAdministrador: 'revertida@example.test',
+        rfc: 'ABC010101AB1',
         ahora: new Date('2026-09-12T18:00:00.000Z'),
       };
       const auditoriaFallida = {
@@ -187,6 +205,7 @@ describe('Alta atómica de negocio (T31)', () => {
         nombre: 'Alta no autorizada',
         identificadorPublico: 'alta-no-autorizada',
         emailAdministrador: 'otro-admin@example.test',
+        rfc: 'ABC010101AB1',
         ahora: new Date('2026-09-12T19:00:00.000Z'),
       })).rejects.toBeInstanceOf(ForbiddenException);
       await expect(Promise.all([

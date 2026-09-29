@@ -34,6 +34,10 @@ export class AltaAdministrador {
   } })
   correo: string;
 
+  // Cambiar destinatario invalida códigos emitidos para versiones anteriores.
+  @Column({ name: 'correo_version', type: 'int', unsigned: true, default: 1 })
+  correoVersion: number;
+
   @Column({ type: 'enum', enum: EstadoAltaAdministrador, default: EstadoAltaAdministrador.PENDIENTE })
   estado: EstadoAltaAdministrador;
 

@@ -20,7 +20,7 @@ export class Negocio {
   @Column({ name: 'email_contacto', length: 150 })
   emailContacto: string;
 
-  // Anulables mientras el alta histórica aún no exige estos datos; T035 cerrará ese flujo.
+  // Anulables para datos históricos; el servicio de altas nuevas exige estos datos.
   @Column({ name: 'rfc', type: 'varchar', length: 13, nullable: true, unique: false })
   rfc: string | null;
 

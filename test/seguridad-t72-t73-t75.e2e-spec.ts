@@ -1,3 +1,6 @@
+import { CodigosService } from '../src/codigos/codigos.service';
+import { derivadorPrueba } from './support/invitaciones-fase-2';
+import { codigoDelEnvio } from './support/credenciales-prueba';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
@@ -22,6 +25,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
   await conBaseMigrada(async (db) => {
     const reloj = new RelojPrueba(fechaSegura());
     const modulo = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CodigosService).useFactory({ inject: [AuditoriaService],
+        factory: (auditoria: AuditoriaService) => new CodigosService(auditoria, derivadorPrueba) })
       .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
     const app = modulo.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -223,7 +228,7 @@ describe('T75 — matriz de bloqueos en rutas protegidas', () => {
       // Reinicia solo la ventana de intentos; las sesiones siguen vigentes.
       reloj.avanzar(60_000);
       await request(app.getHttpServer()).post('/auth/recuperar-contrasena')
-        .send({ codigo: recuperacion.body.codigo, password: 'password-recuperada-t75' }).expect(204);
+        .send({ codigo: await codigoDelEnvio(db, recuperacion.body.envioId), password: 'password-recuperada-t75' }).expect(204);
       expect((await db.getRepository(Licencia).findOneByOrFail({ id: primero.licenciaId })).suspendidaEn)
         .toEqual(suspendidaEn);
       await request(app.getHttpServer()).post('/auth/login')
