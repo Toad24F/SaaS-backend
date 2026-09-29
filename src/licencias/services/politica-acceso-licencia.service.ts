@@ -26,13 +26,17 @@ export interface ResultadoAcceso {
 @Injectable()
 export class PoliticaAccesoLicenciaService {
   estado(licencia: Licencia, ahora: Date): EstadoAccesoLicencia {
-    if (licencia.suspendidaEn !== null) return EstadoAccesoLicencia.SUSPENDIDA;//verifica si la licencia esta suspendida
+    if (licencia.congeladaEn != null || licencia.suspendidaEn !== null) return EstadoAccesoLicencia.SUSPENDIDA;
     if (licencia.habilitadaEn === null || licencia.venceEn === null) {
       return EstadoAccesoLicencia.PENDIENTE;//retorna pendiente si la licencia no esta habilitada o no tiene fecha de vencimiento
     }
-    return ahora.getTime() >= licencia.venceEn.getTime()//verifica si la licencia esta vencida
-      ? EstadoAccesoLicencia.VENCIDA//retorna vencida si la licencia esta vencida
-      : EstadoAccesoLicencia.VIGENTE;//retorna vigente si la licencia esta habilitada y no esta vencida
+    if (ahora.getTime() >= licencia.venceEn.getTime()) return EstadoAccesoLicencia.VENCIDA;
+    // En la gracia se permite el uso hasta el menor del vencimiento y el bloqueo previsto.
+    if (licencia.bloqueoProgramadoEn != null
+      && ahora.getTime() >= licencia.bloqueoProgramadoEn.getTime()) {
+      return EstadoAccesoLicencia.SUSPENDIDA;
+    }
+    return EstadoAccesoLicencia.VIGENTE;
   }
 
   evaluarAccesoUsuario(contexto: ContextoAccesoUsuario): ResultadoAcceso {
@@ -53,7 +57,8 @@ export class PoliticaAccesoLicenciaService {
   }
 
   puedeActivarAdministrador(licencia: Licencia, ahora: Date): boolean {
-    return this.estado(licencia, ahora) === EstadoAccesoLicencia.PENDIENTE;
+    return this.estado(licencia, ahora) === EstadoAccesoLicencia.PENDIENTE
+      && licencia.suspensionSolicitadaEn == null;
   }
 
   puedeAceptarReserva(

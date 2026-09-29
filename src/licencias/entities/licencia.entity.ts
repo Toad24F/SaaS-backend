@@ -39,6 +39,24 @@ export class Licencia {
   @Column({ name: 'suspendida_en', type: 'datetime', precision: 6, nullable: true })
   suspendidaEn: Date | null;
 
+  // La solicitud y el bloqueo previsto preservan las 48 horas de gracia.
+  @Column({ name: 'suspension_solicitada_en', type: 'datetime', precision: 6, nullable: true })
+  suspensionSolicitadaEn: Date | null;
+
+  @Column({ name: 'bloqueo_programado_en', type: 'datetime', precision: 6, nullable: true })
+  bloqueoProgramadoEn: Date | null;
+
+  // congeladaEn marca el instante efectivo original; remanenteMs congela tiempo restante.
+  @Column({ name: 'congelada_en', type: 'datetime', precision: 6, nullable: true })
+  congeladaEn: Date | null;
+
+  @Column({ name: 'remanente_ms', type: 'bigint', unsigned: true, nullable: true })
+  remanenteMs: string | null;
+
+  // Aumenta al cambiar venceEn para que consumidores puedan detectar su versión.
+  @Column({ name: 'version_vencimiento', type: 'int', unsigned: true, default: 0 })
+  versionVencimiento: number;
+
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
   creadoEn: Date;
 

@@ -9,6 +9,7 @@ import { Licencia } from './entities/licencia.entity';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
 
 const MAX_INTENTOS_CONFLICTO_VISTA = 3;
+const GRACIA_SUSPENSION_MS = 48 * 60 * 60 * 1000;
 
 /** Serializa suspensión, reactivación y renovación sobre una misma licencia. */
 @Injectable()
@@ -22,33 +23,85 @@ export class LicenciasService {
 
   async suspender(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
     await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
-      if (licencia.suspendidaEn !== null) return;
+      if (licencia.suspensionSolicitadaEn != null || licencia.congeladaEn != null
+        || licencia.suspendidaEn !== null) return;
       if (licencia.venceEn !== null && ahora >= licencia.venceEn) {
         // Una entrada válida incompatible con el estado actual es un conflicto (409).
         throw new ConflictException('Una licencia vencida debe renovarse antes de suspenderse.');
       }
-      licencia.suspendidaEn = new Date(ahora);
+      licencia.suspensionSolicitadaEn = new Date(ahora);
+      // Las licencias iniciales se bloquean de inmediato; una habilitada recibe 48 horas.
+      licencia.bloqueoProgramadoEn = licencia.venceEn === null
+        ? new Date(ahora) : new Date(ahora.getTime() + GRACIA_SUSPENSION_MS);
       await manager.getRepository(Licencia).save(licencia);
       await this.registrar(manager, actor.id, licencia, 'licencia_suspendida',
         { suspendidaEn: null, venceEn: licencia.venceEn?.toISOString() ?? null },
-        { suspendidaEn: ahora.toISOString(), venceEn: licencia.venceEn?.toISOString() ?? null });
+        { suspensionSolicitadaEn: ahora.toISOString(),
+          bloqueoProgramadoEn: licencia.bloqueoProgramadoEn.toISOString(),
+          venceEn: licencia.venceEn?.toISOString() ?? null });
+    });
+  }
+
+  /** Congela a la hora prevista original, aunque el procesador llegue tarde. */
+  async materializarSuspension(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
+    await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
+      const efectiva = licencia.bloqueoProgramadoEn;
+      if (!efectiva || efectiva > ahora || licencia.congeladaEn != null) return;
+      const anterior = licencia.venceEn;
+      licencia.congeladaEn = new Date(efectiva);
+      licencia.suspendidaEn = new Date(efectiva);
+      licencia.remanenteMs = anterior === null
+        ? null : String(Math.max(0, anterior.getTime() - efectiva.getTime()));
+      await manager.getRepository(Licencia).save(licencia);
+      await this.registrar(manager, actor.id, licencia, 'licencia_congelada',
+        { venceEn: anterior?.toISOString() ?? null, congeladaEn: null },
+        { venceEn: anterior?.toISOString() ?? null, congeladaEn: efectiva.toISOString(),
+          remanenteMs: licencia.remanenteMs });
     });
   }
 
   async reactivar(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
     await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
-      if (licencia.suspendidaEn === null) return;
-      const suspendidaEn = licencia.suspendidaEn;
+      if (licencia.suspensionSolicitadaEn == null && licencia.congeladaEn == null
+        && licencia.suspendidaEn === null) return;
+      // Si el proceso programado se retrasó, aplica primero la congelación original en esta transacción.
+      if (licencia.congeladaEn == null && licencia.suspendidaEn === null
+        && licencia.bloqueoProgramadoEn != null && licencia.bloqueoProgramadoEn <= ahora) {
+        const instanteEfectivo = licencia.bloqueoProgramadoEn;
+        const vencimiento = licencia.venceEn;
+        licencia.congeladaEn = new Date(instanteEfectivo);
+        licencia.suspendidaEn = new Date(instanteEfectivo);
+        licencia.remanenteMs = vencimiento === null
+          ? null : String(Math.max(0, vencimiento.getTime() - instanteEfectivo.getTime()));
+        await manager.getRepository(Licencia).save(licencia);
+        await this.registrar(manager, actor.id, licencia, 'licencia_congelada',
+          { venceEn: vencimiento?.toISOString() ?? null, congeladaEn: null },
+          { venceEn: vencimiento?.toISOString() ?? null,
+            congeladaEn: instanteEfectivo.toISOString(), remanenteMs: licencia.remanenteMs });
+      }
+      const antes = { suspensionSolicitadaEn: licencia.suspensionSolicitadaEn?.toISOString() ?? null,
+        congeladaEn: licencia.congeladaEn?.toISOString() ?? null,
+        venceEn: licencia.venceEn?.toISOString() ?? null };
       const venceAnterior = licencia.venceEn;
-      // En pendientes solo se quita la marca; nunca se inventa tiempo de licencia.
-      licencia.venceEn = venceAnterior === null ? null : new Date(
-        venceAnterior.getTime() + ahora.getTime() - suspendidaEn.getTime(),
-      );
+      const congelada = licencia.congeladaEn ?? licencia.suspendidaEn;
+      if (congelada !== null && venceAnterior !== null) {
+        // Se restaura el remanente medido al límite programado, no a la ejecución tardía.
+        const restante = licencia.remanenteMs == null
+          ? Math.max(0, venceAnterior.getTime() - congelada.getTime())
+          : Number(licencia.remanenteMs);
+        licencia.venceEn = new Date(ahora.getTime() + restante);
+        licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
+      }
       licencia.suspendidaEn = null;
+      licencia.suspensionSolicitadaEn = null;
+      licencia.bloqueoProgramadoEn = null;
+      licencia.congeladaEn = null;
+      licencia.remanenteMs = null;
       await manager.getRepository(Licencia).save(licencia);
       await this.registrar(manager, actor.id, licencia, 'licencia_reactivada',
-        { suspendidaEn: suspendidaEn.toISOString(), venceEn: venceAnterior?.toISOString() ?? null },
-        { suspendidaEn: null, venceEn: licencia.venceEn?.toISOString() ?? null });
+        antes,
+        { suspensionSolicitadaEn: null, congeladaEn: null,
+          suspendidaEn: null, venceEn: licencia.venceEn?.toISOString() ?? null });
     });
   }
 
@@ -60,6 +113,7 @@ export class LicenciasService {
       const anterior = licencia.venceEn;
       const base = licencia.suspendidaEn !== null || ahora < anterior ? anterior : ahora;
       licencia.venceEn = this.calendario.sumarAnios(base);
+      licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
       await manager.getRepository(Licencia).save(licencia);
       await this.registrar(manager, actor.id, licencia, 'licencia_renovada',
         { venceEn: anterior.toISOString(), suspendidaEn: licencia.suspendidaEn?.toISOString() ?? null },

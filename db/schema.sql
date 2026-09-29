@@ -95,20 +95,21 @@ CREATE TABLE usuarios (
 -- LICENCIAS (RF-02, RF-09, RF-14, RF-28 a RF-38).
 -- Una licencia estrictamente anual por negocio, sin modalidad ni plan.
 -- habilitada_en se establece al activar al primer administrador.
--- suspendida_en indica suspension vigente, tambien antes de activar.
--- No hay un estado "vencida" persistido: se calcula si no esta suspendida.
---
--- Suspendida: conservar vence_en y suspendida_en; no vence
--- por el mero paso del tiempo. Renovar amplia el vencimiento conservado.
--- Reactivar habilitada: sumar a vence_en el tiempo desde suspendida_en
--- y limpiar suspendida_en, exactamente una vez dentro de una transaccion.
--- Reactivar pendiente solo limpia suspendida_en.
+-- suspension_solicitada_en y bloqueo_programado_en representan las 48 horas de gracia.
+-- congelada_en marca el bloqueo materializado; remanente_ms conserva tiempo desde ese límite.
+-- suspendida_en se mantiene como compatibilidad de estado efectivo; version_vencimiento
+-- identifica cambios del vencimiento para consumidores y auditoría.
 CREATE TABLE licencias (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   negocio_id     INT UNSIGNED NOT NULL,
   habilitada_en  DATETIME(6) NULL,
   vence_en       DATETIME(6) NULL,
   suspendida_en  DATETIME(6) NULL,
+  suspension_solicitada_en DATETIME(6) NULL,
+  bloqueo_programado_en DATETIME(6) NULL,
+  congelada_en DATETIME(6) NULL,
+  remanente_ms BIGINT UNSIGNED NULL,
+  version_vencimiento INT UNSIGNED NOT NULL DEFAULT 0,
   creado_en      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
                    ON UPDATE CURRENT_TIMESTAMP(6),

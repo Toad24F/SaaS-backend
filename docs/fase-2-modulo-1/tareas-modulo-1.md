@@ -317,41 +317,43 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T040–T044: [recuperación, HTTP, concurrencia, archivos y resultados](resultados-tareas/resultados-t040-t044.md).
 
-- [ ] **M1-T045 — Ampliar los estados persistidos de licencia** · 25 min · RF-69–RF-79, RF-82–RF-85
+- [x] **M1-T045 — Ampliar los estados persistidos de licencia** · 25 min · RF-69–RF-79, RF-82–RF-85
 
   Dependencias: M1-T011.
 
   Hecho cuando: las entidades distinguen solicitud, bloqueo previsto, congelación efectiva, remanente y versión de vencimiento, sin confundir suspensión pendiente con efectiva.
 
-- [ ] **M1-T046 — Crear la migración incremental de licencias** · 25 min · RF-69–RF-79, RF-82–RF-85
+- [x] **M1-T046 — Crear la migración incremental de licencias** · 25 min · RF-69–RF-79, RF-82–RF-85
 
   Dependencias: M1-T045, M1-T013.
 
   Hecho cuando: una base temporal con las migraciones anteriores admite la nueva migración y conserva sus licencias; no se modifican migraciones históricas.
 
-- [ ] **M1-T047 — Definir la política temporal compartida de acceso** · 25 min · RF-69–RF-72, RF-77–RF-78
+- [x] **M1-T047 — Definir la política temporal compartida de acceso** · 25 min · RF-69–RF-72, RF-77–RF-78
 
   Dependencias: M1-T045.
 
   Hecho cuando: pruebas con reloj fijo resuelven acceso antes, exactamente en y después del menor entre vencimiento y bloqueo previsto; una licencia inicial suspendida no permite activación.
 
-- [ ] **M1-T048 — Solicitar suspensión de forma transaccional** · 25 min · RF-69–RF-73, RF-77, RF-79
+- [x] **M1-T048 — Solicitar suspensión de forma transaccional** · 25 min · RF-69–RF-73, RF-77, RF-79
 
   Dependencias: M1-T046, M1-T047, M1-T010, M1-T016.
 
   Hecho cuando: una solicitud fija el plazo una sola vez; repetirla no lo reinicia y la suspensión inicial impide activar sin consumir tiempo.
 
-- [ ] **M1-T049 — Materializar la congelación al instante efectivo** · 25 min · RF-71–RF-73, RF-78–RF-79
+- [x] **M1-T049 — Materializar la congelación al instante efectivo** · 25 min · RF-71–RF-73, RF-78–RF-79
 
   Dependencias: M1-T048.
 
   Hecho cuando: materializar tarde calcula el remanente desde el instante efectivo original, nunca desde la ejecución tardía; repetir no duplica tiempo ni eventos.
 
-- [ ] **M1-T050 — Separar reactivación anticipada y posterior** · 25 min · RF-74–RF-75, RF-79
+- [x] **M1-T050 — Separar reactivación anticipada y posterior** · 25 min · RF-74–RF-75, RF-79
 
   Dependencias: M1-T049.
 
   Hecho cuando: pruebas verifican que cancelar durante la gracia no devuelve tiempo y reactivar después restaura exactamente el remanente congelado una sola vez.
+
+  Evidencia T045–T050: [modelo, migración, política y resultados](resultados-tareas/resultados-t045-t050.md).
 
 - [ ] **M1-T051 — Adaptar la renovación anual a la suspensión** · 25 min · RF-76, RF-79
 

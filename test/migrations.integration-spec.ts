@@ -8,6 +8,7 @@ import { CrearNegociosUsuarios1760000000000 } from '../src/database/migrations/1
 import { CrearLicencias1760000001000 } from '../src/database/migrations/1760000001000-CrearLicencias';
 import { CrearCodigosSesiones1760000002000 } from '../src/database/migrations/1760000002000-CrearCodigosSesiones';
 import { CrearAuditoriaLimites1760000003000 } from '../src/database/migrations/1760000003000-CrearAuditoriaLimites';
+import { SuspensionProgramadaLicencias1760000009000 } from '../src/database/migrations/1760000009000-SuspensionProgramadaLicencias';
 
 describe('Migraciones T15–T18 en MariaDB', () => {
   const baseTemporal = `citas_migraciones_${randomUUID().replaceAll('-', '')}`;
@@ -26,6 +27,7 @@ describe('Migraciones T15–T18 en MariaDB', () => {
         CrearLicencias1760000001000,
         CrearCodigosSesiones1760000002000,
         CrearAuditoriaLimites1760000003000,
+        SuspensionProgramadaLicencias1760000009000,
       ],
       migrationsRun: false,
     } as DataSourceOptions;
@@ -150,6 +152,11 @@ describe('Migraciones T15–T18 en MariaDB', () => {
     );
     expect((columnas as Array<{ column_name: string }>).map((fila) => fila.column_name))
       .not.toEqual(expect.arrayContaining(['modalidad', 'plan']));
+    expect((columnas as Array<{ column_name: string }>).map((fila) => fila.column_name))
+      .toEqual(expect.arrayContaining([
+        'suspension_solicitada_en', 'bloqueo_programado_en', 'congelada_en',
+        'remanente_ms', 'version_vencimiento',
+      ]));
   });
 
   it('T17 conserva historial/hash único y rechaza relaciones inexistentes', async () => {
