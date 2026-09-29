@@ -355,53 +355,55 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T045–T050: [modelo, migración, política y resultados](resultados-tareas/resultados-t045-t050.md).
 
-- [ ] **M1-T051 — Adaptar la renovación anual a la suspensión** · 25 min · RF-76, RF-79
+- [x] **M1-T051 — Adaptar la renovación anual a la suspensión** · 25 min · RF-76, RF-79
 
   Dependencias: M1-T050.
 
   Hecho cuando: renovar usa el calendario anual existente y conserva suspensión pendiente o efectiva; pruebas comprueban tiempo acumulado y auditoría sin duplicados.
 
-- [ ] **M1-T052 — Aplicar vigencia en cada solicitud autenticada** · 25 min · RF-69–RF-72, RF-77–RF-78
+- [x] **M1-T052 — Aplicar vigencia en cada solicitud autenticada** · 25 min · RF-69–RF-72, RF-77–RF-78
 
   Dependencias: M1-T049, M1-T009.
 
   Hecho cuando: un token emitido antes de suspender sirve durante la gracia válida y falla exactamente al bloqueo; la decisión no depende de que haya corrido un proceso programado.
 
-- [ ] **M1-T053 — Unificar login, logout y acceso de superadmin con la política** · 20 min · RF-02, RF-35–RF-36, RF-69–RF-78
+- [x] **M1-T053 — Unificar login, logout y acceso de superadmin con la política** · 20 min · RF-02, RF-35–RF-36, RF-69–RF-78
 
   Dependencias: M1-T052.
 
   Hecho cuando: login usa la misma vigencia que las solicitudes protegidas; se conserva logout compatible y el superadmin sigue gestionando negocios bloqueados sin habilitar a sus usuarios.
 
-- [ ] **M1-T054 — Integrar la política de licencia con la activación** · 20 min · RF-09–RF-11, RF-77, RF-79
+- [x] **M1-T054 — Integrar la política de licencia con la activación** · 20 min · RF-09–RF-11, RF-77, RF-79
 
   Dependencias: M1-T037, M1-T048.
 
   Hecho cuando: activar una alta suspendida no crea cuenta ni consume código; la activación válida inicia la licencia una sola vez dentro de la misma transacción.
 
-- [ ] **M1-T055 — Calcular la vista de vigencia sin ambigüedades** · 25 min · RF-83–RF-85
+- [x] **M1-T055 — Calcular la vista de vigencia sin ambigüedades** · 25 min · RF-83–RF-85
 
   Dependencias: M1-T047, M1-T050, M1-T051.
 
   Hecho cuando: pruebas de reloj verifican vencimiento, hora del servidor, días/horas/minutos y estados pendiente, en gracia, congelado y vencido, sin cuenta regresiva falsa.
 
-- [ ] **M1-T056 — Exponer la consulta y ajustar comandos de licencia** · 25 min · RF-02, RF-69–RF-79, RF-83–RF-85
+- [x] **M1-T056 — Exponer la consulta y ajustar comandos de licencia** · 25 min · RF-02, RF-69–RF-79, RF-83–RF-85
 
   Dependencias: M1-T005, M1-T055, M1-T052, M1-T051.
 
   Hecho cuando: los contratos HTTP acordados devuelven la vista y cambios permitidos; una licencia bloqueada no obtiene una excepción de acceso implícita a la consulta.
 
-- [ ] **M1-T057 — Probar la frontera exacta de 48 horas por HTTP** · 25 min · RF-69–RF-78, RF-83–RF-85
+- [x] **M1-T057 — Probar la frontera exacta de 48 horas por HTTP** · 25 min · RF-69–RF-78, RF-83–RF-85
 
   Dependencias: M1-T056, M1-T054.
 
   Hecho cuando: casos a 48 h menos un instante, a 48 h y después, y vencimiento natural anterior verifican acceso, datos intactos y vista temporal con reloj controlado.
 
-- [ ] **M1-T058 — Probar carreras entre transiciones de licencia** · 25 min · RF-73–RF-76, RF-79
+- [x] **M1-T058 — Probar carreras entre transiciones de licencia** · 25 min · RF-73–RF-76, RF-79
 
   Dependencias: M1-T056, M1-T007.
 
   Hecho cuando: dos conexiones fuerzan suspensión/repetición, renovación/reactivación y congelación/reactivación; estado, remanente y eventos coinciden con un orden válido sin duplicados.
+
+  Evidencia T051–T058: [renovación, consulta temporal, HTTP y carreras](resultados-tareas/resultados-t051-t058.md).
 
 ## 6. Sucursales y catálogo de servicios
 

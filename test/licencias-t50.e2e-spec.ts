@@ -95,48 +95,57 @@ async function estado(db: DataSource) {
 }
 
 describe('T50 — administración HTTP de licencias', () => {
-  it('suspende, renueva sin desbloquear y reactiva devolviendo tiempo; repetir no duplica efectos', async () => {
+  it('mantiene la gracia al renovar y cancela una solicitud temprana sin duplicar efectos', async () => {
     await conHttp(async (ctx) => {
       const antes = await estado(ctx.db);
       const inicio = ctx.reloj.ahora();
       const vencimiento = ctx.licencias[0].venceEn!;
-      expect((await operar(ctx, 'suspender').expect(204)).text).toBe('');
-      expect(await licencia(ctx)).toMatchObject({ suspendidaEn: inicio, venceEn: vencimiento });
-      for (const indice of [1, 2]) await perfil(ctx, indice).expect(401);
+      const solicitud = await operar(ctx, 'suspender').expect(200);
+      expect(solicitud.body).toMatchObject({ estado: 'suspension_pendiente', condicionAcceso: true });
+      expect(await licencia(ctx)).toMatchObject({ suspendidaEn: null,
+        suspensionSolicitadaEn: inicio, bloqueoProgramadoEn: new Date(inicio.getTime() + 48 * 60 * 60 * 1000),
+        venceEn: vencimiento });
+      for (const indice of [1, 2]) await perfil(ctx, indice).expect(200);
       await perfil(ctx, 3).expect(200);
       const suspendido = await estado(ctx.db);
       ctx.reloj.avanzar(1000);
-      await operar(ctx, 'suspender').expect(204);
+      await operar(ctx, 'suspender').expect(200);
       expect(await estado(ctx.db)).toEqual(suspendido);
-      await operar(ctx, 'renovar').expect(204);
-      expect(await licencia(ctx)).toMatchObject({ suspendidaEn: inicio, venceEn: anios(vencimiento) });
-      await perfil(ctx, 1).expect(401);
+      await operar(ctx, 'renovar').expect(200);
+      expect(await licencia(ctx)).toMatchObject({ suspendidaEn: null,
+        suspensionSolicitadaEn: inicio,
+        bloqueoProgramadoEn: new Date(inicio.getTime() + 48 * 60 * 60 * 1000),
+        venceEn: anios(vencimiento) });
+      await perfil(ctx, 1).expect(200);
       ctx.reloj.avanzar(60000);
-      await operar(ctx, 'reactivar').expect(204);
-      const esperado = new Date(anios(vencimiento).getTime() + 61000);
-      expect(await licencia(ctx)).toMatchObject({ suspendidaEn: null, venceEn: esperado });
+      await operar(ctx, 'reactivar').expect(200);
+      const esperado = anios(vencimiento);
+      expect(await licencia(ctx)).toMatchObject({ suspendidaEn: null,
+        suspensionSolicitadaEn: null, bloqueoProgramadoEn: null, venceEn: esperado });
       for (const indice of [1, 2, 3]) await perfil(ctx, indice).expect(200);
       const reactivado = await estado(ctx.db);
       ctx.reloj.avanzar(1000);
-      await operar(ctx, 'reactivar').expect(204);
+      await operar(ctx, 'reactivar').expect(200);
       expect(await estado(ctx.db)).toEqual(reactivado);
       for (const clave of ['usuarios', 'negocios', 'sesiones', 'codigos'] as const) expect(reactivado[clave]).toEqual(antes[clave]);
       expect(reactivado.licencias.filter(l => l.id !== ctx.licencias[0].id)).toEqual(antes.licencias.filter(l => l.id !== ctx.licencias[0].id));
       const eventos = reactivado.auditoria.filter(e => e.licenciaId === ctx.licencias[0].id);
       expect(eventos.map(e => e.accion)).toEqual(['licencia_suspendida', 'licencia_renovada', 'licencia_reactivada']);
       for (const evento of eventos) expect(evento).toMatchObject({ actorUsuarioId: ctx.usuarios[0].id, negocioId: ctx.usuarios[1].negocioId });
-      expect(eventos[2].valoresAntes).toEqual({ suspendidaEn: inicio.toISOString(), venceEn: anios(vencimiento).toISOString() });
-      expect(eventos[2].valoresDespues).toEqual({ suspendidaEn: null, venceEn: esperado.toISOString() });
+      expect(eventos[2].valoresAntes).toMatchObject({ suspensionSolicitadaEn: inicio.toISOString(),
+        venceEn: anios(vencimiento).toISOString() });
+      expect(eventos[2].valoresDespues).toMatchObject({ suspendidaEn: null,
+        suspensionSolicitadaEn: null, venceEn: esperado.toISOString() });
     });
   });
 
   it('acumula dos renovaciones vigentes y conserva la desactivación de una cuenta al reactivar', async () => {
     await conHttp(async (ctx) => {
-      for (let i = 0; i < 2; i++) await operar(ctx, 'renovar').expect(204);
+      for (let i = 0; i < 2; i++) await operar(ctx, 'renovar').expect(200);
       expect((await licencia(ctx)).venceEn).toEqual(anios(ctx.licencias[0].venceEn!, 2));
       await ctx.db.getRepository(Usuario).update(ctx.usuarios[2].id, { activo: false });
-      await operar(ctx, 'suspender').expect(204);
-      await operar(ctx, 'reactivar').expect(204);
+      await operar(ctx, 'suspender').expect(200);
+      await operar(ctx, 'reactivar').expect(200);
       await perfil(ctx, 1).expect(200);
       await perfil(ctx, 2).expect(401);
     });
@@ -148,11 +157,11 @@ describe('T50 — administración HTTP de licencias', () => {
       await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { venceEn: ctx.reloj.ahora() });
       const antes = await estado(ctx.db);
       await operar(ctx, 'suspender').expect(409);
-      await operar(ctx, 'reactivar').expect(204);
+      await operar(ctx, 'reactivar').expect(200);
       expect(await estado(ctx.db)).toEqual(antes);
       await perfil(ctx, 1).expect(401);
       ctx.reloj.avanzar(1000);
-      await operar(ctx, 'renovar').expect(204);
+      await operar(ctx, 'renovar').expect(200);
       expect((await licencia(ctx)).venceEn).toEqual(anios(ctx.reloj.ahora()));
       await perfil(ctx, 1).expect(200);
     });
@@ -164,11 +173,11 @@ describe('T50 — administración HTTP de licencias', () => {
       const antes = await estado(ctx.db);
       await operar(ctx, 'renovar', id).expect(409);
       expect(await estado(ctx.db)).toEqual(antes);
-      await operar(ctx, 'suspender', id).expect(204);
+      await operar(ctx, 'suspender', id).expect(200);
       const suspendido = await estado(ctx.db);
       await operar(ctx, 'renovar', id).expect(409);
       expect(await estado(ctx.db)).toEqual(suspendido);
-      await operar(ctx, 'reactivar', id).expect(204);
+      await operar(ctx, 'reactivar', id).expect(200);
       expect(await licencia(ctx, id)).toMatchObject({ habilitadaEn: null, venceEn: null, suspendidaEn: null });
       expect((await estado(ctx.db)).usuarios).toEqual(antes.usuarios);
       expect((await estado(ctx.db)).codigos).toEqual(antes.codigos);
@@ -225,7 +234,7 @@ describe('T50 — administración HTTP de licencias', () => {
 
   it.each(acciones)('revierte estado y auditoría si falla registrar %s', async accion => {
     await conHttp(async (ctx) => {
-      if (accion === 'reactivar') await operar(ctx, 'suspender').expect(204);
+      if (accion === 'reactivar') await operar(ctx, 'suspender').expect(200);
       const antes = await estado(ctx.db);
       // Único doble: fuerza el error del registrador; Guards, bloqueos y transacción son reales.
       const fallo = jest.spyOn(ctx.app.get(AuditoriaService), 'registrar').mockRejectedValueOnce(new Error(`Fallo de prueba T50 ${accion}`));
@@ -236,13 +245,13 @@ describe('T50 — administración HTTP de licencias', () => {
 
   it('serializa dobles suspensiones, renovaciones y reactivaciones sin duplicar tiempo ni perder años', async () => {
     await conHttp(async (ctx) => {
-      const inicio = ctx.reloj.ahora();
-      await Promise.all([operar(ctx, 'suspender').expect(204), operar(ctx, 'suspender').expect(204)]);
-      await Promise.all([operar(ctx, 'renovar').expect(204), operar(ctx, 'renovar').expect(204)]);
+      await Promise.all([operar(ctx, 'suspender').expect(200), operar(ctx, 'suspender').expect(200)]);
+      await Promise.all([operar(ctx, 'renovar').expect(200), operar(ctx, 'renovar').expect(200)]);
       ctx.reloj.avanzar(1000);
-      await Promise.all([operar(ctx, 'reactivar').expect(204), operar(ctx, 'reactivar').expect(204)]);
+      await Promise.all([operar(ctx, 'reactivar').expect(200), operar(ctx, 'reactivar').expect(200)]);
       expect(await licencia(ctx)).toMatchObject({ negocioId: ctx.usuarios[1].negocioId, suspendidaEn: null,
-        venceEn: new Date(anios(ctx.licencias[0].venceEn!, 2).getTime() + ctx.reloj.ahora().getTime() - inicio.getTime()) });
+        venceEn: anios(ctx.licencias[0].venceEn!, 2),
+        suspensionSolicitadaEn: null, bloqueoProgramadoEn: null });
       for (const [accion, cantidad] of [['licencia_suspendida', 1], ['licencia_renovada', 2], ['licencia_reactivada', 1]] as const) {
         expect(await ctx.db.getRepository(EventoAuditoria).countBy({ licenciaId: ctx.licencias[0].id, accion })).toBe(cantidad);
       }

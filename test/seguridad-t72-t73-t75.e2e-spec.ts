@@ -219,7 +219,7 @@ describe('T75 — matriz de bloqueos en rutas protegidas', () => {
       });
       await request(app.getHttpServer()).get('/negocios')
         .auth(superToken, { type: 'bearer' }).expect(200);
-      await post(app, `/licencias/${primero.licenciaId}/renovar`, superToken).expect(204);
+      await post(app, `/licencias/${primero.licenciaId}/renovar`, superToken).expect(200);
       expect((await db.getRepository(Licencia).findOneByOrFail({ id: primero.licenciaId })).suspendidaEn)
         .toEqual(suspendidaEn);
       const recuperacion = await post(app,
@@ -237,7 +237,7 @@ describe('T75 — matriz de bloqueos en rutas protegidas', () => {
       await post(app, '/auth/logout', tokenRecepcion).expect(204);
       await post(app, '/auth/logout', tokenRecepcion).expect(401);
 
-      await post(app, `/licencias/${primero.licenciaId}/reactivar`, superToken).expect(204);
+      await post(app, `/licencias/${primero.licenciaId}/reactivar`, superToken).expect(200);
       const adminNuevo = await login(app, primero.administrador.email, 'password-recuperada-t75');
       await post(app, `/recepcionistas/${recepcionId}/desactivar`, adminNuevo).expect(204);
       await post(app, `/recepcionistas/${recepcionId}/restablecer-contrasena`, adminNuevo,

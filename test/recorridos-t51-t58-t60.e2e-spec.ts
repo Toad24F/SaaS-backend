@@ -102,19 +102,19 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       expect(licencia.venceEn).toEqual(new CalendarioLicenciasService().sumarAnios(reloj.ahora()));
       const admin = await db.getRepository(Usuario).findOneByOrFail({ id: creado.body.administradorId });
       const tokenAdmin = await login(app, admin.email);
-      await post(app, `/licencias/${licencia.id}/renovar`, token).expect(204);
+      await post(app, `/licencias/${licencia.id}/renovar`, token).expect(200);
       const renovada = await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id });
       expect(renovada.venceEn).toEqual(new CalendarioLicenciasService().sumarAnios(licencia.venceEn!));
-      await post(app, `/licencias/${licencia.id}/suspender`, token).expect(204);
+      await post(app, `/licencias/${licencia.id}/suspender`, token).expect(200);
       await request(app.getHttpServer()).get('/auth/profile')
-        .auth(tokenAdmin, { type: 'bearer' }).expect(401);
+        .auth(tokenAdmin, { type: 'bearer' }).expect(200);
       expect(await db.getRepository(Usuario).findOneByOrFail({ id: admin.id }))
         .toMatchObject({ negocioId: creado.body.negocioId, activo: true });
       reloj.avanzar(24 * 60 * 60 * 1000);
       const tokenSuperNuevo = await login(app, superadmin.email);
-      await post(app, `/licencias/${licencia.id}/reactivar`, tokenSuperNuevo).expect(204);
+      await post(app, `/licencias/${licencia.id}/reactivar`, tokenSuperNuevo).expect(200);
       const activa = await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id });
-      expect(activa.venceEn).toEqual(new Date(renovada.venceEn!.getTime() + 24 * 60 * 60 * 1000));
+      expect(activa.venceEn).toEqual(renovada.venceEn);
       await login(app, admin.email);
     });
   });
@@ -123,7 +123,7 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
     await conHttp(async ({ app, db, reloj, superadmin, token }) => {
       const tenant = await crearActivo(db, superadmin.id, reloj.ahora());
       const anticipada = await crearActivo(db, superadmin.id, reloj.ahora());
-      await post(app, `/licencias/${anticipada.licenciaId}/renovar`, token).expect(204);
+      await post(app, `/licencias/${anticipada.licenciaId}/renovar`, token).expect(200);
       expect((await db.getRepository(Licencia).findOneByOrFail({ id: anticipada.licenciaId })).venceEn)
         .toEqual(new CalendarioLicenciasService().sumarAnios(anticipada.licencia.venceEn!));
       reloj.avanzar(2000);
@@ -139,29 +139,34 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       await request(app.getHttpServer()).post('/auth/login')
         .send({ email: tenant.administrador.email, password: PASSWORD_T51_T60 }).expect(401);
       const tokenSuper = await login(app, superadmin.email);
-      await post(app, `/licencias/${tenant.licenciaId}/renovar`, tokenSuper).expect(204);
+      await post(app, `/licencias/${tenant.licenciaId}/renovar`, tokenSuper).expect(200);
       const tardia = await db.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
       expect(tardia.venceEn).toEqual(calendario.sumarAnios(vencimiento));
       await login(app, tenant.administrador.email);
 
       const pausa = new Date(vencimiento.getTime() + 1000);
       reloj.fijar(pausa);
-      await post(app, `/licencias/${tenant.licenciaId}/suspender`, tokenSuper).expect(204);
+      await post(app, `/licencias/${tenant.licenciaId}/suspender`, tokenSuper).expect(200);
       reloj.avanzar(30 * 24 * 60 * 60 * 1000);
       const super2 = await login(app, superadmin.email);
-      await post(app, `/licencias/${tenant.licenciaId}/renovar`, super2).expect(204);
+      await post(app, `/licencias/${tenant.licenciaId}/renovar`, super2).expect(200);
       const conservada = await db.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
-      expect(conservada.suspendidaEn).toEqual(pausa);
+      expect(conservada.suspendidaEn).toEqual(new Date(pausa.getTime() + 48 * 60 * 60 * 1000));
+      expect(conservada.suspensionSolicitadaEn).toEqual(pausa);
       expect(conservada.venceEn).toEqual(calendario.sumarAnios(tardia.venceEn!));
-      await post(app, `/licencias/${tenant.licenciaId}/reactivar`, super2).expect(204);
+      await post(app, `/licencias/${tenant.licenciaId}/reactivar`, super2).expect(200);
       const primera = await db.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
-      expect(primera.venceEn).toEqual(new Date(conservada.venceEn!.getTime() + reloj.ahora().getTime() - pausa.getTime()));
-      await post(app, `/licencias/${tenant.licenciaId}/suspender`, super2).expect(204);
+      expect(primera.venceEn).toEqual(new Date(reloj.ahora().getTime()
+        + Math.max(0, conservada.venceEn!.getTime() - conservada.suspendidaEn!.getTime())));
+      const segundaPausa = reloj.ahora();
+      await post(app, `/licencias/${tenant.licenciaId}/suspender`, super2).expect(200);
       reloj.avanzar(7 * 24 * 60 * 60 * 1000);
       const super3 = await login(app, superadmin.email);
-      await post(app, `/licencias/${tenant.licenciaId}/reactivar`, super3).expect(204);
+      await post(app, `/licencias/${tenant.licenciaId}/reactivar`, super3).expect(200);
       expect((await db.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId })).venceEn)
-        .toEqual(new Date(primera.venceEn!.getTime() + 7 * 24 * 60 * 60 * 1000));
+        .toEqual(new Date(reloj.ahora().getTime()
+          + Math.max(0, primera.venceEn!.getTime()
+            - (segundaPausa.getTime() + 48 * 60 * 60 * 1000))));
     }, new Date('2028-02-29T18:00:00.000Z'));
   });
 
@@ -171,7 +176,7 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
         nombre: 'Pendiente suspendido', identificadorPublico: 'pendiente-t60',
         emailAdministrador: 'pendiente-t60@example.test',
       }) };
-      await post(app, `/licencias/${creado.body.licenciaId}/suspender`, token).expect(204);
+      await post(app, `/licencias/${creado.body.licenciaId}/suspender`, token).expect(200);
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({
         codigo: creado.body.codigo, correo: creado.body.correo, negocioId: creado.body.negocioId, nombre: 'Pendiente', password: PASSWORD_T51_T60,
       }).expect(409);
@@ -179,7 +184,7 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       expect(codigo.consumidoEn).toBeNull();
       reloj.avanzar(48 * 60 * 60 * 1000);
       const superNuevo = await login(app, superadmin.email);
-      await post(app, `/licencias/${creado.body.licenciaId}/reactivar`, superNuevo).expect(204);
+      await post(app, `/licencias/${creado.body.licenciaId}/reactivar`, superNuevo).expect(200);
       expect(await db.getRepository(Licencia).findOneByOrFail({ id: creado.body.licenciaId }))
         .toMatchObject({ habilitadaEn: null, venceEn: null, suspendidaEn: null });
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({

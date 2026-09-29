@@ -269,8 +269,9 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
         servicios(primera).licencias.suspender(actor.id, tenant.licenciaId, pausa),
         servicios(segunda).licencias.suspender(actor.id, tenant.licenciaId, siguiente(pausa, 1000)),
       ]);
-      const suspendidaEn = (await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId })).suspendidaEn;
-      expect([pausa.getTime(), siguiente(pausa, 1000).getTime()]).toContain(suspendidaEn!.getTime());
+      const enGracia = await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
+      expect([pausa.getTime(), siguiente(pausa, 1000).getTime()]).toContain(enGracia.suspensionSolicitadaEn!.getTime());
+      expect(enGracia.suspendidaEn).toBeNull();
       await Promise.all([
         servicios(primera).licencias.reactivar(actor.id, tenant.licenciaId, retorno),
         servicios(segunda).licencias.reactivar(actor.id, tenant.licenciaId, siguiente(retorno, 1000)),
@@ -280,9 +281,7 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
       })).valoresDespues;
       const vencimiento = (await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId })).venceEn;
       expect(vencimiento).toEqual(new Date(reactivacion!.venceEn as string));
-      expect([retorno.getTime(), siguiente(retorno, 1000).getTime()]).toContain(
-        vencimiento!.getTime() - tenant.licencia.venceEn!.getTime() + suspendidaEn!.getTime(),
-      );
+      expect(vencimiento).toEqual(tenant.licencia.venceEn);
       expect(await primera.getRepository(EventoAuditoria).countBy({
         licenciaId: tenant.licenciaId, accion: 'licencia_suspendida',
       })).toBe(1);
@@ -323,23 +322,81 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
         servicios(segunda).licencias.renovar(actor.id, tenant.licenciaId, pausa),
       ]);
       const suspendida = await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
-      expect(suspendida).toMatchObject({ suspendidaEn: pausa,
+      expect(suspendida).toMatchObject({ suspendidaEn: null, suspensionSolicitadaEn: pausa,
+        bloqueoProgramadoEn: siguiente(pausa, 48 * 60 * 60 * 1000),
         venceEn: calendario.sumarAnios(tenant.licencia.venceEn!) });
       await Promise.all([
         servicios(primera).licencias.reactivar(actor.id, tenant.licenciaId, reactivacion),
         servicios(segunda).licencias.renovar(actor.id, tenant.licenciaId, reactivacion),
       ]);
       const actual = await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
-      const duracion = reactivacion.getTime() - pausa.getTime();
-      const primeroRenovar = new Date(calendario.sumarAnios(suspendida.venceEn!).getTime() + duracion);
-      const primeroReactivar = calendario.sumarAnios(new Date(suspendida.venceEn!.getTime() + duracion));
-      expect([primeroRenovar.getTime(), primeroReactivar.getTime()]).toContain(actual.venceEn!.getTime());
+      expect(actual.venceEn).toEqual(calendario.sumarAnios(tenant.licencia.venceEn!));
+      expect(actual.bloqueoProgramadoEn).toBeNull();
       expect(actual.suspendidaEn).toBeNull();
       expect(await primera.getRepository(EventoAuditoria).countBy({
         licenciaId: tenant.licenciaId, accion: 'licencia_renovada',
       })).toBe(2);
       expect(await primera.getRepository(EventoAuditoria).countBy({
         licenciaId: tenant.licenciaId, accion: 'licencia_suspendida',
+      })).toBe(1);
+      expect(await primera.getRepository(EventoAuditoria).countBy({
+        licenciaId: tenant.licenciaId, accion: 'licencia_reactivada',
+      })).toBe(1);
+    });
+  });
+
+  it('T58 materialización y reactivación concurrentes congelan y restauran una sola vez', async () => {
+    await conBaseMigrada(async (primera, segunda) => {
+      const ahora = fechaSegura();
+      const actor = await crearSuperadmin(primera, ahora);
+      const tenant = await crearActivo(primera, actor.id, ahora);
+      const solicitud = siguiente(ahora, 3000);
+      const limite = siguiente(solicitud, 48 * 60 * 60 * 1000);
+      const retorno = siguiente(limite, 5000);
+      await servicios(primera).licencias.suspender(actor.id, tenant.licenciaId, solicitud);
+      await Promise.all([
+        servicios(primera).licencias.materializarSuspension(actor.id, tenant.licenciaId, limite),
+        servicios(segunda).licencias.reactivar(actor.id, tenant.licenciaId, retorno),
+      ]);
+      const actual = await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
+      expect(actual.suspendidaEn).toBeNull();
+      expect(actual.remanenteMs).toBeNull();
+      expect(actual.venceEn).toEqual(new Date(retorno.getTime()
+        + Math.max(0, tenant.licencia.venceEn!.getTime() - limite.getTime())));
+      expect(await primera.getRepository(EventoAuditoria).countBy({
+        licenciaId: tenant.licenciaId, accion: 'licencia_congelada',
+      })).toBe(1);
+      expect(await primera.getRepository(EventoAuditoria).countBy({
+        licenciaId: tenant.licenciaId, accion: 'licencia_reactivada',
+      })).toBe(1);
+    });
+  });
+
+  it('T58 renovación y reactivación concurrentes sobre saldo congelado conservan un orden serial', async () => {
+    await conBaseMigrada(async (primera, segunda) => {
+      const ahora = fechaSegura();
+      const actor = await crearSuperadmin(primera, ahora);
+      const tenant = await crearActivo(primera, actor.id, ahora);
+      const solicitud = siguiente(ahora, 3000);
+      const limite = siguiente(solicitud, 48 * 60 * 60 * 1000);
+      const retorno = siguiente(limite, 5000);
+      const calendario = new CalendarioLicenciasService();
+      await servicios(primera).licencias.suspender(actor.id, tenant.licenciaId, solicitud);
+      await servicios(primera).licencias.materializarSuspension(actor.id, tenant.licenciaId, limite);
+      await Promise.all([
+        servicios(primera).licencias.renovar(actor.id, tenant.licenciaId, retorno),
+        servicios(segunda).licencias.reactivar(actor.id, tenant.licenciaId, retorno),
+      ]);
+      const actual = await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
+      const renovarPrimero = new Date(retorno.getTime()
+        + Math.max(0, calendario.sumarAnios(tenant.licencia.venceEn!).getTime() - limite.getTime()));
+      const reactivarPrimero = calendario.sumarAnios(new Date(retorno.getTime()
+        + Math.max(0, tenant.licencia.venceEn!.getTime() - limite.getTime())));
+      expect([renovarPrimero.getTime(), reactivarPrimero.getTime()]).toContain(actual.venceEn!.getTime());
+      expect(actual).toMatchObject({ suspendidaEn: null, congeladaEn: null,
+        suspensionSolicitadaEn: null, remanenteMs: null, versionVencimiento: 3 });
+      expect(await primera.getRepository(EventoAuditoria).countBy({
+        licenciaId: tenant.licenciaId, accion: 'licencia_renovada',
       })).toBe(1);
       expect(await primera.getRepository(EventoAuditoria).countBy({
         licenciaId: tenant.licenciaId, accion: 'licencia_reactivada',

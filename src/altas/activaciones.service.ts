@@ -76,7 +76,11 @@ export class ActivacionesService {
           estado: EstadoAltaAdministrador.ACTIVADA, usuarioCreadoId: usuario.id, activadoEn: new Date(datos.ahora),
         });//actualiza el alta para marcarlo como activado, asignarle el id del usuario creado y la fecha de activacion
         await manager.getRepository(Negocio).update(negocio.id, { activadoEn: new Date(datos.ahora) });
-        await manager.getRepository(Licencia).update(licencia.id, { habilitadaEn: new Date(datos.ahora), venceEn });
+        // La activación inicia el primer vencimiento y establece su versión persistida.
+        await manager.getRepository(Licencia).update(licencia.id, {
+          habilitadaEn: new Date(datos.ahora), venceEn,
+          versionVencimiento: (licencia.versionVencimiento ?? 0) + 1,
+        });
         await this.auditoria.registrar(manager, {//registra la auditoria de la activacion del administrador
           operacionId: randomUUID(), actorUsuarioId: usuario.id, negocioId: codigo.negocioId,
           usuarioId: usuario.id, altaAdministradorId: alta.id, licenciaId: licencia.id,
@@ -113,7 +117,9 @@ export class ActivacionesService {
         activadoEn: new Date(datos.ahora),
       });
       await manager.getRepository(Licencia).update(licencia.id, {//actualiza la licencia con la fecha de habilitacion y la fecha de vencimiento
+        // La versión cambia junto con la fecha para invalidar cualquier vista temporal previa.
         habilitadaEn: new Date(datos.ahora), venceEn,
+        versionVencimiento: (licencia.versionVencimiento ?? 0) + 1,
       });
       await this.auditoria.registrar(manager, {//registra la auditoria de la activacion del administrador
         operacionId: randomUUID(), actorUsuarioId: usuario.id,
