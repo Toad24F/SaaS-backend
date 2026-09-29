@@ -25,6 +25,7 @@ export interface CrearNegocioHistorico {
 }
 
 export interface AltaNegocioHistorica {
+  correo: string;
   negocioId: number;
   administradorId: number;
   licenciaId: number;
@@ -118,6 +119,7 @@ export class AltasHistoricasFixture {
         return {
           negocioId: negocio.id,
           administradorId: administrador.id,
+          correo: email,
           licenciaId: licencia.id,
           codigo: codigo.codigo,
           expiraEn: codigo.expiraEn,

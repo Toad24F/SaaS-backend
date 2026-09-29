@@ -181,7 +181,8 @@ export class ProcesadorCorreoService {
       destino.correoVersion !== codigo.destinatarioVersion) return null;
     const vigente = destino instanceof AltaAdministrador
       ? destino.estado === EstadoAltaAdministrador.PENDIENTE && destino.correo === envio.correoDestinatario
-      : destino.activo && destino.activadoEn !== null && destino.email === envio.correoDestinatario &&
+      // Recuperar una contraseña no habilita la cuenta ni levanta una suspensión.
+      : destino.activadoEn !== null && destino.email === envio.correoDestinatario &&
       destino.rol === Rol.ADMIN_NEGOCIO;
     if (!vigente) return null;//si el destinatario no es vigente, devuelve null
     const valor = this.derivador.derivar({

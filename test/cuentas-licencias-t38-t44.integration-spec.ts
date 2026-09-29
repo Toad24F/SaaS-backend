@@ -19,6 +19,8 @@ import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Usuario } from '../src/usuarios/entities/usuario.entity';
 import { UsuariosService } from '../src/usuarios/usuarios.service';
 import { conBaseMigrada } from './support/mariadb';
+import { derivadorPrueba } from './support/invitaciones-fase-2';
+import { credencialesDePrueba } from './support/credenciales-prueba';
 
 const contrasenaInicial = 'contraseña-inicial';
 
@@ -72,10 +74,10 @@ async function crearTenant(dataSource: DataSource) {
 function credenciales(dataSource: DataSource) {
   const auditoria = new AuditoriaService();
   const sesiones = new SesionesService(dataSource.getRepository(Sesion));
-  return new CredencialesService(
-    dataSource.getRepository(Usuario), new CodigosService(auditoria),
+  return credencialesDePrueba(dataSource, new CredencialesService(
+    dataSource.getRepository(Usuario), new CodigosService(auditoria, derivadorPrueba),
     new AutorizacionService(), new PoliticaContrasenasService(), sesiones, auditoria,
-  );
+  ));
 }
 
 function licencias(dataSource: DataSource) {

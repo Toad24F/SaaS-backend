@@ -23,6 +23,7 @@ import { ReservaCorreoService } from './reserva-correo.service';
 import { BandejaCorreoService } from '../correos/bandeja-correo.service';
 import { CodigoAcceso } from '../codigos/entities/codigo-acceso.entity';
 import { EnvioCorreo, EstadoEnvioCorreo } from '../correos/entities/envio-correo.entity';
+import { transaccionIdentidad } from '../comun/transaccion-identidad';
 
 export interface CrearNegocio {
   actorUsuarioId: number;
@@ -171,8 +172,8 @@ export class AltasService {
   }
 
   /** Revalida emisor y destinatario bajo bloqueo sin activar ni modificar la licencia. */
-  async reemitirCodigoInicial(datos: { actorUsuarioId: number; negocioId: number; ahora: Date }) {
-    return this.negocios.manager.transaction(async (manager) => {
+  async reemitirCodigoInicial(datos: { actorUsuarioId: number; negocioId: number; ahora: Date; soloInvitacion?: boolean }) {
+    return transaccionIdentidad(this.negocios.manager, async (manager) => {
       await this.autorizarGestion(manager, datos);
       const alta = await this.bloquearInvitacion(manager, datos.negocioId);
       if (alta) {
@@ -181,6 +182,7 @@ export class AltasService {
         return this.reemplazarInvitacion(manager, alta, datos);
       }
       // Compatibilidad con registros históricos: nunca crea una cuenta pendiente nueva.
+      if (datos.soloInvitacion) throw new ConflictException('Invitación no disponible.');
       const actor = await manager.getRepository(Usuario).createQueryBuilder('actor')
         .setLock('pessimistic_read').where('actor.id = :id', { id: datos.actorUsuarioId }).getOne();
       if (!actor || actor.rol !== Rol.SUPERADMIN) throw new ForbiddenException('Acceso denegado.');
@@ -203,7 +205,7 @@ export class AltasService {
   async corregirCorreoInicial(datos: { actorUsuarioId: number; negocioId: number; ahora: Date; nuevoCorreo: string }) {
     const correo = typeof datos.nuevoCorreo === 'string' ? datos.nuevoCorreo.trim().toLowerCase() : '';//normaliza el correo a minúsculas y sin espacios
     if (!isEmail(correo) || correo.length > 150) throw new BadRequestException('El correo no es válido.');//verifica que el correo sea válido y no exceda los 150 caracteres
-    return this.negocios.manager.transaction(async (manager) => {//inicia una transacción para garantizar que todas las operaciones se realicen de manera atómica
+    return transaccionIdentidad(this.negocios.manager, async (manager) => {//Reintenta conflictos sin conservar escrituras parciales.
       await this.autorizarGestion(manager, datos);
       const alta = await this.bloquearInvitacion(manager, datos.negocioId);
       if (!alta) throw new NotFoundException('Invitación no disponible.');

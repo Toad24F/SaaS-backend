@@ -96,8 +96,8 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       expect(pendiente).toMatchObject({ habilitadaEn: null, venceEn: null });
       reloj.avanzar(1000);
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({
-        codigo: creado.body.codigo, nombre: 'Administrador anual', password: PASSWORD_T51_T60,
-      }).expect(204);
+        codigo: creado.body.codigo, correo: creado.body.correo, negocioId: creado.body.negocioId, nombre: 'Administrador anual', password: PASSWORD_T51_T60,
+      }).expect(200);
       const licencia = await db.getRepository(Licencia).findOneByOrFail({ id: creado.body.licenciaId });
       expect(licencia.venceEn).toEqual(new CalendarioLicenciasService().sumarAnios(reloj.ahora()));
       const admin = await db.getRepository(Usuario).findOneByOrFail({ id: creado.body.administradorId });
@@ -173,8 +173,8 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       }) };
       await post(app, `/licencias/${creado.body.licenciaId}/suspender`, token).expect(204);
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({
-        codigo: creado.body.codigo, nombre: 'Pendiente', password: PASSWORD_T51_T60,
-      }).expect(400);
+        codigo: creado.body.codigo, correo: creado.body.correo, negocioId: creado.body.negocioId, nombre: 'Pendiente', password: PASSWORD_T51_T60,
+      }).expect(409);
       const codigo = await db.getRepository(CodigoAcceso).findOneByOrFail({ usuarioId: creado.body.administradorId });
       expect(codigo.consumidoEn).toBeNull();
       reloj.avanzar(48 * 60 * 60 * 1000);
@@ -183,14 +183,16 @@ describe('T51 y T58–T60 — recorridos HTTP completos', () => {
       expect(await db.getRepository(Licencia).findOneByOrFail({ id: creado.body.licenciaId }))
         .toMatchObject({ habilitadaEn: null, venceEn: null, suspendidaEn: null });
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({
-        codigo: creado.body.codigo, nombre: 'Tarde', password: PASSWORD_T51_T60,
-      }).expect(400);
-      const nuevo = await post(app, `/negocios/${creado.body.negocioId}/reemitir-codigo`, superNuevo)
-        .expect(201);
+        codigo: creado.body.codigo, correo: creado.body.correo, negocioId: creado.body.negocioId, nombre: 'Tarde', password: PASSWORD_T51_T60,
+      }).expect(409);
+      // Preparación histórica de licencias; la reemisión HTTP moderna se cubre en T041.
+      const nuevo = { body: await servicios(db).altas.reemitirCodigoInicial({
+        actorUsuarioId: superadmin.id, negocioId: creado.body.negocioId, ahora: reloj.ahora(),
+      }) };
       expect(nuevo.body.codigo).not.toBe(creado.body.codigo);
       await request(app.getHttpServer()).post('/auth/activar-administrador').send({
-        codigo: nuevo.body.codigo, nombre: 'Activado', password: PASSWORD_T51_T60,
-      }).expect(204);
+        codigo: nuevo.body.codigo, correo: creado.body.correo, negocioId: creado.body.negocioId, nombre: 'Activado', password: PASSWORD_T51_T60,
+      }).expect(200);
       const licencia = await db.getRepository(Licencia).findOneByOrFail({ id: creado.body.licenciaId });
       expect(licencia).toMatchObject({ habilitadaEn: reloj.ahora(),
         venceEn: new CalendarioLicenciasService().sumarAnios(reloj.ahora()) });

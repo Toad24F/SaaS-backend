@@ -9,6 +9,7 @@ import {
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AltaAdministrador, EstadoAltaAdministrador } from '../altas/entities/alta-administrador.entity';
 import { DerivadorCodigo } from './derivador-codigo';
+import { transaccionIdentidad } from '../comun/transaccion-identidad';
 
 const DURACION_ACTIVACION_MS = 48 * 60 * 60 * 1000;
 const DURACION_RECUPERACION_MS = 30 * 60 * 1000;
@@ -127,7 +128,7 @@ export class CodigosService {
     operacion: (manager: EntityManager, codigo: CodigoAcceso) => Promise<T>,
   ): Promise<T> {
     //busca el codigo con el hash del codigo que se le pasa, si no lo encuentra lanza un error
-    return dataSource.transaction(async (manager) => {
+    return transaccionIdentidad(dataSource, async (manager) => {
       const repositorio = manager.getRepository(CodigoAcceso);
       const referencia = await repositorio.createQueryBuilder('codigo')
         .addSelect('codigo.codigoHash')

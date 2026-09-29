@@ -1,3 +1,6 @@
+import { AuditoriaService } from '../src/auditoria/auditoria.service';
+import { derivadorPrueba } from './support/invitaciones-fase-2';
+import { codigoDelEnvio } from './support/credenciales-prueba';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
@@ -37,6 +40,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
   await conBaseMigrada(async (db) => {
     const reloj = new RelojPrueba(new Date(Date.now() + 60000));
     const modulo = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CodigosService).useFactory({ inject: [AuditoriaService],
+        factory: (auditoria: AuditoriaService) => new CodigosService(auditoria, derivadorPrueba) })
       .overrideProvider(DataSource).useValue(db)
       .overrideProvider(RELOJ).useValue(reloj)
       .compile();
@@ -83,7 +88,9 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
             negocioId: negocio.id, usuarioId: usuario.id, emisorUsuarioId: emisor.id,
             proposito, ahora: reloj.ahora(),
           }));
-        destinos[ruta] = { usuario, licencia, proposito, ...emitido };
+        // El secreto se reconstruye exclusivamente en memoria del destinatario de prueba.
+        const codigo = recuperacion ? await codigoDelEnvio(db, (emitido as { envioId: number }).envioId) : (emitido as { codigo: string }).codigo;
+        destinos[ruta] = { usuario, licencia, proposito, ...emitido, codigo };
       }
       await ejecutar({ app, db, reloj, destinos, emisor });
     } finally {
@@ -94,7 +101,7 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
 
 function entrada(ruta: Ruta, codigo: string) {
   return { codigo, password: nuevaPassword,
-    ...(ruta === rutas[1] ? {} : { nombre: '  Nombre activado  ' }) };
+    ...(ruta === rutas[1] ? {} : { nombre: '  Nombre activado  ', correo: 'usuario0@example.test', negocioId: 1 }) };
 }
 
 // Se compara el estado completo sensible para acreditar rechazos sin efectos parciales.
@@ -124,8 +131,8 @@ describe('T46 — activación y recuperación HTTP', () => {
       const destino = destinos[ruta];
       const antes = await estado(db);
       const respuesta = await request(app.getHttpServer()).post(ruta)
-        .send(entrada(ruta, destino.codigo)).expect(204);
-      expect(respuesta.text).toBe('');
+        .send(entrada(ruta, destino.codigo)).expect(ruta === rutas[0] ? 200 : 204);
+      expect(respuesta.body).toMatchObject({ id: destino.usuario.id, email: destino.usuario.email });
       const usuario = await db.getRepository(Usuario).findOneByOrFail({ id: destino.usuario.id });
       expect(usuario).toMatchObject({
         nombre: 'Nombre activado', activadoEn: reloj.ahora(),
@@ -145,7 +152,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       expect(despues.usuarios.filter((fila) => fila.id !== usuario.id))
         .toEqual(antes.usuarios.filter((fila) => fila.id !== usuario.id));
       expect(despues.sesiones).toEqual([]);
-      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(400);
+      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(ruta === rutas[0] ? 409 : 400);
       expect(await estado(db)).toEqual(despues);
     });
   });
@@ -198,8 +205,8 @@ describe('T46 — activación y recuperación HTTP', () => {
         invalidos.push({ codigo: valido.codigo, password: nuevaPassword },
           ...[null, 123, '   ', 'a'.repeat(151)].map((nombre) => ({ ...valido, nombre })));
       }
-      const extras = ['email', 'rol', 'negocioId', 'negocio_id', 'usuarioId', 'destinatarioId', 'proposito', 'ahora'];
-      if (ruta === rutas[1]) extras.push('nombre');
+      const extras = ['email', 'rol', 'negocio_id', 'usuarioId', 'destinatarioId', 'proposito', 'ahora'];
+      if (ruta === rutas[1]) extras.push('nombre', 'negocioId', 'correo');
       const antes = await estado(db);
       for (const body of invalidos) {
         // Se avanza la ventana solo en esta matriz para probar validación, no el límite.
@@ -222,7 +229,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       const otro = destinos[rutas[(rutas.indexOf(ruta) + 1) % rutas.length]];
       const antes = await estado(db);
       for (const codigo of ['codigo-inexistente', otro.codigo]) {
-        await request(app.getHttpServer()).post(ruta).send(entrada(ruta, codigo)).expect(400);
+        await request(app.getHttpServer()).post(ruta).send(entrada(ruta, codigo)).expect(ruta === rutas[0] ? 409 : 400);
       }
       expect(await estado(db)).toEqual(antes);
       await app.get(CodigosService).reemplazar(db, {
@@ -230,7 +237,7 @@ describe('T46 — activación y recuperación HTTP', () => {
         emisorUsuarioId: emisor.id, proposito: destino.proposito, ahora: reloj.ahora(),
       });
       const reemplazado = await estado(db);
-      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(400);
+      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(ruta === rutas[0] ? 409 : 400);
       expect(await estado(db)).toEqual(reemplazado);
     });
   });
@@ -240,7 +247,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       const destino = destinos[ruta];
       reloj.fijar(destino.expiraEn);
       const antes = await estado(db);
-      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(400);
+      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(ruta === rutas[0] ? 409 : 400);
       expect(await estado(db)).toEqual(antes);
     });
   });
@@ -254,7 +261,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       await db.getRepository(Licencia).update(destino.licencia.id,
         estadoLicencia === 'suspendida' ? { suspendidaEn: reloj.ahora() } : { venceEn: reloj.ahora() });
       const antes = await estado(db);
-      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(400);
+      await request(app.getHttpServer()).post(ruta).send(entrada(ruta, destino.codigo)).expect(ruta === rutas[0] ? 409 : 400);
       expect(await estado(db)).toEqual(antes);
     });
   });
@@ -264,7 +271,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       await request(app.getHttpServer()).post('/auth/login')
         .send({ email: 'nadie@example.test', password }).expect(401);
       for (const otra of rutas) {
-        await request(app.getHttpServer()).post(otra).send(entrada(otra, 'inexistente')).expect(400);
+        await request(app.getHttpServer()).post(otra).send(entrada(otra, 'inexistente')).expect(otra === rutas[0] ? 409 : 400);
       }
       await request(app.getHttpServer()).post('/auth/login')
         .send({ email: 'nadie@example.test', password }).expect(401);
@@ -279,7 +286,7 @@ describe('T46 — activación y recuperación HTTP', () => {
       await enviar().expect(429);
       expect(await estado(db)).toEqual(antes);
       reloj.avanzar(1);
-      await enviar().expect(204);
+      await enviar().expect(ruta === rutas[0] ? 200 : 204);
     });
   });
 });

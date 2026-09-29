@@ -1,3 +1,6 @@
+import { CodigosService } from '../src/codigos/codigos.service';
+import { derivadorPrueba } from './support/invitaciones-fase-2';
+import { codigoDelEnvio } from './support/credenciales-prueba';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
@@ -28,6 +31,8 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
   await conBaseMigrada(async (db) => {
     const reloj = new RelojPrueba(new Date(Date.now() + 60000));
     const modulo = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CodigosService).useFactory({ inject: [AuditoriaService],
+        factory: (auditoria: AuditoriaService) => new CodigosService(auditoria, derivadorPrueba) })
       .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
     const app = modulo.createNestApplication();
     // Se conservan los Guards reales y las opciones de ValidationPipe de producción.
@@ -135,10 +140,12 @@ describe('T49 — cambio y autorización de recuperación HTTP', () => {
       await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { suspendidaEn: ctx.reloj.ahora() });
       const antes = await estado(ctx.db);
       const primero = await autorizar(ctx).expect(201);
+      const codigoPrimero = await codigoDelEnvio(ctx.db, primero.body.envioId);
       ctx.reloj.avanzar(1000);
       const segundo = await autorizar(ctx).expect(201);
-      expect(segundo.body).toEqual({ codigo: expect.any(String), expiraEn: new Date(ctx.reloj.ahora().getTime() + 1800000).toISOString() });
-      expect(segundo.body.codigo).not.toBe(primero.body.codigo);
+      const codigoSegundo = await codigoDelEnvio(ctx.db, segundo.body.envioId);
+      expect(segundo.body).toEqual({ negocioId: ctx.usuarios[1].negocioId, administradorId: ctx.usuarios[1].id, envioId: expect.any(String), estadoEnvio: 'pendiente', expiraEn: new Date(ctx.reloj.ahora().getTime() + 1800000).toISOString() });
+      expect(codigoSegundo).not.toBe(codigoPrimero);
       const emitido = await estado(ctx.db);
       expect(emitido.usuarios).toEqual(antes.usuarios);
       expect(emitido.licencias).toEqual(antes.licencias);
@@ -147,9 +154,9 @@ describe('T49 — cambio y autorización de recuperación HTTP', () => {
       expect(eventos).toHaveLength(2);
       expect(eventos[0]).toMatchObject({ actorUsuarioId: ctx.usuarios[0].id, usuarioId: ctx.usuarios[1].id, negocioId: ctx.usuarios[1].negocioId });
       const recuperar = (codigo: string) => request(ctx.app.getHttpServer()).post('/auth/recuperar-contrasena').send({ codigo, password: cambio.nuevaPassword });
-      await recuperar(primero.body.codigo).expect(400);
-      await recuperar(segundo.body.codigo).expect(204);
-      await recuperar(segundo.body.codigo).expect(400);
+      await recuperar(codigoPrimero).expect(400);
+      await recuperar(codigoSegundo).expect(204);
+      await recuperar(codigoSegundo).expect(400);
       const despues = await estado(ctx.db);
       expect(despues.licencias).toEqual(antes.licencias);
       expect(despues.usuarios.find(u => u.id === ctx.usuarios[1].id)?.activo).toBe(false);

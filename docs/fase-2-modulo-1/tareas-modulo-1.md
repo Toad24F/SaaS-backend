@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **101 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **96 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -283,37 +283,39 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T037–T039: [activación, corrección, reemisión, flujo y pruebas](resultados-tareas/resultados-t037-t039.md).
 
-- [ ] **M1-T040 — Enviar recuperación de administrador por correo** · 25 min · RF-14, RF-16, RF-19
+- [x] **M1-T040 — Enviar recuperación de administrador por correo** · 25 min · RF-14, RF-16, RF-19
 
   Dependencias: M1-T029, M1-T024, M1-T018.
 
   Hecho cuando: la recuperación autorizada conserva 30 minutos y los bloqueos previos, entrega por correo y no introduce códigos para recepción o Profesional.
 
-- [ ] **M1-T041 — Actualizar HTTP de alta y activación** · 25 min · RF-06–RF-19, RF-20
+- [x] **M1-T041 — Actualizar HTTP de alta y activación** · 25 min · RF-06–RF-19, RF-20
 
   Dependencias: M1-T005, M1-T039, M1-T040.
 
   Hecho cuando: los DTO exigen RFC/correo según operación y respuestas no incluyen usuario pendiente ni código; errores y roles se verifican por HTTP.
 
-- [ ] **M1-T042 — Probar activación frente a activación** · 20 min · RF-09–RF-11
+- [x] **M1-T042 — Probar activación frente a activación** · 20 min · RF-09–RF-11
 
   Dependencias: M1-T037, M1-T007.
 
   Hecho cuando: dos conexiones consumen el mismo código y solo una crea cuenta, inicia licencia y audita, sin registros parciales.
 
-- [ ] **M1-T043 — Probar activación frente a reemplazo** · 25 min · RF-10–RF-13, RF-18
+- [x] **M1-T043 — Probar activación frente a reemplazo** · 25 min · RF-10–RF-13, RF-18
 
   Dependencias: M1-T039, M1-T038, M1-T007.
 
   Hecho cuando: ambos órdenes entre activación, reemisión y corrección respetan el ganador del bloqueo; ningún código o correo sustituido activa después.
 
-- [ ] **M1-T044 — Probar invalidaciones y secretos por HTTP** · 25 min · RF-09–RF-19
+- [x] **M1-T044 — Probar invalidaciones y secretos por HTTP** · 25 min · RF-09–RF-19
 
   Dependencias: M1-T041, M1-T042, M1-T043.
 
   Hecho cuando: correo distinto, código vencido/usado/sustituido y entradas extra se rechazan sin activar; ninguna respuesta o log de los recorridos contiene secretos.
 
 ## 5. Licencias y control de acceso
+
+  Evidencia T040–T044: [recuperación, HTTP, concurrencia, archivos y resultados](resultados-tareas/resultados-t040-t044.md).
 
 - [ ] **M1-T045 — Ampliar los estados persistidos de licencia** · 25 min · RF-69–RF-79, RF-82–RF-85
 

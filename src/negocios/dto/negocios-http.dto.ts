@@ -43,3 +43,11 @@ export class NegocioIdDto {
   @Max(4294967295, { message: 'El ID del negocio está fuera de rango' })
   id: number;
 }
+
+/** La corrección admite únicamente el correo; negocio y actor proceden de ruta/sesión. */
+export class CorregirCorreoDto {
+  @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
+  @IsEmail()
+  @MaxLength(150)
+  correo: string;
+}

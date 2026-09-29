@@ -19,13 +19,15 @@ import { CalendarioLicenciasService } from '../../src/licencias/services/calenda
 import { PoliticaAccesoLicenciaService } from '../../src/licencias/services/politica-acceso-licencia.service';
 import { Negocio } from '../../src/negocios/entities/negocio.entity';
 import { Usuario } from '../../src/usuarios/entities/usuario.entity';
+import { derivadorPrueba } from './invitaciones-fase-2';
+import { credencialesDePrueba } from './credenciales-prueba';
 
 export const PASSWORD_T51_T60 = 'password-segura-t51';
 
 /** Construye servicios reales vinculados a la conexión recibida, sin mocks de persistencia. */
 export function servicios(db: DataSource, auditoria = new AuditoriaService()) {
   const politica = new PoliticaContrasenasService();
-  const codigos = new CodigosService(auditoria);
+  const codigos = new CodigosService(auditoria, derivadorPrueba);
   const autorizacion = new AutorizacionService();
   const calendario = new CalendarioLicenciasService();
   const sesiones = new SesionesService(db.getRepository(Sesion));
@@ -39,8 +41,9 @@ export function servicios(db: DataSource, auditoria = new AuditoriaService()) {
       reemitirCodigoInicial: altasDominio.reemitirCodigoInicial.bind(altasDominio) },
     activaciones: new ActivacionesService(db.getRepository(Usuario), codigos, politica,
       new PoliticaAccesoLicenciaService(), calendario, auditoria),
-    credenciales: new CredencialesService(db.getRepository(Usuario), codigos, autorizacion,
-      politica, sesiones, auditoria),
+    // Reconstruye solo en la fixture el código que la API entrega por correo.
+    credenciales: credencialesDePrueba(db, new CredencialesService(db.getRepository(Usuario), codigos, autorizacion,
+      politica, sesiones, auditoria)),
     licencias: new LicenciasService(db.getRepository(Licencia), autorizacion, calendario, auditoria),
   };
 }

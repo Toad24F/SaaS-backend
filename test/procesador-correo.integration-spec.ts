@@ -98,9 +98,10 @@ describe('M1-T030–T033: procesamiento durable de códigos', () => {
         return codigo;
       });
       if (desactivado) await db.getRepository(Usuario).update(usuario.id, { activo: false });
-      expect((await crear().procesarUno())!.estado).toBe(desactivado ? 'descartado' : 'enviado');
-      expect(transporte.intentos).toHaveLength(desactivado ? 0 : 1);
-      if (!desactivado) expect(transporte.intentos[0].texto).toContain(emitido.codigo);
+      // T040 conserva bloqueos de acceso, pero permite entregar una recuperación autorizada.
+      expect((await crear().procesarUno())!.estado).toBe('enviado');
+      expect(transporte.intentos).toHaveLength(1);
+      expect(transporte.intentos[0].texto).toContain(emitido.codigo);
     });
   });
 

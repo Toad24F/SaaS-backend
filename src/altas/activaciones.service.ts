@@ -37,9 +37,9 @@ export class ActivacionesService {
     private readonly reservaCorreo: ReservaCorreoService = new ReservaCorreoService(),
   ) { }
 
-  async activarAdministrador(datos: ActivarCuenta): Promise<void> {
+  async activarAdministrador(datos: ActivarCuenta) {
     const { nombre, passwordHash } = await this.prepararCredenciales(datos);
-    await this.codigos.consumir(this.usuarios.manager.connection, {//consume el codigo de activacion y ejecuta la operacion de activacion de administrador
+    return this.codigos.consumir(this.usuarios.manager.connection, {//Cuenta, reserva y consumo comparten la transacción.
       codigo: datos.codigo,
       correo: datos.correo,
       proposito: PropositoCodigoAcceso.ACTIVACION_ADMIN,
@@ -83,11 +83,15 @@ export class ActivacionesService {
           accion: 'administrador_activado', valoresAntes: { activadoEn: null },
           valoresDespues: { activadoEn: datos.ahora.toISOString(), venceEn: venceEn.toISOString() },
         });
-        return;
+        return { id: usuario.id, negocioId: usuario.negocioId, nombre: usuario.nombre,
+          email: usuario.email, rol: usuario.rol, activo: usuario.activo, activadoEn: usuario.activadoEn };
       }
       // Este controlador histórico solo procesa códigos ligados a cuenta.
       if (codigo.usuarioId === null) throw new BadRequestException('Código inválido o no disponible.');
       const usuario = await manager.getRepository(Usuario).findOneByOrFail({ id: codigo.usuarioId });//busca el usuario con el id de usuario si no lo encuentra lanza un error
+      if (datos.correo !== undefined && datos.correo.trim().toLowerCase() !== usuario.email) {
+        throw new BadRequestException('Código inválido o no disponible.');
+      }
       const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')//consulta la licencia del negocio con el id de negocio del codigo, si no lo encuentra lanza un error
         .setLock('pessimistic_write')//bloquea el registro de licencia para que no se pueda modificar mientras se consume el codigo
         .where('licencia.negocioId = :negocioId', { negocioId: codigo.negocioId })
@@ -117,6 +121,8 @@ export class ActivacionesService {
         accion: 'administrador_activado', valoresAntes: { activadoEn: null },
         valoresDespues: { activadoEn: datos.ahora.toISOString(), venceEn: venceEn.toISOString() },
       });
+      return { id: usuario.id, negocioId: usuario.negocioId, nombre, email: usuario.email,
+        rol: usuario.rol, activo: usuario.activo, activadoEn: new Date(datos.ahora) };
     });
   }
 

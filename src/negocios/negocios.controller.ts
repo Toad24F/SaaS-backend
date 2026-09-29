@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AltasService } from '../altas/altas.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -8,7 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
-import { CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
+import { CorregirCorreoDto, CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
 import { NegociosConsultaService } from './negocios-consulta.service';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 
@@ -43,11 +43,18 @@ export class NegociosController {
   reemitirCodigo(@Param() parametros: NegocioIdDto, @Body() _datos: SinCamposDto, @CurrentUser() usuario: JwtPayload) {
     // Hereda el rol exclusivo de superadmin; el cuerpo no puede elegir destinatario.
     return this.altas.reemitirCodigoInicial({ actorUsuarioId: usuario.sub,
-      negocioId: parametros.id, ahora: this.reloj.ahora() });
+      negocioId: parametros.id, ahora: this.reloj.ahora(), soloInvitacion: true });
   }
 
   @Get(':id')
   consultar(@Param() parametros: NegocioIdDto) {
     return this.consultas.consultar(parametros.id);
+  }
+
+  @Patch(':id/correo-administrador')
+  corregirCorreo(@Param() parametros: NegocioIdDto, @Body() datos: CorregirCorreoDto, @CurrentUser() usuario: JwtPayload) {
+    // Comparte sesión y rol de superadmin y devuelve solo metadatos de envío.
+    return this.altas.corregirCorreoInicial({ actorUsuarioId: usuario.sub, negocioId: parametros.id,
+      nuevoCorreo: datos.correo, ahora: this.reloj.ahora() });
   }
 }
