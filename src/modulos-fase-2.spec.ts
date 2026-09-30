@@ -10,6 +10,7 @@ import { CorreosModule } from './correos/correos.module';
 import { TransporteCorreoSmtp } from './correos/transporte-correo-smtp';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EnvioCorreo } from './correos/entities/envio-correo.entity';
+import { Sucursal } from './sucursales/entities/sucursal.entity';
 import { BandejaCorreoService } from './correos/bandeja-correo.service';
 import { ProcesadorCorreoService } from './correos/procesador-correo.service';
 
@@ -24,13 +25,16 @@ describe('M1-T008: composición inicial de fase 2', () => {
     // Solo sustituye la persistencia; el registro real de la entidad sigue siendo obligatorio.
     const modulo = await Test.createTestingModule({ imports: modulos })
       .overrideProvider(ProcesadorCorreoService).useValue({})
-      .overrideProvider(getRepositoryToken(EnvioCorreo)).useValue({}).compile();
+      .overrideProvider(getRepositoryToken(EnvioCorreo)).useValue({})
+      // Sucursal registra metadatos; la prueba de composición no abre MariaDB.
+      .overrideProvider(getRepositoryToken(Sucursal)).useValue({}).compile();
     try {
       await modulo.init();
       for (const tipo of modulos) expect(modulo.get(tipo)).toBeDefined();
       expect(modulo.get(TransporteCorreoSmtp)).toBeDefined();
       expect(modulo.get(BandejaCorreoService)).toBeDefined();
       expect(modulo.get(getRepositoryToken(EnvioCorreo))).toBeDefined();
+      expect(modulo.get(getRepositoryToken(Sucursal))).toBeDefined();
       expect(enviar).not.toHaveBeenCalled();
     } finally {
       await modulo.close();

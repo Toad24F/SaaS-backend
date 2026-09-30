@@ -55,7 +55,9 @@ describe('Licencias — reintentos de transacción por ER_CHECKREAD', () => {
         transaccion.mockRestore();
       }
       expect(await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id }))
-        .toMatchObject({ suspendidaEn: ahora });
+        // La solicitud inicia 48 horas de gracia, no una suspensión inmediata.
+        .toMatchObject({ suspendidaEn: null, suspensionSolicitadaEn: ahora,
+          bloqueoProgramadoEn: new Date(ahora.getTime() + 48 * 60 * 60 * 1000) });
       expect(await db.getRepository(EventoAuditoria).countBy({
         licenciaId: licencia.id, accion: 'licencia_suspendida',
       })).toBe(1);

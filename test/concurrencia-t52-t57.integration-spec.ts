@@ -330,7 +330,8 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
         servicios(segunda).licencias.renovar(actor.id, tenant.licenciaId, reactivacion),
       ]);
       const actual = await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licenciaId });
-      expect(actual.venceEn).toEqual(calendario.sumarAnios(tenant.licencia.venceEn!));
+      // La segunda renovación durante la reactivación también acumula un año.
+      expect(actual.venceEn).toEqual(calendario.sumarAnios(calendario.sumarAnios(tenant.licencia.venceEn!)));
       expect(actual.bloqueoProgramadoEn).toBeNull();
       expect(actual.suspendidaEn).toBeNull();
       expect(await primera.getRepository(EventoAuditoria).countBy({

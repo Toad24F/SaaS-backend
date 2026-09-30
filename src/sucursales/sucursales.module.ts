@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Sucursal } from './entities/sucursal.entity';
 
-// Reserva el dominio de sucursales; T059 y siguientes incorporarán su persistencia y casos de uso.
-@Module({})
+// Registra la entidad en autoLoadEntities; T062 añadirá el servicio que la utiliza.
+@Module({ imports: [TypeOrmModule.forFeature([Sucursal])], exports: [TypeOrmModule] })
 export class SucursalesModule {}

@@ -184,7 +184,10 @@ describe('Cuentas y licencias T38–T44', () => {
       await servicio.suspender(actor.id, tenant.licencia.id, tenant.ahora);
       await servicio.suspender(actor.id, tenant.licencia.id, new Date(tenant.ahora.getTime() + 1000));
       expect(await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licencia.id }))
-        .toMatchObject({ suspendidaEn: tenant.ahora, venceEn: tenant.licencia.venceEn });
+        // La fase 2 conserva acceso durante la gracia de 48 horas.
+        .toMatchObject({ suspendidaEn: null, suspensionSolicitadaEn: tenant.ahora,
+          bloqueoProgramadoEn: new Date(tenant.ahora.getTime() + 48 * 60 * 60 * 1000),
+          venceEn: tenant.licencia.venceEn });
       expect(await primera.getRepository(EventoAuditoria).countBy({ accion: 'licencia_suspendida' })).toBe(1);
     });
   });
@@ -197,7 +200,9 @@ describe('Cuentas y licencias T38–T44', () => {
       await servicio.suspender(actor.id, tenant.licencia.id, tenant.ahora);
       const reactivacion = new Date(tenant.ahora.getTime() + 10 * 24 * 60 * 60 * 1000);
       await servicio.reactivar(actor.id, tenant.licencia.id, reactivacion);
-      const esperado = new Date(tenant.licencia.venceEn!.getTime() + reactivacion.getTime() - tenant.ahora.getTime());
+      // Solo se devuelve el tiempo congelado después del fin de la gracia.
+      const esperado = new Date(tenant.licencia.venceEn!.getTime() + reactivacion.getTime() -
+        tenant.ahora.getTime() - 48 * 60 * 60 * 1000);
       await servicio.reactivar(actor.id, tenant.licencia.id, new Date(reactivacion.getTime() + 1000));
       expect(await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licencia.id }))
         .toMatchObject({ suspendidaEn: null, venceEn: esperado });
@@ -218,7 +223,8 @@ describe('Cuentas y licencias T38–T44', () => {
       await servicio.suspender(actor.id, tenant.licencia.id, tenant.ahora);
       await servicio.renovar(actor.id, tenant.licencia.id, new Date(tenant.ahora.getTime() + 1000));
       expect(await primera.getRepository(Licencia).findOneByOrFail({ id: tenant.licencia.id }))
-        .toMatchObject({ suspendidaEn: tenant.ahora, venceEn: calendario.sumarAnios(primeraRenovacion) });
+        .toMatchObject({ suspendidaEn: null, suspensionSolicitadaEn: tenant.ahora,
+          venceEn: calendario.sumarAnios(primeraRenovacion) });
     });
   });
 

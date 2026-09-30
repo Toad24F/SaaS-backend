@@ -31,9 +31,9 @@ describe('M1-T021–T024: invitación, emisión, reemplazo y consumo', () => {
   it('convierte códigos vigentes de fase 1 al instalar la migración sobre datos existentes', async () => {
     await conBaseMigrada(async (db) => {
       // Volvemos al esquema anterior para probar una actualización real con una emisión pendiente.
-      // La bandeja depende de códigos; se revierten ambas para reproducir fase 1.
-      await db.undoLastMigration();
-      await db.undoLastMigration();
+      // También se revierten sucursales y suspensión programada, posteriores
+      // a la bandeja y los códigos, para reconstruir el esquema previo real.
+      for (let indice = 0; indice < 4; indice += 1) await db.undoLastMigration();
       const datos = await escenario(db);
       await db.query(`INSERT INTO codigos_acceso
         (negocio_id, usuario_id, emisor_usuario_id, proposito, codigo_hash, emitido_en, expira_en)

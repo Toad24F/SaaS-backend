@@ -243,7 +243,8 @@ describe('Migraciones T15–T18 en MariaDB', () => {
 
   it('revierte las cuatro migraciones históricas sin dejar tablas del modelo', async () => {
     // Este escenario conserva la instalación de fase 1; las nuevas tienen prueba aparte.
-    for (let indice = 0; indice < 4; indice += 1) {
+    // Esta suite incluye la migración de suspensión programada además de las cuatro históricas.
+    for (let indice = 0; indice < 5; indice += 1) {
       await primera.undoLastMigration({ transaction: 'each' });
     }
     const tablas = await primera.query(

@@ -265,19 +265,27 @@ CREATE TABLE limites_intentos (
 -- garantizan ausencia de empalmes ni pertenencia cruzada de todos los recursos.
 
 -- 3. SUCURSALES
--- Por qué: soporta el registro de N ubicaciones físicas por negocio con sus datos básicos.
+-- Por qué: soporta ubicaciones físicas por negocio, zona local y conteo de activas.
 -- De dónde: Módulo 1, "Gestión Multi-Locación: Capacidad de registrar N cantidad de consultorios, clínicas o sucursales físicas
 CREATE TABLE sucursales (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   negocio_id     INT UNSIGNED NOT NULL,
   nombre         VARCHAR(150) NOT NULL,
-  direccion      VARCHAR(255) NULL,
-  telefono       VARCHAR(20)  NULL,
+  direccion      VARCHAR(255) NOT NULL,
+  telefono       VARCHAR(20)  NOT NULL,
+  zona_horaria   VARCHAR(64) NOT NULL,
+  url_google_maps VARCHAR(2048) NULL,
   notas_llegada  TEXT NULL, -- instrucciones para el cliente al llegar a la sucursal
   activo         BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   CONSTRAINT fk_sucursales_negocio
-    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE,
-  INDEX idx_sucursales_negocio (negocio_id)
+    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  UNIQUE KEY uq_sucursales_negocio_id (negocio_id, id),
+  INDEX idx_sucursales_negocio_activo (negocio_id, activo),
+  CONSTRAINT chk_sucursales_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
+  CONSTRAINT chk_sucursales_direccion CHECK (CHAR_LENGTH(TRIM(direccion)) > 0),
+  CONSTRAINT chk_sucursales_telefono CHECK (CHAR_LENGTH(TRIM(telefono)) > 0),
+  CONSTRAINT chk_sucursales_zona CHECK (CHAR_LENGTH(TRIM(zona_horaria)) > 0)
 ) ENGINE=InnoDB;
 
 

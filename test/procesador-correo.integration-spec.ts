@@ -15,7 +15,9 @@ describe('M1-T030–T033: procesamiento durable de códigos', () => {
   const derivador = new DerivadorCodigo({ 1: 'clave-de-prueba-en-memoria-123456789012345' }, 1);
   const codigos = new CodigosService(new AuditoriaService(), derivador);
   async function escenario(db: DataSource) {
-    const reloj = new RelojPrueba(new Date('2026-09-29T18:00:00Z'));
+    // El alta usa creado_en del motor; el reloj de entrega debe quedar después
+    // para respetar la restricción de activación aun cuando avance la fecha real.
+    const reloj = new RelojPrueba(new Date(Date.now() + 120000));
     const negocioId = Number((await db.query(`INSERT INTO negocios (nombre, slug, email_contacto)
       VALUES ('Uno', 'uno', 'uno@example.test')`)).insertId);
     const actorId = Number((await db.query(`INSERT INTO usuarios

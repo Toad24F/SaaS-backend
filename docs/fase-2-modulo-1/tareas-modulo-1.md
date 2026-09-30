@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **96 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **79 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -407,23 +407,25 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 6. Sucursales y catálogo de servicios
 
-- [ ] **M1-T059 — Definir la entidad de sucursal y su pertenencia** · 20 min · RF-21–RF-26
+- [x] **M1-T059 — Definir la entidad de sucursal y su pertenencia** · 20 min · RF-21–RF-26
 
   Dependencias: M1-T011, M1-T008.
 
   Hecho cuando: la entidad incluye campos aprobados, zona IANA y estado, con pertenencia inequívoca al negocio.
 
-- [ ] **M1-T060 — Crear la migración incremental de sucursales** · 25 min · RF-20–RF-26
+- [x] **M1-T060 — Crear la migración incremental de sucursales** · 25 min · RF-20–RF-26
 
   Dependencias: M1-T059, M1-T013.
 
   Hecho cuando: la migración sobre base temporal crea índices y restricciones necesarios sin borrar tablas ni datos existentes.
 
-- [ ] **M1-T061 — Validar entradas de sucursal** · 20 min · RF-21
+- [x] **M1-T061 — Validar entradas de sucursal** · 20 min · RF-21
 
   Dependencias: M1-T059, M1-T005.
 
   Hecho cuando: pruebas aceptan mapas/notas ausentes y rechazan obligatorios ausentes, zona desconocida y formatos inválidos conforme al contrato, con errores por campo.
+
+  Evidencia T059–T061: [entidad, migración, validación, flujo y pruebas](resultados-tareas/resultados-t059-t061.md).
 
 - [ ] **M1-T062 — Crear sucursal bajo el cupo del negocio** · 25 min · RF-20–RF-23
 
