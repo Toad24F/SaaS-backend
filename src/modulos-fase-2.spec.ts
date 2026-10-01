@@ -11,6 +11,7 @@ import { TransporteCorreoSmtp } from './correos/transporte-correo-smtp';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EnvioCorreo } from './correos/entities/envio-correo.entity';
 import { Sucursal } from './sucursales/entities/sucursal.entity';
+import { Servicio } from './servicios/entities/servicio.entity';
 import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 import { BandejaCorreoService } from './correos/bandeja-correo.service';
 import { ProcesadorCorreoService } from './correos/procesador-correo.service';
@@ -29,6 +30,7 @@ describe('M1-T008: composición inicial de fase 2', () => {
       .overrideProvider(getRepositoryToken(EnvioCorreo)).useValue({})
       // Sucursal registra metadatos; la prueba de composición no abre MariaDB.
       .overrideProvider(getRepositoryToken(Sucursal)).useValue({})
+      .overrideProvider(getRepositoryToken(Servicio)).useValue({})
       .overrideProvider(getRepositoryToken(EventoAuditoria)).useValue({}).compile();
     try {
       await modulo.init();

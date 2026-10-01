@@ -459,29 +459,31 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T062–T066: [flujo, archivos modificados y resultados de pruebas](resultados-tareas/resultados-t062-t066.md).
 
-- [ ] **M1-T067 — Definir entidad y migración del catálogo de servicios** · 25 min · RF-27–RF-28, RF-34
+- [x] **M1-T067 — Definir entidad y migración del catálogo de servicios** · 25 min · RF-27–RF-28, RF-34
 
   Dependencias: M1-T008, M1-T013.
 
   Hecho cuando: una migración nueva en base temporal persiste costo decimal exacto, duración entera, nombre, pertenencia y estado; no introduce tarifas por sucursal o profesional.
 
-- [ ] **M1-T068 — Crear, consultar y modificar servicios del negocio** · 25 min · RF-01–RF-04, RF-27–RF-28
+- [x] **M1-T068 — Crear, consultar y modificar servicios del negocio** · 25 min · RF-01–RF-04, RF-27–RF-28
 
   Dependencias: M1-T067, M1-T005.
 
   Hecho cuando: pruebas cubren costo cero válido, costo negativo rechazado y duración entera positiva; lectura y modificación no cruzan negocios.
 
-- [ ] **M1-T069 — Desactivar y reactivar servicios sin perder datos** · 20 min · RF-34, RF-66
+- [x] **M1-T069 — Desactivar y reactivar servicios sin perder datos** · 20 min · RF-34, RF-66
 
   Dependencias: M1-T068.
 
   Hecho cuando: las transiciones preservan el catálogo y distinguen estado global de futuras selecciones individuales.
 
-- [ ] **M1-T070 — Exponer y probar el catálogo por HTTP** · 25 min · RF-01–RF-05, RF-27–RF-28, RF-34, RF-66
+- [x] **M1-T070 — Exponer y probar el catálogo por HTTP** · 25 min · RF-01–RF-05, RF-27–RF-28, RF-34, RF-66
 
   Dependencias: M1-T069, M1-T009.
 
   Hecho cuando: las rutas permiten gestionar el catálogo al administrador y rechazan recepción, Profesional e IDs de otro negocio; los datos conservan costo y duración comunes.
+
+  Evidencia T067–T070: [implementación, archivos y resultados de pruebas](resultados-tareas/resultados-t067-t070.md).
 
 ## 7. Profesionales y selección de servicios
 

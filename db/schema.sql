@@ -296,12 +296,18 @@ CREATE TABLE servicios (
   id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   negocio_id        INT UNSIGNED NOT NULL,
   nombre            VARCHAR(150) NOT NULL,
-  costo             DECIMAL(10,2) NOT NULL DEFAULT 0,
+  costo             DECIMAL(10,2) NOT NULL,
   duracion_minutos  INT UNSIGNED NOT NULL,
   activo            BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en         DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   CONSTRAINT fk_servicios_negocio
-    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE,
-  INDEX idx_servicios_negocio (negocio_id)
+    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  UNIQUE KEY uq_servicios_negocio_id (negocio_id, id),
+  INDEX idx_servicios_negocio_activo (negocio_id, activo),
+  CONSTRAINT chk_servicios_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
+  CONSTRAINT chk_servicios_costo CHECK (costo >= 0),
+  CONSTRAINT chk_servicios_duracion CHECK (duracion_minutos > 0),
+  CONSTRAINT chk_servicios_activo CHECK (activo IN (0, 1))
 ) ENGINE=InnoDB;
 
 
