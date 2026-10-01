@@ -9,7 +9,7 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
-  ProfesionalIdDto } from './dto/profesionales.dto';
+  ProfesionalIdDto, SeleccionarServiciosDto } from './dto/profesionales.dto';
 import { ProfesionalesService } from './profesionales.service';
 
 /** Gestión administrativa del perfil; la respuesta del servicio excluye secretos. */
@@ -65,5 +65,19 @@ export class ProfesionalesController {
     @Body() datos: AsignarSucursalesDto, @CurrentUser() actor: JwtPayload) {
     // El conjunto completo se valida antes de quitar asignaciones previas.
     return this.profesionales.asignarSucursales(actor.sub, parametros.id, datos);
+  }
+
+  @Get(':id/servicios')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  listarServicios(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
+    return this.profesionales.listarServicios(actor.sub, parametros.id);
+  }
+
+  @Put(':id/servicios')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  seleccionarServicios(@Param() parametros: ProfesionalIdDto,
+    @Body() datos: SeleccionarServiciosDto, @CurrentUser() actor: JwtPayload) {
+    // La ruta acepta el conjunto completo, separado de asignaciones a sucursales.
+    return this.profesionales.seleccionarServicios(actor.sub, parametros.id, datos);
   }
 }

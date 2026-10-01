@@ -31,9 +31,14 @@ describe('M1-T021–T024: invitación, emisión, reemplazo y consumo', () => {
   it('convierte códigos vigentes de fase 1 al instalar la migración sobre datos existentes', async () => {
     await conBaseMigrada(async (db) => {
       // Volvemos al esquema anterior para probar una actualización real con una emisión pendiente.
-      // También se revierten sucursales y suspensión programada, posteriores
-      // a la bandeja y los códigos, para reconstruir el esquema previo real.
-      for (let indice = 0; indice < 4; indice += 1) await db.undoLastMigration();
+      // Retroceder hasta la migración inmediatamente anterior a códigos derivados.
+      // El número de migraciones posteriores crece con otros módulos y no es fijo.
+      for (;;) {
+        const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');
+        if (ultima?.name === 'DestinosAuditoria1760000006000') break;
+        if (!ultima) throw new Error('No se encontró la migración base de códigos.');
+        await db.undoLastMigration();
+      }
       const datos = await escenario(db);
       await db.query(`INSERT INTO codigos_acceso
         (negocio_id, usuario_id, emisor_usuario_id, proposito, codigo_hash, emitido_en, expira_en)

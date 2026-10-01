@@ -62,3 +62,13 @@ export class AsignarSucursalesDto {
   @Max(4294967295, { each: true })
   sucursalIds: number[];
 }
+
+/** El formulario envía el conjunto completo; [] desmarca todos los servicios. */
+export class SeleccionarServiciosDto {
+  @IsArray()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(4294967295, { each: true })
+  servicioIds: number[];
+}

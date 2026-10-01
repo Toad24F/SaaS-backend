@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **74 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **60 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -525,29 +525,31 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T071–T076: [implementación, archivos y resultados de pruebas](resultados-tareas/resultados-t071-t076.md).
 
-- [ ] **M1-T077 — Consultar selección de servicios del Profesional** · 20 min · RF-32, RF-34, RF-86
+- [x] **M1-T077 — Consultar selección de servicios del Profesional** · 20 min · RF-32, RF-34, RF-86
 
   Dependencias: M1-T072, M1-T068.
 
   Hecho cuando: la consulta devuelve opciones activas y selecciones persistidas, incluidas las globalmente desactivadas con su estado, para representar los checkboxes.
 
-- [ ] **M1-T078 — Guardar el conjunto exacto de servicios seleccionados** · 25 min · RF-32, RF-34, RF-87–RF-88
+- [x] **M1-T078 — Guardar el conjunto exacto de servicios seleccionados** · 25 min · RF-32, RF-34, RF-87–RF-88
 
   Dependencias: M1-T077, M1-T010.
 
   Hecho cuando: guardar agrega y retira únicamente relaciones del perfil autorizado; una lista vacía es válida y ningún dato de sucursales, horarios o catálogo se modifica.
 
-- [ ] **M1-T079 — Resolver la oferta efectiva por sucursal** · 25 min · RF-25, RF-31–RF-35, RF-88
+- [x] **M1-T079 — Resolver la oferta efectiva por sucursal** · 25 min · RF-25, RF-31–RF-35, RF-88
 
   Dependencias: M1-T078, M1-T074, M1-T075, M1-T064.
 
   Hecho cuando: pruebas muestran solo servicios globalmente activos seleccionados por profesionales activos asignados a una sucursal activa; selección vacía produce oferta vacía.
 
-- [ ] **M1-T080 — Exponer operaciones de perfiles y selección** · 25 min · RF-01–RF-05, RF-29–RF-36, RF-86–RF-88
+- [x] **M1-T080 — Exponer operaciones de perfiles y selección** · 25 min · RF-01–RF-05, RF-29–RF-36, RF-86–RF-88
 
   Dependencias: M1-T005, M1-T079, M1-T076.
 
   Hecho cuando: las rutas separan asignaciones de sucursal del formulario de servicios; admin y Profesional propio guardan selecciones y se rechaza editar otro perfil.
+
+  Evidencia T077–T080: [flujo, archivos modificados y pruebas](resultados-tareas/resultados-t077-t080.md).
 
 - [ ] **M1-T081 — Probar persistencia y aislamiento de los checkboxes** · 25 min · RF-32–RF-34, RF-86–RF-88
 

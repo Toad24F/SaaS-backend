@@ -15,14 +15,22 @@ import { AutorizacionService, Permiso } from '../auth/services/autorizacion.serv
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
+import { Servicio } from '../servicios/entities/servicio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto } from './dto/profesionales.dto';
+import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
+  SeleccionarServiciosDto } from './dto/profesionales.dto';
 import { Personal } from './entities/personal.entity';
 import { PersonalSucursal } from './entities/personal-sucursal.entity';
+import { PersonalServicio } from './entities/personal-servicio.entity';
 
 export interface PerfilProfesional {
   id: number; negocioId: number; usuarioId: number;
   nombre: string; correo: string; activo: boolean;
+}
+
+export interface OpcionServicioProfesional {
+  id: number; nombre: string; costo: string; duracionMinutos: number;
+  activo: boolean; seleccionado: boolean;
 }
 
 /** Cuenta, perfil, correo reservado y asignaciones comparten pertenencia transaccional. */
@@ -166,6 +174,83 @@ export class ProfesionalesService {
     });
   }
 
+  async listarServicios(actorId: number, id: number): Promise<OpcionServicioProfesional[]> {
+    const manager = this.perfiles.manager;
+    const actor = await this.actorServicios(manager, actorId);
+    await this.perfilParaServicios(manager, actor, id);
+    const [catalogo, relaciones] = await Promise.all([
+      manager.getRepository(Servicio).find({ where: { negocioId: actor.negocioId! },
+        order: { id: 'ASC' } }),
+      manager.getRepository(PersonalServicio).findBy({ negocioId: actor.negocioId!,
+        personalId: id }),
+    ]);
+    const seleccionados = new Set(relaciones.map((r) => r.servicioId));
+    // Una selección histórica inactiva sigue visible, pero su estado global no cambia.
+    return catalogo.filter((servicio) => servicio.activo || seleccionados.has(servicio.id))
+      .map((servicio) => ({ id: servicio.id, nombre: servicio.nombre,
+        costo: servicio.costo, duracionMinutos: servicio.duracionMinutos,
+        activo: servicio.activo, seleccionado: seleccionados.has(servicio.id) }));
+  }
+
+  async seleccionarServicios(actorId: number, id: number,
+    entrada: SeleccionarServiciosDto): Promise<OpcionServicioProfesional[]> {
+    const datos = this.validar(SeleccionarServiciosDto, entrada);
+    await transaccionIdentidad(this.perfiles.manager, async (manager) => {
+      const actor = await this.actorServicios(manager, actorId);
+      const perfil = await this.perfilParaServicios(manager, actor, id, true);
+      const repo = manager.getRepository(PersonalServicio);
+      const actuales = await repo.findBy({ negocioId: actor.negocioId!, personalId: id });
+      const antes = actuales.map((r) => r.servicioId).sort((a, b) => a - b);
+      const ids = [...datos.servicioIds].sort((a, b) => a - b);
+      if (JSON.stringify(ids) === JSON.stringify(antes)) return;
+      const nuevos = ids.filter((servicioId) => !antes.includes(servicioId));
+      if (ids.length) {
+        // Bloquear los servicios evita admitir una selección nueva durante su desactivación.
+        const servicios = await manager.getRepository(Servicio).createQueryBuilder('servicio')
+          .setLock('pessimistic_read')
+          .where('servicio.negocioId = :negocioId AND servicio.id IN (:...ids)',
+            { negocioId: actor.negocioId, ids }).getMany();
+        if (servicios.length !== ids.length) throw new NotFoundException('Servicio no disponible.');
+        if (servicios.some((servicio) => nuevos.includes(servicio.id) && !servicio.activo)) {
+          throw new ConflictException('No se puede seleccionar un servicio inactivo.');
+        }
+      }
+      // El perfil bloqueado serializa reemplazos: solo se insertan y retiran relaciones.
+      const quitados = antes.filter((servicioId) => !ids.includes(servicioId));
+      if (quitados.length) await repo.delete({ negocioId: actor.negocioId!,
+        personalId: id, servicioId: In(quitados) });
+      if (nuevos.length) await repo.save(nuevos.map((servicioId) => repo.create({
+        negocioId: actor.negocioId!, personalId: id, servicioId })));
+      await this.registrar(manager, actor, perfil, 'profesional_servicios_modificados',
+        { servicioIds: antes }, { servicioIds: ids });
+    });
+    return this.listarServicios(actorId, id);
+  }
+
+  async ofertaSucursal(actorId: number, sucursalId: number): Promise<Servicio[]> {
+    const manager = this.perfiles.manager;
+    const actor = await this.actor(manager, actorId);
+    const sucursal = await manager.getRepository(Sucursal).findOneBy({
+      id: sucursalId, negocioId: actor.negocioId! });
+    if (!sucursal) throw new NotFoundException('Sucursal no disponible.');
+    if (!sucursal.activo) return [];
+    // La oferta se deriva de cuatro estados actuales; no se duplica en sucursales.
+    return manager.getRepository(Servicio).createQueryBuilder('servicio')
+      .distinct(true)
+      .innerJoin(PersonalServicio, 'seleccion',
+        'seleccion.servicioId = servicio.id AND seleccion.negocioId = servicio.negocioId')
+      .innerJoin(Personal, 'perfil',
+        'perfil.id = seleccion.personalId AND perfil.negocioId = servicio.negocioId')
+      .innerJoin(Usuario, 'cuenta',
+        'cuenta.id = perfil.usuarioId AND cuenta.negocioId = perfil.negocioId')
+      .innerJoin(PersonalSucursal, 'asignacion',
+        'asignacion.personalId = perfil.id AND asignacion.negocioId = perfil.negocioId')
+      .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo',
+        { negocioId: actor.negocioId, activo: true })
+      .andWhere('asignacion.sucursalId = :sucursalId', { sucursalId })
+      .orderBy('servicio.id', 'ASC').getMany();
+  }
+
   private validar<T extends object>(tipo: new () => T, valor: T): T {
     const datos = plainToInstance(tipo, valor);
     const errores = validateSync(datos, { whitelist: true, forbidNonWhitelisted: true });
@@ -184,6 +269,32 @@ export class ProfesionalesService {
     }
     this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_PROFESIONALES);
     return actor;
+  }
+
+  private async actorServicios(manager: EntityManager, id: number): Promise<Usuario> {
+    const consulta = manager.getRepository(Usuario).createQueryBuilder('actor')
+      .where('actor.id = :id', { id });
+    if (manager.queryRunner?.isTransactionActive) consulta.setLock('pessimistic_read');
+    const actor = await consulta.getOne();
+    if (!actor || !actor.activo || actor.activadoEn === null || actor.negocioId === null) {
+      throw new ForbiddenException('Cuenta no disponible.');
+    }
+    this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_SERVICIOS_PROPIOS);
+    return actor;
+  }
+
+  private async perfilParaServicios(manager: EntityManager, actor: Usuario,
+    id: number, bloquear = false): Promise<Personal> {
+    const consulta = manager.getRepository(Personal).createQueryBuilder('perfil')
+      .where('perfil.id = :id AND perfil.negocioId = :negocioId',
+        { id, negocioId: actor.negocioId });
+    if (bloquear) consulta.setLock('pessimistic_write');
+    const perfil = await consulta.getOne();
+    if (!perfil) throw new NotFoundException('Profesional no disponible.');
+    if (actor.rol === Rol.PROFESIONAL && perfil.usuarioId !== actor.id) {
+      throw new ForbiddenException('Profesional no autorizado.');
+    }
+    return perfil;
   }
 
   private async perfilPropio(manager: EntityManager, negocioId: number, id: number): Promise<Personal> {
