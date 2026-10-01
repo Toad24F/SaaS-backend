@@ -51,3 +51,11 @@ export class CorregirCorreoDto {
   @MaxLength(150)
   correo: string;
 }
+
+/** El cupo es entero positivo; solo el superadmin puede enviar este DTO. */
+export class CambiarLimiteSucursalesDto {
+  @IsInt({ message: 'limiteSucursales debe ser entero' })
+  @Min(1, { message: 'limiteSucursales debe ser al menos uno' })
+  @Max(4294967295, { message: 'limiteSucursales está fuera de rango' })
+  limiteSucursales: number;
+}

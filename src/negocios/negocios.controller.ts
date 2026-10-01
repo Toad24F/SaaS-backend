@@ -8,9 +8,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
-import { CorregirCorreoDto, CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
+import { CambiarLimiteSucursalesDto, CorregirCorreoDto, CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
 import { NegociosConsultaService } from './negocios-consulta.service';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
+import { SucursalesService } from '../sucursales/sucursales.service';
 
 // Primero se valida la sesión y su estado actual; después se exige superadmin.
 @Controller('negocios')
@@ -20,6 +21,7 @@ export class NegociosController {
   constructor(
     private readonly altas: AltasService,
     private readonly consultas: NegociosConsultaService,
+    private readonly sucursales: SucursalesService,
     @Inject(RELOJ) private readonly reloj: Reloj,
   ) {}
 
@@ -56,5 +58,17 @@ export class NegociosController {
     // Comparte sesión y rol de superadmin y devuelve solo metadatos de envío.
     return this.altas.corregirCorreoInicial({ actorUsuarioId: usuario.sub, negocioId: parametros.id,
       nuevoCorreo: datos.correo, ahora: this.reloj.ahora() });
+  }
+
+  @Get(':id/cupo-sucursales')
+  consultarCupo(@Param() parametros: NegocioIdDto, @CurrentUser() usuario: JwtPayload) {
+    return this.sucursales.consultarCupoNegocio(usuario.sub, parametros.id);
+  }
+
+  @Patch(':id/limite-sucursales')
+  cambiarLimite(@Param() parametros: NegocioIdDto, @Body() datos: CambiarLimiteSucursalesDto,
+    @CurrentUser() usuario: JwtPayload) {
+    // El actor proviene de la sesión; el cupo se serializa en el servicio.
+    return this.sucursales.cambiarLimite(usuario.sub, parametros.id, datos.limiteSucursales);
   }
 }

@@ -12,6 +12,7 @@ import { NegociosHttpModule } from './negocios/negocios-http.module';
 import { UsuariosHttpModule } from './usuarios/usuarios-http.module';
 import { LicenciasHttpModule } from './licencias/licencias-http.module';
 import { SucursalesModule } from './sucursales/sucursales.module';
+import { SucursalesHttpModule } from './sucursales/sucursales-http.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { ProfesionalesModule } from './profesionales/profesionales.module';
 import { HorariosModule } from './horarios/horarios.module';
@@ -42,6 +43,7 @@ import { CorreosHttpModule } from './correos/correos-http.module';
     LicenciasHttpModule,
     // Declara los dominios nuevos sin procesos ni envíos al inicializar la app.
     SucursalesModule,
+    SucursalesHttpModule,
     ServiciosModule,
     ProfesionalesModule,
     HorariosModule,

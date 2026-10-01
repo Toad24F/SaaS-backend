@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **79 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **74 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -427,35 +427,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T059–T061: [entidad, migración, validación, flujo y pruebas](resultados-tareas/resultados-t059-t061.md).
 
-- [ ] **M1-T062 — Crear sucursal bajo el cupo del negocio** · 25 min · RF-20–RF-23
+- [x] **M1-T062 — Crear sucursal bajo el cupo del negocio** · 25 min · RF-20–RF-23
 
   Dependencias: M1-T060, M1-T061, M1-T010.
 
   Hecho cuando: el alta cuenta únicamente sucursales activas dentro de la transacción protegida del negocio y rechaza sobrecupo sin escritura parcial.
 
-- [ ] **M1-T063 — Cambiar el límite exclusivamente como superadmin** · 20 min · RF-02, RF-20, RF-24
+- [x] **M1-T063 — Cambiar el límite exclusivamente como superadmin** · 20 min · RF-02, RF-20, RF-24
 
   Dependencias: M1-T062, M1-T009, M1-T001.
 
   Hecho cuando: aumentar funciona y reducir por debajo de activas se rechaza; cualquier valor cero sigue la decisión aprobada y ningún otro rol puede modificarlo.
 
-- [ ] **M1-T064 — Consultar, editar y desactivar sucursales** · 25 min · RF-01–RF-04, RF-21, RF-25, RF-66
+- [x] **M1-T064 — Consultar, editar y desactivar sucursales** · 25 min · RF-01–RF-04, RF-21, RF-25, RF-66
 
   Dependencias: M1-T062.
 
   Hecho cuando: las operaciones validan negocio y permisos; desactivar conserva el registro y deja de contarlo en el cupo, sin habilitar su uso operativo.
 
-- [ ] **M1-T065 — Exponer operaciones iniciales de sucursal y cupo** · 25 min · RF-01–RF-04, RF-20–RF-25
+- [x] **M1-T065 — Exponer operaciones iniciales de sucursal y cupo** · 25 min · RF-01–RF-04, RF-20–RF-25
 
   Dependencias: M1-T005, M1-T064, M1-T063.
 
   Hecho cuando: pruebas HTTP de alta, consulta, edición, desactivación y cambio de cupo verifican roles, pertenencia y errores; la reactivación queda para su tarea dependiente de horarios.
 
-- [ ] **M1-T066 — Probar altas y cambios de cupo simultáneos** · 25 min · RF-22–RF-24
+- [x] **M1-T066 — Probar altas y cambios de cupo simultáneos** · 25 min · RF-22–RF-24
 
   Dependencias: M1-T065, M1-T007.
 
   Hecho cuando: dos conexiones compiten por el último lugar y por reducir el cupo; no termina ningún negocio con más sucursales activas que su límite.
+
+  Evidencia T062–T066: [flujo, archivos modificados y resultados de pruebas](resultados-tareas/resultados-t062-t066.md).
 
 - [ ] **M1-T067 — Definir entidad y migración del catálogo de servicios** · 25 min · RF-27–RF-28, RF-34
 
