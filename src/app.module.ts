@@ -16,6 +16,7 @@ import { SucursalesHttpModule } from './sucursales/sucursales-http.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { ServiciosHttpModule } from './servicios/servicios-http.module';
 import { ProfesionalesModule } from './profesionales/profesionales.module';
+import { ProfesionalesHttpModule } from './profesionales/profesionales-http.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { BloqueosModule } from './bloqueos/bloqueos.module';
 import { CorreosModule } from './correos/correos.module';
@@ -48,6 +49,7 @@ import { CorreosHttpModule } from './correos/correos-http.module';
     ServiciosModule,
     ServiciosHttpModule,
     ProfesionalesModule,
+    ProfesionalesHttpModule,
     HorariosModule,
     BloqueosModule,
     CorreosModule,

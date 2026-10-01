@@ -487,41 +487,43 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 7. Profesionales y selección de servicios
 
-- [ ] **M1-T071 — Definir perfiles y relaciones con sucursales y servicios** · 25 min · RF-29–RF-34, RF-86–RF-88
+- [x] **M1-T071 — Definir perfiles y relaciones con sucursales y servicios** · 25 min · RF-29–RF-34, RF-86–RF-88
 
   Dependencias: M1-T014, M1-T059, M1-T067.
 
   Hecho cuando: las entidades separan perfil y cuenta sin duplicar credenciales, y representan relaciones múltiples con claves de pertenencia al negocio.
 
-- [ ] **M1-T072 — Crear la migración de perfiles y relaciones** · 25 min · RF-29–RF-34, RF-86–RF-88
+- [x] **M1-T072 — Crear la migración de perfiles y relaciones** · 25 min · RF-29–RF-34, RF-86–RF-88
 
   Dependencias: M1-T071, M1-T015, M1-T060, M1-T067.
 
   Hecho cuando: la base temporal impide perfil duplicado, selección duplicada y relaciones entre negocios mediante las restricciones previstas.
 
-- [ ] **M1-T073 — Crear cuenta completa y perfil Profesional** · 25 min · RF-29–RF-30
+- [x] **M1-T073 — Crear cuenta completa y perfil Profesional** · 25 min · RF-29–RF-30
 
   Dependencias: M1-T072, M1-T018, M1-T009.
 
   Hecho cuando: el administrador crea cuenta y perfil atómicamente con nombre, correo único y contraseña válida; cualquier fallo no deja cuenta ni reserva de correo huérfana.
 
-- [ ] **M1-T074 — Gestionar pertenencia del Profesional a sucursales** · 25 min · RF-01, RF-03, RF-05, RF-31
+- [x] **M1-T074 — Gestionar pertenencia del Profesional a sucursales** · 25 min · RF-01, RF-03, RF-05, RF-31
 
   Dependencias: M1-T073, M1-T010.
 
   Hecho cuando: el administrador asigna varias sucursales del negocio y se rechazan sucursales ajenas; el propio Profesional no adquiere permiso para cambiar sus asignaciones.
 
-- [ ] **M1-T075 — Desactivar y reactivar acceso del Profesional** · 25 min · RF-35–RF-36, RF-66
+- [x] **M1-T075 — Desactivar y reactivar acceso del Profesional** · 25 min · RF-35–RF-36, RF-66
 
   Dependencias: M1-T073, M1-T052.
 
   Hecho cuando: desactivar invalida el acceso con sesiones abiertas sin borrar el perfil; reactivar conserva credenciales, exige nuevo login y no revive sesiones anteriores.
 
-- [ ] **M1-T076 — Consultar y modificar los datos permitidos del perfil** · 25 min · RF-01–RF-05, RF-29–RF-30, RF-35–RF-36
+- [x] **M1-T076 — Consultar y modificar los datos permitidos del perfil** · 25 min · RF-01–RF-05, RF-29–RF-30, RF-35–RF-36
 
   Dependencias: M1-T073, M1-T075, M1-T017.
 
   Hecho cuando: los cambios admitidos en el contrato no duplican identidad ni evaden la reserva de correo o permisos; pruebas conservan los datos previos ante actualización inválida.
+
+  Evidencia T071–T076: [implementación, archivos y resultados de pruebas](resultados-tareas/resultados-t071-t076.md).
 
 - [ ] **M1-T077 — Consultar selección de servicios del Profesional** · 20 min · RF-32, RF-34, RF-86
 

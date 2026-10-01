@@ -1,16 +1,23 @@
 import { conBaseMigrada } from './support/mariadb';
 import { Sucursal } from '../src/sucursales/entities/sucursal.entity';
 import { Sucursales1760000010000 } from '../src/database/migrations/1760000010000-Sucursales';
+import { Servicios1760000011000 } from '../src/database/migrations/1760000011000-Servicios';
+import { Profesionales1760000012000 } from '../src/database/migrations/1760000012000-Profesionales';
 
 describe('M1-T060: migración incremental de sucursales', () => {
   it('instala restricciones tenant y conserva negocios previos al aplicar la migración', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const existente = await db.query("INSERT INTO negocios (nombre, slug, email_contacto) VALUES ('Previo', 'previo-sucursal', 'previo@example.test')");
-      // Se ensaya el incremento otra vez sobre datos existentes en una base temporal.
+      // Las relaciones de perfiles dependen de sucursales y servicios; se revierten
+      // primero y se restauran después para ensayar el incremento de sucursales.
       const runner = db.createQueryRunner();
       try {
+        await new Profesionales1760000012000().down(runner);
+        await new Servicios1760000011000().down(runner);
         await new Sucursales1760000010000().down(runner);
         await new Sucursales1760000010000().up(runner);
+        await new Servicios1760000011000().up(runner);
+        await new Profesionales1760000012000().up(runner);
       } finally { await runner.release(); }
       expect(await db.query('SELECT id FROM negocios WHERE id = ?', [existente.insertId]))
         .toHaveLength(1);

@@ -32,7 +32,8 @@ function servicio(db: DataSource) {
 async function actor(db: DataSource) {
   return db.getRepository(Usuario).save({ negocioId: null, nombre: 'Super',
     email: 'super@example.test', passwordHash: 'hash', rol: Rol.SUPERADMIN,
-    activo: true, activadoEn: ahora });
+    // La activación y la creación comparten el reloj fijo de la prueba.
+    activo: true, creadoEn: ahora, activadoEn: ahora });
 }
 
 describe('M1-T035: alta mediante invitación sin cuenta', () => {

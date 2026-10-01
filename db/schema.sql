@@ -311,35 +311,44 @@ CREATE TABLE servicios (
 ) ENGINE=InnoDB;
 
 
--- 5. PERSONAL (especialistas / empleados)
--- Por qué: representa a cada especialista/empleado que atiende citas.
--- De dónde: Módulo 1, "Matriz de Disponibilidad del Personal" — es la base sobre la que se construye esa matriz.
+-- 5. PERSONAL (perfil de la cuenta Profesional)
+-- La identidad y el acceso viven en usuarios; el perfil solo representa relaciones operativas.
 CREATE TABLE personal (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   negocio_id     INT UNSIGNED NOT NULL,
-  nombre         VARCHAR(150) NOT NULL,
-  especialidad   VARCHAR(150) NULL,
-  email          VARCHAR(150) NULL,
-  telefono       VARCHAR(20)  NULL,
-  activo         BOOLEAN NOT NULL DEFAULT TRUE,
+  usuario_id     INT UNSIGNED NOT NULL,
+  UNIQUE KEY uq_personal_usuario (usuario_id),
+  UNIQUE KEY uq_personal_negocio_id (negocio_id, id),
   CONSTRAINT fk_personal_negocio
-    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE,
-  INDEX idx_personal_negocio (negocio_id)
+    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_personal_usuario
+    FOREIGN KEY (negocio_id, usuario_id) REFERENCES usuarios(negocio_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- ---------------------------------------------------------
--- Relación sobre qué servicios puede dar cada especialista
--- Por qué: Es una relación muchos-a-muchos porque un especialista puede ofrecer varios servicios y un servicio puede 
--- ser dado por varios especialistas, no está explícita como tabla en el documento pero es necesaria para que el portal 
--- público solo muestre profesionales que si pueden hacer esos servicios.
--- De dónde: flujo del Módulo 3: Selección de Servicio > Selección de Sucursal > Selección de Profesional
--- ese tercer paso requiere saber qué profesionales pueden dar ese servicio.
+-- Varias sucursales por perfil; la pertenencia se verifica en ambas claves compuestas.
+CREATE TABLE personal_sucursales (
+  negocio_id   INT UNSIGNED NOT NULL,
+  personal_id  INT UNSIGNED NOT NULL,
+  sucursal_id  INT UNSIGNED NOT NULL,
+  PRIMARY KEY (negocio_id, personal_id, sucursal_id),
+  INDEX idx_ps_sucursal (negocio_id, sucursal_id),
+  CONSTRAINT fk_ps_perfil FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ps_sucursal FOREIGN KEY (negocio_id, sucursal_id)
+    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- Selecciones individuales futuras; el precio y el estado global siguen en servicios.
 CREATE TABLE personal_servicios (
+  negocio_id   INT UNSIGNED NOT NULL,
   personal_id  INT UNSIGNED NOT NULL,
   servicio_id  INT UNSIGNED NOT NULL,
-  PRIMARY KEY (personal_id, servicio_id),
-  CONSTRAINT fk_ps_personal FOREIGN KEY (personal_id) REFERENCES personal(id) ON DELETE CASCADE,
-  CONSTRAINT fk_ps_servicio FOREIGN KEY (servicio_id) REFERENCES servicios(id) ON DELETE CASCADE
+  PRIMARY KEY (negocio_id, personal_id, servicio_id),
+  INDEX idx_pserv_servicio (negocio_id, servicio_id),
+  CONSTRAINT fk_pserv_perfil FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_pserv_servicio FOREIGN KEY (negocio_id, servicio_id)
+    REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 

@@ -12,6 +12,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { EnvioCorreo } from './correos/entities/envio-correo.entity';
 import { Sucursal } from './sucursales/entities/sucursal.entity';
 import { Servicio } from './servicios/entities/servicio.entity';
+import { Personal } from './profesionales/entities/personal.entity';
+import { PersonalSucursal } from './profesionales/entities/personal-sucursal.entity';
+import { PersonalServicio } from './profesionales/entities/personal-servicio.entity';
 import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 import { BandejaCorreoService } from './correos/bandeja-correo.service';
 import { ProcesadorCorreoService } from './correos/procesador-correo.service';
@@ -31,6 +34,10 @@ describe('M1-T008: composición inicial de fase 2', () => {
       // Sucursal registra metadatos; la prueba de composición no abre MariaDB.
       .overrideProvider(getRepositoryToken(Sucursal)).useValue({})
       .overrideProvider(getRepositoryToken(Servicio)).useValue({})
+      // Los tres repositorios del perfil son metadatos; no necesitan MariaDB aquí.
+      .overrideProvider(getRepositoryToken(Personal)).useValue({})
+      .overrideProvider(getRepositoryToken(PersonalSucursal)).useValue({})
+      .overrideProvider(getRepositoryToken(PersonalServicio)).useValue({})
       .overrideProvider(getRepositoryToken(EventoAuditoria)).useValue({}).compile();
     try {
       await modulo.init();
