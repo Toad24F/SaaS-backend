@@ -352,23 +352,87 @@ CREATE TABLE personal_servicios (
 ) ENGINE=InnoDB;
 
 
--- 6. HORARIOS DEL PERSONAL (matriz de disponibilidad semanal)
--- Por que: Define en qué sucursal y qué bloques atiende cada persona por día.
--- si el personal_id tiene una hora de comida o descanso diario, el horario se divide en dos bloques (ej: 09:00-13:00 y 14:00-18:00).
--- De dónde: Módulo 1, "Cruce de ubicación: Definir en qué sucursal atiende el profesional según el día ".
+-- 6. HORARIOS DEL PERSONAL: minutos locales y borradores inactivos.
+-- La sucursal informada debe ser una asignación de ese Profesional en ese negocio.
 CREATE TABLE horarios_personal (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   negocio_id     INT UNSIGNED NOT NULL,
   personal_id    INT UNSIGNED NOT NULL,
-  sucursal_id    INT UNSIGNED NOT NULL,
-  dia_semana     TINYINT UNSIGNED NOT NULL,   -- 0=domingo ... 6=sábado
-  hora_inicio    TIME NOT NULL,
-  hora_fin       TIME NOT NULL,
-  CONSTRAINT fk_hp_negocio  FOREIGN KEY (negocio_id)  REFERENCES negocios(id)   ON DELETE CASCADE,
-  CONSTRAINT fk_hp_personal FOREIGN KEY (personal_id) REFERENCES personal(id)  ON DELETE CASCADE,
-  CONSTRAINT fk_hp_sucursal FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE CASCADE,
-  CONSTRAINT chk_hp_horas CHECK (hora_fin > hora_inicio),
-  INDEX idx_hp_negocio_personal_dia (negocio_id, personal_id, dia_semana)
+  dia_semana     TINYINT UNSIGNED NOT NULL, -- 0=domingo ... 6=sábado
+  orden          INT UNSIGNED NOT NULL DEFAULT 0,
+  sucursal_id    INT UNSIGNED NULL,
+  inicio_minutos INT UNSIGNED NULL,
+  fin_minutos    INT UNSIGNED NULL,
+  descanso_inicio_minutos INT UNSIGNED NULL,
+  descanso_fin_minutos INT UNSIGNED NULL,
+  activo         BOOLEAN NOT NULL DEFAULT FALSE,
+  UNIQUE KEY uq_horarios_negocio_id (negocio_id, id),
+  INDEX idx_horarios_personal_dia_orden (negocio_id, personal_id, dia_semana, orden),
+  INDEX idx_horarios_asignacion (negocio_id, personal_id, sucursal_id),
+  CONSTRAINT fk_horarios_personal FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_horarios_asignacion FOREIGN KEY (negocio_id, personal_id, sucursal_id)
+    REFERENCES personal_sucursales(negocio_id, personal_id, sucursal_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_horarios_dia CHECK (dia_semana BETWEEN 0 AND 6),
+  CONSTRAINT chk_horarios_orden CHECK (orden >= 0),
+  CONSTRAINT chk_horarios_activo CHECK (activo IN (0, 1)),
+  CONSTRAINT chk_horarios_limites CHECK (
+    (inicio_minutos IS NULL OR inicio_minutos BETWEEN 0 AND 1439)
+    AND (fin_minutos IS NULL OR fin_minutos BETWEEN 1 AND 1440)
+    AND (descanso_inicio_minutos IS NULL OR descanso_inicio_minutos BETWEEN 0 AND 1439)
+    AND (descanso_fin_minutos IS NULL OR descanso_fin_minutos BETWEEN 1 AND 1440)),
+  CONSTRAINT chk_horarios_pares CHECK (
+    (inicio_minutos IS NULL OR fin_minutos IS NULL OR inicio_minutos < fin_minutos)
+    AND (descanso_inicio_minutos IS NULL OR descanso_fin_minutos IS NULL
+      OR descanso_inicio_minutos < descanso_fin_minutos)),
+  CONSTRAINT chk_horarios_completos CHECK (activo = 0 OR (
+    sucursal_id IS NOT NULL AND inicio_minutos IS NOT NULL AND fin_minutos IS NOT NULL
+    AND inicio_minutos < fin_minutos
+    AND ((descanso_inicio_minutos IS NULL AND descanso_fin_minutos IS NULL)
+      OR (descanso_inicio_minutos IS NOT NULL AND descanso_fin_minutos IS NOT NULL
+        AND descanso_inicio_minutos >= inicio_minutos
+        AND descanso_inicio_minutos < descanso_fin_minutos
+        AND descanso_fin_minutos <= fin_minutos)))
+) ENGINE=InnoDB;
+
+-- Una cabecera sin hijas reemplaza la fecha por un día sin atención.
+CREATE TABLE excepciones_horario (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  negocio_id INT UNSIGNED NOT NULL,
+  personal_id INT UNSIGNED NOT NULL,
+  sucursal_id INT UNSIGNED NOT NULL,
+  fecha_local DATE NOT NULL,
+  UNIQUE KEY uq_excepciones_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_excepciones_profesional_sucursal_fecha
+    (negocio_id, personal_id, sucursal_id, fecha_local),
+  CONSTRAINT fk_excepciones_personal FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_excepciones_asignacion FOREIGN KEY (negocio_id, personal_id, sucursal_id)
+    REFERENCES personal_sucursales(negocio_id, personal_id, sucursal_id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE franjas_excepcion_horario (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  negocio_id INT UNSIGNED NOT NULL,
+  excepcion_id INT UNSIGNED NOT NULL,
+  orden INT UNSIGNED NOT NULL DEFAULT 0,
+  inicio_minutos INT UNSIGNED NOT NULL,
+  fin_minutos INT UNSIGNED NOT NULL,
+  descanso_inicio_minutos INT UNSIGNED NULL,
+  descanso_fin_minutos INT UNSIGNED NULL,
+  INDEX idx_franjas_excepcion_orden (negocio_id, excepcion_id, orden),
+  CONSTRAINT fk_franjas_excepcion FOREIGN KEY (negocio_id, excepcion_id)
+    REFERENCES excepciones_horario(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_franjas_excepcion_orden CHECK (orden >= 0),
+  CONSTRAINT chk_franjas_excepcion_intervalo CHECK (
+    inicio_minutos BETWEEN 0 AND 1439 AND fin_minutos BETWEEN 1 AND 1440
+    AND inicio_minutos < fin_minutos),
+  CONSTRAINT chk_franjas_excepcion_descanso CHECK (
+    (descanso_inicio_minutos IS NULL AND descanso_fin_minutos IS NULL)
+    OR (descanso_inicio_minutos IS NOT NULL AND descanso_fin_minutos IS NOT NULL
+      AND descanso_inicio_minutos >= inicio_minutos
+      AND descanso_inicio_minutos < descanso_fin_minutos
+      AND descanso_fin_minutos <= fin_minutos))
 ) ENGINE=InnoDB;
 
 -- 7. BLOQUEOS DE HORARIO

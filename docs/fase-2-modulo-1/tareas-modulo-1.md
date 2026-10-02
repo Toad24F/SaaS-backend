@@ -567,29 +567,31 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 8. Horarios semanales y excepciones
 
-- [ ] **M1-T083 — Definir persistencia de franjas y borradores** · 25 min · RF-37–RF-43, RF-45, RF-54
+- [x] **M1-T083 — Definir persistencia de franjas y borradores** · 25 min · RF-37–RF-43, RF-45, RF-54
 
   Dependencias: M1-T071.
 
   Hecho cuando: las entidades tienen identificador estable, día, sucursal, minutos de entrada/salida, descanso y estado; admiten campos incompletos solo en borradores inactivos.
 
-- [ ] **M1-T084 — Migrar franjas con pertenencia y estados** · 25 min · RF-37–RF-43, RF-54
+- [x] **M1-T084 — Migrar franjas con pertenencia y estados** · 25 min · RF-37–RF-43, RF-54
 
   Dependencias: M1-T083, M1-T072.
 
   Hecho cuando: la migración temporal conserva integridad del negocio y permite almacenar/recuperar borradores sin exigirles campos propios de una franja activa.
 
-- [ ] **M1-T085 — Definir y migrar excepciones por fecha** · 25 min · RF-44–RF-47
+- [x] **M1-T085 — Definir y migrar excepciones por fecha** · 25 min · RF-44–RF-47
 
   Dependencias: M1-T084.
 
   Hecho cuando: existen cabecera única por profesional/sucursal/fecha y franjas hijas; una cabecera sin franjas se distingue de la ausencia de excepción.
 
-- [ ] **M1-T086 — Validar franja, descanso y cambio de estado** · 25 min · RF-38–RF-43, RF-45, RF-49–RF-50
+- [x] **M1-T086 — Validar franja, descanso y cambio de estado** · 25 min · RF-38–RF-43, RF-45, RF-49–RF-50
 
   Dependencias: M1-T083.
 
   Hecho cuando: pruebas cubren borrador, activación incompleta, intervalo invertido, descanso parcial o fuera de franja y salida 24:00; los errores identifican campos.
+
+  Evidencia T083–T086: [modelo, migraciones, validación y resultados de pruebas](resultados-tareas/resultados-t083-t086.md).
 
 - [ ] **M1-T087 — Resolver intervalos locales conforme a la decisión horaria** · 25 min · RF-44–RF-46, RF-58–RF-61
 

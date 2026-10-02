@@ -3,21 +3,27 @@ import { Sucursal } from '../src/sucursales/entities/sucursal.entity';
 import { Sucursales1760000010000 } from '../src/database/migrations/1760000010000-Sucursales';
 import { Servicios1760000011000 } from '../src/database/migrations/1760000011000-Servicios';
 import { Profesionales1760000012000 } from '../src/database/migrations/1760000012000-Profesionales';
+import { HorariosSemanales1760000013000 } from '../src/database/migrations/1760000013000-HorariosSemanales';
+import { ExcepcionesHorario1760000014000 } from '../src/database/migrations/1760000014000-ExcepcionesHorario';
 
 describe('M1-T060: migración incremental de sucursales', () => {
   it('instala restricciones tenant y conserva negocios previos al aplicar la migración', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const existente = await db.query("INSERT INTO negocios (nombre, slug, email_contacto) VALUES ('Previo', 'previo-sucursal', 'previo@example.test')");
-      // Las relaciones de perfiles dependen de sucursales y servicios; se revierten
-      // primero y se restauran después para ensayar el incremento de sucursales.
+      // Franjas y excepciones dependen de asignaciones; todas se revierten antes
+      // de sucursales y se restauran en orden para ensayar su incremento.
       const runner = db.createQueryRunner();
       try {
+        await new ExcepcionesHorario1760000014000().down(runner);
+        await new HorariosSemanales1760000013000().down(runner);
         await new Profesionales1760000012000().down(runner);
         await new Servicios1760000011000().down(runner);
         await new Sucursales1760000010000().down(runner);
         await new Sucursales1760000010000().up(runner);
         await new Servicios1760000011000().up(runner);
         await new Profesionales1760000012000().up(runner);
+        await new HorariosSemanales1760000013000().up(runner);
+        await new ExcepcionesHorario1760000014000().up(runner);
       } finally { await runner.release(); }
       expect(await db.query('SELECT id FROM negocios WHERE id = ?', [existente.insertId]))
         .toHaveLength(1);

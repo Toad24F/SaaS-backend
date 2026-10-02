@@ -34,7 +34,8 @@ function servicios(db: DataSource) {
 
 async function escenario(db: DataSource) {
   const negocio = await db.getRepository(Negocio).save({ nombre: 'Negocio selección',
-    slug: 'pruebas-seleccion', emailContacto: 'seleccion@example.test', activadoEn: ahora,
+    // El reloj fijo evita que la activación quede antes del DEFAULT de creación al pasar el tiempo.
+    slug: 'pruebas-seleccion', emailContacto: 'seleccion@example.test', creadoEn: ahora, activadoEn: ahora,
     limiteSucursalesActivas: 2 });
   const admin = await db.getRepository(Usuario).save({ negocioId: negocio.id,
     nombre: 'Admin', email: 'admin-seleccion@example.test', passwordHash: 'hash',

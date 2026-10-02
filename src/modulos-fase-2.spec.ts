@@ -15,6 +15,9 @@ import { Servicio } from './servicios/entities/servicio.entity';
 import { Personal } from './profesionales/entities/personal.entity';
 import { PersonalSucursal } from './profesionales/entities/personal-sucursal.entity';
 import { PersonalServicio } from './profesionales/entities/personal-servicio.entity';
+import { HorarioPersonal } from './horarios/entities/horario-personal.entity';
+import { ExcepcionHorario } from './horarios/entities/excepcion-horario.entity';
+import { FranjaExcepcionHorario } from './horarios/entities/franja-excepcion-horario.entity';
 import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 import { BandejaCorreoService } from './correos/bandeja-correo.service';
 import { ProcesadorCorreoService } from './correos/procesador-correo.service';
@@ -38,6 +41,10 @@ describe('M1-T008: composición inicial de fase 2', () => {
       .overrideProvider(getRepositoryToken(Personal)).useValue({})
       .overrideProvider(getRepositoryToken(PersonalSucursal)).useValue({})
       .overrideProvider(getRepositoryToken(PersonalServicio)).useValue({})
+      // El modelo de horarios se compone sin abrir una conexión en esta prueba.
+      .overrideProvider(getRepositoryToken(HorarioPersonal)).useValue({})
+      .overrideProvider(getRepositoryToken(ExcepcionHorario)).useValue({})
+      .overrideProvider(getRepositoryToken(FranjaExcepcionHorario)).useValue({})
       .overrideProvider(getRepositoryToken(EventoAuditoria)).useValue({}).compile();
     try {
       await modulo.init();
