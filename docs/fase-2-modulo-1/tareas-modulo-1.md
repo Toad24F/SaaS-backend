@@ -593,35 +593,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T083–T086: [modelo, migraciones, validación y resultados de pruebas](resultados-tareas/resultados-t083-t086.md).
 
-- [ ] **M1-T087 — Resolver intervalos locales conforme a la decisión horaria** · 25 min · RF-44–RF-46, RF-58–RF-61
+- [x] **M1-T087 — Resolver intervalos locales conforme a la decisión horaria** · 25 min · RF-44–RF-46, RF-58–RF-61
 
   Dependencias: M1-T002, M1-T086.
 
   Hecho cuando: pruebas con zonas y cambios de desplazamiento convierten intervalos y aplican la política aprobada para horas inexistentes/repetidas, sin desplazamientos silenciosos.
 
-- [ ] **M1-T088 — Detectar empalmes entre sucursales y días locales** · 25 min · RF-41, RF-43, RF-46–RF-48
+- [x] **M1-T088 — Detectar empalmes entre sucursales y días locales** · 25 min · RF-41, RF-43, RF-46–RF-48
 
   Dependencias: M1-T087, M1-T074.
 
   Hecho cuando: el detector compara intervalos completos, no resta descansos y permite límites consecutivos; detecta coincidencias aunque los días locales difieran.
 
-- [ ] **M1-T089 — Validar recurrencias y sustituciones por fecha** · 25 min · RF-44–RF-48
+- [x] **M1-T089 — Validar recurrencias y sustituciones por fecha** · 25 min · RF-44–RF-48
 
   Dependencias: M1-T088, M1-T085.
 
   Hecho cuando: pruebas combinan semana, excepción normal/vacía y transiciones de zona; comprobar una semana actual no se usa como prueba de validez de toda la recurrencia.
 
-- [ ] **M1-T090 — Guardar una semana como reemplazo atómico** · 25 min · RF-37–RF-43, RF-47, RF-51–RF-53
+- [x] **M1-T090 — Guardar una semana como reemplazo atómico** · 25 min · RF-37–RF-43, RF-47, RF-51–RF-53
 
   Dependencias: M1-T089, M1-T084, M1-T010.
 
   Hecho cuando: la transacción bloquea al Profesional, valida el conjunto contra el estado vigente y lo reemplaza completo; cualquier error conserva íntegra la versión anterior.
 
-- [ ] **M1-T091 — Recuperar semana y errores identificables** · 20 min · RF-39–RF-40, RF-52, RF-54
+- [x] **M1-T091 — Recuperar semana y errores identificables** · 20 min · RF-39–RF-40, RF-52, RF-54
 
   Dependencias: M1-T090.
 
   Hecho cuando: la consulta devuelve también franjas inactivas/borradores y semana vacía; un error de guardado referencia fila/campo sin exigir recapturar el resto.
+
+  Evidencia T087–T091: [calendario, guardado semanal y resultados de pruebas](resultados-tareas/resultados-t087-t091.md).
 
 - [ ] **M1-T092 — Crear, sustituir y retirar una excepción de fecha** · 25 min · RF-44–RF-47, RF-51–RF-53
 
