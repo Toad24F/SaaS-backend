@@ -1,4 +1,14 @@
-import { BadRequestException, ConflictException, Body, Controller, HttpCode, HttpStatus, Inject, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ActivacionesService } from '../altas/activaciones.service';
 import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
@@ -16,32 +26,45 @@ export class AccesoCodigoController {
     private readonly activaciones: ActivacionesService,
     private readonly credenciales: CredencialesService,
     @Inject(RELOJ) private readonly reloj: Reloj,
-  ) { }
+  ) {}
 
-  @Post('activar-administrador')//expone la ruta para activar la cuenta de administrador
+  @Post('activar-administrador') //expone la ruta para activar la cuenta de administrador
   @HttpCode(HttpStatus.OK)
   async activarAdministrador(@Body() datos: ActivarCuentaDto) {
     // El propósito lo determina la ruta y el instante lo aporta el servidor.
-    try { return await this.activaciones.activarAdministrador({
-      codigo: datos.codigo, nombre: datos.nombre, password: datos.password,
-      correo: datos.correo, negocioId: datos.negocioId,
-      ahora: this.reloj.ahora(),
-    }); } catch (error) {
+    try {
+      return await this.activaciones.activarAdministrador({
+        codigo: datos.codigo,
+        nombre: datos.nombre,
+        password: datos.password,
+        correo: datos.correo /*negocioId: datos.negocioId,*/,
+        ahora: this.reloj.ahora(),
+      });
+    } catch (error) {
       // Se distinguen entradas mal formadas de un código/destinatario/estado conflictivo.
-      if (error instanceof BadRequestException &&
-        ['Código inválido o no disponible.', 'La cuenta no puede activarse.'].includes(error.message)) {
-        throw new ConflictException('Código o destinatario inválido o no disponible.');
+      if (
+        error instanceof BadRequestException &&
+        [
+          'Código inválido o no disponible.',
+          'La cuenta no puede activarse.',
+        ].includes(error.message)
+      ) {
+        throw new ConflictException(
+          'Código o destinatario inválido o no disponible.',
+        );
       }
       throw error;
     }
   }
 
-  @Post('recuperar-contrasena')//expone la ruta para recuperar la contraseña de un usuario con un código de recuperación
+  @Post('recuperar-contrasena') //expone la ruta para recuperar la contraseña de un usuario con un código de recuperación
   @HttpCode(HttpStatus.NO_CONTENT)
   recuperarContrasena(@Body() datos: CodigoContrasenaDto): Promise<void> {
     // Consumo, cambio y revocación se confirman juntos; no se devuelve una sesión.
     return this.credenciales.recuperarContrasena({
-      codigo: datos.codigo, nuevaPassword: datos.password, ahora: this.reloj.ahora(),
+      codigo: datos.codigo,
+      nuevaPassword: datos.password,
+      ahora: this.reloj.ahora(),
     });
   }
 }

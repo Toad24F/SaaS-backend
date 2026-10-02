@@ -1,31 +1,45 @@
 # Especificación de autenticación, negocios y licencias
 
-## Objetivo y decisiones
+> **Estado: antecedente de fase 1.** Esta especificación conserva las decisiones y los RF tal como se formularon entonces. Para las reglas modificadas en la reunión posterior prevalece [la especificación del módulo 1 de fase 2](../../fase-2-modulo-1/spec-modulo-1.md). Las marcas **EN DESUSO** y **PARCIALMENTE SUSTITUIDO** señalan texto histórico que ya no debe usarse como criterio de aceptación. Los RF sin marca siguen siendo antecedentes compatibles, sujetos a las precisiones de fase 2. Los números RF de ambos documentos pertenecen a especificaciones distintas y no se equiparan por número.
+
+### Correspondencia de cambios acordados
+
+| RF de este documento | Estado y regla vigente de fase 2 |
+| --- | --- |
+| RF-01, RF-03 | **Parcialmente sustituidos.** El alta exige también RFC, asigna un límite inicial de una sucursal activa y reserva el correo sin crear una cuenta de administrador. Solo el superadministrador modifica ese límite. Véanse RF-06–RF-08, RF-13 y RF-20–RF-24 del módulo 1. |
+| RF-08, RF-10 | **Parcialmente sustituidos.** La activación exige correo, código y datos completos; la cuenta se crea únicamente al activar. Véanse RF-08–RF-11 del módulo 1. |
+| RF-14, RF-15, RF-19 | **Parcialmente sustituidos.** Una suspensión manual de licencia habilitada programa el bloqueo para 48 horas después; hasta entonces se permite el acceso si la licencia no venció. La suspensión anterior a la activación bloquea la activación de inmediato. Véanse RF-69–RF-77 del módulo 1. |
+| RF-22 | **En desuso.** Los códigos de recuperación se envían por correo al destinatario; la autorización del superadministrador y las demás restricciones compatibles se conservan. Véanse RF-14 y RF-16 del módulo 1. |
+| RF-33, RF-34, RF-36, RF-37 | **Parcialmente sustituidos.** El bloqueo por suspensión y la congelación del tiempo restante ocurren al cumplirse las 48 horas; el vencimiento natural puede bloquear el acceso antes. Reactivar antes cancela el bloqueo pendiente sin devolver tiempo consumido. Véanse RF-69–RF-79 del módulo 1. |
+
+También quedan desplazadas las afirmaciones generales de este documento sobre sucursales ilimitadas, entrega manual de códigos, cuenta de administrador pendiente y bloqueo o congelación inmediatos por suspensión manual. Los códigos iniciales y de recuperación deben enviarse por correo; el fallo de entrega, los reintentos y la reemisión siguen RF-14–RF-19 del módulo 1. El aviso previo al vencimiento y la consulta de tiempo restante siguen RF-80–RF-85 del módulo 1. La evidencia histórica de fase 1 no demuestra estos comportamientos nuevos.
+
+## Objetivo y decisiones de fase 1 (históricas)
 
 Completar el acceso de superadministrador, administrador de negocio y recepcionista; el alta controlada de negocios multitenant; la activación de cuentas y la administración de licencias.
 
-Decisiones acordadas:
+Decisiones acordadas en fase 1; las incompatibles están sustituidas conforme a la tabla anterior:
 
-- Licencias estrictamente anuales; sin límites de sucursales, servicios ni usuarios.
+- **EN DESUSO en cuanto a sucursales:** Licencias estrictamente anuales; sin límites de sucursales, servicios ni usuarios.
 - El superadmin administra su asignación, suspensión y reactivación; las licencias se pueden renovar de forma acumulativa.
 - La primera habilitación de la licencia ocurre al activar al administrador del negocio.
-- Suspender una licencia bloquea el acceso del negocio y las nuevas reservas, conservando sus datos en su esquema. Se congela el tiempo restante.
+- **PARCIALMENTE SUSTITUIDO en cuanto al momento del bloqueo y la congelación:** Suspender una licencia bloquea el acceso del negocio y las nuevas reservas, conservando sus datos en su esquema. Se congela el tiempo restante.
 - Pausar, suspender y desactivar una licencia son la misma acción reversible; se utiliza el término «suspender». No existe cancelación definitiva ni suspensión independiente del negocio.
 - Una licencia vencida bloquea el acceso y las nuevas reservas hasta renovar.
-- Los códigos del primer administrador y de recuperación se entregan manualmente; los recepcionistas no utilizan códigos.
+- **EN DESUSO en cuanto a la entrega manual:** Los códigos del primer administrador y de recuperación se entregan manualmente; los recepcionistas no utilizan códigos.
 - El código inicial dura 48 horas, está vinculado al correo del administrador y puede reemplazarse, invalidando el anterior.
 - Los administradores crean directamente a los recepcionistas de su negocio indicando nombre, correo y contraseña; la cuenta queda activa sin cambio obligatorio de contraseña en el primer acceso.
 - Los administradores pueden desactivar, reactivar y restablecer la contraseña únicamente de recepcionistas de su propio negocio. Desactivar o restablecer revoca sus sesiones y reactivar exige un nuevo inicio de sesión.
 
-## Requisitos funcionales en EARS
+## Requisitos funcionales en EARS de fase 1
 
 ### Negocios y permisos
 
 **Por qué:** impedir el registro libre de negocios y mantener separados sus datos y responsabilidades.
 
-- **RF-01.** Cuando el superadministrador registre un negocio, el sistema deberá exigir nombre, identificador público único y correo del primer administrador, asignando automáticamente una licencia anual.
+- **RF-01 [PARCIALMENTE SUSTITUIDO].** Cuando el superadministrador registre un negocio, el sistema deberá exigir nombre, identificador público único y correo del primer administrador, asignando automáticamente una licencia anual.
 - **RF-02.** Cuando el registro sea aceptado, el sistema deberá dejar el negocio pendiente de activación, con la licencia anual asignada pero aún no habilitada y un código para crear al primer administrador.
-- **RF-03.** Si el identificador público o el correo de acceso ya están registrados, el sistema deberá rechazar el alta sin dejar un negocio, licencia o cuenta parcialmente creados.
+- **RF-03 [PARCIALMENTE SUSTITUIDO].** Si el identificador público o el correo de acceso ya están registrados, el sistema deberá rechazar el alta sin dejar un negocio, licencia o cuenta parcialmente creados.
 - **RF-04.** Cuando un usuario distinto del superadministrador intente crear negocios o crear, asignar, renovar, suspender o reactivar licencias, el sistema deberá denegar la operación.
 - **RF-05.** Cuando un administrador gestione recepcionistas, el sistema deberá permitirle crearlos, consultarlos, desactivarlos, reactivarlos y restablecer su contraseña únicamente dentro de su negocio.
 - **RF-06.** Si un usuario de negocio intenta consultar o modificar información de otro negocio, el sistema deberá denegar el acceso.
@@ -35,23 +49,23 @@ Decisiones acordadas:
 
 **Por qué:** entregar el control al destinatario previsto y evitar que un código permita crear varias cuentas.
 
-- **RF-08.** Cuando el primer administrador presente un código inicial válido, el sistema deberá permitirle establecer su nombre y contraseña y activar la cuenta vinculada al correo previsto.
+- **RF-08 [PARCIALMENTE SUSTITUIDO].** Cuando el primer administrador presente un código inicial válido, el sistema deberá permitirle establecer su nombre y contraseña y activar la cuenta vinculada al correo previsto.
 - **RF-09.** Cuando se active correctamente el primer administrador, el sistema deberá iniciar la vigencia del año de licencia y consumir el código.
-- **RF-10.** Si el código inicial del administrador es incorrecto, está vencido, fue usado o fue reemplazado, el sistema deberá rechazarlo sin activar la cuenta, el negocio ni la licencia.
+- **RF-10 [PARCIALMENTE SUSTITUIDO].** Si el código inicial del administrador es incorrecto, está vencido, fue usado o fue reemplazado, el sistema deberá rechazarlo sin activar la cuenta, el negocio ni la licencia.
 - **RF-11.** Cuando se presenten simultáneamente varias solicitudes con el mismo código inicial de administrador, el sistema deberá resolver la condición de carrera aceptando como máximo una activación y rechazando las demás.
 - **RF-12.** Cuando el superadministrador reemita un código inicial, el sistema deberá invalidar el anterior y conceder otras 48 horas sin iniciar la vigencia.
 - **RF-13.** Cuando un administrador autorizado proporcione nombre, correo y contraseña válidos para un recepcionista, el sistema deberá crear transaccionalmente la cuenta en su propio negocio, asignar en el servidor el rol de recepcionista, guardar únicamente el hash de la contraseña, marcarla activa y activada en ese momento y no generar un código de acceso.
-- **RF-14.** Mientras la licencia esté suspendida, el sistema deberá impedir la activación inicial del administrador; las operaciones autenticadas de alta y gestión de recepcionistas deberán permanecer bloqueadas por la validación continua del estado de la cuenta y la licencia.
+- **RF-14 [PARCIALMENTE SUSTITUIDO].** Mientras la licencia esté suspendida, el sistema deberá impedir la activación inicial del administrador; las operaciones autenticadas de alta y gestión de recepcionistas deberán permanecer bloqueadas por la validación continua del estado de la cuenta y la licencia.
 
 ### Inicio y cierre de sesión
 
 **Por qué:** permitir el acceso autorizado y retirar permisos cuando cambien las condiciones de la cuenta.
 
-- **RF-15.** Cuando un usuario activo presente credenciales válidas, el sistema deberá iniciar su sesión con su rol y negocio únicamente si su cuenta está activada y, para usuarios de negocio, el negocio está activado, su licencia está habilitada, no está suspendida y tiene vigencia disponible.
+- **RF-15 [PARCIALMENTE SUSTITUIDO].** Cuando un usuario activo presente credenciales válidas, el sistema deberá iniciar su sesión con su rol y negocio únicamente si su cuenta está activada y, para usuarios de negocio, el negocio está activado, su licencia está habilitada, no está suspendida y tiene vigencia disponible.
 - **RF-16.** Si las credenciales son incorrectas o la cuenta está desactivada, el sistema deberá rechazar el acceso con un mensaje que no revele si el correo existe.
 - **RF-17.** Si se supera el límite de cinco intentos de acceso o validación de códigos por minuto desde una misma dirección IP, el sistema (a nivel de backend mediante herramientas de limitación de tasa como `@nestjs/throttle`) deberá bloquear nuevos intentos de ese origen durante un minuto.
 - **RF-18.** Cuando un usuario cierre sesión, el sistema deberá impedir que ese token/sesión vuelva a utilizarse.
-- **RF-19.** En cada validación de solicitud a la API (mediante Guards o middleware), el sistema deberá verificar el estado actual de la cuenta y la licencia. Si la cuenta es desactivada o la licencia se vence/suspende, el sistema deberá denegar el acceso inmediatamente con un error 401, incluso si el usuario tenía una sesión previamente iniciada.
+- **RF-19 [PARCIALMENTE SUSTITUIDO].** En cada validación de solicitud a la API (mediante Guards o middleware), el sistema deberá verificar el estado actual de la cuenta y la licencia. Si la cuenta es desactivada o la licencia se vence/suspende, el sistema deberá denegar el acceso inmediatamente con un error 401, incluso si el usuario tenía una sesión previamente iniciada.
 - **RF-20.** Cuando una sesión cumpla 12 horas desde su inicio, el backend deberá rechazar cualquier nueva solicitud exigiendo un nuevo inicio de sesión, sin almacenar mutaciones de datos que hayan quedado a la mitad al momento de expirar.
 
 ### Cambio y recuperación de contraseña
@@ -59,7 +73,7 @@ Decisiones acordadas:
 **Por qué:** recuperar el acceso sin que los administradores conozcan las contraseñas y retirar sesiones potencialmente comprometidas.
 
 - **RF-21.** Cuando un usuario autenticado cambie su contraseña, el sistema deberá exigir la contraseña actual y una nueva de al menos 12 caracteres.
-- **RF-22.** Cuando el superadministrador autorice recuperar una cuenta de administrador, el sistema deberá generar un código de recuperación para entregar manualmente.
+- **RF-22 [EN DESUSO: entrega manual].** Cuando el superadministrador autorice recuperar una cuenta de administrador, el sistema deberá generar un código de recuperación para entregar manualmente.
 - **RF-23.** Cuando se emita un código de recuperación, el sistema deberá vincularlo a una sola cuenta, darle 30 minutos de vigencia e invalidar los códigos de recuperación anteriores de esa cuenta.
 - **RF-24.** Cuando se utilice correctamente un código de recuperación, el sistema deberá permitir establecer una nueva contraseña, consumir el código e invalidar todas las sesiones anteriores.
 - **RF-25.** Cuando se complete un cambio de contraseña, el sistema deberá invalidar todas las sesiones existentes y exigir autenticarse nuevamente.
@@ -75,11 +89,11 @@ Decisiones acordadas:
 - **RF-30.** Mientras el negocio esté bloqueado, el sistema deberá conservar intacta su base de datos (cuentas, configuración y citas) y permitir que el superadministrador gestione su licencia.
 - **RF-31.** Cuando el superadministrador renueve una licencia ya habilitada, el sistema deberá añadir un año calendario exacto. Si se realizan múltiples renovaciones, los años deberán sumarse de forma acumulativa. El cálculo se hará desde el vencimiento actual si sigue vigente, o desde el vencimiento conservado si está suspendida; si venció sin estar suspendida, deberá iniciar el nuevo año desde el momento de la renovación.
 - **RF-32.** Cuando se renueve una licencia suspendida, el sistema deberá conservar su suspensión y ampliar el tiempo conservado sumando el nuevo año, sin restablecer el acceso automáticamente.
-- **RF-33.** Cuando el superadministrador suspenda una licencia, el sistema deberá bloquear el acceso de los usuarios del negocio y nuevas reservas.
-- **RF-34.** Cuando el superadministrador reactive una licencia, el sistema deberá retirar su suspensión y permitir el acceso únicamente si negocio y cuenta están activados y el usuario está activo; el sistema deberá aplicar el tiempo restante conservado.
+- **RF-33 [PARCIALMENTE SUSTITUIDO].** Cuando el superadministrador suspenda una licencia, el sistema deberá bloquear el acceso de los usuarios del negocio y nuevas reservas.
+- **RF-34 [PARCIALMENTE SUSTITUIDO].** Cuando el superadministrador reactive una licencia, el sistema deberá retirar su suspensión y permitir el acceso únicamente si negocio y cuenta están activados y el usuario está activo; el sistema deberá aplicar el tiempo restante conservado.
 - **RF-35.** Cuando se registre un alta, activación, creación o restablecimiento de recepcionista, renovación, suspensión, reactivación o recuperación autorizada, el sistema deberá conservar quién realizó la acción, cuándo y sobre qué cuenta, negocio o licencia, incluyendo fechas anteriores y nuevas cuando cambien, sin registrar contraseñas, hashes ni códigos ni duplicar transiciones ya aplicadas.
-- **RF-36.** Cuando el superadministrador suspenda una licencia vigente, el sistema deberá calcular el tiempo restante y detener su consumo hasta la reactivación.
-- **RF-37.** Cuando el superadministrador reactive una licencia suspendida, el sistema deberá ajustar su fecha de vencimiento proyectándola hacia el futuro para devolver el tiempo exacto que le restaba al suspenderla, sumando las renovaciones realizadas durante la suspensión.
+- **RF-36 [PARCIALMENTE SUSTITUIDO].** Cuando el superadministrador suspenda una licencia vigente, el sistema deberá calcular el tiempo restante y detener su consumo hasta la reactivación.
+- **RF-37 [PARCIALMENTE SUSTITUIDO].** Cuando el superadministrador reactive una licencia suspendida, el sistema deberá ajustar su fecha de vencimiento proyectándola hacia el futuro para devolver el tiempo exacto que le restaba al suspenderla, sumando las renovaciones realizadas durante la suspensión.
 - **RF-38.** Si se repite o se solicita simultáneamente una suspensión o reactivación ya aplicada (condición de carrera), el sistema deberá conservar un único efecto sobre el estado y el tiempo de la licencia.
 
 ### Estado de acceso de recepcionistas
@@ -95,7 +109,7 @@ Decisiones acordadas:
 
 ## Supuestos y fuera de alcance
 
-Defaults para cerrar las decisiones no consultadas:
+Defaults históricos para cerrar las decisiones no consultadas en fase 1; las reglas incompatibles se interpretan conforme a la correspondencia anterior:
 
 - Los correos de acceso son únicos en toda la plataforma, sin distinguir mayúsculas; cada cuenta de negocio pertenece a uno solo.
 - El superadministrador inicial ya existe. Su recuperación excepcional queda fuera de esta entrega.
@@ -103,7 +117,7 @@ Defaults para cerrar las decisiones no consultadas:
 - Toda licencia es estrictamente anual.
 - Suspender antes de activar impide usar el código sin iniciar ni acumular tiempo de licencia. Reactivar antes de activar tampoco inicia la vigencia; el código conserva sus 48 horas y debe reemitirse si vence.
 - Una licencia ya vencida debe renovarse antes de poder suspenderla; no se recupera tiempo consumido. Una licencia suspendida con tiempo conservado no vence por el mero transcurso de la suspensión.
-- Al reactivar una licencia, se desplaza su vencimiento por el tiempo total de suspensión. Suspensiones sucesivas, repetidas o concurrentes no pueden duplicar tiempo ni sus efectos.
+- **PARCIALMENTE SUSTITUIDO para el plazo previo al bloqueo:** Al reactivar una licencia, se desplaza su vencimiento por el tiempo total de suspensión. Suspensiones sucesivas, repetidas o concurrentes no pueden duplicar tiempo ni sus efectos.
 - Desactivar una cuenta no elimina sus datos. Reemitir un código inicial no cambia al destinatario.
 - Reactivar una cuenta de recepcionista no reactiva licencias ni restablece contraseñas. Los recepcionistas se crean completamente activados y no participan en el flujo de códigos ni tienen estado pendiente.
 - El administrador conoce la contraseña que asigna al crear o restablecer una cuenta; la API no la devuelve y el recepcionista no está obligado a cambiarla en su primer acceso.
@@ -111,11 +125,13 @@ Defaults para cerrar las decisiones no consultadas:
 - Condiciones de carrera entre activación y reemisión de código invalidan la transacción que llegue un milisegundo tarde, priorizando el bloqueo en base de datos.
 - Se adoptan sesiones de 12 horas, recuperación de 30 minutos y contraseñas de al menos 12 caracteres.
 
-Fuera de alcance: cobros y facturación de licencias, pagos de citas, registro público de negocios, envío automático de códigos, acceso social, autenticación multifactor, múltiples administradores por negocio, cambio de propietario, y cancelación definitiva de licencias.
+Fuera de alcance **de la fase 1**: cobros y facturación de licencias, pagos de citas, registro público de negocios, envío automático de códigos, acceso social, autenticación multifactor, múltiples administradores por negocio, cambio de propietario, y cancelación definitiva de licencias. El envío por correo de códigos y los avisos de vencimiento sí son requisitos de fase 2.
 
 La gestión de sucursales, servicios, citas, disponibilidad, WhatsApp y reportes continúa fuera de esta entrega; únicamente queda definido su bloqueo por licencia o suspensión a través de los Guards de autorización.
 
-## Criterios de finalización
+## Criterios de finalización de fase 1 (evidencia histórica)
+
+Los criterios siguientes documentan la aceptación original; donde dependan de RF marcados arriba, deben actualizarse según el módulo 1 antes de usarse para aceptar el comportamiento vigente. En particular, el bloqueo inmediato por suspensión manual y la cuenta pendiente del primer administrador ya no son expectativas válidas.
 
 - Todos los RF tienen escenarios de aceptación aprobados para resultados válidos y rechazos.
 - Se demuestra mediante pruebas de integración que los usuarios no acceden a los datos de otros *tenants* y que los recepcionistas no administran permisos.
@@ -124,7 +140,7 @@ La gestión de sucursales, servicios, citas, disponibilidad, WhatsApp y reportes
 - Se verifican transiciones repetidas y concurrentes, rollback conjunto, un único evento por cambio real y que ninguna sesión anterior vuelva a ser válida después de reactivar.
 - Se verifica que restablecer la contraseña de una cuenta activa o desactivada revoca todas sus sesiones sin reactivarla ni modificar la licencia, y que la auditoría no contiene contraseñas ni hashes.
 - Se verifican códigos de administrador y recuperación incorrectos, vencidos, reemplazados, reutilizados y utilizados simultáneamente, previniendo condiciones de carrera.
-- Se comprueba en cada endpoint que la API rechaza inmediatamente el acceso si la licencia es suspendida o expira a mitad de una sesión activa (validación continua).
+- **PARCIALMENTE SUSTITUIDO para suspensión manual:** Se comprueba en cada endpoint que la API rechaza inmediatamente el acceso si la licencia es suspendida o expira a mitad de una sesión activa (validación continua).
 - Se verifica el bloqueo por tasa de peticiones mediante el Throttler.
 - Se verifican vencimientos exactos considerando zonas horarias, fin de mes, año bisiesto, renovaciones acumulativas, congelación exacta del tiempo y ajuste del vencimiento al reactivar.
 - Se verifican suspensiones antes de activar, códigos vencidos durante la suspensión, pausas prolongadas y sucesivas, doble suspensión, doble reactivación y cruces con renovación, sin pérdida ni duplicación de tiempo.
