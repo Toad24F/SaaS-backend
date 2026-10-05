@@ -78,15 +78,23 @@ describe('M1-T013: migración incremental de identidad en MariaDB temporal', () 
 
   it('revierte solo la migración nueva y permite aplicarla otra vez', async () => {
     await conBaseMigrada(async (db) => {
-      // Retrocede las migraciones posteriores, incluidas franjas, excepciones y bloqueos.
-      for (let indice = 0; indice < 12; indice += 1) await db.undoLastMigration();
+      // Retrocede hasta la predecesora de identidad: las migraciones posteriores
+      // aumentan con cada módulo, por lo que una cuenta fija queda obsoleta.
+      let deshechas = 0;
+      for (;;) {
+        const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');
+        if (ultima?.name === 'CrearAuditoriaLimites1760000003000') break;
+        if (!ultima) throw new Error('No se encontró la migración base de identidad.');
+        await db.undoLastMigration();
+        deshechas += 1;
+      }
       const tablas = await db.query(`SELECT TABLE_NAME AS nombre FROM information_schema.TABLES
         WHERE TABLE_SCHEMA = DATABASE()`);
       const nombres = tablas.map((fila: { nombre: string }) => fila.nombre);
       expect(nombres).toContain('usuarios');
       expect(nombres).not.toContain('altas_administrador');
       expect(nombres).not.toContain('correos_acceso');
-      expect(await db.runMigrations()).toHaveLength(12);
+      expect(await db.runMigrations()).toHaveLength(deshechas);
     });
   });
 });

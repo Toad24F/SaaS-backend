@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **58 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **8 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -883,17 +883,19 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T126–T130: [implementación y resultados](resultados-tareas/resultados-t126-t130.md).
 
-- [ ] **M1-T131 — Auditar permisos HTTP de horarios y bloqueos** · 25 min · RF-01–RF-05, RF-37–RF-65
+- [x] **M1-T131 — Auditar permisos HTTP de horarios y bloqueos** · 25 min · RF-01–RF-05, RF-37–RF-65
 
   Dependencias: M1-T093, M1-T108, M1-T110.
 
   Hecho cuando: dos negocios y perfiles diferentes prueban pertenencia en semana, excepciones, consulta y bloqueos; un cambio de alcance no evade permisos.
 
-- [ ] **M1-T132 — Probar corte de acceso sobre todas las rutas nuevas** · 25 min · RF-35–RF-36, RF-69–RF-78, RF-83–RF-85
+- [x] **M1-T132 — Probar corte de acceso sobre todas las rutas nuevas** · 25 min · RF-35–RF-36, RF-69–RF-78, RF-83–RF-85
 
   Dependencias: M1-T130, M1-T131, M1-T053, M1-T056.
 
   Hecho cuando: una matriz parametrizada cubre lectura y escritura con sesión abierta antes/en/después del bloqueo y cuenta desactivada; el superadmin conserva gestión y nadie obtiene un bypass por la consulta.
+
+  Evidencia T131–T132: [flujo, archivos y resultados de pruebas](resultados-tareas/resultados-t131-t132.md).
 
 - [ ] **M1-T133 — Ejecutar el recorrido funcional conjunto sin citas** · 25 min · RF-06–RF-88
 
