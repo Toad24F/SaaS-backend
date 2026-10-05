@@ -15,7 +15,7 @@ export interface DatosBloqueo {
   finMinutos: number | null;
 }
 
-/** Conserva las fechas civiles: la conversión a instantes por sede corresponde a T106. */
+/** Conserva fechas civiles hasta interpretarlas en la zona de cada sede afectada. */
 export function validarBloqueo(datos: DatosBloqueo): DatosBloqueo {
   if ((datos.personalId !== null && (!Number.isInteger(datos.personalId) || datos.personalId <= 0)) ||
     (datos.sucursalId !== null && (!Number.isInteger(datos.sucursalId) || datos.sucursalId <= 0))) {

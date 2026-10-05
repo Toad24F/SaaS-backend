@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Max, Min,
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Matches, Max, Min,
   ValidateNested } from 'class-validator';
 import { ProfesionalIdDto } from '../../profesionales/dto/profesionales.dto';
 
@@ -43,4 +43,10 @@ export class GuardarExcepcionDto {
 
 export class RetirarExcepcionDto {
   @Type(() => Number) @IsInt() @Min(1) sucursalId: number;
+}
+
+/** Fechas civiles explícitas: la consulta no infiere días desde el reloj del servidor. */
+export class ConsultarAtencionDto {
+  @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) desde: string;
+  @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) hasta: string;
 }

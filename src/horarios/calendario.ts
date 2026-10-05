@@ -70,6 +70,18 @@ function instanteLocal(fecha: string, minuto: number, zona: string): number | nu
   return candidatos.length === 1 ? candidatos[0] : null;
 }
 
+/** Resuelve un extremo civil explícito sin elegir arbitrariamente una hora DST. */
+export function resolverInstanteLocal(fecha: string, minuto: number, zona: string): Date {
+  if (!Number.isInteger(minuto) || minuto < 0 || minuto > 1439) {
+    throw new BadRequestException('minuto: fuera del día local.');
+  }
+  const instante = instanteLocal(fecha, minuto, zona);
+  if (instante === null) {
+    throw new BadRequestException('Hora local inexistente o repetida por cambio de huso.');
+  }
+  return new Date(instante);
+}
+
 /** Un extremo 24:00 es la medianoche del día siguiente, sin prolongar la franja. */
 export function resolverIntervaloLocal(fecha: string, zona: string, inicioMinutos: number,
   finMinutos: number, modo: 'estricto' | 'recurrencia' = 'estricto'): IntervaloReal | null {

@@ -1,6 +1,6 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import type { EntityManager } from 'typeorm';
 import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
@@ -10,9 +10,10 @@ import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.en
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { BloqueoHorario } from './entities/bloqueo-horario.entity';
+import { intervaloBloqueo } from './calculo-bloqueos';
 import { DatosBloqueo, validarBloqueo } from './validar-bloqueo';
 
-/** Persiste cada restricción por separado; su combinación con disponibilidad llega en T107. */
+/** Persiste cada restricción por separado; la atención calcula su unión al consultar. */
 @Injectable()
 export class BloqueosService {
   constructor(@InjectRepository(BloqueoHorario)
@@ -42,21 +43,48 @@ export class BloqueosService {
       await this.fechasCiviles(manager, actor.negocioId!, [actual]);
       // Autoriza el estado previo y el candidato para impedir escalar el alcance al editar.
       await this.exigirAlcance(manager, actor, this.datos(actual));
-      const datos = validarBloqueo({ ...this.datos(actual), ...cambio });
+      // class-transformer puede crear propiedades undefined: solo las presentes cambian.
+      const definidos = Object.fromEntries(Object.entries(cambio)
+        .filter(([, valor]) => valor !== undefined)) as Partial<DatosBloqueo>;
+      if (!Object.keys(definidos).length) {
+        throw new BadRequestException('Indica un campo de bloqueo.');
+      }
+      const datos = validarBloqueo({ ...this.datos(actual), ...definidos });
       await this.exigirAlcance(manager, actor, datos);
       Object.assign(actual, datos);
       return repo.save(actual);
     });
   }
 
-  async listar(actorId: number): Promise<BloqueoHorario[]> {
+  async listar(actorId: number, filtro: { personalId?: number; sucursalId?: number } = {})
+    : Promise<BloqueoHorario[]> {
     const manager = this.bloqueos.manager;
     const actor = await this.actor(manager, actorId);
+    if (filtro.personalId !== undefined) {
+      const perfilFiltrado = await manager.getRepository(Personal).findOneBy({
+        id: filtro.personalId, negocioId: actor.negocioId! });
+      if (!perfilFiltrado) throw new NotFoundException('Profesional no disponible.');
+      this.autorizacion.exigirSobreRecurso(actor, Permiso.GESTIONAR_BLOQUEOS,
+        { negocioId: actor.negocioId!, usuarioId: perfilFiltrado.usuarioId });
+    }
+    if (filtro.sucursalId !== undefined && !await manager.getRepository(Sucursal).findOneBy({
+      id: filtro.sucursalId, negocioId: actor.negocioId! })) {
+      throw new NotFoundException('Sucursal no disponible.');
+    }
+    if (filtro.sucursalId !== undefined && actor.rol === Rol.PROFESIONAL) {
+      const perfilFiltro = await manager.getRepository(Personal).findOneBy({
+        negocioId: actor.negocioId!, usuarioId: actor.id });
+      if (!perfilFiltro || !await manager.getRepository(PersonalSucursal).findOneBy({
+        negocioId: actor.negocioId!, personalId: perfilFiltro.id,
+        sucursalId: filtro.sucursalId })) {
+        throw new NotFoundException('Sucursal no asignada al Profesional.');
+      }
+    }
     if (actor.rol === Rol.ADMIN_NEGOCIO) {
       const filas = await this.bloqueos.find({ where: { negocioId: actor.negocioId! },
         order: { id: 'ASC' } });
       await this.fechasCiviles(manager, actor.negocioId!, filas);
-      return filas;
+      return this.filtrar(filas, filtro);
     }
     const perfil = await manager.getRepository(Personal).findOneBy({
       negocioId: actor.negocioId!, usuarioId: actor.id });
@@ -73,7 +101,7 @@ export class BloqueosService {
     else consulta.andWhere('b.sucursalId IS NULL');
     const filas = await consulta.orderBy('b.id', 'ASC').getMany();
     await this.fechasCiviles(manager, actor.negocioId!, filas);
-    return filas;
+    return this.filtrar(filas, filtro);
   }
 
   async eliminar(actorId: number, id: number): Promise<void> {
@@ -124,6 +152,16 @@ export class BloqueosService {
         throw new NotFoundException('Sucursal no asignada al Profesional.');
       }
     }
+    // El alcance no se copia a destinatarios: se consulta la asignación vigente.
+    const ids = datos.sucursalId !== null ? [datos.sucursalId] : perfil ?
+      (await manager.getRepository(PersonalSucursal).findBy({ negocioId,
+        personalId: perfil.id })).map((fila) => fila.sucursalId) :
+      (await manager.getRepository(Sucursal).findBy({ negocioId })).map((fila) => fila.id);
+    if (datos.inicioMinutos !== null && ids.length) {
+      const sedes = await manager.getRepository(Sucursal).findBy({ negocioId, id: In(ids) });
+      // Valida ambos extremos en cada huso; una hora ambigua revierte toda la operación.
+      for (const sede of sedes) intervaloBloqueo(datos, sede.zonaHoraria);
+    }
   }
 
   private datos(fila: BloqueoHorario): DatosBloqueo {
@@ -131,6 +169,14 @@ export class BloqueosService {
       tipo: fila.tipo, motivo: fila.motivo, fechaInicio: fila.fechaInicio,
       fechaFin: fila.fechaFin, inicioMinutos: fila.inicioMinutos ?? null,
       finMinutos: fila.finMinutos ?? null };
+  }
+
+  private filtrar(filas: BloqueoHorario[], filtro: { personalId?: number; sucursalId?: number }) {
+    // Null en un bloque significa equipo o todas las sedes, también bajo filtro.
+    return filas.filter((fila) => (filtro.personalId === undefined ||
+      fila.personalId === null || fila.personalId === filtro.personalId) &&
+      (filtro.sucursalId === undefined || fila.sucursalId === null ||
+        fila.sucursalId === filtro.sucursalId));
   }
 
   private async fechasCiviles(manager: EntityManager, negocioId: number,

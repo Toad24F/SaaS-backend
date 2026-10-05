@@ -717,35 +717,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T101–T105: [modelo, permisos y resultados de pruebas](resultados-tareas/resultados-t101-t105.md).
 
-- [ ] **M1-T106 — Interpretar alcance colectivo en zonas locales** · 25 min · RF-56–RF-61
+- [x] **M1-T106 — Interpretar alcance colectivo en zonas locales** · 25 min · RF-56–RF-61
 
   Dependencias: M1-T104, M1-T074.
 
   Hecho cuando: cada sucursal afectada usa su zona local; el alcance todas/equipo se resuelve sobre las asignaciones vigentes conforme al plan, no como una copia congelada de destinatarios.
 
-- [ ] **M1-T107 — Combinar restricciones sin borrar horarios** · 25 min · RF-50, RF-62, RF-65
+- [x] **M1-T107 — Combinar restricciones sin borrar horarios** · 25 min · RF-50, RF-62, RF-65
 
   Dependencias: M1-T106, M1-T105, M1-T089.
 
   Hecho cuando: pruebas demuestran unión de bloqueos superpuestos y prioridad sobre excepciones; quitar uno no libera el tramo cubierto por otro ni modifica franjas.
 
-- [ ] **M1-T108 — Exponer y probar contratos de gestión de bloqueos** · 25 min · RF-01–RF-05, RF-55–RF-65
+- [x] **M1-T108 — Exponer y probar contratos de gestión de bloqueos** · 25 min · RF-01–RF-05, RF-55–RF-65
 
   Dependencias: M1-T005, M1-T107.
 
   Hecho cuando: rutas de consulta, alta, edición y baja validan rol, negocio, perfil y alcance; HTTP conserva datos anteriores ante entradas inválidas.
 
-- [ ] **M1-T109 — Probar rangos, superposición y permisos por HTTP** · 25 min · RF-55–RF-65
+- [x] **M1-T109 — Probar rangos, superposición y permisos por HTTP** · 25 min · RF-55–RF-65
 
   Dependencias: M1-T108.
 
   Hecho cuando: casos atraviesan varios días/sucursales y verifican horas continuas, días inclusivos, rechazo de hora parcial, modificación individual por Profesional y prohibición de colectivo.
 
-- [ ] **M1-T110 — Exponer intervalos de atención por fechas, sin ranuras de citas** · 25 min · RF-25, RF-37–RF-50, RF-54, RF-62, RF-65
+- [x] **M1-T110 — Exponer intervalos de atención por fechas, sin ranuras de citas** · 25 min · RF-25, RF-37–RF-50, RF-54, RF-62, RF-65
 
   Dependencias: M1-T093, M1-T107, M1-T108.
 
   Hecho cuando: la consulta autorizada combina semana o excepción, sucursal operativa, descansos y unión de bloqueos; omite borradores/inactivas y no genera slots ni citas.
+
+  Evidencia T106–T110: [zonas, restricciones, HTTP y resultados](resultados-tareas/resultados-t106-t110.md).
 
 ## 10. Bajas seguras y conservación
 

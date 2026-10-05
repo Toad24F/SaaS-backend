@@ -5,13 +5,15 @@ import { AutorizacionService, Permiso } from '../auth/services/autorizacion.serv
 import { Personal } from '../profesionales/entities/personal.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { EntradaExcepcion, EntradaSemana, HorariosService } from './horarios.service';
+import { AtencionService } from './atencion.service';
 
 /** Deriva el negocio y la propiedad de registros actuales, nunca del cuerpo HTTP. */
 @Injectable()
 export class HorariosAccesoService {
   constructor(@InjectRepository(Personal) private readonly perfiles: Repository<Personal>,
     private readonly autorizacion: AutorizacionService,
-    private readonly horarios: HorariosService) {}
+    private readonly horarios: HorariosService,
+    private readonly atencion: AtencionService) {}
 
   private async negocioAutorizado(actorId: number, personalId: number): Promise<number> {
     const actor = await this.perfiles.manager.getRepository(Usuario).findOneBy({ id: actorId });
@@ -30,6 +32,11 @@ export class HorariosAccesoService {
   async consultarSemana(actorId: number, personalId: number) {
     const negocioId = await this.negocioAutorizado(actorId, personalId);
     return this.horarios.consultarSemana(negocioId, personalId);
+  }
+
+  async consultarAtencion(actorId: number, personalId: number, desde: string, hasta: string) {
+    const negocioId = await this.negocioAutorizado(actorId, personalId);
+    return this.atencion.consultar(actorId, negocioId, personalId, desde, hasta);
   }
 
   async guardarSemana(actorId: number, personalId: number,

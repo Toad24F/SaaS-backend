@@ -8,7 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { ProfesionalIdDto } from '../profesionales/dto/profesionales.dto';
-import { FechaExcepcionDto, GuardarExcepcionDto, GuardarSemanaDto,
+import { ConsultarAtencionDto, FechaExcepcionDto, GuardarExcepcionDto, GuardarSemanaDto,
   RetirarExcepcionDto } from './dto/horarios.dto';
 import { HorariosAccesoService } from './horarios-acceso.service';
 
@@ -25,6 +25,14 @@ export class HorariosController {
   @Get(':id/horario')
   consultarSemana(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
     return this.acceso.consultarSemana(actor.sub, parametros.id);
+  }
+
+  @Get(':id/atencion')
+  consultarAtencion(@Param() parametros: ProfesionalIdDto,
+    @Query() consulta: ConsultarAtencionDto, @CurrentUser() actor: JwtPayload) {
+    // La fachada comprueba la propiedad actual antes de proyectar intervalos.
+    return this.acceso.consultarAtencion(actor.sub, parametros.id,
+      consulta.desde, consulta.hasta);
   }
 
   @Put(':id/horario')

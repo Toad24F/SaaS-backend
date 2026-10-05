@@ -4,9 +4,12 @@ import { HorarioPersonal } from './entities/horario-personal.entity';
 import { ExcepcionHorario } from './entities/excepcion-horario.entity';
 import { FranjaExcepcionHorario } from './entities/franja-excepcion-horario.entity';
 import { HorariosService } from './horarios.service';
+import { BloqueosModule } from '../bloqueos/bloqueos.module';
+import { AtencionService } from './atencion.service';
 
-// Comparte el guardado semanal; los contratos HTTP llegan en tareas posteriores.
-@Module({ imports: [TypeOrmModule.forFeature([
+// Comparte horarios y proyección de atención sin introducir rutas en el dominio.
+@Module({ imports: [BloqueosModule, TypeOrmModule.forFeature([
   HorarioPersonal, ExcepcionHorario, FranjaExcepcionHorario,
-])], providers: [HorariosService], exports: [TypeOrmModule, HorariosService] })
+])], providers: [HorariosService, AtencionService],
+  exports: [TypeOrmModule, HorariosService, AtencionService] })
 export class HorariosModule {}

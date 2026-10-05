@@ -20,6 +20,7 @@ import { ProfesionalesHttpModule } from './profesionales/profesionales-http.modu
 import { HorariosModule } from './horarios/horarios.module';
 import { HorariosHttpModule } from './horarios/horarios-http.module';
 import { BloqueosModule } from './bloqueos/bloqueos.module';
+import { BloqueosHttpModule } from './bloqueos/bloqueos-http.module';
 import { CorreosModule } from './correos/correos.module';
 import { CorreosHttpModule } from './correos/correos-http.module';
 
@@ -54,6 +55,7 @@ import { CorreosHttpModule } from './correos/correos-http.module';
     HorariosModule,
     HorariosHttpModule,
     BloqueosModule,
+    BloqueosHttpModule,
     CorreosModule,
     CorreosHttpModule,
   ],
