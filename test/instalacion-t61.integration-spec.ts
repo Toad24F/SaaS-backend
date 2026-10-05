@@ -35,8 +35,8 @@ describe('T61 — instalación desde cero', () => {
         // migraciones pendientes, sin recrear tablas ni modificar datos.
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const historial = await segunda.query('SELECT COUNT(*) AS total FROM migrations');
-        // La instalación incluye horarios, excepciones y bloqueos.
-        expect(Number(historial[0].total)).toBe(16);
+        // La instalación incluye la corrección del límite de suspensión.
+        expect(Number(historial[0].total)).toBe(17);
       } finally {
         await app?.close();
         process.env.TEST_DB_NAME = entornoAnterior.TEST_DB_NAME;

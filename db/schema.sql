@@ -134,7 +134,6 @@ CREATE TABLE licencias (
         habilitada_en IS NULL
         OR (
           suspendida_en >= habilitada_en
-          AND suspendida_en < vence_en
         )
       )
     )

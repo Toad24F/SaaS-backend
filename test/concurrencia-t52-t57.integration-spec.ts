@@ -395,7 +395,8 @@ describe('T52–T57 — concurrencia y rollback con dos conexiones MariaDB', () 
         + Math.max(0, tenant.licencia.venceEn!.getTime() - limite.getTime())));
       expect([renovarPrimero.getTime(), reactivarPrimero.getTime()]).toContain(actual.venceEn!.getTime());
       expect(actual).toMatchObject({ suspendidaEn: null, congeladaEn: null,
-        suspensionSolicitadaEn: null, remanenteMs: null, versionVencimiento: 3 });
+        // La congelación efectiva agrega una versión antes de renovar y reactivar.
+        suspensionSolicitadaEn: null, remanenteMs: null, versionVencimiento: 4 });
       expect(await primera.getRepository(EventoAuditoria).countBy({
         licenciaId: tenant.licenciaId, accion: 'licencia_renovada',
       })).toBe(1);

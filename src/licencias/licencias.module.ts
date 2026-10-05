@@ -8,12 +8,15 @@ import { LicenciasService } from './licencias.service';
 import { AutorizacionService } from '../auth/services/autorizacion.service';
 import { VistaVigenciaLicenciaService } from './services/vista-vigencia-licencia.service';
 import { ConsultaVigenciaLicenciasService } from './services/consulta-vigencia-licencias.service';
+import { CorreosModule } from '../correos/correos.module';
+import { AvisosVencimientoService } from './services/avisos-vencimiento.service';
 
 // Las operaciones posteriores reutilizarán este repositorio de dominio.
 @Module({
-  imports: [AuditoriaModule, TypeOrmModule.forFeature([Licencia])],
+  imports: [AuditoriaModule, CorreosModule, TypeOrmModule.forFeature([Licencia])],
   providers: [CalendarioLicenciasService, PoliticaAccesoLicenciaService, LicenciasService,
-    VistaVigenciaLicenciaService, ConsultaVigenciaLicenciasService, AutorizacionService],
+    VistaVigenciaLicenciaService, ConsultaVigenciaLicenciasService, AutorizacionService,
+    AvisosVencimientoService],
   exports: [
     TypeOrmModule,
     CalendarioLicenciasService,
@@ -21,6 +24,7 @@ import { ConsultaVigenciaLicenciasService } from './services/consulta-vigencia-l
     LicenciasService,
     VistaVigenciaLicenciaService,
     ConsultaVigenciaLicenciasService,
+    AvisosVencimientoService,
   ],
 })
 export class LicenciasModule {}

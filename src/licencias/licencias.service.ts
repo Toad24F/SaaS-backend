@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from '../correos/entities/envio-correo.entity';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Licencia } from './entities/licencia.entity';
@@ -67,6 +68,9 @@ export class LicenciasService {
           : Number(licencia.remanenteMs);
         licencia.venceEn = new Date(ahora.getTime() + restante);
         licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
+      } else {
+        // Cancelar la gracia también sustituye la elegibilidad de avisos pendientes.
+        licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
       }
       licencia.suspendidaEn = null;
       licencia.suspensionSolicitadaEn = null;
@@ -74,6 +78,7 @@ export class LicenciasService {
       licencia.congeladaEn = null;
       licencia.remanenteMs = null;
       await manager.getRepository(Licencia).save(licencia);
+      await this.invalidarAvisos(manager, licencia, false);
       await this.registrar(manager, actor.id, licencia, 'licencia_reactivada',
         antes,
         { suspensionSolicitadaEn: null, congeladaEn: null,
@@ -102,6 +107,7 @@ export class LicenciasService {
       }
       licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
       await manager.getRepository(Licencia).save(licencia);
+      await this.invalidarAvisos(manager, licencia, false);
       await this.registrar(manager, actor.id, licencia, 'licencia_renovada',
         { venceEn: anterior.toISOString(), suspendidaEn: licencia.suspendidaEn?.toISOString() ?? null,
           remanenteMs: remanenteAntes },
@@ -170,10 +176,29 @@ export class LicenciasService {
     licencia.suspendidaEn = new Date(efectiva);
     licencia.remanenteMs = anterior === null
       ? null : String(Math.max(0, anterior.getTime() - efectiva.getTime()));
+    // La suspensión efectiva invalida la elegibilidad aunque venceEn se conserve.
+    licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
     await manager.getRepository(Licencia).save(licencia);
+    await this.invalidarAvisos(manager, licencia, true);
     await this.registrar(manager, actor.id, licencia, 'licencia_congelada',
       { venceEn: anterior?.toISOString() ?? null, congeladaEn: null },
       { venceEn: anterior?.toISOString() ?? null, congeladaEn: efectiva.toISOString(),
         remanenteMs: licencia.remanenteMs });
+  }
+
+  private async invalidarAvisos(manager: Repository<Licencia>['manager'],
+    licencia: Licencia, todos: boolean): Promise<void> {
+    // Conserva confirmados e historial; retira solamente trabajos aún recuperables.
+    const consulta = manager.getRepository(EnvioCorreo).createQueryBuilder().update()
+      .set({ estado: EstadoEnvioCorreo.DESCARTADO, arrendamientoId: null,
+        arrendadoHasta: null, ultimoError: 'Vencimiento sustituido o suspendido.' })
+      .where('licencia_id = :id AND tipo = :tipo AND estado IN (:...estados)', {
+        id: licencia.id, tipo: TipoEnvioCorreo.AVISO_VENCIMIENTO,
+        estados: [EstadoEnvioCorreo.PENDIENTE, EstadoEnvioCorreo.FALLIDO,
+          EstadoEnvioCorreo.TOMADO],
+      });
+    if (!todos) consulta.andWhere('version_vencimiento <> :version',
+      { version: licencia.versionVencimiento });
+    await consulta.execute();
   }
 }

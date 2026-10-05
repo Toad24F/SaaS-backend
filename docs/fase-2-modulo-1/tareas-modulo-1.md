@@ -785,35 +785,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 11. Avisos de vencimiento
 
-- [ ] **M1-T116 — Detectar licencias dentro de la ventana de aviso** · 25 min · RF-80–RF-82
+- [x] **M1-T116 — Detectar licencias dentro de la ventana de aviso** · 25 min · RF-80–RF-82
 
   Dependencias: M1-T055, M1-T049.
 
   Hecho cuando: con reloj fijo se detecta el umbral de dos días y envío tardío permitido antes de vencer; no se seleccionan licencias o vencimientos obsoletos.
 
-- [ ] **M1-T117 — Encolar un aviso por versión de vencimiento** · 25 min · RF-80–RF-82
+- [x] **M1-T117 — Encolar un aviso por versión de vencimiento** · 25 min · RF-80–RF-82
 
   Dependencias: M1-T116, M1-T029.
 
   Hecho cuando: el envío refiere a la administradora vigente y a la versión de vencimiento; dos detecciones no crean dos avisos lógicos para la misma versión.
 
-- [ ] **M1-T118 — Revalidar y enviar avisos desde la bandeja** · 25 min · RF-80–RF-82
+- [x] **M1-T118 — Revalidar y enviar avisos desde la bandeja** · 25 min · RF-80–RF-82
 
   Dependencias: M1-T117, M1-T032.
 
   Hecho cuando: antes del envío se revalida vencimiento/destinatario, se descartan avisos obsoletos y se reintenta solo mientras siga vigente; un confirmado no se reenvía.
 
-- [ ] **M1-T119 — Invalidar avisos al cambiar vencimiento o estado** · 20 min · RF-75–RF-76, RF-80–RF-82
+- [x] **M1-T119 — Invalidar avisos al cambiar vencimiento o estado** · 20 min · RF-75–RF-76, RF-80–RF-82
 
   Dependencias: M1-T118, M1-T051.
 
   Hecho cuando: renovar, suspender efectivamente o reactivar actualiza la elegibilidad y versión; un aviso pendiente anterior no anuncia un vencimiento sustituido.
 
-- [ ] **M1-T120 — Probar avisos con reloj, fallos y dos procesadores** · 25 min · RF-80–RF-85
+- [x] **M1-T120 — Probar avisos con reloj, fallos y dos procesadores** · 25 min · RF-80–RF-85
 
   Dependencias: M1-T119, M1-T007.
 
   Hecho cuando: pruebas verifican frontera de 48 h, caída/reintento, expiración, renovación y procesadores simultáneos, sin repetir confirmados ni enviar avisos ya invalidados.
+
+  Evidencia T116–T120: [implementación y resultados](resultados-tareas/resultados-t116-t120.md).
 
 ## 12. Integración, regresión y cierre
 

@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import type { EntityManager } from 'typeorm';
 import { CodigoAcceso, PropositoCodigoAcceso } from '../codigos/entities/codigo-acceso.entity';
 import { Licencia } from '../licencias/entities/licencia.entity';
+import { avisoElegible } from '../licencias/services/aviso-elegible';
+import { Negocio } from '../negocios/entities/negocio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Rol } from '../auth/enums/rol.enum';
 import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from './entities/envio-correo.entity';
@@ -55,10 +57,14 @@ export class BandejaCorreoService {
     const usuario = await manager.getRepository(Usuario).findOneBy({
       id: datos.usuarioId, negocioId: datos.negocioId, rol: Rol.ADMIN_NEGOCIO,
     });//busca al usuario administrador de negocio correspondiente al aviso de vencimientoS
-    if (!licencia || !usuario || usuario.activadoEn === null || !usuario.activo) {
+    const negocio = await manager.getRepository(Negocio).findOneBy({ id: datos.negocioId });
+    if (!licencia || !usuario || !negocio || usuario.activadoEn === null || !usuario.activo ||
+      negocio.activadoEn === null || negocio.correoAdministrador !== usuario.email ||
+      licencia.versionVencimiento !== datos.versionVencimiento ||
+      !avisoElegible(licencia, datos.ahora)) {
       throw new ConflictException('La licencia o su administrador no están disponibles para envío.');
-    }//valida que la licencia y el usuario existan, que el usuario esté activado y activo
-    // La selección de vencimientos elegibles y su versión se conectará en T116–T118.
+    }
+    // La versión y el destinatario proceden del estado confirmado, no del solicitante.
     return this.guardar(manager, {
       negocioId: datos.negocioId, tipo: TipoEnvioCorreo.AVISO_VENCIMIENTO,
       correoDestinatario: usuario.email, codigoAccesoId: null, licenciaId: licencia.id,

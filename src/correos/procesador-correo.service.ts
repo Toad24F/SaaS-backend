@@ -7,6 +7,8 @@ import { DerivadorCodigo } from '../codigos/derivador-codigo';
 import { AltaAdministrador, EstadoAltaAdministrador } from '../altas/entities/alta-administrador.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
+import { Licencia } from '../licencias/entities/licencia.entity';
+import { avisoElegible } from '../licencias/services/aviso-elegible';
 import { Rol } from '../auth/enums/rol.enum';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { RelojSistema } from '../comun/reloj';
@@ -35,11 +37,9 @@ export class ProcesadorCorreoService {
     const ahora = this.reloj.ahora();
     return this.db.transaction(async (manager) => {
       // Solo bloquea la fila de trabajo. La consulta bloqueante reevalúa el ganador concurrente.
-      // Los avisos de licencia se conectarán al procesador en T118.
       const repo = manager.getRepository(EnvioCorreo);
       const envio = await repo.createQueryBuilder('envio').setLock('pessimistic_write')
-        .where('envio.codigoAccesoId IS NOT NULL')
-        .andWhere(`((envio.estado IN ('pendiente','fallido') AND envio.proximoIntentoEn <= :ahora)
+        .where(`((envio.estado IN ('pendiente','fallido') AND envio.proximoIntentoEn <= :ahora)
           OR (envio.estado = 'tomado' AND envio.arrendadoHasta <= :ahora))`, { ahora })
         .orderBy('envio.id', 'ASC').take(1).getOne();
       if (!envio) return null;
@@ -56,7 +56,8 @@ export class ProcesadorCorreoService {
     if (!toma) return null;
     let mensaje: MensajeCorreo | null;
     try {
-      mensaje = await this.db.transaction(async (manager) => {
+      mensaje = toma.licenciaId !== null ? await this.prepararAviso(toma) :
+        await this.db.transaction(async (manager) => {
         const datos = await this.bloquearCodigo(manager, toma);
         if (!this.leaseVigente(datos.envio, toma)) return null;
         const preparado = this.mensajeVigente(datos);
@@ -69,7 +70,7 @@ export class ProcesadorCorreoService {
           await manager.getRepository(EnvioCorreo).save(datos.envio);
         }
         return preparado;
-      });
+        });
     } catch {
       await this.registrarResultado(toma, new Error('Preparación no disponible.'));
       return this.consultarEstado(toma.id);
@@ -115,6 +116,32 @@ export class ProcesadorCorreoService {
       await this.autorizar(manager, actorId, negocioId);
       const referencia = await manager.getRepository(EnvioCorreo).findOneBy({ id: envioId, negocioId });
       if (!referencia) throw new NotFoundException('Envío no encontrado.');
+      if (referencia.licenciaId !== null) {
+        // La misma validación impide reintentar versiones o destinatarios sustituidos.
+        const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
+          .setLock('pessimistic_write').where('licencia.id = :id AND licencia.negocioId = :negocioId',
+            { id: referencia.licenciaId, negocioId }).getOne();
+        const envioAviso = await manager.getRepository(EnvioCorreo).createQueryBuilder('envio')
+          .setLock('pessimistic_write').where('envio.id = :id', { id: envioId }).getOneOrFail();
+        if (!licencia || !await this.avisoVigente(manager, envioAviso, licencia) ||
+          [EstadoEnvioCorreo.ENVIADO, EstadoEnvioCorreo.DESCARTADO].includes(envioAviso.estado) ||
+          (envioAviso.estado === EstadoEnvioCorreo.TOMADO &&
+            envioAviso.arrendadoHasta! > this.reloj.ahora())) {
+          throw new ConflictException('El envío está confirmado, ocupado u obsoleto.');
+        }
+        if (envioAviso.estado === EstadoEnvioCorreo.PENDIENTE) return vista(envioAviso);
+        const antes = envioAviso.estado;
+        envioAviso.estado = EstadoEnvioCorreo.PENDIENTE;
+        envioAviso.proximoIntentoEn = this.reloj.ahora();
+        envioAviso.arrendamientoId = null;
+        envioAviso.arrendadoHasta = null;
+        await manager.getRepository(EnvioCorreo).save(envioAviso);
+        await new AuditoriaService().registrar(manager, { operacionId: randomUUID(),
+          actorUsuarioId: actorId, negocioId, usuarioId: null, licenciaId: null,
+          accion: 'envio_reintento_solicitado', valoresAntes: { estado: antes },
+          valoresDespues: { envioId, estado: envioAviso.estado } });
+        return vista(envioAviso);
+      }
       const datos = await this.bloquearCodigo(manager, referencia);
       const envio = datos.envio;
       if ([EstadoEnvioCorreo.ENVIADO, EstadoEnvioCorreo.DESCARTADO].includes(envio.estado) ||//si el envío ya fue enviado o descartado, no se puede reintentar
@@ -171,6 +198,42 @@ export class ProcesadorCorreoService {
       .setLock('pessimistic_write').where('envio.id = :id AND envio.negocioId = :negocioId',
         { id: referencia.id, negocioId: referencia.negocioId }).getOneOrFail();
     return { envio, codigo, destino };
+  }
+
+  private async prepararAviso(toma: EnvioCorreo): Promise<MensajeCorreo | null> {
+    return this.db.transaction(async (manager) => {
+      // Licencia -> envío comparte orden con renovación e invalidación del pendiente.
+      const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
+        .setLock('pessimistic_write')
+        .where('licencia.id = :id AND licencia.negocioId = :negocioId',
+          { id: toma.licenciaId, negocioId: toma.negocioId }).getOne();
+      const envio = await manager.getRepository(EnvioCorreo).createQueryBuilder('envio')
+        .setLock('pessimistic_write').where('envio.id = :id', { id: toma.id }).getOneOrFail();
+      if (!this.leaseVigente(envio, toma)) return null;
+      if (!licencia || !await this.avisoVigente(manager, envio, licencia)) {
+        envio.estado = EstadoEnvioCorreo.DESCARTADO;
+        envio.arrendamientoId = null;
+        envio.arrendadoHasta = null;
+        envio.ultimoError = 'Vencimiento o destinatario no vigente.';
+        await manager.getRepository(EnvioCorreo).save(envio);
+        return null;
+      }
+      return { destinatario: envio.correoDestinatario,
+        asunto: 'Aviso de vencimiento de licencia',
+        texto: `La licencia de tu negocio vence el ${licencia.venceEn!.toISOString()}.` };
+    });
+  }
+
+  private async avisoVigente(manager: EntityManager, envio: EnvioCorreo,
+    licencia: Licencia): Promise<boolean> {
+    if (!avisoElegible(licencia, this.reloj.ahora()) ||
+      licencia.versionVencimiento !== envio.versionVencimiento) return false;
+    const negocio = await manager.getRepository(Negocio).findOneBy({ id: licencia.negocioId });
+    if (!negocio?.correoAdministrador || negocio.activadoEn === null ||
+      negocio.correoAdministrador !== envio.correoDestinatario) return false;
+    const admin = await manager.getRepository(Usuario).findOneBy({ negocioId: negocio.id,
+      email: envio.correoDestinatario, rol: Rol.ADMIN_NEGOCIO, activo: true });
+    return admin?.activadoEn !== null && admin?.activadoEn !== undefined;
   }
 
   private mensajeVigente({ envio, codigo, destino }: Awaited<ReturnType<ProcesadorCorreoService['bloquearCodigo']>>): MensajeCorreo | null {

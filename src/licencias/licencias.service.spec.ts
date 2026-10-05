@@ -5,6 +5,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Licencia } from './entities/licencia.entity';
 import { LicenciasService } from './licencias.service';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
+import { EnvioCorreo } from '../correos/entities/envio-correo.entity';
 
 describe('Renovación anual durante suspensión (T051)', () => {
   const inicio = new Date('2026-02-28T12:00:00.000Z');
@@ -23,9 +24,13 @@ describe('Renovación anual durante suspensión (T051)', () => {
       createQueryBuilder: () => ({ setLock() { return this; }, where() { return this; }, getOne: async () => licencia }),
       save: jest.fn(async (valor: Licencia) => Object.assign(licencia, valor)),
     };
+    const consultaEnvios = { update() { return this; }, set() { return this; },
+      where() { return this; }, andWhere() { return this; },
+      execute: jest.fn().mockResolvedValue({ affected: 0 }) };
     const manager = {
-      getRepository: (entidad: typeof Licencia | typeof Usuario) => entidad === Licencia
-        ? repositorioLicencia : { findOneBy: async () => actor },
+      getRepository: (entidad: typeof Licencia | typeof Usuario | typeof EnvioCorreo) =>
+        entidad === Licencia ? repositorioLicencia : entidad === EnvioCorreo
+          ? { createQueryBuilder: () => consultaEnvios } : { findOneBy: async () => actor },
     };
     const repositorio = { manager: { transaction: (operacion: (tx: typeof manager) => unknown) => operacion(manager) } };
     const auditoria = { registrar: jest.fn().mockResolvedValue(undefined) };

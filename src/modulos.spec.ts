@@ -26,6 +26,7 @@ import { CorreoAcceso } from './altas/entities/correo-acceso.entity';
 import { EnvioCorreo } from './correos/entities/envio-correo.entity';
 import { ProcesadorCorreoService } from './correos/procesador-correo.service';
 import { CorreosModule } from './correos/correos.module';
+import { AvisosVencimientoService } from './licencias/services/avisos-vencimiento.service';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
   CodigosModule, AltasModule, AuditoriaModule, CorreosModule];
@@ -57,6 +58,8 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       // T035 incorpora Correos: evita abrir conexión para el procesador bajo demanda.
       .overrideProvider(getRepositoryToken(EnvioCorreo)).useValue({})
       .overrideProvider(ProcesadorCorreoService).useValue({})
+      // El detector se invoca bajo demanda y tampoco requiere abrir una base aquí.
+      .overrideProvider(AvisosVencimientoService).useValue({})
       .compile();
     try {
       await modulo.init();

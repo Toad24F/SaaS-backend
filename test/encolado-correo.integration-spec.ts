@@ -97,11 +97,18 @@ describe('M1-T029: encolado dentro de la transacción de dominio', () => {
   it('encola avisos solo para licencia y administrador completos del propio negocio', async () => {
     await conBaseMigrada(async (db) => {
       const { negocioId, ajenoId } = await escenario(db);
-      const licenciaId = Number((await db.query('INSERT INTO licencias (negocio_id) VALUES (?)', [negocioId])).insertId);
+      const fecha = new Date(Date.now() + 120_000);
+      const vence = new Date(fecha.getTime() + 48 * 60 * 60 * 1000);
+      await db.query(`UPDATE negocios SET activado_en=?, correo_administrador='cuenta@example.test'
+        WHERE id=?`, [fecha, negocioId]);
+      const licenciaId = Number((await db.query(`INSERT INTO licencias
+        (negocio_id,habilitada_en,vence_en,version_vencimiento) VALUES (?,?,?,1)`,
+      [negocioId, fecha, vence])).insertId);
       const usuarioId = Number((await db.query(`INSERT INTO usuarios
         (negocio_id, nombre, email, password_hash, rol, activado_en)
-        VALUES (?, 'Admin', 'cuenta@example.test', 'hash', 'admin_negocio', UTC_TIMESTAMP(6))`, [negocioId])).insertId);
-      const datos = { negocioId, licenciaId, usuarioId, versionVencimiento: 1, ahora };
+        VALUES (?, 'Admin', 'cuenta@example.test', 'hash', 'admin_negocio', ?)`,
+      [negocioId, fecha])).insertId);
+      const datos = { negocioId, licenciaId, usuarioId, versionVencimiento: 1, ahora: fecha };
       await expect(db.transaction((manager) => bandeja.encolarAviso(manager,
         { ...datos, negocioId: ajenoId }))).rejects.toThrow();
       await expect(db.transaction((manager) => bandeja.encolarAviso(manager,

@@ -17,7 +17,7 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 @Index('idx_licencias_vencimiento', ['suspendidaEn', 'venceEn'])
 @Check('chk_licencias_vigencia', '(habilitada_en IS NULL AND vence_en IS NULL) OR (habilitada_en IS NOT NULL AND vence_en IS NOT NULL AND vence_en > habilitada_en)')
 @Check('chk_licencias_habilitacion', 'habilitada_en IS NULL OR habilitada_en >= creado_en')
-@Check('chk_licencias_suspension', 'suspendida_en IS NULL OR (suspendida_en >= creado_en AND (habilitada_en IS NULL OR (suspendida_en >= habilitada_en AND suspendida_en < vence_en)))')
+@Check('chk_licencias_suspension', 'suspendida_en IS NULL OR (suspendida_en >= creado_en AND (habilitada_en IS NULL OR suspendida_en >= habilitada_en))')
 export class Licencia {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
