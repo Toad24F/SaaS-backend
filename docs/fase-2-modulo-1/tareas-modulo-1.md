@@ -851,35 +851,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T121–T125: [implementación y resultados](resultados-tareas/resultados-t121-t125.md).
 
-- [ ] **M1-T126 — Sincronizar el SQL de licencias** · 15 min · RF-69–RF-85
+- [x] **M1-T126 — Sincronizar el SQL de licencias** · 15 min · RF-69–RF-85
 
   Dependencias: M1-T057, M1-T058, M1-T120.
 
   Hecho cuando: el SQL representa las fechas, estados, remanente y versión adoptados en las migraciones y admite suspensión con remanente cero.
 
-- [ ] **M1-T127 — Verificar instalación completa sobre base desechable** · 25 min · RF-01–RF-88
+- [x] **M1-T127 — Verificar instalación completa sobre base desechable** · 25 min · RF-01–RF-88
 
   Dependencias: M1-T124, M1-T125, M1-T126, M1-T004.
 
   Hecho cuando: las migraciones históricas más las nuevas se aplican en una base temporal validada, una segunda ejecución no agrega cambios y la comparación con el esquema queda registrada; no se toca la base cotidiana.
 
-- [ ] **M1-T128 — Actualizar y ejecutar la regresión compatible de autenticación** · 25 min · RF-01–RF-19, RF-29–RF-30, RF-35–RF-36
+- [x] **M1-T128 — Actualizar y ejecutar la regresión compatible de autenticación** · 25 min · RF-01–RF-19, RF-29–RF-30, RF-35–RF-36
 
   Dependencias: M1-T044, M1-T080, M1-T053.
 
   Hecho cuando: sesiones, contraseñas, recepción y límites de intentos conservan contratos compatibles; se sustituyen expectativas de cuentas incompletas/códigos en respuestas sin cambiar evidencias históricas ni añadir recuperación por código al Profesional.
 
-- [ ] **M1-T129 — Completar regresión anual y rollback de licencias** · 25 min · RF-69–RF-85
+- [x] **M1-T129 — Completar regresión anual y rollback de licencias** · 25 min · RF-69–RF-85
 
   Dependencias: M1-T058, M1-T057, M1-T122.
 
   Hecho cuando: casos de aniversario bisiesto, remanente cero, renovaciones simultáneas y fallo transaccional verifican calendario America/Chihuahua y ausencia de tiempo o eventos duplicados.
 
-- [ ] **M1-T130 — Auditar permisos HTTP de catálogos y perfiles** · 25 min · RF-01–RF-05, RF-20–RF-36, RF-66–RF-68, RF-86–RF-88
+- [x] **M1-T130 — Auditar permisos HTTP de catálogos y perfiles** · 25 min · RF-01–RF-05, RF-20–RF-36, RF-66–RF-68, RF-86–RF-88
 
   Dependencias: M1-T065, M1-T080, M1-T070, M1-T115, M1-T100.
 
   Hecho cuando: pruebas de los cuatro roles e IDs cruzados por ruta/cuerpo rechazan permisos indebidos, incluido cupo por admin y selección de otro Profesional, sin efectos laterales.
+
+  Evidencia T126–T130: [implementación y resultados](resultados-tareas/resultados-t126-t130.md).
 
 - [ ] **M1-T131 — Auditar permisos HTTP de horarios y bloqueos** · 25 min · RF-01–RF-05, RF-37–RF-65
 

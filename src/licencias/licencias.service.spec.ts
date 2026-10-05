@@ -32,7 +32,9 @@ describe('Renovación anual durante suspensión (T051)', () => {
         entidad === Licencia ? repositorioLicencia : entidad === EnvioCorreo
           ? { createQueryBuilder: () => consultaEnvios } : { findOneBy: async () => actor },
     };
-    const repositorio = { manager: { transaction: (operacion: (tx: typeof manager) => unknown) => operacion(manager) } };
+    // El doble acepta el aislamiento explícito que usa la transición real.
+    const repositorio = { manager: { transaction: (_aislamiento: string,
+      operacion: (tx: typeof manager) => unknown) => operacion(manager) } };
     const auditoria = { registrar: jest.fn().mockResolvedValue(undefined) };
     return { instancia: new LicenciasService(repositorio as never, new AutorizacionService(),
       new CalendarioLicenciasService(), auditoria as unknown as AuditoriaService), licencia, auditoria };

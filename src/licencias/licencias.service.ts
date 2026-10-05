@@ -125,7 +125,8 @@ export class LicenciasService {
       try {
         // Cada intento abre una transacción nueva: nunca reutiliza una vista ni
         // una entidad de licencia obtenida antes del rollback de MariaDB.
-        await this.licencias.manager.transaction(async (manager) => {
+        // READ COMMITTED evita reutilizar una vista anterior al bloqueo de otra transición.
+        await this.licencias.manager.transaction('READ COMMITTED', async (manager) => {
           const actor = await manager.getRepository(Usuario).findOneBy({ id: actorId });
           if (!actor) throw new ForbiddenException('Acceso denegado.');
           this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_LICENCIA);

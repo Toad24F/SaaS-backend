@@ -37,7 +37,7 @@ export class AccesoCodigoController {
         codigo: datos.codigo,
         nombre: datos.nombre,
         password: datos.password,
-        correo: datos.correo /*negocioId: datos.negocioId,*/,
+        correo: datos.correo, negocioId: datos.negocioId,
         ahora: this.reloj.ahora(),
       });
     } catch (error) {

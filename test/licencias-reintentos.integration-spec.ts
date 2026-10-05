@@ -42,6 +42,59 @@ const conflictoDeVista = () => Object.assign(new Error('Vista de licencia desact
 });
 
 describe('Licencias — reintentos de transacción por ER_CHECKREAD', () => {
+  it('calcula el aniversario bisiesto en America/Chihuahua', () => {
+    const calendario = new CalendarioLicenciasService();
+    // 15:30Z equivale a 09:30 del 29 de febrero en Chihuahua.
+    const alta = new Date('2024-02-29T15:30:00.123Z');
+    expect(calendario.sumarAnios(alta)).toEqual(new Date('2025-02-28T15:30:00.123Z'));
+    expect(calendario.sumarAnios(alta, 4)).toEqual(new Date('2028-02-29T15:30:00.123Z'));
+  });
+
+  it('congela remanente cero al vencer durante la gracia y no duplica eventos', async () => {
+    await conBaseMigrada(async (db) => {
+      const { actor, licencia, ahora } = await escenario(db);
+      const limite = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+      // La licencia vence antes del bloqueo programado: su saldo debe quedar en cero.
+      await db.getRepository(Licencia).update(licencia.id, {
+        venceEn: new Date(limite.getTime() - 1000),
+      });
+      const licencias = servicio(db);
+      await licencias.suspender(actor.id, licencia.id, ahora);
+      await licencias.materializarSuspension(actor.id, licencia.id, limite);
+      await licencias.materializarSuspension(actor.id, licencia.id, limite);
+      const congelada = await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id });
+      expect(congelada).toMatchObject({ congeladaEn: limite, remanenteMs: '0' });
+      expect(await db.getRepository(EventoAuditoria).countBy({
+        licenciaId: licencia.id, accion: 'licencia_congelada',
+      })).toBe(1);
+      const retorno = new Date(limite.getTime() + 1000);
+      await licencias.reactivar(actor.id, licencia.id, retorno);
+      expect((await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id })).venceEn)
+        .toEqual(retorno);
+    });
+  });
+
+  it('revierte la renovación completa si falla la auditoría y permite reintentar una sola vez', async () => {
+    await conBaseMigrada(async (db) => {
+      const { actor, licencia, ahora } = await escenario(db);
+      const original = await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id });
+      const auditoria = new AuditoriaService();
+      const fallo = jest.spyOn(auditoria, 'registrar').mockRejectedValueOnce(new Error('Fallo controlado'));
+      const licencias = new LicenciasService(db.getRepository(Licencia),
+        new AutorizacionService(), new CalendarioLicenciasService(), auditoria);
+      await expect(licencias.renovar(actor.id, licencia.id, ahora)).rejects.toThrow('Fallo controlado');
+      expect(await db.getRepository(Licencia).findOneByOrFail({ id: licencia.id }))
+        .toMatchObject({ venceEn: original.venceEn, versionVencimiento: original.versionVencimiento });
+      expect(await db.getRepository(EventoAuditoria).countBy({
+        licenciaId: licencia.id, accion: 'licencia_renovada',
+      })).toBe(0);
+      fallo.mockRestore();
+      await licencias.renovar(actor.id, licencia.id, ahora);
+      expect(await db.getRepository(EventoAuditoria).countBy({
+        licenciaId: licencia.id, accion: 'licencia_renovada',
+      })).toBe(1);
+    });
+  });
   it('repite la transacción completa y registra una sola suspensión después del conflicto', async () => {
     await conBaseMigrada(async (db) => {
       const { actor, licencia, ahora } = await escenario(db);

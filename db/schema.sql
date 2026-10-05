@@ -105,14 +105,15 @@ CREATE TABLE licencias (
   habilitada_en  DATETIME(6) NULL,
   vence_en       DATETIME(6) NULL,
   suspendida_en  DATETIME(6) NULL,
+  creado_en      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+                   ON UPDATE CURRENT_TIMESTAMP(6),
+  -- Estas columnas se agregaron después en las migraciones; el orden refleja la instalación.
   suspension_solicitada_en DATETIME(6) NULL,
   bloqueo_programado_en DATETIME(6) NULL,
   congelada_en DATETIME(6) NULL,
   remanente_ms BIGINT UNSIGNED NULL,
   version_vencimiento INT UNSIGNED NOT NULL DEFAULT 0,
-  creado_en      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
-                   ON UPDATE CURRENT_TIMESTAMP(6),
   UNIQUE KEY uq_licencias_negocio (negocio_id),
   UNIQUE KEY uq_licencias_negocio_id (negocio_id, id),
   INDEX idx_licencias_vencimiento (suspendida_en, vence_en),

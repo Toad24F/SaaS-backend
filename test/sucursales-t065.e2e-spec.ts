@@ -59,6 +59,96 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
 }
 
 describe('M1-T065: HTTP de sucursales y cupo', () => {
+  it('T130 audita cuatro roles, IDs cruzados y cuerpos ajenos sin efectos laterales', async () => {
+    await conHttp(async ({ app, db, tokens, negocios }) => {
+      const http = app.getHttpServer();
+      const sucursal = (await request(http).post('/sucursales')
+        .auth(tokens[1], { type: 'bearer' }).send(entrada).expect(201)).body;
+      const servicio = (await request(http).post('/servicios')
+        .auth(tokens[1], { type: 'bearer' })
+        .send({ nombre: 'Consulta', costo: '10.00', duracionMinutos: 30 }).expect(201)).body;
+      const perfil = (await request(http).post('/profesionales')
+        .auth(tokens[1], { type: 'bearer' })
+        .send({ nombre: 'Profesional A', correo: 'perfil-a@example.test',
+          password: 'Clave-profesional-123' }).expect(201)).body;
+      const ajeno = (await request(http).post('/profesionales')
+        .auth(tokens[4], { type: 'bearer' })
+        .send({ nombre: 'Profesional B', correo: 'perfil-b@example.test',
+          password: 'Clave-profesional-123' }).expect(201)).body;
+      const antes = await db.query(`SELECT
+        (SELECT COUNT(*) FROM sucursales) sucursales,
+        (SELECT COUNT(*) FROM servicios) servicios,
+        (SELECT COUNT(*) FROM personal_servicios) selecciones,
+        (SELECT COUNT(*) FROM eventos_auditoria) eventos`);
+      // Superadmin solo cambia cupos; Recepción y Profesional no crean catálogos.
+      for (const indice of [0, 2, 3, 5, 6]) {
+        await request(http).post('/sucursales').auth(tokens[indice], { type: 'bearer' })
+          .send(entrada).expect(403);
+        await request(http).post('/servicios').auth(tokens[indice], { type: 'bearer' })
+          .send({ nombre: 'Intruso', costo: '1.00', duracionMinutos: 10 }).expect(403);
+        await request(http).post('/profesionales').auth(tokens[indice], { type: 'bearer' })
+          .send({ nombre: 'Intruso', correo: 'intruso@example.test',
+            password: 'Clave-profesional-123' }).expect(403);
+      }
+      await request(http).get('/sucursales/cupo').auth(tokens[1], { type: 'bearer' })
+        .expect(200);
+      await request(http).get('/sucursales/cupo').auth(tokens[4], { type: 'bearer' })
+        .expect(200);
+      for (const indice of [0, 2, 3]) await request(http).get('/sucursales/cupo')
+        .auth(tokens[indice], { type: 'bearer' }).expect(403);
+      await request(http).patch(`/negocios/${negocios[0].id}/limite-sucursales`)
+        .auth(tokens[1], { type: 'bearer' }).send({ limiteSucursales: 2 }).expect(403);
+      await request(http).get(`/negocios/${negocios[0].id}/cupo-sucursales`)
+        .auth(tokens[1], { type: 'bearer' }).expect(403);
+      await request(http).get(`/negocios/${negocios[0].id}/cupo-sucursales`)
+        .auth(tokens[0], { type: 'bearer' }).expect(200);
+      await request(http).patch(`/negocios/${negocios[0].id}/limite-sucursales`)
+        .auth(tokens[0], { type: 'bearer' })
+        .send({ limiteSucursales: 2, negocioId: negocios[1].id }).expect(400);
+      // Los IDs de la ruta y los del cuerpo no atraviesan el aislamiento del negocio.
+      await request(http).get(`/sucursales/${sucursal.id}`)
+        .auth(tokens[4], { type: 'bearer' }).expect(404);
+      await request(http).patch(`/sucursales/${sucursal.id}`)
+        .auth(tokens[4], { type: 'bearer' }).send({ nombre: 'Ajena' }).expect(404);
+      await request(http).post(`/sucursales/${sucursal.id}/desactivar`)
+        .auth(tokens[4], { type: 'bearer' }).send({}).expect(404);
+      await request(http).delete(`/sucursales/${sucursal.id}`)
+        .auth(tokens[4], { type: 'bearer' }).expect(404);
+      await request(http).get(`/servicios/${servicio.id}`)
+        .auth(tokens[4], { type: 'bearer' }).expect(404);
+      await request(http).patch(`/servicios/${servicio.id}`)
+        .auth(tokens[4], { type: 'bearer' }).send({ nombre: 'Ajeno' }).expect(404);
+      await request(http).post(`/servicios/${servicio.id}/desactivar`)
+        .auth(tokens[4], { type: 'bearer' }).send({}).expect(404);
+      await request(http).delete(`/servicios/${servicio.id}`)
+        .auth(tokens[4], { type: 'bearer' }).expect(404);
+      await request(http).get(`/profesionales/${perfil.id}`)
+        .auth(tokens[4], { type: 'bearer' }).expect(404);
+      await request(http).post(`/profesionales/${perfil.id}/desactivar`)
+        .auth(tokens[4], { type: 'bearer' }).send({}).expect(404);
+      await request(http).put(`/profesionales/${perfil.id}/sucursales`)
+        .auth(tokens[4], { type: 'bearer' })
+        .send({ sucursalIds: [sucursal.id] }).expect(404);
+      await request(http).put(`/profesionales/${ajeno.id}/sucursales`)
+        .auth(tokens[4], { type: 'bearer' })
+        .send({ sucursalIds: [sucursal.id] }).expect(404);
+      await request(http).put(`/profesionales/${ajeno.id}/servicios`)
+        .auth(tokens[4], { type: 'bearer' })
+        .send({ servicioIds: [servicio.id] }).expect(404);
+      await request(http).put(`/profesionales/${perfil.id}/servicios`)
+        .auth(tokens[3], { type: 'bearer' })
+        .send({ servicioIds: [servicio.id] }).expect(403);
+      await request(http).get(`/profesionales/${perfil.id}/servicios`)
+        .auth(tokens[3], { type: 'bearer' }).expect(403);
+      await request(http).post('/sucursales').auth(tokens[4], { type: 'bearer' })
+        .send({ ...entrada, negocioId: negocios[0].id }).expect(400);
+      expect(await db.query(`SELECT
+        (SELECT COUNT(*) FROM sucursales) sucursales,
+        (SELECT COUNT(*) FROM servicios) servicios,
+        (SELECT COUNT(*) FROM personal_servicios) selecciones,
+        (SELECT COUNT(*) FROM eventos_auditoria) eventos`)).toEqual(antes);
+    });
+  });
   it('crea, consulta, edita y desactiva conservando pertenencia y cupo', async () => {
     await conHttp(async ({ app, db, tokens, negocios }) => {
       const http = app.getHttpServer();

@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsInt,
@@ -23,11 +23,11 @@ export class CodigoContrasenaDto {
 
 /** Activación exige negocio y destinatario, sin permitir elegir rol ni usuario. */
 export class ActivarCuentaDto extends CodigoContrasenaDto {
-  /*@Type(() => Number)
+  // El negocio es obligatorio y se contrasta con el que está ligado al código.
   @IsInt()
   @Min(1)
   @Max(4294967295)
-  negocioId: number;*/
+  negocioId: number;
 
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,

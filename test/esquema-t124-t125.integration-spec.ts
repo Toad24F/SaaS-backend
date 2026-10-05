@@ -9,6 +9,7 @@ const IDENTIDAD = ['negocios', 'usuarios', 'altas_administrador', 'correos_acces
 const CALENDARIO = ['sucursales', 'servicios', 'personal', 'personal_sucursales',
   'personal_servicios', 'horarios_personal', 'excepciones_horario',
   'franjas_excepcion_horario', 'bloqueos_horario'];
+const LICENCIAS = ['licencias'];
 
 async function metadatos(conexion: { query: (sql: string, valores?: unknown[]) => Promise<unknown> },
   base: string, tablas: string[]) {
@@ -52,7 +53,8 @@ async function metadatos(conexion: { query: (sql: string, valores?: unknown[]) =
 
 describe('M1-T124–T125 SQL de referencia frente a migraciones', () => {
   it.each([['identidad y mensajería', IDENTIDAD],
-    ['catálogos y calendario', CALENDARIO]])('%s coincide en columnas, índices y pertenencia',
+    ['catálogos y calendario', CALENDARIO],
+    ['licencias T126', LICENCIAS]])('%s coincide en columnas, índices y pertenencia',
     async (_nombre, tablas) => {
       await conBaseMigrada(async (migrada) => {
         const base = `citas_esquema_${randomUUID().replaceAll('-', '')}`;

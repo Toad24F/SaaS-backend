@@ -94,7 +94,7 @@ describe('T45 — login, perfil y logout HTTP', () => {
     });
   });
 
-  it('unifica errores para correo desconocido, contraseña incorrecta, cuenta inactiva y pendiente', async () => {
+  it('unifica errores para correo desconocido, contraseña incorrecta y cuenta inactiva', async () => {
     await conHttp(async ({ app, db, usuario }) => {
       const enviar = (email: string, clave: string) => request(app.getHttpServer())
         .post('/auth/login').send({ email, password: clave }).expect(401);
@@ -104,11 +104,8 @@ describe('T45 — login, perfil y logout HTTP', () => {
       expect((await enviar(usuario.email, 'x')).body).toEqual(desconocido.body);
       await db.getRepository(Usuario).update(usuario.id, { activo: false });
       expect((await enviar(usuario.email, password)).body).toEqual(desconocido.body);
-      // La cuenta pendiente debe respetar la restricción SQL: no posee credenciales.
-      await db.getRepository(Usuario).update(usuario.id, {
-        activo: true, activadoEn: null, nombre: null, passwordHash: null,
-      });
-      expect((await enviar(usuario.email, password)).body).toEqual(desconocido.body);
+      // El alta pendiente de fase 2 todavía no crea Usuario; su correo equivale a desconocido.
+      expect((await enviar('invitacion@example.test', password)).body).toEqual(desconocido.body);
     });
   });
 
