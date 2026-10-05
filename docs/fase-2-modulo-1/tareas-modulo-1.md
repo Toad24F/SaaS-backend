@@ -819,35 +819,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 12. Integración, regresión y cierre
 
-- [ ] **M1-T121 — Conectar ejecución periódica y recuperación de la bandeja** · 25 min · RF-14–RF-18, RF-80–RF-82
+- [x] **M1-T121 — Conectar ejecución periódica y recuperación de la bandeja** · 25 min · RF-14–RF-18, RF-80–RF-82
 
   Dependencias: M1-T033, M1-T120.
 
   Hecho cuando: el ejecutor toma envíos y detecta avisos al arrancar/ejecutarse, recupera arrendamientos vencidos y una prueba con reinicio usa transporte falso sin perder pendientes.
 
-- [ ] **M1-T122 — Conectar conciliación de suspensiones vencidas** · 20 min · RF-72–RF-73, RF-79
+- [x] **M1-T122 — Conectar conciliación de suspensiones vencidas** · 20 min · RF-72–RF-73, RF-79
 
   Dependencias: M1-T049, M1-T058.
 
   Hecho cuando: un ciclo con reloj fijo materializa suspensiones vencidas una sola vez; acceso y remanente siguen correctos si el ciclo se retrasa o no corre.
 
-- [ ] **M1-T123 — Verificar configuración y rotación de claves de correo** · 20 min · RF-14–RF-19, RF-80–RF-82
+- [x] **M1-T123 — Verificar configuración y rotación de claves de correo** · 20 min · RF-14–RF-19, RF-80–RF-82
 
   Dependencias: M1-T028, M1-T022, M1-T121.
 
   Hecho cuando: la configuración documentada separa claves de JWT/códigos y remitente/transporte, no contiene secretos y las pruebas cubren versión anterior vigente y configuración faltante sin destinatarios reales.
 
-- [ ] **M1-T124 — Sincronizar el SQL de identidad y mensajería** · 25 min · RF-06–RF-19, RF-29–RF-30
+- [x] **M1-T124 — Sincronizar el SQL de identidad y mensajería** · 25 min · RF-06–RF-19, RF-29–RF-30
 
   Dependencias: M1-T044, M1-T072, M1-T026.
 
   Hecho cuando: db/schema.sql coincide con entidades/migraciones en cuentas, invitaciones, reserva de correos y envíos; el diff no reescribe migraciones históricas.
 
-- [ ] **M1-T125 — Sincronizar el SQL de catálogos y calendario** · 25 min · RF-20–RF-68, RF-86–RF-88
+- [x] **M1-T125 — Sincronizar el SQL de catálogos y calendario** · 25 min · RF-20–RF-68, RF-86–RF-88
 
   Dependencias: M1-T115, M1-T099, M1-T110.
 
   Hecho cuando: db/schema.sql coincide con entidades/migraciones de sucursales, servicios, perfiles, relaciones, franjas, excepciones y bloqueos, con las restricciones de pertenencia.
+
+  Evidencia T121–T125: [implementación y resultados](resultados-tareas/resultados-t121-t125.md).
 
 - [ ] **M1-T126 — Sincronizar el SQL de licencias** · 15 min · RF-69–RF-85
 

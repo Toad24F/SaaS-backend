@@ -23,6 +23,7 @@ import { BloqueosModule } from './bloqueos/bloqueos.module';
 import { BloqueosHttpModule } from './bloqueos/bloqueos-http.module';
 import { CorreosModule } from './correos/correos.module';
 import { CorreosHttpModule } from './correos/correos-http.module';
+import { OperacionModule } from './operacion/operacion.module';
 
 @Module({
   imports: [
@@ -58,6 +59,8 @@ import { CorreosHttpModule } from './correos/correos-http.module';
     BloqueosHttpModule,
     CorreosModule,
     CorreosHttpModule,
+    // Al arrancar activa conciliación y bandeja; en tests se invoca con reloj falso.
+    OperacionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

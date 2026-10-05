@@ -26,7 +26,7 @@ function vista(envio: EnvioCorreo) {
   };
 }
 
-/** Procesa códigos después del commit; el arranque no dispara entregas. */
+/** Procesa códigos y avisos después del commit; el coordinador lo invoca al arrancar y por ciclo. */
 @Injectable()
 export class ProcesadorCorreoService {
   constructor(private readonly db: DataSource, private readonly transporte: TransporteCorreo,

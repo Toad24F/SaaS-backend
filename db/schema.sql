@@ -391,7 +391,7 @@ CREATE TABLE horarios_personal (
       OR (descanso_inicio_minutos IS NOT NULL AND descanso_fin_minutos IS NOT NULL
         AND descanso_inicio_minutos >= inicio_minutos
         AND descanso_inicio_minutos < descanso_fin_minutos
-        AND descanso_fin_minutos <= fin_minutos)))
+        AND descanso_fin_minutos <= fin_minutos))))
 ) ENGINE=InnoDB;
 
 -- Una cabecera sin hijas reemplaza la fecha por un día sin atención.
@@ -473,7 +473,7 @@ CREATE TABLE bloqueos_horario (
 
 -- 8. CLIENTES
 -- Por qué: guarda los datos capturados en el formulario público, con telefono VARCHAR(10) validación exigida.
---De dónde: Módulo 3, "Validación de Datos: Captura obligatoria de Nombre completo, Teléfono a 10 dígitos (para WhatsApp)".
+-- De dónde: Módulo 3, "Validación de Datos: Captura obligatoria de Nombre completo, Teléfono a 10 dígitos (para WhatsApp)".
 CREATE TABLE clientes (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   negocio_id       INT UNSIGNED NOT NULL,
