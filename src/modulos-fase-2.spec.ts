@@ -18,6 +18,7 @@ import { PersonalServicio } from './profesionales/entities/personal-servicio.ent
 import { HorarioPersonal } from './horarios/entities/horario-personal.entity';
 import { ExcepcionHorario } from './horarios/entities/excepcion-horario.entity';
 import { FranjaExcepcionHorario } from './horarios/entities/franja-excepcion-horario.entity';
+import { BloqueoHorario } from './bloqueos/entities/bloqueo-horario.entity';
 import { EventoAuditoria } from './auditoria/entities/evento-auditoria.entity';
 import { BandejaCorreoService } from './correos/bandeja-correo.service';
 import { ProcesadorCorreoService } from './correos/procesador-correo.service';
@@ -45,6 +46,8 @@ describe('M1-T008: composición inicial de fase 2', () => {
       .overrideProvider(getRepositoryToken(HorarioPersonal)).useValue({})
       .overrideProvider(getRepositoryToken(ExcepcionHorario)).useValue({})
       .overrideProvider(getRepositoryToken(FranjaExcepcionHorario)).useValue({})
+      // El modelo de bloqueos también se compone sin abrir MariaDB.
+      .overrideProvider(getRepositoryToken(BloqueoHorario)).useValue({})
       .overrideProvider(getRepositoryToken(EventoAuditoria)).useValue({}).compile();
     try {
       await modulo.init();

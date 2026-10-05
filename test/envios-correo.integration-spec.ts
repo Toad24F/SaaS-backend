@@ -29,8 +29,8 @@ describe('M1-T026: bandeja durable en MariaDB temporal', () => {
       const { uno, codigo } = await datos(primera);
       const migraciones = await primera.query('SELECT name FROM migrations ORDER BY id');
       // La lista completa incorpora suspensión programada y sucursales.
-      // Horarios y excepciones añaden dos migraciones sin alterar el historial previo.
-      expect(migraciones).toHaveLength(15);
+      // Horarios, excepciones y bloqueos añaden migraciones sin alterar el historial previo.
+      expect(migraciones).toHaveLength(16);
       const id = (await primera.query(`INSERT INTO envios_correo
         (negocio_id, tipo, correo_destinatario, codigo_acceso_id, clave_dedupe, proximo_intento_en)
         VALUES (?, 'recuperacion', 'admin@example.test', ?, 'recuperacion:1', UTC_TIMESTAMP(6))`,

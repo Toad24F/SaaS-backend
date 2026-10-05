@@ -685,35 +685,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 9. Bloqueos y disponibilidad resultante
 
-- [ ] **M1-T101 — Definir y migrar bloqueos individuales y colectivos** · 25 min · RF-55–RF-61
+- [x] **M1-T101 — Definir y migrar bloqueos individuales y colectivos** · 25 min · RF-55–RF-61
 
   Dependencias: M1-T072, M1-T008.
 
   Hecho cuando: la migración temporal persiste motivo, tipo, fechas, horas opcionales y alcances; identifica inequívocamente equipo/todas las sucursales sin relaciones ajenas.
 
-- [ ] **M1-T102 — Validar datos e intervalos de bloqueo** · 25 min · RF-55, RF-58–RF-61
+- [x] **M1-T102 — Validar datos e intervalos de bloqueo** · 25 min · RF-55, RF-58–RF-61
 
   Dependencias: M1-T101, M1-T087.
 
   Hecho cuando: pruebas aceptan rango continuo con dos horas o días completos inclusivos y rechazan tipo/motivo ausentes, una sola hora, inversión y duración nula.
 
-- [ ] **M1-T103 — Resolver permisos de lectura y gestión de bloqueos** · 25 min · RF-03, RF-05, RF-56–RF-57, RF-63–RF-64
+- [x] **M1-T103 — Resolver permisos de lectura y gestión de bloqueos** · 25 min · RF-03, RF-05, RF-56–RF-57, RF-63–RF-64
 
   Dependencias: M1-T101, M1-T009, M1-T074.
 
   Hecho cuando: la matriz distingue admin, Profesional afectado y creador; el Profesional gestiona bloqueos individuales propios incluso creados por admin, nunca colectivos ni ajenos.
 
-- [ ] **M1-T104 — Crear y editar bloqueos preservando su alcance autorizado** · 25 min · RF-55–RF-61, RF-63–RF-64
+- [x] **M1-T104 — Crear y editar bloqueos preservando su alcance autorizado** · 25 min · RF-55–RF-61, RF-63–RF-64
 
   Dependencias: M1-T102, M1-T103, M1-T010.
 
   Hecho cuando: crear/editar valida pertenencia y alcance antes y después del cambio; cambiar IDs no convierte un bloqueo propio en colectivo ni afecta otro Profesional.
 
-- [ ] **M1-T105 — Consultar y eliminar un bloqueo autorizado** · 20 min · RF-62–RF-64
+- [x] **M1-T105 — Consultar y eliminar un bloqueo autorizado** · 20 min · RF-62–RF-64
 
   Dependencias: M1-T104.
 
   Hecho cuando: listar incluye bloqueos que afectan al Profesional y eliminar actúa únicamente sobre el ID autorizado; los demás bloqueos se conservan.
+
+  Evidencia T101–T105: [modelo, permisos y resultados de pruebas](resultados-tareas/resultados-t101-t105.md).
 
 - [ ] **M1-T106 — Interpretar alcance colectivo en zonas locales** · 25 min · RF-56–RF-61
 

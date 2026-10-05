@@ -435,26 +435,40 @@ CREATE TABLE franjas_excepcion_horario (
       AND descanso_fin_minutos <= fin_minutos))
 ) ENGINE=InnoDB;
 
--- 7. BLOQUEOS DE HORARIO
--- Por que_ Cubre: descansos, vacaciones, feriados, emergencias.
--- si personal_id es NULL, el bloqueo aplica a toda la sucursal.
--- De dónde: combina dos requisitos distintos del documento; Módulo 1 (Horarios de descanso, bloqueados automáticamente) 
--- y Módulo 2 (Bloqueos Excepcionales: cancelar o bloquear días completos o franjas horarias por vacaciones, días festivos o emergencias).
+-- 7. BLOQUEOS DE HORARIO (T101-T105).
+-- personal_id NULL afecta al equipo; sucursal_id NULL afecta a todas las sedes.
+-- Ambas horas NULL incluyen cada día; con horas, el intervalo es continuo entre fechas.
 CREATE TABLE bloqueos_horario (
-  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  negocio_id     INT UNSIGNED NOT NULL,
-  personal_id    INT UNSIGNED NULL,
-  sucursal_id    INT UNSIGNED NULL,
-  tipo           ENUM('vacaciones','feriado','emergencia') NOT NULL,
-  fecha_inicio   DATE NOT NULL,
-  fecha_fin      DATE NOT NULL,
-  hora_inicio    TIME NULL,   -- NULL = todo el día
-  hora_fin       TIME NULL,
-  motivo         VARCHAR(255) NULL,
-  CONSTRAINT fk_bh_negocio  FOREIGN KEY (negocio_id)  REFERENCES negocios(id)   ON DELETE CASCADE,
-  CONSTRAINT fk_bh_personal FOREIGN KEY (personal_id) REFERENCES personal(id)  ON DELETE CASCADE,
-  CONSTRAINT fk_bh_sucursal FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE CASCADE,
-  INDEX idx_bh_negocio_fecha (negocio_id, fecha_inicio, fecha_fin)
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  negocio_id INT UNSIGNED NOT NULL,
+  personal_id INT UNSIGNED NULL,
+  sucursal_id INT UNSIGNED NULL,
+  creador_usuario_id INT UNSIGNED NOT NULL,
+  tipo VARCHAR(30) NOT NULL,
+  motivo VARCHAR(500) NOT NULL,
+  fecha_inicio DATE NOT NULL,
+  fecha_fin DATE NOT NULL,
+  inicio_minutos INT UNSIGNED NULL,
+  fin_minutos INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  UNIQUE KEY uq_bloqueos_negocio_id (negocio_id, id),
+  INDEX idx_bloqueos_profesional_fechas (negocio_id, personal_id, fecha_inicio, fecha_fin),
+  INDEX idx_bloqueos_sucursal_fechas (negocio_id, sucursal_id, fecha_inicio, fecha_fin),
+  CONSTRAINT fk_bloqueos_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bloqueos_personal FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bloqueos_sucursal FOREIGN KEY (negocio_id, sucursal_id)
+    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bloqueos_creador FOREIGN KEY (negocio_id, creador_usuario_id)
+    REFERENCES usuarios(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_bloqueos_tipo CHECK (tipo IN ('vacaciones','dia_festivo','emergencia')),
+  CONSTRAINT chk_bloqueos_motivo CHECK (CHAR_LENGTH(TRIM(motivo)) > 0),
+  CONSTRAINT chk_bloqueos_fechas CHECK (fecha_inicio <= fecha_fin),
+  CONSTRAINT chk_bloqueos_horas CHECK (
+    (inicio_minutos IS NULL AND fin_minutos IS NULL) OR
+    (inicio_minutos BETWEEN 0 AND 1439 AND fin_minutos BETWEEN 1 AND 1440
+      AND (fecha_inicio < fecha_fin OR inicio_minutos < fin_minutos)))
 ) ENGINE=InnoDB;
 
 
