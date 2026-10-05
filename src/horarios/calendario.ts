@@ -45,6 +45,9 @@ function fechaUtc(fecha: string): number {
   return instante;
 }
 
+/** Valida una fecha local aun cuando una excepción no contenga franjas. */
+export function validarFechaLocal(fecha: string): void { fechaUtc(fecha); }
+
 /** Encuentra todas las ocurrencias UTC de una pared local; cero y dos son errores. */
 function instanteLocal(fecha: string, minuto: number, zona: string): number | null {
   const base = fechaUtc(fecha) + minuto * 60000;

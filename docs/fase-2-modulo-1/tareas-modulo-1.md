@@ -625,35 +625,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T087–T091: [calendario, guardado semanal y resultados de pruebas](resultados-tareas/resultados-t087-t091.md).
 
-- [ ] **M1-T092 — Crear, sustituir y retirar una excepción de fecha** · 25 min · RF-44–RF-47, RF-51–RF-53
+- [x] **M1-T092 — Crear, sustituir y retirar una excepción de fecha** · 25 min · RF-44–RF-47, RF-51–RF-53
 
   Dependencias: M1-T089, M1-T090.
 
   Hecho cuando: crear o sustituir valida empalmes bajo el mismo bloqueo del perfil; la excepción vacía elimina atención de esa fecha y retirarla restaura la semana solo si el resultado es válido.
 
-- [ ] **M1-T093 — Exponer semana y excepciones con permisos de propietario** · 25 min · RF-01–RF-05, RF-37–RF-54
+- [x] **M1-T093 — Exponer semana y excepciones con permisos de propietario** · 25 min · RF-01–RF-05, RF-37–RF-54
 
   Dependencias: M1-T005, M1-T091, M1-T092.
 
   Hecho cuando: admin y Profesional propio consultan/guardan; recepción y otro Profesional no editan, y las respuestas preservan identificadores y errores por campo.
 
-- [ ] **M1-T094 — Probar interruptores, borradores y descansos** · 25 min · RF-37–RF-43, RF-49–RF-54
+- [x] **M1-T094 — Probar interruptores, borradores y descansos** · 25 min · RF-37–RF-43, RF-49–RF-54
 
   Dependencias: M1-T093.
 
   Hecho cuando: pruebas comprueban interruptores independientes, quitar última franja, semana vacía, borrador recuperable, activación inválida y todos los límites del descanso.
 
-- [ ] **M1-T095 — Probar días distintos, excepciones y consecutividad** · 25 min · RF-43–RF-50
+- [x] **M1-T095 — Probar días distintos, excepciones y consecutividad** · 25 min · RF-43–RF-50
 
   Dependencias: M1-T093.
 
   Hecho cuando: casos verifican cambio de sucursal con franjas separadas, descanso que no libera asignación, medianoche, excepción vacía y choques reales entre zonas distintas.
 
-- [ ] **M1-T096 — Probar último guardado válido y rollback semanal** · 25 min · RF-47, RF-51–RF-54
+- [x] **M1-T096 — Probar último guardado válido y rollback semanal** · 25 min · RF-47, RF-51–RF-54
 
   Dependencias: M1-T093, M1-T007.
 
   Hecho cuando: dos reemplazos válidos dejan la última versión confirmada; un segundo inválido y un fallo provocado conservan la primera completa, sin filas mezcladas.
+
+  Evidencia T092–T096: [excepciones, permisos, rollback y resultados de pruebas](resultados-tareas/resultados-t092-t096.md).
 
 - [ ] **M1-T097 — Reactivar sucursal validando cupo y horarios** · 25 min · RF-23–RF-26, RF-46–RF-47
 
