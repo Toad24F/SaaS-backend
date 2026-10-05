@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch,
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch,
   Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -46,6 +46,13 @@ export class ProfesionalesController {
   desactivar(@Param() parametros: ProfesionalIdDto, @Body() _datos: SinCamposDto,
     @CurrentUser() actor: JwtPayload) {
     return this.profesionales.cambiarEstado(actor.sub, parametros.id, false, this.reloj.ahora());
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  eliminar(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
+    // Perfil y cuenta solo salen juntos cuando no conservaron uso operativo.
+    return this.profesionales.eliminar(actor.sub, parametros.id);
   }
 
   @Post(':id/reactivar')

@@ -7,6 +7,7 @@ import type { EntityManager } from 'typeorm';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
+import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { CrearServicioDto, EditarServicioDto } from './dto/servicio.dto';
@@ -82,6 +83,20 @@ export class ServiciosService {
     });
   }
 
+  async eliminar(actorId: number, id: number): Promise<void> {
+    try {
+      await transaccionIdentidad(this.servicios.manager, async (manager) => {
+        const actor = await this.actor(manager, actorId);
+        const servicio = await this.bloquear(manager, actor.negocioId!, id);
+        // La selección y cualquier evento posterior al alta convierten la baja en conflicto.
+        await exigirEliminacionElegible(manager, 'servicio', actor.negocioId!, id);
+        await manager.getRepository(Servicio).delete({ id, negocioId: actor.negocioId! });
+        await this.registrar(manager, actor, servicio, 'servicio_eliminado',
+          this.campos(servicio), null);
+      });
+    } catch (error) { conflictoEliminacion(error); }
+  }
+
   private validar<T extends object>(tipo: new () => T, valor: T): T {
     const datos = plainToInstance(tipo, valor);
     const errores = validateSync(datos, { whitelist: true, forbidNonWhitelisted: true });
@@ -124,7 +139,7 @@ export class ServiciosService {
 
   private async registrar(manager: EntityManager, actor: Usuario, servicio: Servicio,
     accion: string, antes: Record<string, unknown> | null,
-    despues: Record<string, unknown>): Promise<void> {
+    despues: Record<string, unknown> | null): Promise<void> {
     await this.auditoria.registrar(manager, { operacionId: randomUUID(),
       actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: null,
       licenciaId: null, recursoTipo: 'servicio', recursoId: servicio.id,

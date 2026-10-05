@@ -8,6 +8,7 @@ import type { EntityManager } from 'typeorm';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
+import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { CoordinacionHorarios } from '../horarios/coordinacion-horarios';
 import { Negocio } from '../negocios/entities/negocio.entity';
@@ -106,6 +107,21 @@ export class SucursalesService {
       await this.registrar(manager, actor.id, actor.negocioId!, sucursal.id,
         'sucursal_desactivada', { activo: true }, { activo: false });
     });
+  }
+
+  async eliminar(actorId: number, sucursalId: number): Promise<void> {
+    try {
+      await transaccionIdentidad(this.sucursales.manager, async (manager) => {
+        const actor = await this.actor(manager, actorId, Permiso.GESTIONAR_CATALOGO);
+        // Negocio y sucursal se bloquean en el mismo orden que las demás escrituras.
+        await this.bloquearNegocio(manager, actor.negocioId!);
+        const sucursal = await this.bloquearSucursal(manager, actor.negocioId!, sucursalId);
+        await exigirEliminacionElegible(manager, 'sucursal', actor.negocioId!, sucursalId);
+        await manager.getRepository(Sucursal).delete({ id: sucursalId, negocioId: actor.negocioId! });
+        await this.registrar(manager, actor.id, actor.negocioId!, sucursalId,
+          'sucursal_eliminada', this.campos(sucursal), null);
+      });
+    } catch (error) { conflictoEliminacion(error); }
   }
 
   async reactivar(actorId: number, sucursalId: number,

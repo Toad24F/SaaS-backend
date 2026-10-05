@@ -751,35 +751,37 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## 10. Bajas seguras y conservación
 
-- [ ] **M1-T111 — Definir política de eliminación por relaciones e historial** · 20 min · RF-66–RF-68
+- [x] **M1-T111 — Definir política de eliminación por relaciones e historial** · 20 min · RF-66–RF-68
 
   Dependencias: M1-T003, M1-T072, M1-T084, M1-T101.
 
   Hecho cuando: la política implementa el significado aprobado de historial y enumera relaciones impeditivas sin borrar auditoría para permitir una eliminación.
 
-- [ ] **M1-T112 — Eliminar únicamente sucursales elegibles** · 25 min · RF-66–RF-68
+- [x] **M1-T112 — Eliminar únicamente sucursales elegibles** · 25 min · RF-66–RF-68
 
   Dependencias: M1-T111, M1-T097.
 
   Hecho cuando: el endpoint rechaza una sucursal relacionada/con historial indicando desactivación como alternativa; una elegible se elimina sin afectar otros registros.
 
-- [ ] **M1-T113 — Eliminar únicamente servicios elegibles** · 20 min · RF-66–RF-68
+- [x] **M1-T113 — Eliminar únicamente servicios elegibles** · 20 min · RF-66–RF-68
 
   Dependencias: M1-T111, M1-T078.
 
   Hecho cuando: un servicio con selección o historial no se elimina; la baja elegible y la desactivación conservan las relaciones no afectadas.
 
-- [ ] **M1-T114 — Resolver la baja elegible del perfil y su cuenta vinculada** · 25 min · RF-35–RF-36, RF-66–RF-68
+- [x] **M1-T114 — Resolver la baja elegible del perfil y su cuenta vinculada** · 25 min · RF-35–RF-36, RF-66–RF-68
 
   Dependencias: M1-T111, M1-T075.
 
   Hecho cuando: la operación aplica la política aprobada al agregado perfil/cuenta, rechaza cualquier relación o historial impeditivo y no deja credenciales o referencias huérfanas.
 
-- [ ] **M1-T115 — Probar eliminación frente a creación de relaciones** · 25 min · RF-66–RF-68
+- [x] **M1-T115 — Probar eliminación frente a creación de relaciones** · 25 min · RF-66–RF-68
 
   Dependencias: M1-T112, M1-T113, M1-T114, M1-T007.
 
   Hecho cuando: dos conexiones intentan eliminar y relacionar el mismo registro; una falla limpiamente y no quedan huérfanos ni auditoría de cambios revertidos.
+
+  Evidencia T111–T115: [política](politica-eliminacion.md) y [resultados y pruebas](resultados-tareas/resultados-t111-t115.md).
 
 ## 11. Avisos de vencimiento
 

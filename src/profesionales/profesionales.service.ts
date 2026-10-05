@@ -13,6 +13,7 @@ import { Sesion } from '../auth/entities/sesion.entity';
 import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
+import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { ExcepcionHorario } from '../horarios/entities/excepcion-horario.entity';
 import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
@@ -141,6 +142,32 @@ export class ProfesionalesService {
         activo ? 'profesional_reactivado' : 'profesional_desactivado',
         { activo: usuario.activo }, { activo });
     });
+  }
+
+  async eliminar(actorId: number, id: number): Promise<void> {
+    try {
+      await transaccionIdentidad(this.perfiles.manager, async (manager) => {
+        const actor = await this.actor(manager, actorId);
+        const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+        const usuario = await this.bloquearUsuario(manager, perfil);
+        await exigirEliminacionElegible(manager, 'profesional', actor.negocioId!, id, usuario.id);
+        // El alta se conserva; se libera únicamente su FK a la cuenta que se retira.
+        await manager.query(`UPDATE eventos_auditoria SET usuario_id = NULL
+          WHERE negocio_id = ? AND recurso_tipo = 'profesional' AND recurso_id = ?
+            AND accion = 'profesional_creado' AND usuario_id = ?`,
+        [actor.negocioId, id, usuario.id]);
+        // La reserva técnica acompaña a la cuenta; no representa trabajo del Profesional.
+        await manager.getRepository(CorreoAcceso).delete({ usuarioId: usuario.id });
+        await manager.getRepository(Personal).delete({ id, negocioId: actor.negocioId! });
+        await manager.getRepository(Usuario).delete({ id: usuario.id, negocioId: actor.negocioId! });
+        await this.auditoria.registrar(manager, { operacionId: randomUUID(),
+          actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: null,
+          licenciaId: null, recursoTipo: 'profesional', recursoId: id,
+          accion: 'profesional_eliminado',
+          valoresAntes: { nombre: usuario.nombre, correo: usuario.email, activo: usuario.activo },
+          valoresDespues: null });
+      });
+    } catch (error) { conflictoEliminacion(error); }
   }
 
   async listarSucursales(actorId: number, id: number): Promise<number[]> {

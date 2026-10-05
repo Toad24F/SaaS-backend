@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -44,6 +44,13 @@ export class ServiciosController {
   desactivar(@Param() parametros: ServicioIdDto, @Body() _datos: SinCamposDto,
     @CurrentUser() actor: JwtPayload) {
     return this.servicios.cambiarEstado(actor.sub, parametros.id, false);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  eliminar(@Param() parametros: ServicioIdDto, @CurrentUser() actor: JwtPayload) {
+    // Un servicio elegido o con actividad posterior al alta permanece consultable.
+    return this.servicios.eliminar(actor.sub, parametros.id);
   }
 
   @Post(':id/reactivar')

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -52,6 +52,13 @@ export class SucursalesController {
   desactivar(@Param() parametros: SucursalIdDto, @Body() _datos: SinCamposDto,
     @CurrentUser() actor: JwtPayload) {
     return this.sucursales.desactivar(actor.sub, parametros.id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  eliminar(@Param() parametros: SucursalIdDto, @CurrentUser() actor: JwtPayload) {
+    // El servicio verifica pertenencia, vínculos e historial antes de borrar.
+    return this.sucursales.eliminar(actor.sub, parametros.id);
   }
 
   @Post(':id/reactivar')
