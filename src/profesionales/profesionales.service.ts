@@ -14,6 +14,8 @@ import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { ExcepcionHorario } from '../horarios/entities/excepcion-horario.entity';
+import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -164,6 +166,20 @@ export class ProfesionalesService {
       const actuales = await repo.findBy({ negocioId: actor.negocioId!, personalId: id });
       const anteriores = actuales.map((r) => r.sucursalId).sort((a, b) => a - b);
       if (JSON.stringify(ids) === JSON.stringify(anteriores)) return ids;
+      const retiradas = anteriores.filter((sucursalId) => !ids.includes(sucursalId));
+      if (retiradas.length) {
+        // El perfil ya está bloqueado: una semana o excepción concurrente no
+        // puede confirmar entre la comprobación y el retiro de la asignación.
+        const usadas = await Promise.all([
+          manager.getRepository(HorarioPersonal).countBy({ negocioId: actor.negocioId!,
+            personalId: id, sucursalId: In(retiradas) }),
+          manager.getRepository(ExcepcionHorario).countBy({ negocioId: actor.negocioId!,
+            personalId: id, sucursalId: In(retiradas) }),
+        ]);
+        if (usadas.some((total) => total > 0)) {
+          throw new ConflictException('La sucursal conserva franjas o excepciones del Profesional.');
+        }
+      }
       // El bloqueo del perfil serializa reemplazos concurrentes del conjunto completo.
       await repo.delete({ negocioId: actor.negocioId!, personalId: id });
       if (ids.length) await repo.save(ids.map((sucursalId) => repo.create({

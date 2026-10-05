@@ -657,29 +657,31 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T092–T096: [excepciones, permisos, rollback y resultados de pruebas](resultados-tareas/resultados-t092-t096.md).
 
-- [ ] **M1-T097 — Reactivar sucursal validando cupo y horarios** · 25 min · RF-23–RF-26, RF-46–RF-47
+- [x] **M1-T097 — Reactivar sucursal validando cupo y horarios** · 25 min · RF-23–RF-26, RF-46–RF-47
 
   Dependencias: M1-T089, M1-T064, M1-T063, M1-T010.
 
   Hecho cuando: reactivar valida cupo y horarios conservados en una transacción coordinada por negocio/perfiles; un conflicto deja la sucursal inactiva e identifica las franjas. La operación queda conectada a su ruta HTTP autorizada.
 
-- [ ] **M1-T098 — Validar cambios de zona y asignaciones con horarios existentes** · 25 min · RF-21, RF-26, RF-31, RF-41, RF-46–RF-47
+- [x] **M1-T098 — Validar cambios de zona y asignaciones con horarios existentes** · 25 min · RF-21, RF-26, RF-31, RF-41, RF-46–RF-47
 
   Dependencias: M1-T097, M1-T074.
 
   Hecho cuando: cambiar zona o asignaciones no deja franjas activas inválidas; la validación usa el mismo orden de bloqueos que el guardado semanal.
 
-- [ ] **M1-T099 — Probar cruces entre horarios y sus dependencias** · 25 min · RF-23–RF-26, RF-41, RF-44, RF-47, RF-51–RF-53
+- [x] **M1-T099 — Probar cruces entre horarios y sus dependencias** · 25 min · RF-23–RF-26, RF-41, RF-44, RF-47, RF-51–RF-53
 
   Dependencias: M1-T098, M1-T092, M1-T007.
 
   Hecho cuando: carreras semana/excepción, semana/asignación y semana/reactivación se serializan sin empalmes ni sobrecupo; una operación rechazada no deja cambios parciales.
 
-- [ ] **M1-T100 — Probar reactivaciones simultáneas en el último cupo** · 20 min · RF-23–RF-26
+- [x] **M1-T100 — Probar reactivaciones simultáneas en el último cupo** · 20 min · RF-23–RF-26
 
   Dependencias: M1-T097, M1-T007.
 
   Hecho cuando: dos reactivaciones o alta/reactivación compiten por un único lugar; solo una se confirma y la rechazada conserva estado y horarios anteriores.
+
+  Evidencia T097–T100: [cupo, horarios, carreras y resultados de pruebas](resultados-tareas/resultados-t097-t100.md).
 
 ## 9. Bloqueos y disponibilidad resultante
 

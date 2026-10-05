@@ -79,7 +79,12 @@ describe('M1-T065: HTTP de sucursales y cupo', () => {
       await request(http).post(`/sucursales/${id}/desactivar`).auth(tokens[1], { type: 'bearer' })
         .send({}).expect(204);
       await request(http).post(`/sucursales/${id}/reactivar`).auth(tokens[1], { type: 'bearer' })
-        .send({}).expect(404);
+        .send({}).expect(204);
+      expect((await db.getRepository(Sucursal).findOneByOrFail({ id })).activo).toBe(true);
+      await request(http).post(`/sucursales/${id}/reactivar`).auth(tokens[2], { type: 'bearer' })
+        .send({}).expect(403);
+      await request(http).post(`/sucursales/${id}/desactivar`).auth(tokens[1], { type: 'bearer' })
+        .send({}).expect(204);
       expect((await request(http).get('/sucursales').auth(tokens[1], { type: 'bearer' })
         .expect(200)).body).toHaveLength(1);
       expect((await request(http).get('/sucursales/cupo').auth(tokens[1], { type: 'bearer' })

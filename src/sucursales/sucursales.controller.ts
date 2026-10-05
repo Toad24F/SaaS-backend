@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
+import { RELOJ, type Reloj } from '../comun/reloj';
 import { CrearSucursalDto, EditarSucursalDto } from './dto/sucursal.dto';
 import { SucursalIdDto } from './dto/sucursal-id.dto';
 import { Sucursal } from './entities/sucursal.entity';
@@ -16,7 +17,8 @@ import { SucursalesService } from './sucursales.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Rol.ADMIN_NEGOCIO)
 export class SucursalesController {
-  constructor(private readonly sucursales: SucursalesService) {}
+  constructor(private readonly sucursales: SucursalesService,
+    @Inject(RELOJ) private readonly reloj: Reloj) {}
 
   @Post()
   async crear(@Body() datos: CrearSucursalDto, @CurrentUser() actor: JwtPayload) {
@@ -41,7 +43,8 @@ export class SucursalesController {
   @Patch(':id')
   async editar(@Param() parametros: SucursalIdDto, @Body() datos: EditarSucursalDto,
     @CurrentUser() actor: JwtPayload) {
-    return this.presentar(await this.sucursales.editar(actor.sub, parametros.id, datos));
+    return this.presentar(await this.sucursales.editar(actor.sub, parametros.id, datos,
+      this.reloj.ahora().toISOString().slice(0, 10)));
   }
 
   @Post(':id/desactivar')
@@ -49,6 +52,15 @@ export class SucursalesController {
   desactivar(@Param() parametros: SucursalIdDto, @Body() _datos: SinCamposDto,
     @CurrentUser() actor: JwtPayload) {
     return this.sucursales.desactivar(actor.sub, parametros.id);
+  }
+
+  @Post(':id/reactivar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  reactivar(@Param() parametros: SucursalIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    // El servicio serializa cupo y horarios antes de habilitar la sucursal.
+    return this.sucursales.reactivar(actor.sub, parametros.id,
+      this.reloj.ahora().toISOString().slice(0, 10));
   }
 
   private presentar(sucursal: Sucursal) {

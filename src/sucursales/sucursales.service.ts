@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { CoordinacionHorarios } from '../horarios/coordinacion-horarios';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { validarLimiteSucursales } from '../negocios/validar-limite-sucursales';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -21,6 +22,7 @@ type CamposSucursal = Pick<Sucursal, 'nombre' | 'direccion' | 'telefono' | 'zona
 /** Gestiona sucursales serializando el cupo sobre la fila del negocio. */
 @Injectable()
 export class SucursalesService {
+  private readonly horarios = new CoordinacionHorarios();
   constructor(
     @InjectRepository(Sucursal) private readonly sucursales: Repository<Sucursal>,
     private readonly autorizacion: AutorizacionService,
@@ -59,7 +61,8 @@ export class SucursalesService {
     return sucursal;
   }
 
-  async editar(actorId: number, sucursalId: number, entrada: EditarSucursalDto): Promise<Sucursal> {
+  async editar(actorId: number, sucursalId: number, entrada: EditarSucursalDto,
+    desde = new Date().toISOString().slice(0, 10)): Promise<Sucursal> {
     const datos = this.validar(EditarSucursalDto, entrada);
     if (!Object.values(datos).some((valor) => valor !== undefined)) {
       throw new BadRequestException('Indica un campo de sucursal.');
@@ -77,6 +80,13 @@ export class SucursalesService {
       }
       const despues = this.campos(sucursal);
       if (JSON.stringify(antes) === JSON.stringify(despues)) return sucursal;
+      if (antes.zonaHoraria !== despues.zonaHoraria && sucursal.activo) {
+        // Negocio -> sucursal -> perfiles ascendentes: la semana usa el mismo perfil.
+        const ids = await this.horarios.perfilesAsignados(manager, actor.negocioId!, sucursal.id);
+        await this.horarios.bloquearPerfiles(manager, actor.negocioId!, ids);
+        await this.horarios.validarPerfiles(manager, actor.negocioId!, ids, desde,
+          { sucursalId, zonaHoraria: sucursal.zonaHoraria });
+      }
       await manager.getRepository(Sucursal).save(sucursal);
       await this.registrar(manager, actor.id, actor.negocioId!, sucursal.id,
         'sucursal_editada', antes, despues);
@@ -95,6 +105,28 @@ export class SucursalesService {
       await manager.getRepository(Sucursal).save(sucursal);
       await this.registrar(manager, actor.id, actor.negocioId!, sucursal.id,
         'sucursal_desactivada', { activo: true }, { activo: false });
+    });
+  }
+
+  async reactivar(actorId: number, sucursalId: number,
+    desde = new Date().toISOString().slice(0, 10)): Promise<void> {
+    await transaccionIdentidad(this.sucursales.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId, Permiso.GESTIONAR_CATALOGO);
+      const negocio = await this.bloquearNegocio(manager, actor.negocioId!);
+      const sucursal = await this.bloquearSucursal(manager, negocio.id, sucursalId);
+      if (sucursal.activo) return;
+      if (await this.contarActivas(manager, negocio.id) >= negocio.limiteSucursalesActivas) {
+        throw new ConflictException('No hay cupo para reactivar la sucursal.');
+      }
+      const ids = await this.horarios.perfilesAsignados(manager, negocio.id, sucursal.id);
+      await this.horarios.bloquearPerfiles(manager, negocio.id, ids);
+      // Se valida con la sucursal candidata activa antes de modificar el estado.
+      await this.horarios.validarPerfiles(manager, negocio.id, ids, desde,
+        { sucursalId, activo: true });
+      sucursal.activo = true;
+      await manager.getRepository(Sucursal).save(sucursal);
+      await this.registrar(manager, actor.id, negocio.id, sucursal.id,
+        'sucursal_reactivada', { activo: false }, { activo: true });
     });
   }
 
