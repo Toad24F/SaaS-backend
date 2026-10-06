@@ -101,7 +101,7 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
 
 function entrada(ruta: Ruta, codigo: string) {
   return { codigo, password: nuevaPassword,
-    ...(ruta === rutas[1] ? {} : { nombre: '  Nombre activado  ', correo: 'usuario0@example.test', negocioId: 1 }) };
+    ...(ruta === rutas[1] ? {} : { nombre: '  Nombre activado  ', correo: 'usuario0@example.test' }) };
 }
 
 // Se compara el estado completo sensible para acreditar rechazos sin efectos parciales.
@@ -206,7 +206,8 @@ describe('T46 — activación y recuperación HTTP', () => {
           ...[null, 123, '   ', 'a'.repeat(151)].map((nombre) => ({ ...valido, nombre })));
       }
       const extras = ['email', 'rol', 'negocio_id', 'usuarioId', 'destinatarioId', 'proposito', 'ahora'];
-      if (ruta === rutas[1]) extras.push('nombre', 'negocioId', 'correo');
+      if (ruta === rutas[1]) extras.push('nombre', 'correo');
+      else extras.push('negocioId');
       const antes = await estado(db);
       for (const body of invalidos) {
         // Se avanza la ventana solo en esta matriz para probar validación, no el límite.

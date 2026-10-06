@@ -197,7 +197,7 @@ Mantener las convenciones actuales. Salvo rutas públicas indicadas, el negocio 
 | Método y ruta | Entrada mínima / respuesta | Permiso y errores específicos | RF |
 |---|---|---|---|
 | POST /negocios (ampliar) | `nombre`, `slug`, `rfc`, `correoAdministrador`; `limiteSucursales` opcional, entero desde 1. Devuelve negocio, licencia pendiente y estado del envío, sin usuario administrador. | superadmin; 400 campos/cupo, 409 slug o correo reservado. | RF-06–RF-08, RF-13–RF-14, RF-20 |
-| POST /auth/activar-administrador (ampliar) | Público: `negocioId`, `correo`, `codigo`, `nombre`, `password`; devuelve cuenta completa y estado de activación, ningún código utilizable. | 400 entrada, 409 código, destinatario, vigencia o estado inválido; nunca crea cuenta parcial. | RF-09–RF-11 |
+| POST /auth/activar-administrador (ampliar) | Público: `correo`, `codigo`, `nombre`, `password`; identifica el negocio mediante el código y devuelve la cuenta completa sin ningún código utilizable. | 400 entrada, 409 código, destinatario, vigencia o estado inválido; nunca crea cuenta parcial. | RF-09–RF-11 |
 | POST /negocios/:id/reemitir-codigo (conservar) | Sin cuerpo; devuelve metadatos de nuevo envío y caducidad, no el código. | superadmin; 404 negocio, 409 invitación ya activada. | RF-12, RF-15, RF-18 |
 | PATCH /negocios/:id/correo-administrador | `correo` nuevo; devuelve destinatario y estado de nueva emisión, sin código. | superadmin; 404 negocio, 409 activado o correo reservado. | RF-12–RF-13, RF-18 |
 | GET /negocios/:id/envios y POST /negocios/:id/reintentar-envio | Consulta estados/intentos; reintento recibe `envioId` y devuelve estado pendiente/confirmado, nunca contenido ni código. | superadmin; 404 negocio/envío, 409 envío obsoleto o confirmado. | RF-17–RF-19 |

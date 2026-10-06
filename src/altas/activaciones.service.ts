@@ -21,7 +21,6 @@ import { ReservaCorreoService } from './reserva-correo.service';
 export interface ActivarCuenta {
   codigo: string;
   correo?: string;
-  negocioId?: number;
   nombre: string;
   password: string;
   ahora: Date;
@@ -52,10 +51,7 @@ export class ActivacionesService {
         ahora: datos.ahora,
       },
       async (manager, codigo) => {
-        // El identificador del cliente no decide la pertenencia: debe coincidir con el código.
-        if (datos.negocioId !== undefined && datos.negocioId !== codigo.negocioId) {
-          throw new BadRequestException('Código inválido o no disponible.');
-        }
+        // La pertenencia se toma exclusivamente del código persistido.
         if (codigo.altaAdministradorId !== null) {
           // Consumir ya bloqueó invitación y código y validó correo, versión y vigencia.
           // Se crean credenciales completas, se transfiere la reserva y se inicia el año

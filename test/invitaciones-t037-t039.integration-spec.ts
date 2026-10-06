@@ -51,7 +51,7 @@ async function escenario(db: DataSource) {
   const alta = await servicio.altas.crearNegocio({ actorUsuarioId: actor.id, nombre: 'Uno', rfc: 'ABC010101AB1',
     identificadorPublico: 'uno', emailAdministrador: 'admin@example.test', ahora });
   const codigo = await valor(db);
-  const activar = { codigo, correo: ' ADMIN@EXAMPLE.TEST ', negocioId: alta.negocioId,
+  const activar = { codigo, correo: ' ADMIN@EXAMPLE.TEST ',
     nombre: ' Administrador ', password, ahora: new Date(ahora.getTime() + 1000) };
   const gestionar = { actorUsuarioId: actor.id, negocioId: alta.negocioId, ahora: activar.ahora };
   return { ...servicio, alta, actor, activar, gestionar };
@@ -81,14 +81,13 @@ describe('M1-T037–T039: activación, corrección y reemisión de invitaciones'
     });
   });
 
-  it.each(['correo distinto', 'sin correo', 'negocio ajeno', 'vencido', 'contraseña corta', 'suspendido'])(
+  it.each(['correo distinto', 'sin correo', 'vencido', 'contraseña corta', 'suspendido'])(
     'rechaza activación %s sin cambios', async (motivo) => {
       await conBaseMigrada(async (db) => {
         const ctx = await escenario(db);
         const datos = { ...ctx.activar };
         if (motivo === 'correo distinto') datos.correo = 'otro@example.test';
         if (motivo === 'sin correo') datos.correo = '';
-        if (motivo === 'negocio ajeno') datos.negocioId += 1;
         if (motivo === 'vencido') datos.ahora = ctx.alta.expiraEn;
         if (motivo === 'contraseña corta') datos.password = 'corta';
         if (motivo === 'suspendido') await db.query('UPDATE licencias SET suspendida_en = ?', [ctx.activar.ahora]);

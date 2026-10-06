@@ -78,17 +78,17 @@ describe('M1-T041–T044: HTTP completo sin secretos', () => {
       if (motivo === 'usado') await ctx.activar().expect(200);
       if (motivo === 'sustituido') await ctx.altas.reemitirCodigoInicial({ ...ctx.gestionar, ahora: ctx.reloj.ahora() });
       if (motivo === 'extra') datos = { ...datos, rol: Rol.SUPERADMIN } as typeof datos;
-      if (motivo === 'negocio') datos.negocioId += 1;
+      if (motivo === 'negocio') datos = { ...datos, negocioId: ctx.alta.negocioId } as typeof datos;
       const antes = await estadoIdentidad(ctx.db);
-      const respuesta = await ctx.activar(datos).expect(motivo === 'extra' ? 400 : 409);
+      const respuesta = await ctx.activar(datos).expect(['extra', 'negocio'].includes(motivo) ? 400 : 409);
       expect(await estadoIdentidad(ctx.db)).toEqual(antes);
       expect(JSON.stringify(respuesta.body)).not.toContain(ctx.datosActivacion.codigo);
     });
   });
 
-  it('exige correo/negocio y RFC, valida campos extra y protege corrección por sesión/rol', async () => {
+  it('exige correo y RFC, rechaza negocioId y protege corrección por sesión/rol', async () => {
     await conHttp(async (ctx) => {
-      for (const campo of ['correo', 'negocioId']) {
+      for (const campo of ['correo']) {
         const datos = { ...ctx.datosActivacion };
         delete datos[campo];
         await ctx.activar(datos).expect(400);

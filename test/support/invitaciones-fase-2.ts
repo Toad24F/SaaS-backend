@@ -51,7 +51,7 @@ export async function prepararInvitacion(db: DataSource) {
   const servicios = serviciosInvitacion(db);
   const alta = await servicios.altas.crearNegocio({ actorUsuarioId: actor.id, nombre: 'Uno', rfc: 'ABC010101AB1',
     identificadorPublico: 'uno', emailAdministrador: 'admin@example.test', ahora });
-  const activar = { codigo: await reconstruirCodigo(db), correo: 'admin@example.test', negocioId: alta.negocioId,
+  const activar = { codigo: await reconstruirCodigo(db), correo: 'admin@example.test',
     nombre: 'Administrador', password: passwordPrueba, ahora: new Date(ahora.getTime() + 1000) };
   return { ...servicios, actor, alta, activar,
     gestionar: { actorUsuarioId: actor.id, negocioId: alta.negocioId, ahora: activar.ahora } };

@@ -65,7 +65,7 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         expect(codigo).toBeTruthy();
         reloj.avanzar(60_000);
         await request(http).post('/auth/activar-administrador').send({ codigo,
-          correo: 'admin-t133@example.test', negocioId: alta.negocioId,
+          correo: 'admin-t133@example.test',
           nombre: 'Administradora', password: PASSWORD }).expect(200);
         const adminToken = (await request(http).post('/auth/login').send({
           email: 'admin-t133@example.test', password: PASSWORD }).expect(200)).body.accessToken;

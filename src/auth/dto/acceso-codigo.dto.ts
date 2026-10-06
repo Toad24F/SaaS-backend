@@ -1,11 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
-  IsInt,
   IsNotEmpty,
   IsString,
-  Max,
-  Min,
   MaxLength,
 } from 'class-validator';
 
@@ -21,14 +18,8 @@ export class CodigoContrasenaDto {
   password: string;
 }
 
-/** Activación exige negocio y destinatario, sin permitir elegir rol ni usuario. */
+/** Activación exige destinatario; el negocio se obtiene del código. */
 export class ActivarCuentaDto extends CodigoContrasenaDto {
-  // El negocio es obligatorio y se contrasta con el que está ligado al código.
-  @IsInt()
-  @Min(1)
-  @Max(4294967295)
-  negocioId: number;
-
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )

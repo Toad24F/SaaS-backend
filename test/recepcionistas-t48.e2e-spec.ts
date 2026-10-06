@@ -381,7 +381,7 @@ describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
       expect(codigos[1]).toMatchObject({ usuarioId: null, altaAdministradorId: pendiente.altaAdministradorId, negocioId: pendiente.negocioId,
         emisorUsuarioId: ctx.usuarios[0].id, consumidoEn: null, invalidadoEn: null });
       await request(app.getHttpServer()).post('/auth/activar-administrador')
-        .send({ codigo: pendiente.codigo, correo: pendiente.correo, negocioId: pendiente.negocioId, nombre: 'Admin', password: 'password-nueva-t48' }).expect(409);
+        .send({ codigo: pendiente.codigo, correo: pendiente.correo, nombre: 'Admin', password: 'password-nueva-t48' }).expect(409);
       expect(await estado(db)).toEqual(despues);
     });
   });
