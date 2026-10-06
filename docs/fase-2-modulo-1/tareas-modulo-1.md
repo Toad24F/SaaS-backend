@@ -4,7 +4,7 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
 ## Cómo usar esta lista
 
-- **8 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
+- **0 tareas pendientes de 140**, con estimaciones individuales de **10 a 25 minutos de trabajo activo**, siempre menores de 30 minutos. Son estimaciones, no garantías: si una tarea supera ese tamaño al examinarla, dividirla antes de continuar, conservando RF y dependencias.
 - El orden es topológico: cada dependencia aparece antes que la tarea que la necesita. Las dependencias indicadas son directas y heredan las de sus prerrequisitos. No empezar una tarea con un prerrequisito pendiente.
 - Los identificadores **M1-T001–M1-T140** son tareas; no sustituyen los RF ni los escenarios T01–T18 del plan. Las tareas de infraestructura/calidad apoyan los RF citados, pero no los acreditan por sí solas.
 - Cada checkbox se marca solo después de verificar su **Hecho cuando:** y registrar evidencia. Los tiempos no incluyen esperas de aprobación, servicios o ejecución desatendida. Un fallo exige corrección y nueva verificación; no equivale a tarea terminada.
@@ -897,49 +897,53 @@ Desglose del [plan del módulo 1](plan-modulo-1.md), conforme a la [constitució
 
   Evidencia T131–T132: [flujo, archivos y resultados de pruebas](resultados-tareas/resultados-t131-t132.md).
 
-- [ ] **M1-T133 — Ejecutar el recorrido funcional conjunto sin citas** · 25 min · RF-06–RF-88
+- [x] **M1-T133 — Ejecutar el recorrido funcional conjunto sin citas** · 25 min · RF-06–RF-88
 
   Dependencias: M1-T127, M1-T132, M1-T121, M1-T110, M1-T081.
 
   Hecho cuando: un caso HTTP recorre alta, correo falso, activación, catálogos, Profesional, selección vacía/restablecida, horario, bloqueo, suspensión y reactivación; comprueba preservación de horarios al desmarcar sin registrar citas.
 
-- [ ] **M1-T134 — Ejecutar compilación y lint del cambio de código** · 15 min · RF-01–RF-88
+  Evidencia T133–T137: [flujo, archivos y resultados de pruebas](resultados-tareas/resultados-t133-t137.md).
+
+- [x] **M1-T134 — Ejecutar compilación y lint del cambio de código** · 15 min · RF-01–RF-88
 
   Dependencias: M1-T133, M1-T128, M1-T129, M1-T123.
 
   Hecho cuando: npm run build y npm run lint finalizan sin errores; se revisa cualquier cambio del formateador y se registran resultados, sin marcar esta tarea si falla alguno.
 
-- [ ] **M1-T135 — Ejecutar la suite unitaria completa** · 15 min · RF-01–RF-88
+- [x] **M1-T135 — Ejecutar la suite unitaria completa** · 15 min · RF-01–RF-88
 
   Dependencias: M1-T134.
 
   Hecho cuando: npm test -- --runInBand finaliza sin fallos y se registra el resultado; pruebas omitidas no se presentan como evidencia de aceptación.
 
-- [ ] **M1-T136 — Ejecutar integración con MariaDB temporal real** · 20 min · RF-01–RF-88
+- [x] **M1-T136 — Ejecutar integración con MariaDB temporal real** · 20 min · RF-01–RF-88
 
   Dependencias: M1-T135, M1-T019, M1-T042, M1-T043, M1-T066, M1-T082, M1-T096, M1-T099, M1-T100, M1-T115, M1-T058, M1-T120.
 
   Hecho cuando: npm run test:integration -- --runInBand pasa sobre una base desechable segura, incluidas carreras y rollback; los resultados identifican el entorno y no sustituyen MariaDB por mocks.
 
-- [ ] **M1-T137 — Ejecutar la suite HTTP/e2e completa** · 20 min · RF-01–RF-88
+- [x] **M1-T137 — Ejecutar la suite HTTP/e2e completa** · 20 min · RF-01–RF-88
 
   Dependencias: M1-T136, M1-T132.
 
   Hecho cuando: npm run test:e2e -- --runInBand pasa con reloj/transporte controlados, sin correos reales ni pruebas de citas declaradas como terminadas.
 
-- [ ] **M1-T138 — Vincular RF y criterios de cierre de identidad y catálogos** · 25 min · RF-01–RF-36, RF-66–RF-68, RF-86–RF-88
+- [x] **M1-T138 — Vincular RF y criterios de cierre de identidad y catálogos** · 25 min · RF-01–RF-36, RF-66–RF-68, RF-86–RF-88
 
   Dependencias: M1-T137.
 
   Hecho cuando: la matriz RF → caso → resultado/evidencia enlaza cada requisito indicado y criterios 1–6, 24–27 de la spec; RF-88 distingue oferta vacía de rechazo futuro de citas reales.
 
-- [ ] **M1-T139 — Vincular RF y criterios de cierre de calendario y licencias** · 25 min · RF-37–RF-65, RF-69–RF-85
+  Evidencia T138–T140: [matriz RF y criterios](trazabilidad-modulo-1.md) y [resultados de cierre](resultados-tareas/resultados-t138-t140.md).
+
+- [x] **M1-T139 — Vincular RF y criterios de cierre de calendario y licencias** · 25 min · RF-37–RF-65, RF-69–RF-85
 
   Dependencias: M1-T137.
 
   Hecho cuando: la matriz enlaza casos y resultados para cada requisito indicado y criterios 7–23; no se usan evidencias antiguas para acreditar comportamientos nuevos.
 
-- [ ] **M1-T140 — Cerrar trazabilidad y documentar pendientes de entrega** · 20 min · RF-01–RF-88
+- [x] **M1-T140 — Cerrar trazabilidad y documentar pendientes de entrega** · 20 min · RF-01–RF-88
 
   Dependencias: M1-T138, M1-T139.
 
