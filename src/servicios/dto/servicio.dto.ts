@@ -25,6 +25,12 @@ export class CrearServicioDto {
   @Min(1, { message: 'duracionMinutos debe ser positivo' })
   @Max(4294967295, { message: 'duracionMinutos está fuera de rango' })
   duracionMinutos: number;
+
+  // El texto se recorta, puede omitirse y nunca proviene de una columna de tenant.
+  @Transform(normalizarNombre)
+  @ValidateIf((_objeto, valor) => valor !== undefined)
+  @IsString({ message: 'descripcion debe ser texto' })
+  descripcion?: string;
 }
 
 /** Edición parcial: cada campo presente conserva las reglas del alta. */
@@ -48,4 +54,9 @@ export class EditarServicioDto {
   @Min(1, { message: 'duracionMinutos debe ser positivo' })
   @Max(4294967295, { message: 'duracionMinutos está fuera de rango' })
   duracionMinutos?: number;
+
+  @Transform(normalizarNombre)
+  @ValidateIf((_objeto, valor) => valor !== undefined)
+  @IsString({ message: 'descripcion debe ser texto' })
+  descripcion?: string;
 }

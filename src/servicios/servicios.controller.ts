@@ -19,21 +19,25 @@ export class ServiciosController {
   constructor(private readonly servicios: ServiciosService) {}
 
   @Post()
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
   async crear(@Body() datos: CrearServicioDto, @CurrentUser() actor: JwtPayload) {
     return this.presentar(await this.servicios.crear(actor.sub, datos));
   }
 
   @Get()
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
   async listar(@CurrentUser() actor: JwtPayload) {
     return (await this.servicios.listar(actor.sub)).map((servicio) => this.presentar(servicio));
   }
 
   @Get(':id')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
   async consultar(@Param() parametros: ServicioIdDto, @CurrentUser() actor: JwtPayload) {
     return this.presentar(await this.servicios.consultar(actor.sub, parametros.id));
   }
 
   @Patch(':id')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
   async editar(@Param() parametros: ServicioIdDto, @Body() datos: EditarServicioDto,
     @CurrentUser() actor: JwtPayload) {
     return this.presentar(await this.servicios.editar(actor.sub, parametros.id, datos));
@@ -61,9 +65,11 @@ export class ServiciosController {
   }
 
   private presentar(servicio: Servicio) {
-    // Proyección explícita: ninguna relación futura altera el contrato HTTP.
+    // Proyección explícita: expone autoría estable sin la identidad privada del autor.
     return { id: servicio.id, negocioId: servicio.negocioId, nombre: servicio.nombre,
       costo: servicio.costo, duracionMinutos: servicio.duracionMinutos,
-      activo: servicio.activo, creadoEn: servicio.creadoEn };
+      activo: servicio.activo, creadoEn: servicio.creadoEn,
+      descripcion: servicio.descripcion ?? null,
+      creadorPersonalId: servicio.creadorPersonalId ?? null };
   }
 }

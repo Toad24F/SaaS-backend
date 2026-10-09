@@ -56,7 +56,9 @@ async function conHttp(ejecutar: (app: INestApplication, db: DataSource,
   });
 }
 
-const alta = { nombre: 'Ana Profesional', correo: 'ana-prof@example.test', password };
+// Las altas históricas usan ahora el campo obligatorio del contrato vigente.
+const alta = { nombre: 'Ana Profesional', correo: 'ana-prof@example.test', password,
+  especialidad: 'Estilismo' };
 const sucursal = { nombre: 'Centro', direccion: 'Calle Uno 5', telefono: '6141234567',
   zonaHoraria: 'America/Chihuahua' };
 

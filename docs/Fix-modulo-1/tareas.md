@@ -1,6 +1,6 @@
 # Tareas — Fix del módulo 1
 
-Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md) y las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md); las demás casillas no acreditan implementación ni pruebas.
+Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md), las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md) y las 10–18 en [evidencia-t010-t018.md](evidencia-t010-t018.md); las demás casillas no acreditan implementación ni pruebas.
 
 ## 1. Base y persistencia
 
@@ -33,31 +33,31 @@ Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados
 
 ## 2. Perfil y catálogo compartido
 
-- [ ] **FIX-T010 — Exigir especialidad en altas y ediciones** · 25 min · Depende de: FIX-T006, FIX-T009 · RF-01  
+- [x] **FIX-T010 — Exigir especialidad en altas y ediciones** · 25 min · Depende de: FIX-T006, FIX-T009 · RF-01
   Hecho cuando: el alta rechaza especialidad ausente o vacía, la próxima edición de un perfil heredado la exige y las consultas la devuelven.
 
-- [ ] **FIX-T011 — Probar especialidad heredada y nueva** · 20 min · Depende de: FIX-T010 · RF-01  
+- [x] **FIX-T011 — Probar especialidad heredada y nueva** · 20 min · Depende de: FIX-T010 · RF-01
   Hecho cuando: pruebas HTTP cubren alta válida/inválida, perfil antiguo consultable y edición antigua aceptada solo con especialidad.
 
-- [ ] **FIX-T012 — Admitir descripción del servicio** · 20 min · Depende de: FIX-T006, FIX-T009 · RF-02  
+- [x] **FIX-T012 — Admitir descripción del servicio** · 20 min · Depende de: FIX-T006, FIX-T009 · RF-02
   Hecho cuando: alta, edición y consulta aceptan descripción opcional y conservan `null` para los servicios anteriores.
 
-- [ ] **FIX-T013 — Probar descripción en el catálogo** · 20 min · Depende de: FIX-T012 · RF-02  
+- [x] **FIX-T013 — Probar descripción en el catálogo** · 20 min · Depende de: FIX-T012 · RF-02
   Hecho cuando: pruebas HTTP verifican descripción ausente, informada y editada sin modificar costo o duración.
 
-- [ ] **FIX-T014 — Autorizar creación y edición por autor** · 25 min · Depende de: FIX-T006, FIX-T009 · RF-03–RF-04  
+- [x] **FIX-T014 — Autorizar creación y edición por autor** · 25 min · Depende de: FIX-T006, FIX-T009 · RF-03–RF-04
   Hecho cuando: la política distingue administrador, Profesional autor, Profesional ajeno y recepcionista; el Profesional no obtiene activación o eliminación global.
 
-- [ ] **FIX-T015 — Crear servicio profesional de forma atómica** · 25 min · Depende de: FIX-T007, FIX-T014 · RF-03, RF-07  
+- [x] **FIX-T015 — Crear servicio profesional de forma atómica** · 25 min · Depende de: FIX-T007, FIX-T014 · RF-03, RF-07
   Hecho cuando: servicio, autor, selección individual, combinaciones de sucursales asignadas y auditoría se confirman juntos o se revierten juntos.
 
-- [ ] **FIX-T016 — Probar alta compartida y su aislamiento** · 25 min · Depende de: FIX-T015 · RF-03, RF-07  
+- [x] **FIX-T016 — Probar alta compartida y su aislamiento** · 25 min · Depende de: FIX-T015 · RF-03, RF-07
   Hecho cuando: una prueba verifica que el servicio aparece en el catálogo del negocio y solo se asigna automáticamente a su creador, con rechazo de otro negocio.
 
-- [ ] **FIX-T017 — Permitir editar datos globales al autor** · 20 min · Depende de: FIX-T012, FIX-T014 · RF-04  
+- [x] **FIX-T017 — Permitir editar datos globales al autor** · 20 min · Depende de: FIX-T012, FIX-T014 · RF-04
   Hecho cuando: administrador y autor pueden editar nombre, costo, duración y descripción; otro Profesional no puede, sin cambios parciales.
 
-- [ ] **FIX-T018 — Probar permisos y autoría estable** · 25 min · Depende de: FIX-T017 · RF-04  
+- [x] **FIX-T018 — Probar permisos y autoría estable** · 25 min · Depende de: FIX-T017 · RF-04
   Hecho cuando: pruebas cubren servicio creado por administrador, por Profesional, autor distinto, negocio ajeno y autoría que no cambia al editar.
 
 ## 3. Preferencias generales y asignaciones

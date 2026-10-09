@@ -80,7 +80,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
             costo: '100.00', duracionMinutos: 30 }).expect(201)).body;
         const profesional = (await request(http).post('/profesionales')
           .auth(adminToken, { type: 'bearer' }).send({ nombre: 'Profesional',
-            correo: 'prof-t133@example.test', password: PASSWORD }).expect(201)).body;
+            correo: 'prof-t133@example.test', password: PASSWORD,
+            especialidad: 'Estilismo' }).expect(201)).body;
         const ruta = `/profesionales/${profesional.id}`;
         await request(http).put(`${ruta}/sucursales`).auth(adminToken, { type: 'bearer' })
           .send({ sucursalIds: [sede.id] }).expect(200);

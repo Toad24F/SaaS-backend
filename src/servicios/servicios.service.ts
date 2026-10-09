@@ -6,9 +6,14 @@ import { randomUUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { Personal } from '../profesionales/entities/personal.entity';
+import { PersonalServicio } from '../profesionales/entities/personal-servicio.entity';
+import { PersonalServicioSucursal } from '../profesionales/entities/personal-servicio-sucursal.entity';
+import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { CrearServicioDto, EditarServicioDto } from './dto/servicio.dto';
 import { Servicio } from './entities/servicio.entity';
@@ -25,23 +30,48 @@ export class ServiciosService {
   async crear(actorId: number, entrada: CrearServicioDto): Promise<Servicio> {
     const datos = this.validar(CrearServicioDto, entrada);
     return transaccionIdentidad(this.servicios.manager, async (manager) => {
-      const actor = await this.actor(manager, actorId);
+      const actor = await this.actor(manager, actorId, Permiso.CREAR_EDITAR_SERVICIOS);
+      // El perfil bloqueado serializa el alta frente a cambios de asignaciones.
+      const perfil = actor.rol === Rol.PROFESIONAL
+        ? await manager.getRepository(Personal).createQueryBuilder('perfil')
+          .setLock('pessimistic_write')
+          .where('perfil.id = :id AND perfil.negocioId = :negocioId',
+            { id: actor.id, negocioId: actor.negocioId }).getOne()
+        : null;
+      if (actor.rol === Rol.PROFESIONAL && !perfil) {
+        throw new ForbiddenException('Perfil Profesional no disponible.');
+      }
       const repo = manager.getRepository(Servicio);
       const servicio = await repo.save(repo.create({ negocioId: actor.negocioId!,
         nombre: datos.nombre, costo: this.costo(datos.costo),
-        duracionMinutos: datos.duracionMinutos, activo: true }));
+        duracionMinutos: datos.duracionMinutos, activo: true,
+        descripcion: datos.descripcion ?? null,
+        creadorPersonalId: perfil?.id ?? null }));
+      if (perfil) {
+        // Catálogo, selección propia, sucursales y auditoría se confirman juntos.
+        await manager.getRepository(PersonalServicio).save({ negocioId: actor.negocioId!,
+          personalId: perfil.id, servicioId: servicio.id, activo: true });
+        const asignaciones = await manager.getRepository(PersonalSucursal).findBy({
+          negocioId: actor.negocioId!, personalId: perfil.id });
+        if (asignaciones.length) await manager.getRepository(PersonalServicioSucursal).save(
+          asignaciones.map((asignacion) => ({ negocioId: actor.negocioId!,
+            personalId: perfil.id, sucursalId: asignacion.sucursalId,
+            servicioId: servicio.id, activo: true })));
+      }
       await this.registrar(manager, actor, servicio, 'servicio_creado', null, this.campos(servicio));
       return servicio;
     });
   }
 
   async listar(actorId: number): Promise<Servicio[]> {
-    const actor = await this.actor(this.servicios.manager, actorId);
+    const actor = await this.actor(this.servicios.manager, actorId,
+      Permiso.CREAR_EDITAR_SERVICIOS);
     return this.servicios.find({ where: { negocioId: actor.negocioId! }, order: { id: 'ASC' } });
   }
 
   async consultar(actorId: number, id: number): Promise<Servicio> {
-    const actor = await this.actor(this.servicios.manager, actorId);
+    const actor = await this.actor(this.servicios.manager, actorId,
+      Permiso.CREAR_EDITAR_SERVICIOS);
     const servicio = await this.servicios.findOneBy({ id, negocioId: actor.negocioId! });
     if (!servicio) throw new NotFoundException('Servicio no disponible.');
     return servicio;
@@ -50,16 +80,21 @@ export class ServiciosService {
   async editar(actorId: number, id: number, entrada: EditarServicioDto): Promise<Servicio> {
     const datos = this.validar(EditarServicioDto, entrada);
     if (datos.nombre === undefined && datos.costo === undefined &&
-      datos.duracionMinutos === undefined) {
+      datos.duracionMinutos === undefined && datos.descripcion === undefined) {
       throw new BadRequestException('Indica un campo de servicio.');
     }
     return transaccionIdentidad(this.servicios.manager, async (manager) => {
-      const actor = await this.actor(manager, actorId);
+      const actor = await this.actor(manager, actorId, Permiso.CREAR_EDITAR_SERVICIOS);
       const servicio = await this.bloquear(manager, actor.negocioId!, id);
+      // El autor puede cambiar datos globales, pero no recibe permisos de estado o baja.
+      if (actor.rol === Rol.PROFESIONAL && servicio.creadorPersonalId !== actor.id) {
+        throw new ForbiddenException('Solo el autor puede editar este servicio.');
+      }
       const antes = this.campos(servicio);
       if (datos.nombre !== undefined) servicio.nombre = datos.nombre;
       if (datos.costo !== undefined) servicio.costo = this.costo(datos.costo);
       if (datos.duracionMinutos !== undefined) servicio.duracionMinutos = datos.duracionMinutos;
+      if (datos.descripcion !== undefined) servicio.descripcion = datos.descripcion;
       const despues = this.campos(servicio);
       if (JSON.stringify(antes) !== JSON.stringify(despues)) {
         await manager.getRepository(Servicio).save(servicio);
@@ -110,7 +145,8 @@ export class ServiciosService {
     return `${entero}.${fraccion.padEnd(2, '0')}`;
   }
 
-  private async actor(manager: EntityManager, id: number): Promise<Usuario> {
+  private async actor(manager: EntityManager, id: number,
+    permiso: Permiso = Permiso.GESTIONAR_CATALOGO): Promise<Usuario> {
     const consulta = manager.getRepository(Usuario).createQueryBuilder('usuario')
       .where('usuario.id = :id', { id });
     if (manager.queryRunner?.isTransactionActive) consulta.setLock('pessimistic_read');
@@ -118,7 +154,7 @@ export class ServiciosService {
     if (!usuario || !usuario.activo || usuario.activadoEn === null) {
       throw new ForbiddenException('Cuenta no disponible.');
     }
-    this.autorizacion.exigir(usuario.rol, Permiso.GESTIONAR_CATALOGO);
+    this.autorizacion.exigir(usuario.rol, permiso);
     if (usuario.negocioId === null) throw new ForbiddenException('Negocio no autorizado.');
     return usuario;
   }
@@ -134,7 +170,9 @@ export class ServiciosService {
 
   private campos(servicio: Servicio) {
     return { nombre: servicio.nombre, costo: servicio.costo,
-      duracionMinutos: servicio.duracionMinutos, activo: servicio.activo };
+      duracionMinutos: servicio.duracionMinutos, activo: servicio.activo,
+      descripcion: servicio.descripcion ?? null,
+      creadorPersonalId: servicio.creadorPersonalId ?? null };
   }
 
   private async registrar(manager: EntityManager, actor: Usuario, servicio: Servicio,

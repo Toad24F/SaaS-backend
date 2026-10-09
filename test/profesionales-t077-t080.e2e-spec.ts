@@ -60,7 +60,8 @@ async function tokenProfesional(app: INestApplication, db: DataSource, correo: s
 }
 
 const alta = (n: number) => ({ nombre: `Profesional ${n}`,
-  correo: `seleccion-prof-${n}@example.test`, password: 'Clave-profesional-123' });
+  correo: `seleccion-prof-${n}@example.test`, password: 'Clave-profesional-123',
+  especialidad: 'Estilismo' });
 
 describe('M1-T077–T080: selección y oferta de servicios', () => {
   it('consulta opciones activas y conserva selecciones desactivadas sin ofrecerlas', async () => {

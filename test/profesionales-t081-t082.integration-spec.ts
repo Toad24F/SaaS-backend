@@ -59,9 +59,9 @@ describe('M1-T081–T082: persistencia y carreras de selección', () => {
     await conBaseMigrada(async (db, segunda) => {
       const { negocio, admin, sucursal, catalogo } = await escenario(db);
       const a = await profesionales(db).crear(admin.id, { nombre: 'Ana',
-        correo: 'ana-seleccion@example.test', password }, ahora);
+        correo: 'ana-seleccion@example.test', password, especialidad: 'Estilismo' }, ahora);
       const b = await profesionales(db).crear(admin.id, { nombre: 'Bea',
-        correo: 'bea-seleccion@example.test', password }, ahora);
+        correo: 'bea-seleccion@example.test', password, especialidad: 'Estilismo' }, ahora);
       expect(a.id).toBe(a.usuarioId);
       expect(b.id).toBe(b.usuarioId);
       await profesionales(db).asignarSucursales(admin.id, a.id, { sucursalIds: [sucursal.id] });
@@ -95,7 +95,8 @@ describe('M1-T081–T082: persistencia y carreras de selección', () => {
     await conBaseMigrada(async (db, segunda) => {
       const { negocio, admin } = await escenario(db);
       const barrera = new BarreraDos();
-      const alta = { nombre: 'Profesional', correo: 'unico-seleccion@example.test', password };
+      const alta = { nombre: 'Profesional', correo: 'unico-seleccion@example.test', password,
+        especialidad: 'Estilismo' };
       // La barrera inicia ambas solicitudes desde conexiones independientes.
       const resultados = await Promise.allSettled([
         barrera.esperar().then(() => profesionales(db).crear(admin.id, alta, ahora)),
@@ -117,7 +118,7 @@ describe('M1-T081–T082: persistencia y carreras de selección', () => {
     await conBaseMigrada(async (db, segunda) => {
       const { negocio, admin, catalogo } = await escenario(db);
       const perfil = await profesionales(db).crear(admin.id, { nombre: 'Ana',
-        correo: 'ana-carrera@example.test', password }, ahora);
+        correo: 'ana-carrera@example.test', password, especialidad: 'Estilismo' }, ahora);
       const barrera = new BarreraDos();
       const uno = [catalogo[0].id, catalogo[1].id];
       const dos = [catalogo[2].id];
@@ -141,7 +142,7 @@ describe('M1-T081–T082: persistencia y carreras de selección', () => {
     await conBaseMigrada(async (db, segunda) => {
       const { negocio, admin, sucursal, catalogo } = await escenario(db);
       const perfil = await profesionales(db).crear(admin.id, { nombre: 'Ana',
-        correo: 'ana-inactivo@example.test', password }, ahora);
+        correo: 'ana-inactivo@example.test', password, especialidad: 'Estilismo' }, ahora);
       await profesionales(db).asignarSucursales(admin.id, perfil.id,
         { sucursalIds: [sucursal.id] });
       const barrera = new BarreraDos();

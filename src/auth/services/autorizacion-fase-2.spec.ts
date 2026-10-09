@@ -12,16 +12,20 @@ describe('M1-T009: matriz de permisos de fase 2', () => {
   it.each([
     [Rol.SUPERADMIN, Permiso.GESTIONAR_LIMITE_SUCURSALES, true],
     [Rol.ADMIN_NEGOCIO, Permiso.GESTIONAR_CATALOGO, true],
+    // El catálogo compartido permite crear/editar al Profesional, no controlar su estado global.
+    [Rol.ADMIN_NEGOCIO, Permiso.CREAR_EDITAR_SERVICIOS, true],
     [Rol.ADMIN_NEGOCIO, Permiso.GESTIONAR_PROFESIONALES, true],
     [Rol.ADMIN_NEGOCIO, Permiso.GESTIONAR_HORARIO, true],
     [Rol.ADMIN_NEGOCIO, Permiso.GESTIONAR_BLOQUEOS, true],
     [Rol.PROFESIONAL, Permiso.GESTIONAR_HORARIO, true],
     [Rol.PROFESIONAL, Permiso.GESTIONAR_BLOQUEOS, true],
     [Rol.PROFESIONAL, Permiso.GESTIONAR_SERVICIOS_PROPIOS, true],
+    [Rol.PROFESIONAL, Permiso.CREAR_EDITAR_SERVICIOS, true],
     [Rol.PROFESIONAL, Permiso.GESTIONAR_CATALOGO, false],
     [Rol.PROFESIONAL, Permiso.GESTIONAR_PROFESIONALES, false],
     [Rol.RECEPCIONISTA, Permiso.GESTIONAR_HORARIO, false],
     [Rol.RECEPCIONISTA, Permiso.GESTIONAR_CATALOGO, false],
+    [Rol.RECEPCIONISTA, Permiso.CREAR_EDITAR_SERVICIOS, false],
     [Rol.ADMIN_NEGOCIO, Permiso.GESTIONAR_LIMITE_SUCURSALES, false],
   ])('aplica %s / %s', (rol, permiso, permitido) => {
     const accion = () => servicio.exigir(rol, permiso);

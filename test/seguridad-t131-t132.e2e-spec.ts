@@ -243,7 +243,9 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
         { metodo: 'get', ruta: '/profesionales' },
         { metodo: 'get', ruta: perfil },
         { metodo: 'post', ruta: '/profesionales', cuerpo: {}, antes: 400 },
-        { metodo: 'patch', ruta: perfil, cuerpo: { nombre: 'profA' } },
+        // El perfil de esta base se sembró sin especialidad; su próxima edición debe completarla.
+        { metodo: 'patch', ruta: perfil,
+          cuerpo: { nombre: 'profA', especialidad: 'Estilismo' } },
         { metodo: 'post', ruta: '/profesionales/999999/desactivar', cuerpo: {}, antes: 404 },
         { metodo: 'post', ruta: '/profesionales/999999/reactivar', cuerpo: {}, antes: 404 },
         { metodo: 'delete', ruta: '/profesionales/999999', antes: 404 },

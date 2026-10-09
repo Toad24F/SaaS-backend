@@ -119,17 +119,24 @@ describe('M1-T067–T070: catálogo global de servicios', () => {
     });
   });
 
-  it('restringe todas las rutas al administrador del negocio dueño', async () => {
+  it('mantiene control global administrativo y aísla el catálogo entre negocios', async () => {
     await conHttp(async (app, _db, tokens) => {
       const http = app.getHttpServer();
       const alta = await request(http).post('/servicios').auth(tokens[0], { type: 'bearer' })
         .send({ nombre: 'Consulta', costo: '99.99', duracionMinutos: 30 }).expect(201);
       const id = alta.body.id;
-      for (const indice of [1, 2]) {
-        await request(http).get('/servicios').auth(tokens[indice], { type: 'bearer' }).expect(403);
-        await request(http).post('/servicios').auth(tokens[indice], { type: 'bearer' })
-          .send({ nombre: 'Ajeno', costo: '1.00', duracionMinutos: 10 }).expect(403);
-      }
+      await request(http).get('/servicios').auth(tokens[1], { type: 'bearer' }).expect(403);
+      await request(http).post('/servicios').auth(tokens[1], { type: 'bearer' })
+        .send({ nombre: 'Ajeno', costo: '1.00', duracionMinutos: 10 }).expect(403);
+      // El Profesional puede consultar su catálogo; esta cuenta histórica sin perfil no puede crear.
+      expect((await request(http).get('/servicios').auth(tokens[2], { type: 'bearer' })
+        .expect(200)).body).toEqual([expect.objectContaining({ id })]);
+      await request(http).post('/servicios').auth(tokens[2], { type: 'bearer' })
+        .send({ nombre: 'Sin perfil', costo: '1.00', duracionMinutos: 10 }).expect(403);
+      await request(http).patch(`/servicios/${id}`).auth(tokens[2], { type: 'bearer' })
+        .send({ nombre: 'Ajeno' }).expect(403);
+      await request(http).post(`/servicios/${id}/desactivar`)
+        .auth(tokens[2], { type: 'bearer' }).send({}).expect(403);
       expect((await request(http).get('/servicios').auth(tokens[3], { type: 'bearer' })
         .expect(200)).body).toEqual([]);
       await request(http).get(`/servicios/${id}`).auth(tokens[3], { type: 'bearer' }).expect(404);

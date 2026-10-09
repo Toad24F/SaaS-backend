@@ -65,9 +65,9 @@ export class ProfesionalesService {
           negocioId: actor.negocioId, correo });
         const repoPerfil = manager.getRepository(Personal);
         const perfil = await repoPerfil.save(repoPerfil.create({ id: usuario.id,
-          negocioId: actor.negocioId! }));
+          negocioId: actor.negocioId!, especialidad: datos.especialidad }));
         await this.registrar(manager, actor, perfil, 'profesional_creado', null,
-          { nombre, correo, activo: true });
+          { nombre, correo, especialidad: datos.especialidad, activo: true });
         return this.vista(perfil, usuario);
       });
     } catch (error) { return this.conflictoCorreo(error); }
@@ -91,7 +91,8 @@ export class ProfesionalesService {
   async editar(actorId: number, id: number, entrada: EditarProfesionalDto,
     ahora: Date): Promise<PerfilProfesional> {
     const datos = this.validar(EditarProfesionalDto, entrada);
-    if (datos.nombre === undefined && datos.correo === undefined && datos.password === undefined) {
+    if (datos.nombre === undefined && datos.correo === undefined &&
+      datos.password === undefined && datos.especialidad === undefined) {
       throw new BadRequestException('Indica un campo de Profesional.');
     }
     const hash = datos.password === undefined ? undefined : await this.contrasenas.generarHash(datos.password);
@@ -100,11 +101,18 @@ export class ProfesionalesService {
         const actor = await this.actor(manager, actorId);
         const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
         const usuario = await this.bloquearUsuario(manager, perfil);
-        const antes = { nombre: usuario.nombre, correo: usuario.email };
+        // Un perfil histórico sigue consultable, pero su siguiente edición completa el dato.
+        if (!perfil.especialidad?.trim() && datos.especialidad === undefined) {
+          throw new BadRequestException('La especialidad es obligatoria para editar este Profesional.');
+        }
+        const antes = { nombre: usuario.nombre, correo: usuario.email,
+          especialidad: perfil.especialidad };
         const correo = datos.correo?.toLowerCase();
         const cambioCorreo = correo !== undefined && correo !== usuario.email;
         const cambioNombre = datos.nombre !== undefined &&
           datos.nombre.replace(/\s+/g, ' ') !== usuario.nombre;
+        const cambioEspecialidad = datos.especialidad !== undefined &&
+          datos.especialidad !== perfil.especialidad;
         if (cambioCorreo) {
           // La FK de reserva contiene el correo: se retira antes de modificar la cuenta.
           const reserva = await manager.getRepository(CorreoAcceso).findOneBy({
@@ -116,13 +124,20 @@ export class ProfesionalesService {
         }
         if (cambioNombre) usuario.nombre = datos.nombre!.replace(/\s+/g, ' ');
         if (hash !== undefined) usuario.passwordHash = hash;
+        if (cambioEspecialidad) {
+          perfil.especialidad = datos.especialidad!;
+          await manager.getRepository(Personal).save(perfil);
+        }
         if (cambioCorreo || cambioNombre || hash !== undefined) {
           await manager.getRepository(Usuario).save(usuario);
           if (cambioCorreo) await this.reservas.reservarUsuario(manager, {
             usuarioId: usuario.id, negocioId: actor.negocioId, correo: usuario.email });
           if (cambioCorreo || hash !== undefined) await this.revocarSesiones(manager, usuario.id, ahora);
+        }
+        if (cambioCorreo || cambioNombre || hash !== undefined || cambioEspecialidad) {
           await this.registrar(manager, actor, perfil, 'profesional_editado', antes,
             { nombre: usuario.nombre, correo: usuario.email,
+              especialidad: perfil.especialidad,
               accesoRenovado: hash !== undefined });
         }
         return this.vista(perfil, usuario);

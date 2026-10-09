@@ -70,17 +70,17 @@ describe('M1-T065: HTTP de sucursales y cupo', () => {
       const perfil = (await request(http).post('/profesionales')
         .auth(tokens[1], { type: 'bearer' })
         .send({ nombre: 'Profesional A', correo: 'perfil-a@example.test',
-          password: 'Clave-profesional-123' }).expect(201)).body;
+          password: 'Clave-profesional-123', especialidad: 'Estilismo' }).expect(201)).body;
       const ajeno = (await request(http).post('/profesionales')
         .auth(tokens[4], { type: 'bearer' })
         .send({ nombre: 'Profesional B', correo: 'perfil-b@example.test',
-          password: 'Clave-profesional-123' }).expect(201)).body;
+          password: 'Clave-profesional-123', especialidad: 'Estilismo' }).expect(201)).body;
       const antes = await db.query(`SELECT
         (SELECT COUNT(*) FROM sucursales) sucursales,
         (SELECT COUNT(*) FROM servicios) servicios,
         (SELECT COUNT(*) FROM personal_servicios) selecciones,
         (SELECT COUNT(*) FROM eventos_auditoria) eventos`);
-      // Superadmin solo cambia cupos; Recepción y Profesional no crean catálogos.
+      // Superadmin solo cambia cupos; Recepción y estos Profesionales sin perfil no crean catálogos.
       for (const indice of [0, 2, 3, 5, 6]) {
         await request(http).post('/sucursales').auth(tokens[indice], { type: 'bearer' })
           .send(entrada).expect(403);

@@ -52,7 +52,7 @@ describe('M1-T128 regresión de autenticación compatible', () => {
         const profesional = await request(http).post('/profesionales')
           .auth(token, { type: 'bearer' })
           .send({ nombre: 'Profesional', correo: 'prof-t128@example.test',
-            password: 'Clave-profesional-123' }).expect(201);
+            password: 'Clave-profesional-123', especialidad: 'Estilismo' }).expect(201);
         await request(http).post(`/auth/administradores/${profesional.body.usuarioId}/autorizar-recuperacion`)
           .auth(superToken, { type: 'bearer' }).send({}).expect(404);
         const autorizacion = await request(http)

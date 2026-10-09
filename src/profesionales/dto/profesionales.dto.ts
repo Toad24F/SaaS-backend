@@ -30,9 +30,16 @@ export class CrearProfesionalDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+
+  // Solo las altas nuevas exigen especialidad; los perfiles heredados se corrigen al editar.
+  @Transform(recortar)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  especialidad: string;
 }
 
-/** La edición solo toca identidad y credenciales; el perfil no las duplica. */
+/** La edición conserva identidad en Usuario y modifica especialidad en Personal. */
 export class EditarProfesionalDto {
   @Transform(recortar)
   @ValidateIf((_objeto, valor) => valor !== undefined)
@@ -51,6 +58,13 @@ export class EditarProfesionalDto {
   @IsString()
   @IsNotEmpty()
   password?: string;
+
+  @Transform(recortar)
+  @ValidateIf((_objeto, valor) => valor !== undefined)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  especialidad?: string;
 }
 
 /** Reemplaza exactamente el conjunto de sucursales, incluido el conjunto vacío. */

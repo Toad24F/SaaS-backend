@@ -8,6 +8,7 @@ export enum Permiso {
   AUTORIZAR_RECUPERACION_ADMIN = 'autorizar_recuperacion_admin',
   GESTIONAR_LIMITE_SUCURSALES = 'gestionar_limite_sucursales',
   GESTIONAR_CATALOGO = 'gestionar_catalogo',
+  CREAR_EDITAR_SERVICIOS = 'crear_editar_servicios',
   GESTIONAR_PROFESIONALES = 'gestionar_profesionales',
   GESTIONAR_HORARIO = 'gestionar_horario',
   GESTIONAR_BLOQUEOS = 'gestionar_bloqueos',
@@ -25,6 +26,7 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
   [Rol.ADMIN_NEGOCIO]: new Set([
     Permiso.GESTIONAR_RECEPCIONISTAS,
     Permiso.GESTIONAR_CATALOGO,
+    Permiso.CREAR_EDITAR_SERVICIOS,
     Permiso.GESTIONAR_PROFESIONALES,
     Permiso.GESTIONAR_HORARIO,
     Permiso.GESTIONAR_BLOQUEOS,
@@ -32,6 +34,7 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
   ]),
   [Rol.RECEPCIONISTA]: new Set(),
   [Rol.PROFESIONAL]: new Set([
+    Permiso.CREAR_EDITAR_SERVICIOS,
     Permiso.GESTIONAR_HORARIO,
     Permiso.GESTIONAR_BLOQUEOS,
     Permiso.GESTIONAR_SERVICIOS_PROPIOS,
