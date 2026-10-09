@@ -49,8 +49,8 @@ async function preparar(db: DataSource, limite = 2, estados: boolean[] = [true, 
   const usuario = await db.getRepository(Usuario).save({ negocioId: negocio.id,
     nombre: 'Profesional', email: 'prof-cruces@example.test', passwordHash: 'hash',
     rol: Rol.PROFESIONAL, activo: true, creadoEn: ahora, activadoEn: ahora });
-  const perfil = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-    [negocio.id, usuario.id]);
+  await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+    [usuario.id, negocio.id]);
   const ids: number[] = [];
   for (const [indice, zona] of ['America/New_York', 'America/Phoenix'].entries()) {
     const alta = await db.query(`INSERT INTO sucursales
@@ -60,10 +60,10 @@ async function preparar(db: DataSource, limite = 2, estados: boolean[] = [true, 
     ids.push(Number(alta.insertId));
     await db.query(`INSERT INTO personal_sucursales
       (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)`,
-    [negocio.id, perfil.insertId, alta.insertId]);
+    [negocio.id, usuario.id, alta.insertId]);
   }
   return { negocioId: negocio.id, adminId: admin.id,
-    perfilId: Number(perfil.insertId), ids };
+    perfilId: usuario.id, ids };
 }
 
 describe('T097–T100 coordinación de sucursales y horarios', () => {

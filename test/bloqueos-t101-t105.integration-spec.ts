@@ -33,9 +33,9 @@ async function preparar(db: DataSource) {
     }
     const perfiles = [];
     for (const usuario of usuarios.slice(1, 3)) {
-      const fila = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-        [negocio.id, usuario.id]);
-      perfiles.push(Number(fila.insertId));
+      await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+        [usuario.id, negocio.id]);
+      perfiles.push(usuario.id);
     }
     const sede = await db.query(`INSERT INTO sucursales
       (negocio_id,nombre,direccion,telefono,zona_horaria,activo)

@@ -312,17 +312,15 @@ CREATE TABLE servicios (
 
 
 -- 5. PERSONAL (perfil de la cuenta Profesional)
--- La identidad y el acceso viven en usuarios; el perfil solo representa relaciones operativas.
+-- La identidad y el acceso viven en usuarios; el perfil comparte su ID y representa relaciones operativas.
 CREATE TABLE personal (
-  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  id             INT UNSIGNED PRIMARY KEY,
   negocio_id     INT UNSIGNED NOT NULL,
-  usuario_id     INT UNSIGNED NOT NULL,
-  UNIQUE KEY uq_personal_usuario (usuario_id),
   UNIQUE KEY uq_personal_negocio_id (negocio_id, id),
   CONSTRAINT fk_personal_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_personal_usuario
-    FOREIGN KEY (negocio_id, usuario_id) REFERENCES usuarios(negocio_id, id) ON DELETE RESTRICT
+    FOREIGN KEY (negocio_id, id) REFERENCES usuarios(negocio_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- Varias sucursales por perfil; la pertenencia se verifica en ambas claves compuestas.

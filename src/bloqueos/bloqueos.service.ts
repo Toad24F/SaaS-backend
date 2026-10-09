@@ -65,7 +65,7 @@ export class BloqueosService {
         id: filtro.personalId, negocioId: actor.negocioId! });
       if (!perfilFiltrado) throw new NotFoundException('Profesional no disponible.');
       this.autorizacion.exigirSobreRecurso(actor, Permiso.GESTIONAR_BLOQUEOS,
-        { negocioId: actor.negocioId!, usuarioId: perfilFiltrado.usuarioId });
+        { negocioId: actor.negocioId!, usuarioId: perfilFiltrado.id });
     }
     if (filtro.sucursalId !== undefined && !await manager.getRepository(Sucursal).findOneBy({
       id: filtro.sucursalId, negocioId: actor.negocioId! })) {
@@ -73,7 +73,7 @@ export class BloqueosService {
     }
     if (filtro.sucursalId !== undefined && actor.rol === Rol.PROFESIONAL) {
       const perfilFiltro = await manager.getRepository(Personal).findOneBy({
-        negocioId: actor.negocioId!, usuarioId: actor.id });
+        negocioId: actor.negocioId!, id: actor.id });
       if (!perfilFiltro || !await manager.getRepository(PersonalSucursal).findOneBy({
         negocioId: actor.negocioId!, personalId: perfilFiltro.id,
         sucursalId: filtro.sucursalId })) {
@@ -87,7 +87,7 @@ export class BloqueosService {
       return this.filtrar(filas, filtro);
     }
     const perfil = await manager.getRepository(Personal).findOneBy({
-      negocioId: actor.negocioId!, usuarioId: actor.id });
+      negocioId: actor.negocioId!, id: actor.id });
     if (!perfil) throw new ForbiddenException('Profesional sin perfil.');
     const asignaciones = await manager.getRepository(PersonalSucursal).findBy({
       negocioId: actor.negocioId!, personalId: perfil.id });
@@ -142,7 +142,7 @@ export class BloqueosService {
     }
     // El creador no concede privilegios: la propiedad se decide por el perfil afectado.
     this.autorizacion.exigirSobreRecurso(actor, Permiso.GESTIONAR_BLOQUEOS, {
-      negocioId, alcanceEquipo: datos.personalId === null, usuarioId: perfil?.usuarioId });
+      negocioId, alcanceEquipo: datos.personalId === null, usuarioId: perfil?.id });
     if (datos.sucursalId !== null) {
       if (!await manager.getRepository(Sucursal).findOneBy({ id: datos.sucursalId, negocioId })) {
         throw new NotFoundException('Sucursal no disponible.');

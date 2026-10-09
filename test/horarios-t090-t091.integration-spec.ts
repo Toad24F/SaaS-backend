@@ -15,8 +15,8 @@ async function preparar(db: Parameters<Parameters<typeof conBaseMigrada>[0]>[0])
   const usuario = await db.getRepository(Usuario).save({ negocioId: negocio.id,
     nombre: 'Ana', email: 'ana-horarios@example.test', passwordHash: 'hash',
     rol: Rol.PROFESIONAL, activo: true, creadoEn: ahora, activadoEn: ahora });
-  const perfil = await db.query('INSERT INTO personal (negocio_id, usuario_id) VALUES (?,?)',
-    [negocio.id, usuario.id]);
+  await db.query('INSERT INTO personal (id, negocio_id) VALUES (?,?)',
+    [usuario.id, negocio.id]);
   const sucursales: number[] = [];
   for (const [nombre, zona] of [['Centro', 'America/New_York'],
     ['Norte', 'America/Phoenix']]) {
@@ -26,9 +26,9 @@ async function preparar(db: Parameters<Parameters<typeof conBaseMigrada>[0]>[0])
     sucursales.push(Number(alta.insertId));
     await db.query(`INSERT INTO personal_sucursales
       (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)`,
-    [negocio.id, perfil.insertId, alta.insertId]);
+    [negocio.id, usuario.id, alta.insertId]);
   }
-  return { negocioId: negocio.id, personalId: Number(perfil.insertId), sucursales };
+  return { negocioId: negocio.id, personalId: usuario.id, sucursales };
 }
 
 const fila = (sucursalId: number, inicioMinutos = 540, finMinutos = 600) => ({

@@ -25,7 +25,7 @@ export class HorariosAccesoService {
     if (!perfil) throw new NotFoundException('Profesional no disponible.');
     this.autorizacion.exigirSobreRecurso({ id: actor.id, rol: actor.rol,
       negocioId: actor.negocioId }, Permiso.GESTIONAR_HORARIO,
-    { negocioId: perfil.negocioId, usuarioId: perfil.usuarioId });
+    { negocioId: perfil.negocioId, usuarioId: perfil.id });
     return perfil.negocioId;
   }
 

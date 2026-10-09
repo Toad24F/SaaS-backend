@@ -46,8 +46,8 @@ describe('T111–T115 rutas de baja y pertenencia', () => {
           nombre: 'Ana', email: 'ana@bajas-http.test', passwordHash: 'hash',
           rol: Rol.PROFESIONAL, activo: true,
           creadoEn: reloj.ahora(), activadoEn: reloj.ahora() });
-        const perfil = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-          [ids.propio, profesional.id]);
+        await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+          [profesional.id, ids.propio]);
         const sesionPro = await app.get(SesionesService).crear(profesional.id, reloj.ahora());
         tokens.profesional = app.get(JwtService).sign({ sub: profesional.id,
           sesionId: sesionPro.id, rol: profesional.rol, negocioId: ids.propio });
@@ -58,16 +58,16 @@ describe('T111–T115 rutas de baja y pertenencia', () => {
           (negocio_id,nombre,costo,duracion_minutos,activo)
           VALUES (?,'Consulta',100,30,1)`, [ids.propio]);
         const rutas = [`/sucursales/${sede.insertId}`, `/servicios/${servicio.insertId}`,
-          `/profesionales/${perfil.insertId}`];
+          `/profesionales/${profesional.id}`];
         const http = app.getHttpServer();
         for (const ruta of rutas) {
           await request(http).delete(ruta).auth(tokens.ajeno, { type: 'bearer' }).expect(404);
           await request(http).delete(ruta).auth(tokens.profesional, { type: 'bearer' }).expect(403);
         }
         await db.query(`INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id)
-          VALUES (?,?,?)`, [ids.propio, perfil.insertId, sede.insertId]);
+          VALUES (?,?,?)`, [ids.propio, profesional.id, sede.insertId]);
         await db.query(`INSERT INTO personal_servicios (negocio_id,personal_id,servicio_id)
-          VALUES (?,?,?)`, [ids.propio, perfil.insertId, servicio.insertId]);
+          VALUES (?,?,?)`, [ids.propio, profesional.id, servicio.insertId]);
         for (const ruta of rutas) {
           const respuesta = await request(http).delete(ruta)
             .auth(tokens.propio, { type: 'bearer' }).expect(409);

@@ -1,20 +1,18 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-/** Separa perfil y cuenta; las relaciones compuestas bloquean cruces entre negocios. */
+/** El perfil comparte PK con la cuenta; las relaciones compuestas bloquean cruces entre negocios. */
 export class Profesionales1760000012000 implements MigrationInterface {
   name = 'Profesionales1760000012000';
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE TABLE personal (
-      id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      id INT UNSIGNED NOT NULL,
       negocio_id INT UNSIGNED NOT NULL,
-      usuario_id INT UNSIGNED NOT NULL,
       PRIMARY KEY (id),
-      UNIQUE KEY uq_personal_usuario (usuario_id),
       UNIQUE KEY uq_personal_negocio_id (negocio_id, id),
       CONSTRAINT fk_personal_negocio FOREIGN KEY (negocio_id)
         REFERENCES negocios(id) ON DELETE RESTRICT,
-      CONSTRAINT fk_personal_usuario FOREIGN KEY (negocio_id, usuario_id)
+      CONSTRAINT fk_personal_usuario FOREIGN KEY (negocio_id, id)
         REFERENCES usuarios(negocio_id, id) ON DELETE RESTRICT
     ) ENGINE=InnoDB`);
     // La triple PK impide duplicados; ambas FKs incluyen negocio_id.

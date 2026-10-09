@@ -67,9 +67,9 @@ async function conHttp(ejecutar: (ctx: Escenario) => Promise<void>) {
       const sedes: Record<string, number> = {};
       for (const nombre of ['profA', 'profA2', 'profB']) {
         const usuario = usuarios[nombre];
-        const alta = await db.query('INSERT INTO personal (negocio_id, usuario_id) VALUES (?, ?)',
-          [usuario.negocioId, usuario.id]);
-        perfiles[nombre] = Number(alta.insertId);
+        await db.query('INSERT INTO personal (id, negocio_id) VALUES (?, ?)',
+          [usuario.id, usuario.negocioId]);
+        perfiles[nombre] = usuario.id;
       }
       for (const [nombre, negocioId] of [['sedeA', negocios[0].id],
         ['sedeB', negocios[1].id]] as const) {

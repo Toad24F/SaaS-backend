@@ -62,6 +62,8 @@ describe('M1-T081–T082: persistencia y carreras de selección', () => {
         correo: 'ana-seleccion@example.test', password }, ahora);
       const b = await profesionales(db).crear(admin.id, { nombre: 'Bea',
         correo: 'bea-seleccion@example.test', password }, ahora);
+      expect(a.id).toBe(a.usuarioId);
+      expect(b.id).toBe(b.usuarioId);
       await profesionales(db).asignarSucursales(admin.id, a.id, { sucursalIds: [sucursal.id] });
       await profesionales(db).seleccionarServicios(admin.id, b.id,
         { servicioIds: [catalogo[2].id] });

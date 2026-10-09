@@ -21,11 +21,11 @@ async function datos(db: Parameters<Parameters<typeof conBaseMigrada>[0]>[0]) {
   const usuario = await db.getRepository(Usuario).save({ negocioId: negocios[0].id,
     nombre: 'Ana', email: 'horario-ana@example.test', passwordHash: 'hash',
     rol: Rol.PROFESIONAL, activo: true, creadoEn: ahora, activadoEn: ahora });
-  const perfil = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-    [negocios[0].id, usuario.id]);
+  await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+    [usuario.id, negocios[0].id]);
   await db.query('INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)',
-    [negocios[0].id, perfil.insertId, sucursales[0]]);
-  return { negocioId: negocios[0].id, personalId: Number(perfil.insertId),
+    [negocios[0].id, usuario.id, sucursales[0]]);
+  return { negocioId: negocios[0].id, personalId: usuario.id,
     sucursalId: sucursales[0], ajenaId: sucursales[1] };
 }
 

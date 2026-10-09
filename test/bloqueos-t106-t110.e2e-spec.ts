@@ -53,25 +53,26 @@ async function conHttp(ejecutar: (app: INestApplication, db: DataSource,
         negocioId: otroNegocio.id, nombre: 'Ajeno', email: 'ajeno@bloqueos-http.test',
         passwordHash: 'hash', rol: Rol.ADMIN_NEGOCIO, activo: true,
         creadoEn: reloj.ahora(), activadoEn: reloj.ahora() }));
-      const perfil = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-        [negocio.id, usuarios.get('profesional')!.id]);
+      const profesionalId = usuarios.get('profesional')!.id;
+      await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+        [profesionalId, negocio.id]);
       const sede = await db.query(`INSERT INTO sucursales
         (negocio_id,nombre,direccion,telefono,zona_horaria,activo)
         VALUES (?,'Centro','Calle Uno','6141234567','America/Phoenix',1)`, [negocio.id]);
       await db.query(`INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id)
-        VALUES (?,?,?)`, [negocio.id, perfil.insertId, sede.insertId]);
+        VALUES (?,?,?)`, [negocio.id, profesionalId, sede.insertId]);
       const sedeNuevaYork = await db.query(`INSERT INTO sucursales
         (negocio_id,nombre,direccion,telefono,zona_horaria,activo)
         VALUES (?,'Este','Calle Dos','6141234568','America/New_York',1)`, [negocio.id]);
       await db.query(`INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id)
-        VALUES (?,?,?)`, [negocio.id, perfil.insertId, sedeNuevaYork.insertId]);
+        VALUES (?,?,?)`, [negocio.id, profesionalId, sedeNuevaYork.insertId]);
       const tokens: Record<string, string> = {};
       for (const [nombre, usuario] of usuarios) {
         const sesion = await app.get(SesionesService).crear(usuario.id, reloj.ahora());
         tokens[nombre] = app.get(JwtService).sign({ sub: usuario.id,
           sesionId: sesion.id, rol: usuario.rol, negocioId: usuario.negocioId });
       }
-      await ejecutar(app, db, { personalId: Number(perfil.insertId),
+      await ejecutar(app, db, { personalId: profesionalId,
         sucursalId: Number(sede.insertId),
         sucursales: [Number(sede.insertId), Number(sedeNuevaYork.insertId)], tokens });
     } finally { await app.close(); }

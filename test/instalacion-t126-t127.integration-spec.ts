@@ -36,7 +36,7 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
           expect(referencia).toEqual(columnas);
         }
         const antes = await migrada.query('SELECT COUNT(*) total FROM migrations');
-        expect(Number(antes[0].total)).toBe(17);
+        expect(Number(antes[0].total)).toBe(18);
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const despues = await migrada.query('SELECT COUNT(*) total FROM migrations');
         expect(despues).toEqual(antes);

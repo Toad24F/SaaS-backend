@@ -63,8 +63,8 @@ export class ProfesionalesService {
         await this.reservas.reservarUsuario(manager, { usuarioId: usuario.id,
           negocioId: actor.negocioId, correo });
         const repoPerfil = manager.getRepository(Personal);
-        const perfil = await repoPerfil.save(repoPerfil.create({ negocioId: actor.negocioId!,
-          usuarioId: usuario.id }));
+        const perfil = await repoPerfil.save(repoPerfil.create({ id: usuario.id,
+          negocioId: actor.negocioId! }));
         await this.registrar(manager, actor, perfil, 'profesional_creado', null,
           { nombre, correo, activo: true });
         return this.vista(perfil, usuario);
@@ -285,7 +285,7 @@ export class ProfesionalesService {
       .innerJoin(Personal, 'perfil',
         'perfil.id = seleccion.personalId AND perfil.negocioId = servicio.negocioId')
       .innerJoin(Usuario, 'cuenta',
-        'cuenta.id = perfil.usuarioId AND cuenta.negocioId = perfil.negocioId')
+        'cuenta.id = perfil.id AND cuenta.negocioId = perfil.negocioId')
       .innerJoin(PersonalSucursal, 'asignacion',
         'asignacion.personalId = perfil.id AND asignacion.negocioId = perfil.negocioId')
       .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo',
@@ -334,7 +334,7 @@ export class ProfesionalesService {
     if (bloquear) consulta.setLock('pessimistic_write');
     const perfil = await consulta.getOne();
     if (!perfil) throw new NotFoundException('Profesional no disponible.');
-    if (actor.rol === Rol.PROFESIONAL && perfil.usuarioId !== actor.id) {
+    if (actor.rol === Rol.PROFESIONAL && perfil.id !== actor.id) {
       throw new ForbiddenException('Profesional no autorizado.');
     }
     return perfil;
@@ -358,7 +358,7 @@ export class ProfesionalesService {
     const usuario = await manager.getRepository(Usuario).createQueryBuilder('usuario')
       .setLock('pessimistic_write')
       .where('usuario.id = :id AND usuario.negocioId = :negocioId AND usuario.rol = :rol',
-        { id: perfil.usuarioId, negocioId: perfil.negocioId, rol: Rol.PROFESIONAL }).getOne();
+        { id: perfil.id, negocioId: perfil.negocioId, rol: Rol.PROFESIONAL }).getOne();
     if (!usuario) throw new ConflictException('Cuenta Profesional no disponible.');
     return usuario;
   }
@@ -369,7 +369,7 @@ export class ProfesionalesService {
   }
 
   private vista(perfil: Personal, usuario: Usuario): PerfilProfesional {
-    return { id: perfil.id, negocioId: perfil.negocioId, usuarioId: perfil.usuarioId,
+    return { id: perfil.id, negocioId: perfil.negocioId, usuarioId: perfil.id,
       nombre: usuario.nombre!, correo: usuario.email, activo: usuario.activo };
   }
 
@@ -377,7 +377,7 @@ export class ProfesionalesService {
     accion: string, antes: Record<string, unknown> | null,
     despues: Record<string, unknown>): Promise<void> {
     await this.auditoria.registrar(manager, { operacionId: randomUUID(),
-      actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: perfil.usuarioId,
+      actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: perfil.id,
       licenciaId: null, recursoTipo: 'profesional', recursoId: perfil.id,
       accion, valoresAntes: antes, valoresDespues: despues });
   }

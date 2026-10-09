@@ -66,12 +66,12 @@ describe('M1-T071–T076: perfil Profesional', () => {
       const usuario = await db.getRepository(Usuario).save({ negocioId: negocios[0].id,
         nombre: 'Ana', email: 'modelo-prof@example.test', passwordHash: 'hash',
         rol: Rol.PROFESIONAL, activo: true, creadoEn: reloj.ahora(), activadoEn: reloj.ahora() });
-      const perfil = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-        [negocios[0].id, usuario.id]);
-      await expect(db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-        [negocios[0].id, usuario.id])).rejects.toThrow();
-      await expect(db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-        [negocios[1].id, usuario.id])).rejects.toThrow();
+      await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+        [usuario.id, negocios[0].id]);
+      await expect(db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+        [usuario.id, negocios[0].id])).rejects.toThrow();
+      await expect(db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+        [usuario.id, negocios[1].id])).rejects.toThrow();
       const suc = await db.query(`INSERT INTO sucursales
         (negocio_id,nombre,direccion,telefono,zona_horaria) VALUES (?,'Centro','Calle','6141234567','UTC')`,
         [negocios[0].id]);
@@ -79,24 +79,24 @@ describe('M1-T071–T076: perfil Profesional', () => {
         (negocio_id,nombre,direccion,telefono,zona_horaria) VALUES (?,'Ajena','Calle','6141234567','UTC')`,
         [negocios[1].id]);
       await db.query('INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)',
-        [negocios[0].id, perfil.insertId, suc.insertId]);
+        [negocios[0].id, usuario.id, suc.insertId]);
       await expect(db.query('INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)',
-        [negocios[0].id, perfil.insertId, suc.insertId])).rejects.toThrow();
+        [negocios[0].id, usuario.id, suc.insertId])).rejects.toThrow();
       await expect(db.query('INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)',
-        [negocios[0].id, perfil.insertId, ajena.insertId])).rejects.toThrow();
+        [negocios[0].id, usuario.id, ajena.insertId])).rejects.toThrow();
       const servicio = await db.query(`INSERT INTO servicios
         (negocio_id,nombre,costo,duracion_minutos) VALUES (?,'Consulta',0,30)`, [negocios[0].id]);
       await db.query('INSERT INTO personal_servicios (negocio_id,personal_id,servicio_id) VALUES (?,?,?)',
-        [negocios[0].id, perfil.insertId, servicio.insertId]);
+        [negocios[0].id, usuario.id, servicio.insertId]);
       await expect(db.query('INSERT INTO personal_servicios (negocio_id,personal_id,servicio_id) VALUES (?,?,?)',
-        [negocios[0].id, perfil.insertId, servicio.insertId])).rejects.toThrow();
+        [negocios[0].id, usuario.id, servicio.insertId])).rejects.toThrow();
       const servicioAjeno = await db.query(`INSERT INTO servicios
         (negocio_id,nombre,costo,duracion_minutos) VALUES (?,'Ajeno',0,30)`, [negocios[1].id]);
       await expect(db.query('INSERT INTO personal_servicios (negocio_id,personal_id,servicio_id) VALUES (?,?,?)',
-        [negocios[0].id, perfil.insertId, servicioAjeno.insertId])).rejects.toThrow();
+        [negocios[0].id, usuario.id, servicioAjeno.insertId])).rejects.toThrow();
       const columnas = await db.query('SHOW COLUMNS FROM personal') as { Field: string }[];
       expect(columnas.map((c) => c.Field)).not.toEqual(expect.arrayContaining([
-        'nombre', 'email', 'password_hash', 'activo',
+        'nombre', 'email', 'password_hash', 'activo', 'usuario_id',
       ]));
     });
   });
@@ -124,6 +124,8 @@ describe('M1-T071–T076: perfil Profesional', () => {
         correo: alta.correo, activo: true });
       expect(JSON.stringify(creada.body)).not.toMatch(/password|hash/i);
       const usuario = await db.getRepository(Usuario).findOneByOrFail({ email: alta.correo });
+      expect(creada.body.id).toBe(usuario.id);
+      expect(creada.body.usuarioId).toBe(usuario.id);
       expect(usuario.rol).toBe(Rol.PROFESIONAL);
       expect(usuario.passwordHash).not.toBe(password);
       expect((await db.query('SELECT COUNT(*) total FROM correos_acceso WHERE usuario_id = ?',

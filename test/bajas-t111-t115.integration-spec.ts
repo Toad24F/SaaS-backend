@@ -40,7 +40,7 @@ async function preparar(db: DataSource) {
   const cuenta = await db.getRepository(Usuario).save({ negocioId: negocio.id,
     nombre: 'Ana', email: `ana-${randomUUID()}@example.test`, passwordHash: 'hash',
     rol: Rol.PROFESIONAL, activo: true, creadoEn: ahora, activadoEn: ahora });
-  const perfil = await db.getRepository(Personal).save({ negocioId: negocio.id, usuarioId: cuenta.id });
+  const perfil = await db.getRepository(Personal).save({ id: cuenta.id, negocioId: negocio.id });
   await new ReservaCorreoService().reservarUsuario(db.manager, { usuarioId: cuenta.id,
     negocioId: negocio.id, correo: cuenta.email });
   await new AuditoriaService().registrar(db.manager, { operacionId: randomUUID(),

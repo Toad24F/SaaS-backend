@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from 'typeorm';
 import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { PersonalSucursal } from './personal-sucursal.entity';
@@ -6,10 +6,10 @@ import { PersonalServicio } from './personal-servicio.entity';
 
 /** Perfil operativo: identidad, credenciales y estado viven solo en Usuario. */
 @Entity({ name: 'personal' })
-@Index('uq_personal_usuario', ['usuarioId'], { unique: true })
 @Index('uq_personal_negocio_id', ['negocioId', 'id'], { unique: true })
 export class Personal {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  // El perfil usa la misma identidad que su cuenta; no tiene contador propio.
+  @PrimaryColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ name: 'negocio_id', type: 'int', unsigned: true })
@@ -20,14 +20,11 @@ export class Personal {
     foreignKeyConstraintName: 'fk_personal_negocio' })
   negocio: Negocio;
 
-  @Column({ name: 'usuario_id', type: 'int', unsigned: true })
-  usuarioId: number;
-
   // La FK compuesta hace imposible vincular una cuenta de otro negocio.
   @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn([
     { name: 'negocio_id', referencedColumnName: 'negocioId' },
-    { name: 'usuario_id', referencedColumnName: 'id' },
+    { name: 'id', referencedColumnName: 'id' },
   ])
   usuario: Usuario;
 

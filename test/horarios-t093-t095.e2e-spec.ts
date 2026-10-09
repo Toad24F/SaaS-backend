@@ -57,9 +57,10 @@ async function conHttp(ejecutar: (app: INestApplication, datos: {
       }
       const perfiles: number[] = [];
       for (const nombre of ['profesional', 'otroProfesional']) {
-        const alta = await db.query('INSERT INTO personal (negocio_id,usuario_id) VALUES (?,?)',
-          [negocios[0], usuarios.get(nombre)!.id]);
-        perfiles.push(Number(alta.insertId));
+        const usuarioId = usuarios.get(nombre)!.id;
+        await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
+          [usuarioId, negocios[0]]);
+        perfiles.push(usuarioId);
       }
       const sucursales: number[] = [];
       for (const zona of ['America/New_York', 'America/Phoenix']) {
