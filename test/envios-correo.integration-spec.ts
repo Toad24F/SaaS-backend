@@ -30,7 +30,7 @@ describe('M1-T026: bandeja durable en MariaDB temporal', () => {
       const migraciones = await primera.query('SELECT name FROM migrations ORDER BY id');
       // La lista completa incorpora suspensión programada y sucursales.
       // La corrección de suspensión amplía el historial sin alterar la bandeja previa.
-      expect(migraciones).toHaveLength(18);
+      expect(migraciones).toHaveLength(19);
       const id = (await primera.query(`INSERT INTO envios_correo
         (negocio_id, tipo, correo_destinatario, codigo_acceso_id, clave_dedupe, proximo_intento_en)
         VALUES (?, 'recuperacion', 'admin@example.test', ?, 'recuperacion:1', UTC_TIMESTAMP(6))`,

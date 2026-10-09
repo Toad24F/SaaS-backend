@@ -36,7 +36,9 @@ Desde `backend/`:
 ## Documentación y precedencia
 - Los acuerdos de fase 2 recogidos aquí sustituyen las reglas incompatibles de fase 1, en particular sucursales ilimitadas, entrega manual de códigos, creación anticipada de administradores incompletos y bloqueo inmediato por suspensión manual.
 - Consultar `docs/fase-1-auth/spec/spec-auth.md` y `docs/fase-1-auth/plan-auth.md` como antecedentes; conservar sus reglas compatibles y las evidencias históricas, sin atribuirles cobertura de funcionalidades nuevas.
-- Organizar la documentación nueva del módulo 1 en `docs/fase-2-modulo-1/`. Estas instrucciones describen el comportamiento requerido, no acreditan que ya esté implementado.
+- Conservar la documentación original del módulo 1 en `docs/fase-2-modulo-1/` como antecedente de su implementación.
+- Consultar `docs/Fix-modulo-1/constitucion.md`, `spec-fix.md`, `plan.md` y `tareas.md` para los ajustes del módulo 1. Su especificación prevalece sobre las reglas incompatibles de fase 2 relativas a creación y edición de servicios por el Profesional, estados individuales y oferta por sucursal; las demás reglas compatibles siguen vigentes. Los RF-01–RF-10 del fix son locales a esa especificación.
+- Distinguir requisitos, planes y tareas de funcionalidad implementada: las pruebas y evidencias históricas de fases anteriores no acreditan los ajustes del fix.
 
 ## Pruebas
 - Cubrir aislamiento entre negocios, permisos por rol, activación con correo y código, consumo único, vencimiento y envío de correos, incluidos fallos de entrega.

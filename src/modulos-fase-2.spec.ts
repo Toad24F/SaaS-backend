@@ -15,6 +15,7 @@ import { Servicio } from './servicios/entities/servicio.entity';
 import { Personal } from './profesionales/entities/personal.entity';
 import { PersonalSucursal } from './profesionales/entities/personal-sucursal.entity';
 import { PersonalServicio } from './profesionales/entities/personal-servicio.entity';
+import { PersonalServicioSucursal } from './profesionales/entities/personal-servicio-sucursal.entity';
 import { HorarioPersonal } from './horarios/entities/horario-personal.entity';
 import { ExcepcionHorario } from './horarios/entities/excepcion-horario.entity';
 import { FranjaExcepcionHorario } from './horarios/entities/franja-excepcion-horario.entity';
@@ -38,10 +39,11 @@ describe('M1-T008: composición inicial de fase 2', () => {
       // Sucursal registra metadatos; la prueba de composición no abre MariaDB.
       .overrideProvider(getRepositoryToken(Sucursal)).useValue({})
       .overrideProvider(getRepositoryToken(Servicio)).useValue({})
-      // Los tres repositorios del perfil son metadatos; no necesitan MariaDB aquí.
+      // Los cuatro repositorios del perfil son metadatos; no necesitan MariaDB aquí.
       .overrideProvider(getRepositoryToken(Personal)).useValue({})
       .overrideProvider(getRepositoryToken(PersonalSucursal)).useValue({})
       .overrideProvider(getRepositoryToken(PersonalServicio)).useValue({})
+      .overrideProvider(getRepositoryToken(PersonalServicioSucursal)).useValue({})
       // El modelo de horarios se compone sin abrir una conexión en esta prueba.
       .overrideProvider(getRepositoryToken(HorarioPersonal)).useValue({})
       .overrideProvider(getRepositoryToken(ExcepcionHorario)).useValue({})

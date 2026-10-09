@@ -1,9 +1,11 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Check, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from 'typeorm';
 import { Servicio } from '../../servicios/entities/servicio.entity';
 import { Personal } from './personal.entity';
+import { PersonalServicioSucursal } from './personal-servicio-sucursal.entity';
 
 /** Selección futura por Profesional, sin duplicar costo, duración ni estado global. */
 @Entity({ name: 'personal_servicios' })
+@Check('chk_pserv_activo', 'activo IN (0, 1)')
 export class PersonalServicio {
   @PrimaryColumn({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;
@@ -13,6 +15,10 @@ export class PersonalServicio {
 
   @PrimaryColumn({ name: 'servicio_id', type: 'int', unsigned: true })
   servicioId: number;
+
+  // Desmarcar en el futuro conservará la fila y sus preferencias por sucursal.
+  @Column({ type: 'boolean', default: true })
+  activo: boolean;
 
   @ManyToOne(() => Personal, (perfil) => perfil.servicios, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn([
@@ -27,4 +33,7 @@ export class PersonalServicio {
     { name: 'servicio_id', referencedColumnName: 'id' },
   ])
   servicio: Servicio;
+
+  @OneToMany(() => PersonalServicioSucursal, (oferta) => oferta.seleccion)
+  sucursales: PersonalServicioSucursal[];
 }

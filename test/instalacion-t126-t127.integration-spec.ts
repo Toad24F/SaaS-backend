@@ -23,6 +23,8 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
         const nombres = (tablas as { nombre: string }[]).map((fila) => fila.nombre)
           .filter((tabla) => !['migrations', 'typeorm_metadata'].includes(tabla)).sort();
         expect(nombres).toContain('licencias');
+        // La instalación SQL autónoma debe incluir la relación nueva además de las históricas.
+        expect(nombres).toContain('personal_servicios_sucursales');
         for (const tabla of nombres) {
           // Compara definición efectiva, incluyendo restricciones y reglas de pertenencia.
           const [columnas] = await conexion.query(`SELECT COLUMN_NAME nombre, COLUMN_TYPE tipo,
@@ -36,7 +38,7 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
           expect(referencia).toEqual(columnas);
         }
         const antes = await migrada.query('SELECT COUNT(*) total FROM migrations');
-        expect(Number(antes[0].total)).toBe(18);
+        expect(Number(antes[0].total)).toBe(19);
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const despues = await migrada.query('SELECT COUNT(*) total FROM migrations');
         expect(despues).toEqual(antes);

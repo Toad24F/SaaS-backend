@@ -28,12 +28,13 @@ import { PersonalServicio } from './entities/personal-servicio.entity';
 
 export interface PerfilProfesional {
   id: number; negocioId: number; usuarioId: number;
-  nombre: string; correo: string; activo: boolean;
+  nombre: string; correo: string; activo: boolean; especialidad: string | null;
 }
 
 export interface OpcionServicioProfesional {
   id: number; nombre: string; costo: string; duracionMinutos: number;
   activo: boolean; seleccionado: boolean;
+  descripcion: string | null; creadorPersonalId: number | null;
 }
 
 /** Cuenta, perfil, correo reservado y asignaciones comparten pertenencia transaccional. */
@@ -232,7 +233,8 @@ export class ProfesionalesService {
     return catalogo.filter((servicio) => servicio.activo || seleccionados.has(servicio.id))
       .map((servicio) => ({ id: servicio.id, nombre: servicio.nombre,
         costo: servicio.costo, duracionMinutos: servicio.duracionMinutos,
-        activo: servicio.activo, seleccionado: seleccionados.has(servicio.id) }));
+        activo: servicio.activo, seleccionado: seleccionados.has(servicio.id),
+        descripcion: servicio.descripcion, creadorPersonalId: servicio.creadorPersonalId }));
   }
 
   async seleccionarServicios(actorId: number, id: number,
@@ -369,8 +371,10 @@ export class ProfesionalesService {
   }
 
   private vista(perfil: Personal, usuario: Usuario): PerfilProfesional {
+    // La identidad sigue en Usuario; la proyección incorpora solo el dato propio del perfil.
     return { id: perfil.id, negocioId: perfil.negocioId, usuarioId: perfil.id,
-      nombre: usuario.nombre!, correo: usuario.email, activo: usuario.activo };
+      nombre: usuario.nombre!, correo: usuario.email, activo: usuario.activo,
+      especialidad: perfil.especialidad };
   }
 
   private async registrar(manager: EntityManager, actor: Usuario, perfil: Personal,

@@ -300,10 +300,13 @@ CREATE TABLE servicios (
   duracion_minutos  INT UNSIGNED NOT NULL,
   activo            BOOLEAN NOT NULL DEFAULT TRUE,
   creado_en         DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  descripcion       TEXT NULL,
+  creador_personal_id INT UNSIGNED NULL,
   CONSTRAINT fk_servicios_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
   UNIQUE KEY uq_servicios_negocio_id (negocio_id, id),
   INDEX idx_servicios_negocio_activo (negocio_id, activo),
+  INDEX idx_servicios_creador (negocio_id, creador_personal_id),
   CONSTRAINT chk_servicios_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT chk_servicios_costo CHECK (costo >= 0),
   CONSTRAINT chk_servicios_duracion CHECK (duracion_minutos > 0),
@@ -316,6 +319,7 @@ CREATE TABLE servicios (
 CREATE TABLE personal (
   id             INT UNSIGNED PRIMARY KEY,
   negocio_id     INT UNSIGNED NOT NULL,
+  especialidad   VARCHAR(150) NULL,
   UNIQUE KEY uq_personal_negocio_id (negocio_id, id),
   CONSTRAINT fk_personal_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
@@ -323,17 +327,24 @@ CREATE TABLE personal (
     FOREIGN KEY (negocio_id, id) REFERENCES usuarios(negocio_id, id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+-- El autor se agrega tras crear personal para exigir que pertenezca al negocio del servicio.
+ALTER TABLE servicios ADD CONSTRAINT fk_servicios_creador
+  FOREIGN KEY (negocio_id, creador_personal_id)
+  REFERENCES personal(negocio_id, id) ON DELETE RESTRICT;
+
 -- Varias sucursales por perfil; la pertenencia se verifica en ambas claves compuestas.
 CREATE TABLE personal_sucursales (
   negocio_id   INT UNSIGNED NOT NULL,
   personal_id  INT UNSIGNED NOT NULL,
   sucursal_id  INT UNSIGNED NOT NULL,
+  activo       BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (negocio_id, personal_id, sucursal_id),
   INDEX idx_ps_sucursal (negocio_id, sucursal_id),
   CONSTRAINT fk_ps_perfil FOREIGN KEY (negocio_id, personal_id)
     REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
   CONSTRAINT fk_ps_sucursal FOREIGN KEY (negocio_id, sucursal_id)
-    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT
+    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ps_activo CHECK (activo IN (0, 1))
 ) ENGINE=InnoDB;
 
 -- Selecciones individuales futuras; el precio y el estado global siguen en servicios.
@@ -341,12 +352,31 @@ CREATE TABLE personal_servicios (
   negocio_id   INT UNSIGNED NOT NULL,
   personal_id  INT UNSIGNED NOT NULL,
   servicio_id  INT UNSIGNED NOT NULL,
+  activo       BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (negocio_id, personal_id, servicio_id),
   INDEX idx_pserv_servicio (negocio_id, servicio_id),
   CONSTRAINT fk_pserv_perfil FOREIGN KEY (negocio_id, personal_id)
     REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
   CONSTRAINT fk_pserv_servicio FOREIGN KEY (negocio_id, servicio_id)
-    REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT
+    REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_pserv_activo CHECK (activo IN (0, 1))
+) ENGINE=InnoDB;
+
+-- Una fila por combinación; las FKs exigen selección general y sucursal asignada.
+-- El estado propio conserva la preferencia sin duplicar el estado efectivo calculado.
+CREATE TABLE personal_servicios_sucursales (
+  negocio_id INT UNSIGNED NOT NULL,
+  personal_id INT UNSIGNED NOT NULL,
+  sucursal_id INT UNSIGNED NOT NULL,
+  servicio_id INT UNSIGNED NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  PRIMARY KEY (negocio_id, personal_id, sucursal_id, servicio_id),
+  INDEX idx_pss_servicio (negocio_id, personal_id, servicio_id),
+  CONSTRAINT fk_pss_asignacion FOREIGN KEY (negocio_id, personal_id, sucursal_id)
+    REFERENCES personal_sucursales(negocio_id, personal_id, sucursal_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_pss_seleccion FOREIGN KEY (negocio_id, personal_id, servicio_id)
+    REFERENCES personal_servicios(negocio_id, personal_id, servicio_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_pss_activo CHECK (activo IN (0, 1))
 ) ENGINE=InnoDB;
 
 

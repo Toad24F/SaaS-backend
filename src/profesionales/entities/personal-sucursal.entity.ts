@@ -1,9 +1,11 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Check, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from 'typeorm';
 import { Sucursal } from '../../sucursales/entities/sucursal.entity';
 import { Personal } from './personal.entity';
+import { PersonalServicioSucursal } from './personal-servicio-sucursal.entity';
 
 /** Asignación independiente del horario; cada relación conserva el tenant. */
 @Entity({ name: 'personal_sucursales' })
+@Check('chk_ps_activo', 'activo IN (0, 1)')
 export class PersonalSucursal {
   @PrimaryColumn({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;
@@ -13,6 +15,10 @@ export class PersonalSucursal {
 
   @PrimaryColumn({ name: 'sucursal_id', type: 'int', unsigned: true })
   sucursalId: number;
+
+  // Este interruptor no modifica el estado global ni el cupo de la sucursal.
+  @Column({ type: 'boolean', default: true })
+  activo: boolean;
 
   @ManyToOne(() => Personal, (perfil) => perfil.sucursales, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn([
@@ -27,4 +33,7 @@ export class PersonalSucursal {
     { name: 'sucursal_id', referencedColumnName: 'id' },
   ])
   sucursal: Sucursal;
+
+  @OneToMany(() => PersonalServicioSucursal, (oferta) => oferta.asignacion)
+  servicios: PersonalServicioSucursal[];
 }

@@ -15,6 +15,10 @@ export class Personal {
   @Column({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;
 
+  // Perfiles anteriores permanecen sin especialidad hasta su próxima edición.
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  especialidad: string | null;
+
   @ManyToOne(() => Negocio, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'negocio_id', referencedColumnName: 'id',
     foreignKeyConstraintName: 'fk_personal_negocio' })

@@ -7,7 +7,7 @@ import { conBaseMigrada } from './support/mariadb';
 const IDENTIDAD = ['negocios', 'usuarios', 'altas_administrador', 'correos_acceso',
   'codigos_acceso', 'envios_correo'];
 const CALENDARIO = ['sucursales', 'servicios', 'personal', 'personal_sucursales',
-  'personal_servicios', 'horarios_personal', 'excepciones_horario',
+  'personal_servicios', 'personal_servicios_sucursales', 'horarios_personal', 'excepciones_horario',
   'franjas_excepcion_horario', 'bloqueos_horario'];
 const LICENCIAS = ['licencias'];
 

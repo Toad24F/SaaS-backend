@@ -1,11 +1,13 @@
 import { Check, Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne,
   PrimaryGeneratedColumn } from 'typeorm';
 import { Negocio } from '../../negocios/entities/negocio.entity';
+import { Personal } from '../../profesionales/entities/personal.entity';
 
 /** Tarifa y duración únicas del negocio, independientes de sucursal y profesional. */
 @Entity({ name: 'servicios' })
 @Index('idx_servicios_negocio_activo', ['negocioId', 'activo'])
 @Index('uq_servicios_negocio_id', ['negocioId', 'id'], { unique: true })
+@Index('idx_servicios_creador', ['negocioId', 'creadorPersonalId'])
 @Check('chk_servicios_nombre', 'CHAR_LENGTH(TRIM(nombre)) > 0')
 @Check('chk_servicios_costo', 'costo >= 0')
 @Check('chk_servicios_duracion', 'duracion_minutos > 0')
@@ -39,4 +41,20 @@ export class Servicio {
 
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
   creadoEn: Date;
+
+  // El texto y la autoría son opcionales para conservar intacto el catálogo anterior.
+  @Column({ type: 'text', nullable: true })
+  descripcion: string | null;
+
+  @Column({ name: 'creador_personal_id', type: 'int', unsigned: true, nullable: true })
+  creadorPersonalId: number | null;
+
+  // La pareja negocio/autor impide asociar un servicio con un perfil ajeno.
+  @ManyToOne(() => Personal, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([
+    { name: 'negocio_id', referencedColumnName: 'negocioId',
+      foreignKeyConstraintName: 'fk_servicios_creador' },
+    { name: 'creador_personal_id', referencedColumnName: 'id' },
+  ])
+  creador: Personal | null;
 }

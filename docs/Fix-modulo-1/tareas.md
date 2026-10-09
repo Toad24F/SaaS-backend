@@ -1,34 +1,34 @@
 # Tareas — Fix del módulo 1
 
-Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Todas las tareas están pendientes, duran **menos de 30 minutos de trabajo activo** y aparecen en orden de dependencia. Si una supera su estimación al ejecutarla, se divide antes de continuar. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Esta lista no acredita implementación ni pruebas.
+Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md) y las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md); las demás casillas no acreditan implementación ni pruebas.
 
 ## 1. Base y persistencia
 
-- [ ] **FIX-T001 — Fijar regresión del comportamiento actual** · 20 min · Depende de: ninguna · RF-03, RF-05–RF-10  
+- [x] **FIX-T001 — Fijar regresión del comportamiento actual** · 20 min · Depende de: ninguna · RF-03, RF-05–RF-10
   Hecho cuando: pruebas existentes de selección general, asignaciones, oferta y reactivación global se ejecutan y se registran sus resultados como línea base, sin atribuirles cobertura del fix.
 
-- [ ] **FIX-T002 — Migrar campos del perfil y catálogo** · 25 min · Depende de: FIX-T001 · RF-01–RF-04  
+- [x] **FIX-T002 — Migrar campos del perfil y catálogo** · 25 min · Depende de: FIX-T001 · RF-01–RF-04
   Hecho cuando: una migración añade especialidad, descripción y autor anulables sin cambiar valores de perfiles o servicios existentes; la autoría queda restringida al mismo negocio.
 
-- [ ] **FIX-T003 — Migrar estados individuales** · 20 min · Depende de: FIX-T002 · RF-05–RF-06, RF-08  
+- [x] **FIX-T003 — Migrar estados individuales** · 20 min · Depende de: FIX-T002 · RF-05–RF-06, RF-08
   Hecho cuando: las relaciones actuales de Profesional–servicio y Profesional–sucursal tienen un estado individual activo inicial sin alterar los estados globales.
 
-- [ ] **FIX-T004 — Migrar la relación de oferta por sucursal** · 25 min · Depende de: FIX-T003 · RF-07–RF-08, RF-10  
+- [x] **FIX-T004 — Migrar la relación de oferta por sucursal** · 25 min · Depende de: FIX-T003 · RF-07–RF-08, RF-10
   Hecho cuando: la nueva relación única por Profesional, servicio y sucursal impide duplicados y referencias entre negocios o sin asignaciones válidas.
 
-- [ ] **FIX-T005 — Poblar la oferta existente** · 20 min · Depende de: FIX-T004 · RF-07–RF-08  
+- [x] **FIX-T005 — Poblar la oferta existente** · 20 min · Depende de: FIX-T004 · RF-07–RF-08
   Hecho cuando: cada selección general previa aparece en todas las sucursales asignadas del mismo Profesional, incluso si un estado global la deja temporalmente sin oferta efectiva.
 
-- [ ] **FIX-T006 — Actualizar entidades y proyecciones de perfil/catálogo** · 20 min · Depende de: FIX-T002 · RF-01–RF-04  
+- [x] **FIX-T006 — Actualizar entidades y proyecciones de perfil/catálogo** · 20 min · Depende de: FIX-T002 · RF-01–RF-04
   Hecho cuando: las entidades representan especialidad, descripción y autor, sin duplicar identidad del Profesional en su perfil.
 
-- [ ] **FIX-T007 — Actualizar entidades de relaciones individuales** · 25 min · Depende de: FIX-T003–FIX-T004 · RF-05–RF-08  
+- [x] **FIX-T007 — Actualizar entidades de relaciones individuales** · 25 min · Depende de: FIX-T003–FIX-T004 · RF-05–RF-08
   Hecho cuando: las entidades expresan los dos estados individuales y la combinación por sucursal con pertenencia compuesta.
 
-- [ ] **FIX-T008 — Sincronizar el esquema SQL de referencia** · 20 min · Depende de: FIX-T005–FIX-T007 · RF-01–RF-08  
+- [x] **FIX-T008 — Sincronizar el esquema SQL de referencia** · 20 min · Depende de: FIX-T005–FIX-T007 · RF-01–RF-08
   Hecho cuando: `db/schema.sql`, entidades y migración describen los mismos campos, claves, estados y restricciones.
 
-- [ ] **FIX-T009 — Probar instalación y conversión de datos** · 25 min · Depende de: FIX-T008 · RF-01–RF-03, RF-07–RF-08  
+- [x] **FIX-T009 — Probar instalación y conversión de datos** · 25 min · Depende de: FIX-T008 · RF-01–RF-03, RF-07–RF-08
   Hecho cuando: pruebas con MariaDB verifican migración desde el esquema anterior, base nueva, valores heredados, cruces prohibidos y oferta inicial sin pérdida de datos.
 
 ## 2. Perfil y catálogo compartido
