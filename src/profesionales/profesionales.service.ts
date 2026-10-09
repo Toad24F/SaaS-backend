@@ -350,6 +350,59 @@ export class ProfesionalesService {
       .orderBy('servicio.id', 'ASC').getMany();
   }
 
+  async consultarOferta(actorId: number, id: number) {
+    return this.perfiles.manager.transaction('REPEATABLE READ', async (manager) => {
+      const actor = await this.actorServicios(manager, actorId);
+      await this.perfilParaServicios(manager, actor, id);
+      const negocioId = actor.negocioId!;
+      const cuenta = await manager.getRepository(Usuario).findOneBy({
+        id, negocioId, rol: Rol.PROFESIONAL });
+      if (!cuenta) throw new NotFoundException('Profesional no disponible.');
+      const asignaciones = await manager.getRepository(PersonalSucursal).find({
+        where: { negocioId, personalId: id }, order: { sucursalId: 'ASC' } });
+      const sucursalIds = asignaciones.map((fila) => fila.sucursalId);
+      const sucursales = sucursalIds.length ? await manager.getRepository(Sucursal).findBy({
+        negocioId, id: In(sucursalIds) }) : [];
+      const sucursalPorId = new Map(sucursales.map((fila) => [fila.id, fila]));
+      const catalogo = await manager.getRepository(Servicio).find({
+        where: { negocioId }, order: { id: 'ASC' } });
+      const selecciones = await manager.getRepository(PersonalServicio).findBy({
+        negocioId, personalId: id });
+      const combinaciones = await manager.getRepository(PersonalServicioSucursal).findBy({
+        negocioId, personalId: id });
+      const seleccionPorServicio = new Map(selecciones.map((fila) => [fila.servicioId, fila]));
+      const combinacionPorClave = new Map(combinaciones.map((fila) =>
+        [`${fila.sucursalId}:${fila.servicioId}`, fila]));
+
+      // La respuesta conserva estados fuente y deriva el resultado de cada par;
+      // consultar no cambia preferencias ni graba una bandera de oferta efectiva.
+      return { personalId: id, cuentaActiva: cuenta.activo,
+        sucursales: asignaciones.map((asignacion) => {
+          const sucursal = sucursalPorId.get(asignacion.sucursalId)!;
+          return { id: sucursal.id, nombre: sucursal.nombre,
+            sucursalActiva: sucursal.activo, atencionActiva: asignacion.activo,
+            servicios: catalogo.map((servicio) => {
+              const seleccionGeneralActiva = seleccionPorServicio.get(servicio.id)?.activo ?? false;
+              const seleccionSucursalActiva = combinacionPorClave
+                .get(`${sucursal.id}:${servicio.id}`)?.activo ?? false;
+              const motivosExclusion: string[] = [];
+              if (!cuenta.activo) motivosExclusion.push('cuenta_inactiva');
+              if (!sucursal.activo) motivosExclusion.push('sucursal_inactiva');
+              if (!servicio.activo) motivosExclusion.push('servicio_inactivo');
+              if (!seleccionGeneralActiva) motivosExclusion.push('servicio_no_seleccionado');
+              if (!asignacion.activo) motivosExclusion.push('atencion_inactiva');
+              if (!seleccionSucursalActiva) {
+                motivosExclusion.push('servicio_no_ofrecido_en_sucursal');
+              }
+              return { id: servicio.id, nombre: servicio.nombre,
+                servicioActivo: servicio.activo, seleccionGeneralActiva,
+                seleccionSucursalActiva, ofrecido: motivosExclusion.length === 0,
+                motivosExclusion };
+            }) };
+        }) };
+    });
+  }
+
   async consultarAtencionSucursal(actorId: number, id: number, sucursalId: number) {
     const manager = this.perfiles.manager;
     const actor = await this.actorServicios(manager, actorId);

@@ -89,6 +89,13 @@ export class ProfesionalesController {
     return this.profesionales.seleccionarServicios(actor.sub, parametros.id, datos);
   }
 
+  @Get(':id/oferta')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  consultarOferta(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
+    // La vista explica todos los niveles sin persistir un estado efectivo duplicado.
+    return this.profesionales.consultarOferta(actor.sub, parametros.id);
+  }
+
   @Get(':id/sucursales/:sucursalId/atencion')
   @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
   consultarAtencionSucursal(@Param() parametros: ProfesionalSucursalIdDto,

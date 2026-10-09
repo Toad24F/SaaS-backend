@@ -1,6 +1,6 @@
 # Tareas — Fix del módulo 1
 
-Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md), las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md), las 10–18 en [evidencia-t010-t018.md](evidencia-t010-t018.md), las 19–23 en [evidencia-t019-t023.md](evidencia-t019-t023.md) y las 24–29 en [evidencia-t024-t029.md](evidencia-t024-t029.md); las demás casillas no acreditan implementación ni pruebas.
+Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md), las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md), las 10–18 en [evidencia-t010-t018.md](evidencia-t010-t018.md), las 19–23 en [evidencia-t019-t023.md](evidencia-t019-t023.md), las 24–29 en [evidencia-t024-t029.md](evidencia-t024-t029.md) y las 30–36 en [evidencia-t030-t036.md](evidencia-t030-t036.md); las demás casillas no acreditan implementación ni pruebas.
 
 ## 1. Base y persistencia
 
@@ -99,23 +99,23 @@ Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados
 
 ## 5. Consulta, seguridad y cierre
 
-- [ ] **FIX-T030 — Derivar oferta efectiva y motivos de exclusión** · 25 min · Depende de: FIX-T025, FIX-T028 · RF-05–RF-08, RF-10  
+- [x] **FIX-T030 — Derivar oferta efectiva y motivos de exclusión** · 25 min · Depende de: FIX-T025, FIX-T028 · RF-05–RF-08, RF-10
   Hecho cuando: la consulta combina cuenta, estados globales, selección general, atención individual y selección por sucursal sin duplicar el estado final persistido.
 
-- [ ] **FIX-T031 — Exponer consulta autorizada de oferta** · 20 min · Depende de: FIX-T030 · RF-10  
+- [x] **FIX-T031 — Exponer consulta autorizada de oferta** · 20 min · Depende de: FIX-T030 · RF-10
   Hecho cuando: administrador y Profesional propio reciben asignaciones, estados y oferta por sucursal; un perfil ajeno no revela datos.
 
-- [ ] **FIX-T032 — Probar matriz de estados y consulta** · 25 min · Depende de: FIX-T031 · RF-05–RF-08, RF-10  
+- [x] **FIX-T032 — Probar matriz de estados y consulta** · 25 min · Depende de: FIX-T031 · RF-05–RF-08, RF-10
   Hecho cuando: pruebas cubren apagado y recuperación de cada nivel, servicio por una sucursal pero no otra, oferta vacía y estados conservados al consultar.
 
-- [ ] **FIX-T033 — Probar permisos y aislamiento transversal** · 25 min · Depende de: FIX-T018, FIX-T026, FIX-T029, FIX-T031 · RF-03–RF-10  
+- [x] **FIX-T033 — Probar permisos y aislamiento transversal** · 25 min · Depende de: FIX-T018, FIX-T026, FIX-T029, FIX-T031 · RF-03–RF-10
   Hecho cuando: la matriz de roles y dos negocios cubre todas las rutas nuevas y confirma que IDs ajenos no permiten leer o modificar datos.
 
-- [ ] **FIX-T034 — Verificar auditoría, eliminación y carreras restantes** · 25 min · Depende de: FIX-T021, FIX-T023, FIX-T027, FIX-T033 · RF-03–RF-09  
+- [x] **FIX-T034 — Verificar auditoría, eliminación y carreras restantes** · 25 min · Depende de: FIX-T021, FIX-T023, FIX-T027, FIX-T033 · RF-03–RF-09
   Hecho cuando: reintentos y operaciones opuestas producen un evento por cambio real; creación profesional y cambios globales concurrentes conservan pertenencia, y el historial impide bajas físicas indebidas.
 
-- [ ] **FIX-T035 — Actualizar documentación de contrato y estado actual** · 20 min · Depende de: FIX-T032–FIX-T034 · RF-01–RF-10  
+- [x] **FIX-T035 — Actualizar documentación de contrato y estado actual** · 20 min · Depende de: FIX-T032–FIX-T034 · RF-01–RF-10
   Hecho cuando: las rutas y respuestas implementadas quedan documentadas sin presentar disponibilidad ni reservas como operativas; las evidencias del fix se distinguen de las históricas.
 
-- [ ] **FIX-T036 — Ejecutar puertas de calidad y cerrar trazabilidad** · 25 min de trabajo activo · Depende de: FIX-T011, FIX-T013, FIX-T016, FIX-T018, FIX-T021, FIX-T023, FIX-T027, FIX-T029, FIX-T032–FIX-T035 · RF-01–RF-10  
+- [x] **FIX-T036 — Ejecutar puertas de calidad y cerrar trazabilidad** · 25 min de trabajo activo · Depende de: FIX-T011, FIX-T013, FIX-T016, FIX-T018, FIX-T021, FIX-T023, FIX-T027, FIX-T029, FIX-T032–FIX-T035 · RF-01–RF-10
   Hecho cuando: `npm run build`, `npm run lint` y las pruebas relevantes pasan; cada RF tiene evidencia nueva y todo fallo o pendiente queda registrado.
