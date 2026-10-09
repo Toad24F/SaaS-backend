@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { ArrayUnique, IsArray, IsEmail, IsInt, IsNotEmpty, IsString, Max,
+import { ArrayUnique, IsArray, IsBoolean, IsEmail, IsInt, IsNotEmpty, IsString, Max,
   MaxLength, Min, ValidateIf } from 'class-validator';
 
 const recortar = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
@@ -11,6 +11,21 @@ export class ProfesionalIdDto {
   @Min(1)
   @Max(4294967295)
   id: number;
+}
+
+/** Identifica una sucursal sin aceptar un negocio declarado por el cliente. */
+export class ProfesionalSucursalIdDto extends ProfesionalIdDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(4294967295)
+  sucursalId: number;
+}
+
+/** El interruptor individual exige un booleano JSON real. */
+export class CambiarAtencionSucursalDto {
+  @IsBoolean()
+  activo: boolean;
 }
 
 /** Datos de cuenta completa; tenant, rol y estado los fija el servidor. */

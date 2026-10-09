@@ -136,7 +136,8 @@ describe('T111–T115 eliminación elegible sin pérdida de historial', () => {
       await profesionales(db).seleccionarServicios(f.adminId, f.perfilId,
         { servicioIds: [] });
       expect((await db.query('SELECT COUNT(*) total FROM personal_sucursales'))[0].total).toBe('0');
-      expect((await db.query('SELECT COUNT(*) total FROM personal_servicios'))[0].total).toBe('0');
+      // La selección desmarcada permanece inactiva para conservar su historial individual.
+      expect((await db.query('SELECT activo FROM personal_servicios'))[0].activo).toBe(0);
       await expect(sucursales(db).eliminar(f.adminId, f.sedeId))
         .rejects.toBeInstanceOf(ConflictException);
       await expect(servicios(db).eliminar(f.adminId, f.servicioId))

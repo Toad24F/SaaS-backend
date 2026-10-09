@@ -9,7 +9,8 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
-  ProfesionalIdDto, SeleccionarServiciosDto } from './dto/profesionales.dto';
+  CambiarAtencionSucursalDto, ProfesionalIdDto, ProfesionalSucursalIdDto,
+  SeleccionarServiciosDto } from './dto/profesionales.dto';
 import { ProfesionalesService } from './profesionales.service';
 
 /** Gestión administrativa del perfil; la respuesta del servicio excluye secretos. */
@@ -86,5 +87,39 @@ export class ProfesionalesController {
     @Body() datos: SeleccionarServiciosDto, @CurrentUser() actor: JwtPayload) {
     // La ruta acepta el conjunto completo, separado de asignaciones a sucursales.
     return this.profesionales.seleccionarServicios(actor.sub, parametros.id, datos);
+  }
+
+  @Get(':id/sucursales/:sucursalId/atencion')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  consultarAtencionSucursal(@Param() parametros: ProfesionalSucursalIdDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.profesionales.consultarAtencionSucursal(actor.sub,
+      parametros.id, parametros.sucursalId);
+  }
+
+  @Put(':id/sucursales/:sucursalId/atencion')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  cambiarAtencionSucursal(@Param() parametros: ProfesionalSucursalIdDto,
+    @Body() datos: CambiarAtencionSucursalDto, @CurrentUser() actor: JwtPayload) {
+    // El reloj compartido fija el comienzo de la validación de recurrencias.
+    return this.profesionales.cambiarAtencionSucursal(actor.sub, parametros.id,
+      parametros.sucursalId, datos.activo, this.reloj.ahora().toISOString().slice(0, 10));
+  }
+
+  @Get(':id/sucursales/:sucursalId/servicios')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  listarServiciosSucursal(@Param() parametros: ProfesionalSucursalIdDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.profesionales.listarServiciosSucursal(actor.sub,
+      parametros.id, parametros.sucursalId);
+  }
+
+  @Put(':id/sucursales/:sucursalId/servicios')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
+  seleccionarServiciosSucursal(@Param() parametros: ProfesionalSucursalIdDto,
+    @Body() datos: SeleccionarServiciosDto, @CurrentUser() actor: JwtPayload) {
+    // El reemplazo solo afecta a esta sucursal y conserva filas desactivadas.
+    return this.profesionales.seleccionarServiciosSucursal(actor.sub,
+      parametros.id, parametros.sucursalId, datos);
   }
 }

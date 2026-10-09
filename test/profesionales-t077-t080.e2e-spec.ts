@@ -95,6 +95,8 @@ describe('M1-T077–T080: selección y oferta de servicios', () => {
       expect((await request(http).get(ruta).auth(tokens[0], { type: 'bearer' })
         .expect(200)).body).toEqual([
         expect.objectContaining({ id: activo.id, activo: true, seleccionado: true }),
+        // La opción histórica permanece visible para permitir recuperarla después.
+        expect.objectContaining({ id: retirado.id, activo: false, seleccionado: false }),
       ]);
     });
   });

@@ -1,6 +1,6 @@
 # Tareas — Fix del módulo 1
 
-Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md), las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md) y las 10–18 en [evidencia-t010-t018.md](evidencia-t010-t018.md); las demás casillas no acreditan implementación ni pruebas.
+Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados son locales a `spec-fix.md`. Las tareas están ordenadas por dependencia. Marcar una casilla solo después de comprobar su línea **Hecho cuando:** y conservar la evidencia. Las tareas 1–5 se documentan en [evidencia-t001-t005.md](evidencia-t001-t005.md), las 6–9 en [evidencia-t006-t009.md](evidencia-t006-t009.md), las 10–18 en [evidencia-t010-t018.md](evidencia-t010-t018.md), las 19–23 en [evidencia-t019-t023.md](evidencia-t019-t023.md) y las 24–29 en [evidencia-t024-t029.md](evidencia-t024-t029.md); las demás casillas no acreditan implementación ni pruebas.
 
 ## 1. Base y persistencia
 
@@ -62,39 +62,39 @@ Desglose del [plan](plan.md) y la [especificación](spec-fix.md). Los RF citados
 
 ## 3. Preferencias generales y asignaciones
 
-- [ ] **FIX-T019 — Conservar selección general al desmarcar** · 25 min · Depende de: FIX-T007, FIX-T009 · RF-05, RF-08  
+- [x] **FIX-T019 — Conservar selección general al desmarcar** · 25 min · Depende de: FIX-T007, FIX-T009 · RF-05, RF-08
   Hecho cuando: `PUT /profesionales/:id/servicios` marca inactiva la selección retirada, preserva sus combinaciones y `GET` la muestra desmarcada; volver a marcar recupera sus ajustes.
 
-- [ ] **FIX-T020 — Crear combinaciones al seleccionar servicio nuevo** · 20 min · Depende de: FIX-T015, FIX-T019 · RF-05, RF-07–RF-08  
+- [x] **FIX-T020 — Crear combinaciones al seleccionar servicio nuevo** · 20 min · Depende de: FIX-T015, FIX-T019 · RF-05, RF-07–RF-08
   Hecho cuando: una selección nueva crea oferta inicial en las sucursales asignadas y ninguna selección habilita por sí sola un servicio globalmente inactivo.
 
-- [ ] **FIX-T021 — Probar selección general y reintentos** · 25 min · Depende de: FIX-T020 · RF-05, RF-08  
+- [x] **FIX-T021 — Probar selección general y reintentos** · 25 min · Depende de: FIX-T020 · RF-05, RF-08
   Hecho cuando: pruebas cubren selección vacía, desmarcado, recuperación de preferencias por sucursal, repetición sin auditoría duplicada y otro Profesional intacto.
 
-- [ ] **FIX-T022 — Mantener combinaciones al cambiar asignaciones** · 25 min · Depende de: FIX-T020 · RF-06–RF-08  
+- [x] **FIX-T022 — Mantener combinaciones al cambiar asignaciones** · 25 min · Depende de: FIX-T020 · RF-06–RF-08
   Hecho cuando: una sucursal asignada nueva recibe los servicios generales activos y una retirada permitida quita solo sus combinaciones; las restricciones actuales de horarios y excepciones siguen vigentes.
 
-- [ ] **FIX-T023 — Probar alta y retiro de asignación** · 20 min · Depende de: FIX-T022 · RF-06–RF-08  
+- [x] **FIX-T023 — Probar alta y retiro de asignación** · 20 min · Depende de: FIX-T022 · RF-06–RF-08
   Hecho cuando: pruebas comprueban oferta inicial en una asignación nueva, retiro válido, rechazo de retiro con horario y ausencia de cruces entre negocios.
 
 ## 4. Atención y servicios por sucursal
 
-- [ ] **FIX-T024 — Desactivar atención individual** · 20 min · Depende de: FIX-T007, FIX-T009 · RF-06, RF-08  
+- [x] **FIX-T024 — Desactivar atención individual** · 20 min · Depende de: FIX-T007, FIX-T009 · RF-06, RF-08
   Hecho cuando: administrador o Profesional propio dejan de ofrecer atención en una sucursal asignada sin cambiar asignación, sucursal global, cupo u horarios.
 
-- [ ] **FIX-T025 — Reactivar con validación de horarios** · 25 min · Depende de: FIX-T024 · RF-06, RF-08–RF-09  
+- [x] **FIX-T025 — Reactivar con validación de horarios** · 25 min · Depende de: FIX-T024 · RF-06, RF-08–RF-09
   Hecho cuando: la reactivación recupera preferencias guardadas si horarios y excepciones son válidos; un empalme rechaza toda la operación y deja el estado anterior.
 
-- [ ] **FIX-T026 — Exponer y probar el interruptor individual** · 25 min · Depende de: FIX-T025 · RF-06, RF-09  
+- [x] **FIX-T026 — Exponer y probar el interruptor individual** · 25 min · Depende de: FIX-T025 · RF-06, RF-09
   Hecho cuando: la ruta de atención acepta solo `activo` booleano, distingue actor autorizado, rechaza sucursal no asignada y no permite al Profesional cambiar el estado global.
 
-- [ ] **FIX-T027 — Probar concurrencia de atención y horarios** · 25 min · Depende de: FIX-T026 · RF-06, RF-09  
+- [x] **FIX-T027 — Probar concurrencia de atención y horarios** · 25 min · Depende de: FIX-T026 · RF-06, RF-09
   Hecho cuando: dos conexiones coordinadas prueban reactivación frente a edición semanal o excepción, sin empalmes confirmados ni auditoría de operación rechazada.
 
-- [ ] **FIX-T028 — Guardar oferta individual por sucursal** · 25 min · Depende de: FIX-T020, FIX-T022, FIX-T024 · RF-07–RF-08  
+- [x] **FIX-T028 — Guardar oferta individual por sucursal** · 25 min · Depende de: FIX-T020, FIX-T022, FIX-T024 · RF-07–RF-08
   Hecho cuando: el reemplazo de `servicioIds` acepta `[]`, solo permite servicios seleccionados en general y propios del negocio, y conserva ajustes de otras sucursales.
 
-- [ ] **FIX-T029 — Exponer y probar selección por sucursal** · 25 min · Depende de: FIX-T028 · RF-07–RF-08  
+- [x] **FIX-T029 — Exponer y probar selección por sucursal** · 25 min · Depende de: FIX-T028 · RF-07–RF-08
   Hecho cuando: administrador y Profesional propio pueden guardar y consultar la selección; se rechazan IDs duplicados, no seleccionados, ajenos o de sucursal no asignada sin guardado parcial.
 
 ## 5. Consulta, seguridad y cierre

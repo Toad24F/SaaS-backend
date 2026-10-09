@@ -50,7 +50,9 @@ async function escenario(db: DataSource) {
 }
 
 async function seleccion(db: DataSource, negocioId: number, personalId: number) {
-  const filas = await db.getRepository(PersonalServicio).findBy({ negocioId, personalId });
+  // El conjunto vigente excluye las filas históricas que preservan preferencias.
+  const filas = await db.getRepository(PersonalServicio).findBy({ negocioId, personalId,
+    activo: true });
   return filas.map((fila) => fila.servicioId).sort((a, b) => a - b);
 }
 
@@ -134,7 +136,7 @@ describe('M1-T081–T082: persistencia y carreras de selección', () => {
       expect((await profesionales(segunda).listarServicios(admin.id, perfil.id))
         .filter((opcion) => opcion.seleccionado).map((opcion) => opcion.id)).toEqual(final);
       expect(await db.getRepository(PersonalServicio).countBy({ negocioId: negocio.id,
-        personalId: perfil.id })).toBe(final.length);
+        personalId: perfil.id, activo: true })).toBe(final.length);
     });
   });
 

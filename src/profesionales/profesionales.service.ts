@@ -17,6 +17,7 @@ import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politi
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { ExcepcionHorario } from '../horarios/entities/excepcion-horario.entity';
 import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
+import { validarRecurrencias } from '../horarios/calendario';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -25,6 +26,7 @@ import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
 import { Personal } from './entities/personal.entity';
 import { PersonalSucursal } from './entities/personal-sucursal.entity';
 import { PersonalServicio } from './entities/personal-servicio.entity';
+import { PersonalServicioSucursal } from './entities/personal-servicio-sucursal.entity';
 
 export interface PerfilProfesional {
   id: number; negocioId: number; usuarioId: number;
@@ -223,10 +225,25 @@ export class ProfesionalesService {
           throw new ConflictException('La sucursal conserva franjas o excepciones del Profesional.');
         }
       }
-      // El bloqueo del perfil serializa reemplazos concurrentes del conjunto completo.
-      await repo.delete({ negocioId: actor.negocioId!, personalId: id });
-      if (ids.length) await repo.save(ids.map((sucursalId) => repo.create({
-        negocioId: actor.negocioId!, personalId: id, sucursalId })));
+      // La diferencia conserva las asignaciones vigentes y sus preferencias por sucursal.
+      const agregadas = ids.filter((sucursalId) => !anteriores.includes(sucursalId));
+      if (retiradas.length) {
+        await manager.getRepository(PersonalServicioSucursal).delete({
+          negocioId: actor.negocioId!, personalId: id, sucursalId: In(retiradas) });
+        await repo.delete({ negocioId: actor.negocioId!, personalId: id,
+          sucursalId: In(retiradas) });
+      }
+      if (agregadas.length) {
+        await repo.save(agregadas.map((sucursalId) => repo.create({
+          negocioId: actor.negocioId!, personalId: id, sucursalId })));
+        // Una sucursal recién asignada parte de los servicios generales activos.
+        const selecciones = await manager.getRepository(PersonalServicio).findBy({
+          negocioId: actor.negocioId!, personalId: id, activo: true });
+        const repoOferta = manager.getRepository(PersonalServicioSucursal);
+        await repoOferta.save(agregadas.flatMap((sucursalId) => selecciones.map((seleccion) =>
+          repoOferta.create({ negocioId: actor.negocioId!, personalId: id, sucursalId,
+            servicioId: seleccion.servicioId }))));
+      }
       await this.registrar(manager, actor, perfil, 'profesional_sucursales_modificadas',
         { sucursalIds: anteriores }, { sucursalIds: ids });
       return ids;
@@ -243,9 +260,10 @@ export class ProfesionalesService {
       manager.getRepository(PersonalServicio).findBy({ negocioId: actor.negocioId!,
         personalId: id }),
     ]);
-    const seleccionados = new Set(relaciones.map((r) => r.servicioId));
+    const historicos = new Set(relaciones.map((r) => r.servicioId));
+    const seleccionados = new Set(relaciones.filter((r) => r.activo).map((r) => r.servicioId));
     // Una selección histórica inactiva sigue visible, pero su estado global no cambia.
-    return catalogo.filter((servicio) => servicio.activo || seleccionados.has(servicio.id))
+    return catalogo.filter((servicio) => servicio.activo || historicos.has(servicio.id))
       .map((servicio) => ({ id: servicio.id, nombre: servicio.nombre,
         costo: servicio.costo, duracionMinutos: servicio.duracionMinutos,
         activo: servicio.activo, seleccionado: seleccionados.has(servicio.id),
@@ -260,10 +278,14 @@ export class ProfesionalesService {
       const perfil = await this.perfilParaServicios(manager, actor, id, true);
       const repo = manager.getRepository(PersonalServicio);
       const actuales = await repo.findBy({ negocioId: actor.negocioId!, personalId: id });
-      const antes = actuales.map((r) => r.servicioId).sort((a, b) => a - b);
+      const antes = actuales.filter((r) => r.activo).map((r) => r.servicioId)
+        .sort((a, b) => a - b);
       const ids = [...datos.servicioIds].sort((a, b) => a - b);
       if (JSON.stringify(ids) === JSON.stringify(antes)) return;
-      const nuevos = ids.filter((servicioId) => !antes.includes(servicioId));
+      const nuevos = ids.filter((servicioId) => !actuales.some((r) =>
+        r.servicioId === servicioId));
+      const recuperados = ids.filter((servicioId) => actuales.some((r) =>
+        r.servicioId === servicioId && !r.activo));
       if (ids.length) {
         // Bloquear los servicios evita admitir una selección nueva durante su desactivación.
         const servicios = await manager.getRepository(Servicio).createQueryBuilder('servicio')
@@ -275,12 +297,24 @@ export class ProfesionalesService {
           throw new ConflictException('No se puede seleccionar un servicio inactivo.');
         }
       }
-      // El perfil bloqueado serializa reemplazos: solo se insertan y retiran relaciones.
+      // Desmarcar mantiene selección y preferencias; reactivar recupera sus estados previos.
       const quitados = antes.filter((servicioId) => !ids.includes(servicioId));
-      if (quitados.length) await repo.delete({ negocioId: actor.negocioId!,
-        personalId: id, servicioId: In(quitados) });
+      if (quitados.length) await repo.update({ negocioId: actor.negocioId!,
+        personalId: id, servicioId: In(quitados) }, { activo: false });
+      if (recuperados.length) await repo.update({ negocioId: actor.negocioId!,
+        personalId: id, servicioId: In(recuperados) }, { activo: true });
       if (nuevos.length) await repo.save(nuevos.map((servicioId) => repo.create({
         negocioId: actor.negocioId!, personalId: id, servicioId })));
+      if (nuevos.length) {
+        // Solo las selecciones inéditas reciben combinaciones iniciales; las recuperadas
+        // conservan incluso los estados individuales desactivados con anterioridad.
+        const sucursales = await manager.getRepository(PersonalSucursal).findBy({
+          negocioId: actor.negocioId!, personalId: id });
+        const repoOferta = manager.getRepository(PersonalServicioSucursal);
+        await repoOferta.save(nuevos.flatMap((servicioId) => sucursales.map((asignacion) =>
+          repoOferta.create({ negocioId: actor.negocioId!, personalId: id,
+            sucursalId: asignacion.sucursalId, servicioId }))));
+      }
       await this.registrar(manager, actor, perfil, 'profesional_servicios_modificados',
         { servicioIds: antes }, { servicioIds: ids });
     });
@@ -294,7 +328,7 @@ export class ProfesionalesService {
       id: sucursalId, negocioId: actor.negocioId! });
     if (!sucursal) throw new NotFoundException('Sucursal no disponible.');
     if (!sucursal.activo) return [];
-    // La oferta se deriva de cuatro estados actuales; no se duplica en sucursales.
+    // La oferta exige selección, asignación y preferencia individual activas.
     return manager.getRepository(Servicio).createQueryBuilder('servicio')
       .distinct(true)
       .innerJoin(PersonalServicio, 'seleccion',
@@ -305,10 +339,142 @@ export class ProfesionalesService {
         'cuenta.id = perfil.id AND cuenta.negocioId = perfil.negocioId')
       .innerJoin(PersonalSucursal, 'asignacion',
         'asignacion.personalId = perfil.id AND asignacion.negocioId = perfil.negocioId')
+      .innerJoin(PersonalServicioSucursal, 'oferta',
+        'oferta.negocioId = seleccion.negocioId AND oferta.personalId = seleccion.personalId'
+        + ' AND oferta.servicioId = seleccion.servicioId'
+        + ' AND oferta.sucursalId = asignacion.sucursalId')
       .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo',
         { negocioId: actor.negocioId, activo: true })
-      .andWhere('asignacion.sucursalId = :sucursalId', { sucursalId })
+      .andWhere('seleccion.activo = :activo AND asignacion.activo = :activo'
+        + ' AND oferta.activo = :activo AND asignacion.sucursalId = :sucursalId', { sucursalId })
       .orderBy('servicio.id', 'ASC').getMany();
+  }
+
+  async consultarAtencionSucursal(actorId: number, id: number, sucursalId: number) {
+    const manager = this.perfiles.manager;
+    const actor = await this.actorServicios(manager, actorId);
+    await this.perfilParaServicios(manager, actor, id);
+    const asignacion = await this.exigirAsignacion(manager, actor.negocioId!, id, sucursalId);
+    return { sucursalId, activo: asignacion.activo };
+  }
+
+  async cambiarAtencionSucursal(actorId: number, id: number, sucursalId: number,
+    activo: boolean, desde: string) {
+    if (typeof activo !== 'boolean') throw new BadRequestException('activo: debe ser booleano.');
+    return transaccionIdentidad(this.perfiles.manager, async (manager) => {
+      const actor = await this.actorServicios(manager, actorId);
+      // Horarios y excepciones bloquean esta misma fila; la validación no puede quedar obsoleta.
+      const perfil = await this.perfilParaServicios(manager, actor, id, true);
+      const asignacion = await this.exigirAsignacion(manager, actor.negocioId!, id, sucursalId);
+      if (asignacion.activo === activo) return { sucursalId, activo };
+      if (activo) await this.validarReactivacion(manager, actor.negocioId!, id,
+        sucursalId, desde);
+      await manager.getRepository(PersonalSucursal).update({ negocioId: actor.negocioId!,
+        personalId: id, sucursalId }, { activo });
+      await this.registrar(manager, actor, perfil, 'profesional_atencion_sucursal_modificada',
+        { sucursalId, activo: asignacion.activo }, { sucursalId, activo });
+      return { sucursalId, activo };
+    });
+  }
+
+  async listarServiciosSucursal(actorId: number, id: number, sucursalId: number) {
+    const manager = this.perfiles.manager;
+    const actor = await this.actorServicios(manager, actorId);
+    await this.perfilParaServicios(manager, actor, id);
+    await this.exigirAsignacion(manager, actor.negocioId!, id, sucursalId);
+    const [selecciones, ofertas] = await Promise.all([
+      manager.getRepository(PersonalServicio).findBy({ negocioId: actor.negocioId!,
+        personalId: id, activo: true }),
+      manager.getRepository(PersonalServicioSucursal).findBy({ negocioId: actor.negocioId!,
+        personalId: id, sucursalId, activo: true }),
+    ]);
+    const generales = new Set(selecciones.map((fila) => fila.servicioId));
+    return { sucursalId, servicioIds: ofertas.map((fila) => fila.servicioId)
+      .filter((servicioId) => generales.has(servicioId)).sort((a, b) => a - b) };
+  }
+
+  async seleccionarServiciosSucursal(actorId: number, id: number, sucursalId: number,
+    entrada: SeleccionarServiciosDto) {
+    const datos = this.validar(SeleccionarServiciosDto, entrada);
+    await transaccionIdentidad(this.perfiles.manager, async (manager) => {
+      const actor = await this.actorServicios(manager, actorId);
+      const perfil = await this.perfilParaServicios(manager, actor, id, true);
+      await this.exigirAsignacion(manager, actor.negocioId!, id, sucursalId);
+      const ids = [...datos.servicioIds].sort((a, b) => a - b);
+      if (ids.length) {
+        const propios = await manager.getRepository(Servicio).findBy({
+          negocioId: actor.negocioId!, id: In(ids) });
+        if (propios.length !== ids.length) throw new NotFoundException('Servicio no disponible.');
+        const generales = await manager.getRepository(PersonalServicio).findBy({
+          negocioId: actor.negocioId!, personalId: id, servicioId: In(ids), activo: true });
+        if (generales.length !== ids.length) {
+          throw new ConflictException('El servicio no está seleccionado por el Profesional.');
+        }
+      }
+      const repo = manager.getRepository(PersonalServicioSucursal);
+      const actuales = await repo.findBy({ negocioId: actor.negocioId!, personalId: id,
+        sucursalId });
+      const antes = actuales.filter((fila) => fila.activo).map((fila) => fila.servicioId)
+        .sort((a, b) => a - b);
+      if (JSON.stringify(antes) === JSON.stringify(ids)) return;
+      // El reemplazo modifica solo esta sucursal; las filas apagadas conservan preferencia.
+      const retirar = antes.filter((servicioId) => !ids.includes(servicioId));
+      const recuperar = actuales.filter((fila) => !fila.activo && ids.includes(fila.servicioId))
+        .map((fila) => fila.servicioId);
+      const nuevas = ids.filter((servicioId) => !actuales.some((fila) =>
+        fila.servicioId === servicioId));
+      if (retirar.length) await repo.update({ negocioId: actor.negocioId!, personalId: id,
+        sucursalId, servicioId: In(retirar) }, { activo: false });
+      if (recuperar.length) await repo.update({ negocioId: actor.negocioId!, personalId: id,
+        sucursalId, servicioId: In(recuperar) }, { activo: true });
+      if (nuevas.length) await repo.save(nuevas.map((servicioId) => repo.create({
+        negocioId: actor.negocioId!, personalId: id, sucursalId, servicioId })));
+      await this.registrar(manager, actor, perfil, 'profesional_servicios_sucursal_modificados',
+        { sucursalId, servicioIds: antes }, { sucursalId, servicioIds: ids });
+    });
+    return this.listarServiciosSucursal(actorId, id, sucursalId);
+  }
+
+  private async exigirAsignacion(manager: EntityManager, negocioId: number,
+    personalId: number, sucursalId: number): Promise<PersonalSucursal> {
+    const asignacion = await manager.getRepository(PersonalSucursal).findOneBy({
+      negocioId, personalId, sucursalId });
+    if (!asignacion) throw new NotFoundException('Sucursal no asignada.');
+    return asignacion;
+  }
+
+  private async validarReactivacion(manager: EntityManager, negocioId: number,
+    personalId: number, sucursalId: number, desde: string): Promise<void> {
+    const [semana, excepciones, asignaciones] = await Promise.all([
+      manager.getRepository(HorarioPersonal).findBy({ negocioId, personalId }),
+      manager.getRepository(ExcepcionHorario).find({ where: { negocioId, personalId },
+        relations: { franjas: true } }),
+      manager.getRepository(PersonalSucursal).findBy({ negocioId, personalId }),
+    ]);
+    const ids = asignaciones.map((fila) => fila.sucursalId);
+    const atendidas = new Set(asignaciones.filter((fila) => fila.activo ||
+      fila.sucursalId === sucursalId).map((fila) => fila.sucursalId));
+    const sucursales = ids.length ? await manager.getRepository(Sucursal).findBy({
+      negocioId, id: In(ids) }) : [];
+    const zonas = new Map(sucursales.map((fila) => [fila.id, fila.zonaHoraria]));
+    // DATE_FORMAT conserva el día civil SQL; el driver puede desplazar DATE al
+    // convertirlo a Date en el huso local y falsear el día de una excepción.
+    const fechas: { id: number; fecha_local: string }[] = excepciones.length
+      ? await manager.query(`SELECT id, DATE_FORMAT(fecha_local, '%Y-%m-%d') fecha_local
+        FROM excepciones_horario WHERE negocio_id = ? AND personal_id = ?`,
+      [negocioId, personalId]) : [];
+    const fechaPorId = new Map(fechas.map((fila) => [Number(fila.id), fila.fecha_local]));
+    // Se comparan las sucursales atendidas y la candidata; otras pausadas no
+    // bloquean una reactivación por conflictos que aún no forman parte de la oferta.
+    const conflicto = validarRecurrencias(semana.filter((fila) => fila.sucursalId === null ||
+      atendidas.has(fila.sucursalId)), excepciones.filter((fila) =>
+      atendidas.has(fila.sucursalId)).map((fila) => ({
+      sucursalId: fila.sucursalId, fechaLocal: fechaPorId.get(fila.id)!,
+      franjas: fila.franjas.map((franja) => ({ inicioMinutos: franja.inicioMinutos,
+        finMinutos: franja.finMinutos })),
+    })), zonas, desde);
+    if (conflicto) throw new ConflictException(
+      `filas ${conflicto.filas.join(' y ')}, inicioMinutos: empalme de horarios.`);
   }
 
   private validar<T extends object>(tipo: new () => T, valor: T): T {
