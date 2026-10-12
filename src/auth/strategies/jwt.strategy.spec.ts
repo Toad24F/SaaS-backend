@@ -47,6 +47,7 @@ describe('JwtStrategy', () => {
       passwordHash: 'hash-que-no-debe-exponerse',
       negocio: Object.assign(new Negocio(), {
         id: 20,
+        nombre: 'Negocio actual',
         activadoEn: new Date('2026-09-10T12:00:00Z'),
       }),
     });
@@ -60,9 +61,15 @@ describe('JwtStrategy', () => {
         },
         { provide: UsuariosService, useValue: { findById } },
         { provide: SesionesService, useValue: { esValida } },
-        { provide: getRepositoryToken(Licencia), useValue: { findOneBy: findLicencia } },
+        {
+          provide: getRepositoryToken(Licencia),
+          useValue: { findOneBy: findLicencia },
+        },
         PoliticaAccesoLicenciaService,
-        { provide: RELOJ, useValue: { ahora: () => new Date('2026-09-11T12:00:00Z') } },
+        {
+          provide: RELOJ,
+          useValue: { ahora: () => new Date('2026-09-11T12:00:00Z') },
+        },
       ],
     }).compile();
     strategy = module.get(JwtStrategy);
@@ -75,16 +82,19 @@ describe('JwtStrategy', () => {
       nombre: usuario.nombre,
       rol: Rol.RECEPCIONISTA,
       negocioId: 20,
+      negocioNombre: usuario.negocio!.nombre,
       sesionId: payload.sesionId,
     });
     expect(findById).toHaveBeenCalledWith(1);
   });
 
   it('conserva el identificador de sesión persistida recibido en el JWT', async () => {
-    await expect(strategy.validate({
-      ...payload,
-      sesionId: '5e85643d-04a7-4b5e-8ed4-6a8029a2b673',
-    })).resolves.toMatchObject({
+    await expect(
+      strategy.validate({
+        ...payload,
+        sesionId: '5e85643d-04a7-4b5e-8ed4-6a8029a2b673',
+      }),
+    ).resolves.toMatchObject({
       sesionId: '5e85643d-04a7-4b5e-8ed4-6a8029a2b673',
     });
   });
@@ -98,7 +108,9 @@ describe('JwtStrategy', () => {
 
   it('rechaza una sesión revocada o vencida antes de consultar la cuenta', async () => {
     esValida.mockResolvedValue(false);
-    await expect(strategy.validate(payload)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(strategy.validate(payload)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
     expect(findById).not.toHaveBeenCalled();
   });
 
@@ -108,7 +120,9 @@ describe('JwtStrategy', () => {
       venceEn: new Date('2027-09-10T12:00:00Z'),
       suspendidaEn: new Date('2026-09-11T11:00:00Z'),
     });
-    await expect(strategy.validate(payload)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(strategy.validate(payload)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('rechaza la siguiente petición cuando se desactiva el usuario', async () => {
@@ -142,6 +156,7 @@ describe('JwtStrategy', () => {
     await expect(strategy.validate(payload)).resolves.toMatchObject({
       rol: Rol.SUPERADMIN,
       negocioId: null,
+      negocioNombre: null,
     });
   });
 
