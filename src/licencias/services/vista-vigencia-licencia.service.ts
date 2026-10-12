@@ -11,6 +11,7 @@ export interface VistaVigenciaLicencia {
   bloqueoProgramadoEn: string | null;
   tiempoCongelado: boolean;
   tiempoRestante: { dias: number; horas: number; minutos: number } | null;
+  duracionTotalMs: number | null;
 }
 
 /** Construye una vista temporal estable a partir de una fecha explícita del reloj. */
@@ -47,6 +48,12 @@ export class VistaVigenciaLicenciaService {
       horas: Math.floor((restanteMs % 86_400_000) / 3_600_000),
       minutos: Math.floor((restanteMs % 3_600_000) / 60_000),
     };
+    const finEfectivo = pendiente ? null : Math.min(
+      licencia.venceEn!.getTime(),
+      licencia.bloqueoProgramadoEn?.getTime() ?? Number.POSITIVE_INFINITY,
+    );
+    const duracionTotalMs = finEfectivo === null ? null
+      : Math.max(0, finEfectivo - licencia.habilitadaEn!.getTime());
 
     return {
       estado, condicionAcceso, ahora: ahora.toISOString(),
@@ -56,6 +63,7 @@ export class VistaVigenciaLicenciaService {
       bloqueoProgramadoEn: licencia.bloqueoProgramadoEn?.toISOString() ?? null,
       tiempoCongelado: congelada,
       tiempoRestante,
+      duracionTotalMs,
     };
   }
 }

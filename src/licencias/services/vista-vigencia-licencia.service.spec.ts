@@ -19,6 +19,13 @@ describe('Vista de vigencia (T055)', () => {
     });
   });
 
+  it('informa la duración completa cuando la licencia se ha renovado por varios años', () => {
+    const inicio = new Date('2026-01-01T12:00:00Z');
+    const vencimiento = new Date('2029-01-01T12:00:00Z');
+    expect(vista.crear(base({ habilitadaEn: inicio, venceEn: vencimiento }), ahora))
+      .toMatchObject({ duracionTotalMs: vencimiento.getTime() - inicio.getTime() });
+  });
+
   it('distingue la suspensión pendiente y cuenta hasta el primer límite aplicable', () => {
     const bloqueo = new Date(ahora.getTime() + 47 * 60 * 60 * 1000);
     expect(vista.crear(base({ bloqueoProgramadoEn: bloqueo,
@@ -38,7 +45,8 @@ describe('Vista de vigencia (T055)', () => {
 
   it('reporta pendiente sin vencimiento y vencida con tiempo restante cero', () => {
     expect(vista.crear(base({ habilitadaEn: null, venceEn: null }), ahora))
-      .toMatchObject({ estado: 'pendiente', venceEn: null, tiempoRestante: null });
+      .toMatchObject({ estado: 'pendiente', venceEn: null, tiempoRestante: null,
+        duracionTotalMs: null });
     expect(vista.crear(base({ venceEn: ahora }), ahora))
       .toMatchObject({ estado: 'vencida', condicionAcceso: false,
         tiempoRestante: { dias: 0, horas: 0, minutos: 0 } });
