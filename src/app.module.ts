@@ -24,6 +24,8 @@ import { BloqueosHttpModule } from './bloqueos/bloqueos-http.module';
 import { CorreosModule } from './correos/correos.module';
 import { CorreosHttpModule } from './correos/correos-http.module';
 import { OperacionModule } from './operacion/operacion.module';
+import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
+import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.module';
 
 @Module({
   imports: [
@@ -61,6 +63,9 @@ import { OperacionModule } from './operacion/operacion.module';
     CorreosHttpModule,
     // Al arrancar activa conciliación y bandeja; en tests se invoca con reloj falso.
     OperacionModule,
+    // Compone el motor y su límite HTTP sin activar rutas ni escritores de reservas.
+    DisponibilidadModule,
+    DisponibilidadHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

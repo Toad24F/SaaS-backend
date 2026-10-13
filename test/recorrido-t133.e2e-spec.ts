@@ -147,8 +147,9 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         expect((await request(http).get('/bloqueos')
           .auth(profVigente, { type: 'bearer' }).expect(200)).body)
           .toEqual([expect.objectContaining({ id: bloqueo.id })]);
-        // La instalación de módulo 1 todavía no incorpora la tabla ni el flujo de citas.
-        expect(await db.query("SHOW TABLES LIKE 'citas'")).toEqual([]);
+        // Fase 3 instala la fuente de ocupación, pero este recorrido no crea citas.
+        expect(await db.query("SHOW TABLES LIKE 'citas'")).toHaveLength(1);
+        expect(await db.query('SELECT id FROM citas')).toEqual([]);
       } finally { await app.close(); }
     });
   });

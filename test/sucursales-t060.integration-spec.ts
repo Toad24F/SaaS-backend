@@ -7,15 +7,22 @@ import { HorariosSemanales1760000013000 } from '../src/database/migrations/17600
 import { ExcepcionesHorario1760000014000 } from '../src/database/migrations/1760000014000-ExcepcionesHorario';
 import { BloqueosHorario1760000015000 } from '../src/database/migrations/1760000015000-BloqueosHorario';
 import { OfertaIndividual1760000018000 } from '../src/database/migrations/1760000018000-OfertaIndividual';
+import { ConfiguracionAgenda1760000019000 } from '../src/database/migrations/1760000019000-ConfiguracionAgenda';
+import { ClientesBase1760000020000 } from '../src/database/migrations/1760000020000-ClientesBase';
+import { CitasCanonicas1760000021000 } from '../src/database/migrations/1760000021000-CitasCanonicas';
+import { ApartadosCanonicos1760000022000 } from '../src/database/migrations/1760000022000-ApartadosCanonicos';
 
 describe('M1-T060: migración incremental de sucursales', () => {
   it('instala restricciones tenant y conserva negocios previos al aplicar la migración', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const existente = await db.query("INSERT INTO negocios (nombre, slug, email_contacto) VALUES ('Previo', 'previo-sucursal', 'previo@example.test')");
-      // Oferta individual, franjas, excepciones y bloqueos dependen de asignaciones;
-      // se revierten antes de sucursales y se restauran en orden.
+      // Las fuentes de fase 3 también dependen de sucursal/perfil y se revierten primero.
       const runner = db.createQueryRunner();
       try {
+        await new ApartadosCanonicos1760000022000().down(runner);
+        await new CitasCanonicas1760000021000().down(runner);
+        await new ClientesBase1760000020000().down(runner);
+        await new ConfiguracionAgenda1760000019000().down(runner);
         await new OfertaIndividual1760000018000().down(runner);
         await new BloqueosHorario1760000015000().down(runner);
         await new ExcepcionesHorario1760000014000().down(runner);
@@ -30,6 +37,10 @@ describe('M1-T060: migración incremental de sucursales', () => {
         await new ExcepcionesHorario1760000014000().up(runner);
         await new BloqueosHorario1760000015000().up(runner);
         await new OfertaIndividual1760000018000().up(runner);
+        await new ConfiguracionAgenda1760000019000().up(runner);
+        await new ClientesBase1760000020000().up(runner);
+        await new CitasCanonicas1760000021000().up(runner);
+        await new ApartadosCanonicos1760000022000().up(runner);
       } finally { await runner.release(); }
       expect(await db.query('SELECT id FROM negocios WHERE id = ?', [existente.insertId]))
         .toHaveLength(1);

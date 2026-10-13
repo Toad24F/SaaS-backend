@@ -2,7 +2,7 @@
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion-fase-3.md) y la [especificación](spec-modulo-2.md). Todos los RF citados son locales a esta especificación. Los identificadores M01–M08 y T01–T18 remiten a los módulos y grupos de pruebas del plan.
 
-Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. Todas están pendientes, estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
+Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T019 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
 
 Marcar una casilla únicamente después de comprobar su línea **Hecho cuando:** y conservar evidencia con RF, comando o revisión, resultado y limitaciones. Las tareas de tests incluyen preparar el caso y ejecutarlo; las de cierre pueden aprovechar resultados de la misma revisión sin repetir comprobaciones innecesarias. Si una tarea supera su alcance estimado, dividir el trabajo restante antes de marcarla. Las pruebas omitidas por falta de MariaDB u otro impedimento quedan pendientes.
 
@@ -12,65 +12,73 @@ Esta lista organiza trabajo futuro: su creación no implementa funcionalidad. No
 
 Base para M01–M08; pruebas T02, T16 y T17 del plan.
 
-- [ ] **M2-T001 — Fijar la matriz de evidencias y límites** · 15 min · Depende de: ninguna · RF-01–RF-45
+Evidencia, explicación de archivos, flujo y resultados: [M2-T001–M2-T004](evidencia-base-t001-t004.md).
+
+- [x] **M2-T001 — Fijar la matriz de evidencias y límites** · 15 min · Depende de: ninguna · RF-01–RF-45
   Hecho cuando: la matriz enumera RF-01 a RF-45, identifica qué evidencia exige cada uno y deja RF-35–RF-37 con integración real pendiente en módulos 3/4.
 
-- [ ] **M2-T002 — Registrar la regresión unitaria del módulo 1** · 20 min · Depende de: M2-T001 · RF-11–RF-19, RF-38–RF-41
+- [x] **M2-T002 — Registrar la regresión unitaria del módulo 1** · 20 min · Depende de: M2-T001 · RF-11–RF-19, RF-38–RF-41
   Hecho cuando: se ejecutan las suites existentes de oferta, calendario y bloqueos y se registra su resultado como antecedente, sin atribuirles cobertura del motor.
 
-- [ ] **M2-T003 — Registrar contratos actuales de consulta** · 25 min · Depende de: M2-T001 · RF-08–RF-12, RF-19, RF-40, RF-45
+- [x] **M2-T003 — Registrar contratos actuales de consulta** · 25 min · Depende de: M2-T001 · RF-08–RF-12, RF-19, RF-40, RF-45
   Hecho cuando: se verifican las respuestas y permisos actuales de oferta, atención y bloqueos, incluyendo recepción denegada en gestión, y quedan identificados los contratos que deben conservarse.
 
-- [ ] **M2-T004 — Declarar los módulos y contratos internos** · 20 min · Depende de: M2-T002, M2-T003 · RF-01, RF-08, RF-13, RF-31, RF-42
+- [x] **M2-T004 — Declarar los módulos y contratos internos** · 20 min · Depende de: M2-T002, M2-T003 · RF-01, RF-08, RF-13, RF-31, RF-42
   Hecho cuando: DisponibilidadModule, DisponibilidadHttpModule y lectura de ocupaciones quedan compuestos sin procesos ni escritores públicos nuevos; las proyecciones de bloque, tramo, ocupación y resultado tienen responsabilidades documentadas.
 
 ## 2. Persistencia mínima y continuidad
 
 M01 y M04; modelos y migraciones del plan; pruebas T16.
 
-- [ ] **M2-T005 — Migrar configuración de agenda** · 20 min · Depende de: M2-T004 · RF-01–RF-07
+Evidencia, flujo, archivos y pruebas de M2-T005–M2-T010: [persistencia mínima](evidencia-t005-t010.md).
+
+Evidencia, flujo, archivos y pruebas de M2-T011–M2-T015: [entidad, esquema y continuidad](evidencia-t011-t015.md).
+
+Evidencia, flujo, archivos y pruebas de M2-T016–M2-T019: [integridad y conservación](evidencia-t016-t019.md).
+
+- [x] **M2-T005 — Migrar configuración de agenda** · 20 min · Depende de: M2-T004 · RF-01–RF-07
   Hecho cuando: una migración posterior al fix crea una única configuración por negocio con los valores iniciales, tipos y restricciones del plan; no modifica migraciones históricas.
 
-- [ ] **M2-T006 — Representar configuración en TypeORM** · 15 min · Depende de: M2-T005 · RF-01–RF-07
+- [x] **M2-T006 — Representar configuración en TypeORM** · 15 min · Depende de: M2-T005 · RF-01–RF-07
   Hecho cuando: la entidad refleja los campos, claves y restricciones de la migración y puede leerse/escribirse en una base temporal.
 
-- [ ] **M2-T007 — Instalar la base referencial de clientes** · 25 min · Depende de: M2-T004 · RF-09, RF-31, RF-38–RF-40
+- [x] **M2-T007 — Instalar la base referencial de clientes** · 25 min · Depende de: M2-T004 · RF-09, RF-31, RF-38–RF-40
   Hecho cuando: migración y entidad conservan los datos previstos de cliente y sus claves por negocio, sin añadir rutas de gestión o consulta de clientes.
 
-- [ ] **M2-T008 — Migrar citas con intervalos canónicos** · 25 min · Depende de: M2-T007 · RF-09, RF-15–RF-20, RF-31–RF-32, RF-38–RF-41
+- [x] **M2-T008 — Migrar citas con intervalos canónicos** · 25 min · Depende de: M2-T007 · RF-09, RF-15–RF-20, RF-31–RF-32, RF-38–RF-41
   Hecho cuando: la migración instala citas con inicio/fin UTC de precisión milisegundo, zona de reserva, estados, folio, origen, referencias compuestas e índices; rechaza fin no posterior al inicio.
 
-- [ ] **M2-T009 — Representar citas y su duración conservada** · 20 min · Depende de: M2-T008 · RF-18, RF-20, RF-31–RF-32
+- [x] **M2-T009 — Representar citas y su duración conservada** · 20 min · Depende de: M2-T008 · RF-18, RF-20, RF-31–RF-32
   Hecho cuando: la entidad permite leer y guardar citas de prueba sin perder precisión ni recalcular su fin desde el servicio; mantiene las relaciones del mismo negocio.
 
-- [ ] **M2-T010 — Migrar apartados con vigencia y titular hash** · 25 min · Depende de: M2-T008 · RF-09, RF-15, RF-18, RF-33–RF-36
+- [x] **M2-T010 — Migrar apartados con vigencia y titular hash** · 25 min · Depende de: M2-T008 · RF-09, RF-15, RF-18, RF-33–RF-36
   Hecho cuando: la tabla bloqueos_temporales incluye combinación completa, intervalo UTC, expiración, liberación y hash; no contiene session_token utilizable y sus claves impiden asociaciones ajenas.
 
-- [ ] **M2-T011 — Representar apartados en TypeORM** · 20 min · Depende de: M2-T010 · RF-18, RF-33–RF-36
+- [x] **M2-T011 — Representar apartados en TypeORM** · 20 min · Depende de: M2-T010 · RF-18, RF-33–RF-36
   Hecho cuando: la entidad conserva la precisión de intervalo/expiración, admite liberación anulable y coincide con las claves y restricciones de la migración.
 
-- [ ] **M2-T012 — Sincronizar el esquema de configuración y clientes** · 15 min · Depende de: M2-T006, M2-T007 · RF-01–RF-07, RF-09
+- [x] **M2-T012 — Sincronizar el esquema de configuración y clientes** · 15 min · Depende de: M2-T006, M2-T007 · RF-01–RF-07, RF-09
   Hecho cuando: las secciones de configuración y clientes en db/schema.sql coinciden con entidades y migraciones; no se ejecuta el instalador sobre una base cotidiana.
 
-- [ ] **M2-T013 — Sincronizar el esquema de citas y apartados** · 20 min · Depende de: M2-T009, M2-T011, M2-T012 · RF-09, RF-18, RF-20, RF-31–RF-36
+- [x] **M2-T013 — Sincronizar el esquema de citas y apartados** · 20 min · Depende de: M2-T009, M2-T011, M2-T012 · RF-09, RF-18, RF-20, RF-31–RF-36
   Hecho cuando: db/schema.sql usa el modelo UTC, referencias y hash nuevos, sin duplicar tablas ni alterar los diseños todavía ajenos a esta entrega.
 
-- [ ] **M2-T014 — Preparar datos de prueba de ocupaciones** · 20 min · Depende de: M2-T009, M2-T011 · RF-09, RF-18, RF-31–RF-34, RF-38–RF-40
+- [x] **M2-T014 — Preparar datos de prueba de ocupaciones** · 20 min · Depende de: M2-T009, M2-T011 · RF-09, RF-18, RF-31–RF-34, RF-38–RF-40
   Hecho cuando: los helpers crean citas y apartados en dos negocios, varias sucursales y servicios, con reloj explícito, usando únicamente bases temporales y sin endpoints de reserva.
 
-- [ ] **M2-T015 — Verificar instalación y rechazo de esquemas antiguos** · 25 min · Depende de: M2-T013, M2-T014 · RF-01–RF-07, RF-09, RF-18, RF-31–RF-36
+- [x] **M2-T015 — Verificar instalación y rechazo de esquemas antiguos** · 25 min · Depende de: M2-T013, M2-T014 · RF-01–RF-07, RF-09, RF-18, RF-31–RF-36
   Hecho cuando: una base temporal desde migraciones llega a la fase 3; una instalación con tablas antiguas incompatibles se detiene sin convertir ni sobrescribir sus datos; se conserva el resultado.
 
-- [ ] **M2-T016 — Comparar esquema SQL y migraciones** · 25 min · Depende de: M2-T015 · RF-01–RF-07, RF-09, RF-18, RF-31–RF-36
+- [x] **M2-T016 — Comparar esquema SQL y migraciones** · 25 min · Depende de: M2-T015 · RF-01–RF-07, RF-09, RF-18, RF-31–RF-36
   Hecho cuando: la comparación de las tablas de esta fase verifica columnas, precisión temporal, índices y restricciones, y confirma synchronize y migrationsRun desactivados.
 
-- [ ] **M2-T017 — Probar pertenencia e intervalos en base de datos** · 25 min · Depende de: M2-T014 · RF-09, RF-15, RF-18, RF-20, RF-31–RF-36
+- [x] **M2-T017 — Probar pertenencia e intervalos en base de datos** · 25 min · Depende de: M2-T014 · RF-09, RF-15, RF-18, RF-20, RF-31–RF-36
   Hecho cuando: MariaDB rechaza referencias entre negocios e intervalos nulos/invertidos; acepta intervalos válidos y preserva identidad y oferta previa del fix.
 
-- [ ] **M2-T018 — Incorporar ocupaciones a la política de eliminación** · 20 min · Depende de: M2-T009, M2-T011 · RF-12, RF-20, RF-31–RF-34, RF-38–RF-41
+- [x] **M2-T018 — Incorporar ocupaciones a la política de eliminación** · 20 min · Depende de: M2-T009, M2-T011 · RF-12, RF-20, RF-31–RF-34, RF-38–RF-41
   Hecho cuando: las bajas de sucursales, servicios o profesionales con citas/apartados relacionados se rechazan con el mensaje previsto; las desactivaciones siguen disponibles.
 
-- [ ] **M2-T019 — Probar conservación del historial ante bajas** · 20 min · Depende de: M2-T018, M2-T014 · RF-12, RF-20, RF-31–RF-34, RF-38–RF-41
+- [x] **M2-T019 — Probar conservación del historial ante bajas** · 20 min · Depende de: M2-T018, M2-T014 · RF-12, RF-20, RF-31–RF-34, RF-38–RF-41
   Hecho cuando: pruebas demuestran que una baja rechazada deja citas y apartados intactos y que una desactivación conserva sus intervalos y relaciones.
 
 ## 3. Configuración de agenda
