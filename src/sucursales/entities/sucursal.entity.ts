@@ -25,6 +25,18 @@ export class Sucursal {
   @Column({ type: 'varchar', length: 150 })
   nombre: string;
 
+  // La identidad del nombre pertenece al negocio y se conserva aunque la sede se inactive.
+  @Column({
+    name: 'nombre_negocio_unico',
+    type: 'varchar',
+    length: 180,
+    asExpression: "CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END",
+    generatedType: 'STORED',
+    unique: true,
+    select: false,
+  })
+  nombreNegocioUnico: string | null;
+
   @Column({ type: 'varchar', length: 255 })
   direccion: string;
 

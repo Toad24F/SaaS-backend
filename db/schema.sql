@@ -283,11 +283,15 @@ CREATE TABLE sucursales (
   zona_horaria   VARCHAR(64) NOT NULL,
   url_google_maps VARCHAR(2048) NULL,
   notas_llegada  TEXT NULL, -- instrucciones para el cliente al llegar a la sucursal
+  nombre_negocio_unico VARCHAR(180) GENERATED ALWAYS AS
+    (CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL
+      THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END) STORED,
   activo         BOOLEAN NOT NULL DEFAULT TRUE,
   creado_en      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   CONSTRAINT fk_sucursales_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
   UNIQUE KEY uq_sucursales_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_sucursales_negocio_nombre (nombre_negocio_unico),
   INDEX idx_sucursales_negocio_activo (negocio_id, activo),
   CONSTRAINT chk_sucursales_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT chk_sucursales_direccion CHECK (CHAR_LENGTH(TRIM(direccion)) > 0),
@@ -309,9 +313,13 @@ CREATE TABLE servicios (
   creado_en         DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   descripcion       TEXT NULL,
   creador_personal_id INT UNSIGNED NULL,
+  nombre_negocio_unico VARCHAR(180) GENERATED ALWAYS AS
+    (CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL
+      THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END) STORED,
   CONSTRAINT fk_servicios_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
   UNIQUE KEY uq_servicios_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_servicios_negocio_nombre (nombre_negocio_unico),
   INDEX idx_servicios_negocio_activo (negocio_id, activo),
   INDEX idx_servicios_creador (negocio_id, creador_personal_id),
   CONSTRAINT chk_servicios_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),

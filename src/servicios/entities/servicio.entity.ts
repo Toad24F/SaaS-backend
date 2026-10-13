@@ -28,6 +28,18 @@ export class Servicio {
   @Column({ type: 'varchar', length: 150 })
   nombre: string;
 
+  // Columna técnica: reserva el nombre normalizado dentro del negocio, incluso si está inactivo.
+  @Column({
+    name: 'nombre_negocio_unico',
+    type: 'varchar',
+    length: 180,
+    asExpression: "CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END",
+    generatedType: 'STORED',
+    unique: true,
+    select: false,
+  })
+  nombreNegocioUnico: string | null;
+
   // TypeORM devuelve DECIMAL como texto para no redondear importes binarios.
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   costo: string;

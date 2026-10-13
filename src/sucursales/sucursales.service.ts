@@ -27,6 +27,7 @@ import { validarLimiteSucursales } from '../negocios/validar-limite-sucursales';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { CrearSucursalDto, EditarSucursalDto } from './dto/sucursal.dto';
 import { Sucursal } from './entities/sucursal.entity';
+import { esConflictoNombreSucursal, normalizarNombreSucursal } from './normalizar-nombre-sucursal';
 
 type CamposSucursal = Pick<
   Sucursal,
@@ -63,18 +64,26 @@ export class SucursalesService {
         throw new ConflictException('No hay cupo para otra sucursal activa.');
       }
       const repo = manager.getRepository(Sucursal);
-      const sucursal = await repo.save(
-        repo.create({
-          negocioId: negocio.id,
-          nombre: datos.nombre,
-          direccion: datos.direccion,
-          telefono: datos.telefono,
-          zonaHoraria: datos.zonaHoraria,
-          urlGoogleMaps: datos.urlGoogleMaps ?? null,
-          notasLlegada: datos.notasLlegada ?? null,
-          activo: true,
-        }),
-      );
+      let sucursal: Sucursal;
+      try {
+        sucursal = await repo.save(
+          repo.create({
+            negocioId: negocio.id,
+            nombre: normalizarNombreSucursal(datos.nombre),
+            direccion: datos.direccion,
+            telefono: datos.telefono,
+            zonaHoraria: datos.zonaHoraria,
+            urlGoogleMaps: datos.urlGoogleMaps ?? null,
+            notasLlegada: datos.notasLlegada ?? null,
+            activo: true,
+          }),
+        );
+      } catch (error) {
+        if (esConflictoNombreSucursal(error)) {
+          throw new ConflictException('El nombre de la sucursal ya está registrado en este negocio.');
+        }
+        throw error;
+      }
       await this.registrar(
         manager,
         actor.id,
@@ -146,7 +155,9 @@ export class SucursalesService {
       ] as const) {
         if (datos[campo] !== undefined) {
           (sucursal as unknown as Record<string, unknown>)[campo] =
-            datos[campo] ?? null;
+            campo === 'nombre' && typeof datos[campo] === 'string'
+              ? normalizarNombreSucursal(datos[campo])
+              : datos[campo] ?? null;
         }
       }
       const despues = this.campos(sucursal);
@@ -167,7 +178,14 @@ export class SucursalesService {
           { sucursalId, zonaHoraria: sucursal.zonaHoraria },
         );
       }
-      await manager.getRepository(Sucursal).save(sucursal);
+      try {
+        await manager.getRepository(Sucursal).save(sucursal);
+      } catch (error) {
+        if (esConflictoNombreSucursal(error)) {
+          throw new ConflictException('El nombre de la sucursal ya está registrado en este negocio.');
+        }
+        throw error;
+      }
       await this.registrar(
         manager,
         actor.id,
