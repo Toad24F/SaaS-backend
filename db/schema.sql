@@ -68,8 +68,15 @@ CREATE TABLE usuarios (
   admin_negocio_unico  INT UNSIGNED GENERATED ALWAYS AS (
     CASE WHEN rol = 'admin_negocio' THEN negocio_id ELSE NULL END
   ) STORED,
+  nombre_negocio_unico VARCHAR(180) GENERATED ALWAYS AS (
+    CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL
+      THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre)))
+      ELSE NULL
+    END
+  ) STORED,
   UNIQUE KEY uq_usuarios_email (email),
   UNIQUE KEY uq_usuario_admin_negocio (admin_negocio_unico),
+  UNIQUE KEY uq_usuarios_negocio_nombre (nombre_negocio_unico),
   UNIQUE KEY uq_usuarios_negocio_id (negocio_id, id),
   CONSTRAINT fk_usuarios_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id),
   CONSTRAINT chk_usuarios_rol_negocio CHECK (

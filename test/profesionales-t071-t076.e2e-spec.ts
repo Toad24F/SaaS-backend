@@ -133,6 +133,11 @@ describe('M1-T071–T076: perfil Profesional', () => {
       expect((await db.query('SELECT COUNT(*) total FROM correos_acceso WHERE usuario_id = ?',
         [usuario.id]) as { total: string }[])[0].total).toBe('1');
       await request(http).post('/profesionales').auth(tokens[0], { type: 'bearer' })
+        .send({ ...alta, nombre: '  Ana   Profesional ', correo: 'otra-ana@example.test' }).expect(409);
+      await request(http).post('/recepcionistas').auth(tokens[0], { type: 'bearer' })
+        .send({ emailRecepcionista: 'recepcion-ana@example.test', nombre: 'Ana Profesional',
+          password: 'Clave-recepcion-123' }).expect(409);
+      await request(http).post('/profesionales').auth(tokens[0], { type: 'bearer' })
         .send(alta).expect(409);
       expect(await db.getRepository(Usuario).countBy({ email: alta.correo })).toBe(1);
     });

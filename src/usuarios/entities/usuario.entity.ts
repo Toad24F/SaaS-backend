@@ -75,6 +75,18 @@ export class Usuario {
     })
     adminNegocioUnico: number | null;
 
+    // La unicidad incluye admin activado, recepción y Profesional del mismo negocio.
+    @Column({
+        name: 'nombre_negocio_unico',
+        type: 'varchar',
+        length: 180,
+        asExpression: "CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END",
+        generatedType: 'STORED',
+        unique: true,
+        select: false,
+    })
+    nombreNegocioUnico: string | null;
+
     @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
     creadoEn: Date;
 }

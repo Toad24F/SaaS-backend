@@ -28,6 +28,7 @@ import { Personal } from './entities/personal.entity';
 import { PersonalSucursal } from './entities/personal-sucursal.entity';
 import { PersonalServicio } from './entities/personal-servicio.entity';
 import { PersonalServicioSucursal } from './entities/personal-servicio-sucursal.entity';
+import { esConflictoNombreUsuario, normalizarNombreUsuario } from '../usuarios/normalizar-nombre';
 
 export interface PerfilProfesional {
   id: number; negocioId: number; usuarioId: number;
@@ -54,7 +55,7 @@ export class ProfesionalesService {
   async crear(actorId: number, entrada: CrearProfesionalDto, ahora: Date): Promise<PerfilProfesional> {
     const datos = this.validar(CrearProfesionalDto, entrada);
     const correo = datos.correo.toLowerCase();
-    const nombre = datos.nombre.replace(/\s+/g, ' ');
+    const nombre = normalizarNombreUsuario(datos.nombre);
     const passwordHash = await this.contrasenas.generarHash(datos.password);
     try {
       return await transaccionIdentidad(this.perfiles.manager, async (manager) => {
@@ -112,8 +113,8 @@ export class ProfesionalesService {
           especialidad: perfil.especialidad };
         const correo = datos.correo?.toLowerCase();
         const cambioCorreo = correo !== undefined && correo !== usuario.email;
-        const cambioNombre = datos.nombre !== undefined &&
-          datos.nombre.replace(/\s+/g, ' ') !== usuario.nombre;
+        const nombreNormalizado = datos.nombre === undefined ? undefined : normalizarNombreUsuario(datos.nombre);
+        const cambioNombre = nombreNormalizado !== undefined && nombreNormalizado !== usuario.nombre;
         const cambioEspecialidad = datos.especialidad !== undefined &&
           datos.especialidad !== perfil.especialidad;
         if (cambioCorreo) {
@@ -125,7 +126,7 @@ export class ProfesionalesService {
           usuario.email = correo;
           usuario.correoVersion += 1;
         }
-        if (cambioNombre) usuario.nombre = datos.nombre!.replace(/\s+/g, ' ');
+        if (cambioNombre) usuario.nombre = nombreNormalizado!;
         if (hash !== undefined) usuario.passwordHash = hash;
         if (cambioEspecialidad) {
           perfil.especialidad = datos.especialidad!;
@@ -619,6 +620,9 @@ export class ProfesionalesService {
   private conflictoCorreo(error: unknown): never {
     const codigo = (error as { driverError?: { code?: string } }).driverError?.code
       ?? (error as { code?: string }).code;
+    if (esConflictoNombreUsuario(error)) {
+      throw new ConflictException('El nombre ya está registrado en este negocio.');
+    }
     if (codigo === 'ER_DUP_ENTRY') throw new ConflictException('El correo ya está registrado.');
     throw error;
   }
