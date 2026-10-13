@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { PATRON_RFC } from '../validar-rfc';
 
 /** El alta solo admite identidad del negocio y correo del administrador pendiente. */
 export class CrearNegocioDto {
@@ -7,7 +8,7 @@ export class CrearNegocioDto {
   @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
   @IsString()
   @IsNotEmpty()
-  @MaxLength(13)
+  @Matches(PATRON_RFC, { message: 'El RFC no tiene un formato válido' })
   rfc: string;
 
   @IsOptional()

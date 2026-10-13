@@ -24,6 +24,7 @@ import { BandejaCorreoService } from '../correos/bandeja-correo.service';
 import { CodigoAcceso } from '../codigos/entities/codigo-acceso.entity';
 import { EnvioCorreo, EstadoEnvioCorreo } from '../correos/entities/envio-correo.entity';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { esFormatoRfcValido } from '../negocios/validar-rfc';
 
 export interface CrearNegocio {
   actorUsuarioId: number;
@@ -65,7 +66,7 @@ export class AltasService {
     const rfc = typeof datos.rfc === 'string' ? datos.rfc.trim().toUpperCase() : '';
     const limiteSucursales = datos.limiteSucursales === undefined ? 1 : datos.limiteSucursales;
     if (!nombre || nombre.length > 150 || !slug || slug.length > 100 ||
-      !isEmail(email) || email.length > 150 || !rfc || rfc.length > 13 ||
+      !isEmail(email) || email.length > 150 || !esFormatoRfcValido(rfc) ||
       !Number.isInteger(limiteSucursales) || limiteSucursales < 1 || limiteSucursales > 4294967295 ||
       !(datos.ahora instanceof Date) || !Number.isFinite(datos.ahora.getTime())) {
       throw new BadRequestException('Identidad del negocio, correo, RFC, cupo o fecha inválidos.');
