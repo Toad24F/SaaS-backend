@@ -2,7 +2,7 @@
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion-fase-3.md) y la [especificación](spec-modulo-2.md). Todos los RF citados son locales a esta especificación. Los identificadores M01–M08 y T01–T18 remiten a los módulos y grupos de pruebas del plan.
 
-Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T019 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
+Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T025 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
 
 Marcar una casilla únicamente después de comprobar su línea **Hecho cuando:** y conservar evidencia con RF, comando o revisión, resultado y limitaciones. Las tareas de tests incluyen preparar el caso y ejecutarlo; las de cierre pueden aprovechar resultados de la misma revisión sin repetir comprobaciones innecesarias. Si una tarea supera su alcance estimado, dividir el trabajo restante antes de marcarla. Las pruebas omitidas por falta de MariaDB u otro impedimento quedan pendientes.
 
@@ -85,22 +85,24 @@ Evidencia, flujo, archivos y pruebas de M2-T016–M2-T019: [integridad y conserv
 
 M01; decisión D01; pruebas T01.
 
-- [ ] **M2-T020 — Validar los cuatro parámetros de agenda** · 20 min · Depende de: M2-T006 · RF-02–RF-06
+Evidencia, flujo, archivos y pruebas de M2-T020–M2-T025: [configuración de agenda](evidencia-t020-t025.md).
+
+- [x] **M2-T020 — Validar los cuatro parámetros de agenda** · 20 min · Depende de: M2-T006 · RF-02–RF-06
   Hecho cuando: el validador acepta los seis intervalos, anticipación no negativa múltiplo de 5 y días enteros no negativos, y rechaza conjuntos incompletos, valores desconocidos o no representables.
 
-- [ ] **M2-T021 — Consultar valores efectivos sin escribir** · 15 min · Depende de: M2-T020 · RF-02–RF-05
+- [x] **M2-T021 — Consultar valores efectivos sin escribir** · 15 min · Depende de: M2-T020 · RF-02–RF-05
   Hecho cuando: un negocio sin fila obtiene Ventana Libre/15/15/60 y una consulta no crea configuración ni auditoría; una fila existente devuelve sus valores.
 
-- [ ] **M2-T022 — Guardar configuración de forma íntegra** · 25 min · Depende de: M2-T021 · RF-01, RF-06–RF-07
+- [x] **M2-T022 — Guardar configuración de forma íntegra** · 25 min · Depende de: M2-T021 · RF-01, RF-06–RF-07
   Hecho cuando: el administrador actual del negocio puede reemplazar el conjunto bajo bloqueo de negocio; todo fallo conserva la configuración anterior y no se acepta un negocio proporcionado por el cliente.
 
-- [ ] **M2-T023 — Auditar cambios reales de configuración** · 20 min · Depende de: M2-T022 · RF-01, RF-06–RF-07
+- [x] **M2-T023 — Auditar cambios reales de configuración** · 20 min · Depende de: M2-T022 · RF-01, RF-06–RF-07
   Hecho cuando: dato y evento anterior/nuevo se confirman juntos; repetir valores no crea otro evento y un fallo de auditoría revierte la modificación.
 
-- [ ] **M2-T024 — Probar valores iniciales, validación y rollback** · 20 min · Depende de: M2-T023 · RF-01–RF-07
+- [x] **M2-T024 — Probar valores iniciales, validación y rollback** · 20 min · Depende de: M2-T023 · RF-01–RF-07
   Hecho cuando: pasan los casos 0/5/15 y 7/negativos/fracciones para anticipación, horizonte 0/60, los seis intervalos y reemplazo inválido sin cambios ni eventos.
 
-- [ ] **M2-T025 — Probar primeras escrituras concurrentes** · 25 min · Depende de: M2-T023, M2-T014 · RF-01, RF-06–RF-07
+- [x] **M2-T025 — Probar primeras escrituras concurrentes** · 25 min · Depende de: M2-T023, M2-T014 · RF-01, RF-06–RF-07
   Hecho cuando: dos conexiones independientes producen una sola fila de configuración, sin conjuntos parciales; solo las transiciones reales confirmadas generan auditoría.
 
 ## 4. Permisos y oferta efectiva

@@ -4,6 +4,7 @@ import { AppModule } from '../app.module';
 import { DisponibilidadModule } from './disponibilidad.module';
 import { DisponibilidadHttpModule } from './disponibilidad-http.module';
 import { OcupacionesModule } from './ocupaciones.module';
+import { ConfiguracionAgendaService } from './configuracion-agenda.service';
 
 // Protege la separación entre el dominio, la lectura de ocupaciones y HTTP.
 describe('M2-T004: composición base del motor', () => {
@@ -16,6 +17,11 @@ describe('M2-T004: composición base del motor', () => {
     expect(dominio).toContain(OcupacionesModule);
     for (const modulo of [DisponibilidadModule, DisponibilidadHttpModule, OcupacionesModule]) {
       expect(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, modulo) ?? []).toEqual([]);
+    }
+    // M01 registra su servicio interno, mientras HTTP y ocupaciones no publican escritores.
+    expect(Reflect.getMetadata(MODULE_METADATA.PROVIDERS, DisponibilidadModule))
+      .toContain(ConfiguracionAgendaService);
+    for (const modulo of [DisponibilidadHttpModule, OcupacionesModule]) {
       expect(Reflect.getMetadata(MODULE_METADATA.PROVIDERS, modulo) ?? []).toEqual([]);
     }
   });
