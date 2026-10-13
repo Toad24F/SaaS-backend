@@ -3,7 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource, EntityManager } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
-import { Rol } from '../auth/enums/rol.enum';
+import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
@@ -17,6 +17,7 @@ export class ConfiguracionAgendaService {
   constructor(
     @InjectDataSource() private readonly db: DataSource,
     private readonly auditoria: AuditoriaService,
+    private readonly autorizacion: AutorizacionService,
   ) {}
 
   async consultar(actorId: number): Promise<ValoresConfiguracionAgenda> {
@@ -57,10 +58,8 @@ export class ConfiguracionAgendaService {
     if (!usuario || !usuario.activo || !usuario.activadoEn) {
       throw new ForbiddenException('Cuenta no disponible.');
     }
-    // El permiso específico de disponibilidad se incorporará en M2-T026.
-    if (usuario.rol !== Rol.ADMIN_NEGOCIO) {
-      throw new ForbiddenException('Solo el administrador configura la agenda.');
-    }
+    // La matriz específica no concede esta escritura a recepción ni al Profesional.
+    this.autorizacion.exigir(usuario.rol, Permiso.CONFIGURAR_AGENDA);
     if (usuario.negocioId === null) throw new ForbiddenException('Negocio no autorizado.');
     return usuario;
   }

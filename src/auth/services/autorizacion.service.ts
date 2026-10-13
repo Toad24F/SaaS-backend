@@ -14,6 +14,9 @@ export enum Permiso {
   GESTIONAR_BLOQUEOS = 'gestionar_bloqueos',
   GESTIONAR_SERVICIOS_PROPIOS = 'gestionar_servicios_propios',
   VER_SUCURSALES_PROPIAS = 'ver_sucursales_propias',
+  CONFIGURAR_AGENDA = 'configurar_agenda',
+  CONSULTAR_DISPONIBILIDAD = 'consultar_disponibilidad',
+  VALIDAR_DISPONIBILIDAD_MANUAL = 'validar_disponibilidad_manual',
 }
 
 // La matriz es cerrada: ningún rol hereda facultades de otro por coincidencia de negocio.
@@ -25,6 +28,9 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.GESTIONAR_LIMITE_SUCURSALES,
   ]),
   [Rol.ADMIN_NEGOCIO]: new Set([
+    Permiso.CONFIGURAR_AGENDA,
+    Permiso.CONSULTAR_DISPONIBILIDAD,
+    Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
     Permiso.GESTIONAR_RECEPCIONISTAS,
     Permiso.GESTIONAR_CATALOGO,
     Permiso.CREAR_EDITAR_SERVICIOS,
@@ -33,8 +39,14 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.GESTIONAR_BLOQUEOS,
     Permiso.GESTIONAR_SERVICIOS_PROPIOS,
   ]),
-  [Rol.RECEPCIONISTA]: new Set(),
+  // Solo lectura/validación de disponibilidad; no hereda gestión de horarios u oferta.
+  [Rol.RECEPCIONISTA]: new Set([
+    Permiso.CONSULTAR_DISPONIBILIDAD,
+    Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
+  ]),
   [Rol.PROFESIONAL]: new Set([
+    Permiso.CONSULTAR_DISPONIBILIDAD,
+    Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
     Permiso.CREAR_EDITAR_SERVICIOS,
     Permiso.GESTIONAR_HORARIO,
     Permiso.GESTIONAR_BLOQUEOS,

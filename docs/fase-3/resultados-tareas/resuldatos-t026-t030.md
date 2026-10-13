@@ -1,0 +1,25 @@
+# Evidencia M2-T026–M2-T030 — permisos y oferta efectiva
+
+## Archivos y flujo
+
+`src/auth/services/autorizacion.service.ts` añade permisos distintos para consultar disponibilidad, validar una modalidad manual y configurar la agenda. Administrador, Recepción y Profesional pueden consultar y validar; solo Administrador configura. Recepción no adquiere facultades de gestión y superadmin no recibe acceso operativo. `src/auth/services/autorizacion-disponibilidad.spec.ts` comprueba la matriz y el perfil propio del Profesional.
+
+`src/disponibilidad/contexto-disponibilidad.service.ts` reconstruye el actor con la cuenta y sesión persistidas, verifica revocación y vencimiento, reutiliza la política existente de licencia —incluida la gracia de 48 horas— y busca el perfil dentro del negocio actual. Ignora rol y `negocioId` del token. Devuelve 401 cuando sesión, cuenta o licencia impiden acceso; 403 por rol o perfil ajeno del mismo negocio; 404 uniforme por perfil inexistente o de otro negocio. Recibe un gestor transaccional y un instante ya capturado para que las siguientes lecturas compartan la misma vista. Los comentarios señalan las comprobaciones y el orden que evita revelar referencias ajenas.
+
+`src/disponibilidad/estado-oferta.ts` reúne la decisión de oferta: existencia de asignación y seis estados fuente (sucursal, cuenta, servicio, selección general, atención en la sucursal y selección local). Produce motivos sin borrar preferencias. `src/disponibilidad/oferta-efectiva.service.ts` lee esas fuentes con el gestor y negocio autorizados, sin abrir una transacción ni elevar permisos de Recepción. Su puerta `filtrarCandidatos` deja sin candidatos públicos o manuales una combinación no ofrecida; no pretende validar todavía horario, duración u ocupaciones. `src/profesionales/profesionales.service.ts` reutiliza la misma función de decisión en la consulta de oferta anterior, preservando su forma de respuesta. `src/disponibilidad/disponibilidad.module.ts` registra y exporta ambos colaboradores internos sin publicar rutas; importa auditoría y licencias compartidas para no crear instancias paralelas.
+
+`src/disponibilidad/configuracion-agenda.service.ts` pasa a exigir el permiso específico de configuración en vez de comprobar el rol localmente. `test/fase-3-t020-t025.integration-spec.ts` ajusta la construcción del servicio a esa dependencia. `test/fase-3-t026-t030.integration-spec.ts` crea dos negocios temporales, cuentas, sesiones, licencias y selecciones, y comprueba acceso y cada interruptor de oferta. `docs/fase-3/tareas.md` marca únicamente este tramo y enlaza la evidencia.
+
+`tsconfig.build.tsbuildinfo` es la caché incremental que actualizó automáticamente `npm run build`; no contiene reglas de negocio.
+
+Flujo de lectura interna: **transacción y reloj común → sesión y cuenta actuales → permiso → negocio/licencia actuales → perfil del mismo negocio → fuentes de oferta → puerta de candidatos**. Un token con rol o negocio obsoletos no decide la autorización. Si falta una fuente, se conserva su fila o preferencia y la nueva consulta devuelve cero candidatos en ambas modalidades. Solo tras la autorización se entregan motivos de exclusión; la consulta previa del módulo 1 mantiene su contrato.
+
+## Pruebas escritas primero
+
+La prueba nueva de permisos falló antes de añadirlos. La prueba de filtrado falló porque `filtrarCandidatos` aún no existía. Tras implementar los colaboradores, los casos dirigidos aprobaron. Se verificó sesión falsa/revocada, cuenta inactiva, vencimiento natural y el límite exacto de la suspensión manual con la política compartida; superadmin denegado, Recepción autorizada sin gestión, Profesional propio y ajeno, referencias de otro negocio y token con datos obsoletos. Cada uno de los seis estados se desactivó y reactivó por separado; las modalidades pública y manual dejaron de recibir candidatos cuando correspondía. La selección local ausente no borró la selección general ni las citas históricas. La primera regresión HTTP descubrió una segunda instancia de auditoría en el módulo nuevo; importar el módulo compartido corrigió la composición y la repetición pasó.
+
+Verificación final: `npm run build` y `npm run lint` sin errores; `npm test -- --runInBand`: **60 suites, 310 pruebas aprobadas**; `npm run test:integration -- --runInBand` en una ejecución limpia tras el último ajuste: **51 suites, 231 pruebas aprobadas**; `npm run test:e2e -- --runInBand test/profesionales-t071-t076.e2e-spec.ts test/profesionales-t077-t080.e2e-spec.ts`: **2 suites, 7 pruebas aprobadas**. El caso de fallo de auditoría inyectado emite un error esperado en el log del recorrido, pero la prueba verifica el 500 y el rollback y termina aprobada.
+
+## Límite
+
+Esta entrega prepara contexto y puerta de oferta internos. La proyección de atención, los bloqueos, las ocupaciones y el generador completo de ranuras pertenecen a tareas posteriores. Las rutas HTTP privadas también quedan para M2-T060–T071; no hay consulta anónima ni escritores de reservas nuevos.

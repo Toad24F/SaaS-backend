@@ -20,6 +20,7 @@ import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { validarRecurrencias } from '../horarios/calendario';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
+import { derivarEstadoOferta } from '../disponibilidad/estado-oferta';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
   SeleccionarServiciosDto } from './dto/profesionales.dto';
@@ -385,19 +386,14 @@ export class ProfesionalesService {
               const seleccionGeneralActiva = seleccionPorServicio.get(servicio.id)?.activo ?? false;
               const seleccionSucursalActiva = combinacionPorClave
                 .get(`${sucursal.id}:${servicio.id}`)?.activo ?? false;
-              const motivosExclusion: string[] = [];
-              if (!cuenta.activo) motivosExclusion.push('cuenta_inactiva');
-              if (!sucursal.activo) motivosExclusion.push('sucursal_inactiva');
-              if (!servicio.activo) motivosExclusion.push('servicio_inactivo');
-              if (!seleccionGeneralActiva) motivosExclusion.push('servicio_no_seleccionado');
-              if (!asignacion.activo) motivosExclusion.push('atencion_inactiva');
-              if (!seleccionSucursalActiva) {
-                motivosExclusion.push('servicio_no_ofrecido_en_sucursal');
-              }
+              // La consulta previa y el motor comparten la misma regla de seis estados.
+              const estado = derivarEstadoOferta({ asignado: true,
+                cuentaActiva: cuenta.activo, sucursalActiva: sucursal.activo,
+                servicioActivo: servicio.activo, seleccionGeneralActiva,
+                atencionActiva: asignacion.activo, seleccionSucursalActiva });
               return { id: servicio.id, nombre: servicio.nombre,
                 servicioActivo: servicio.activo, seleccionGeneralActiva,
-                seleccionSucursalActiva, ofrecido: motivosExclusion.length === 0,
-                motivosExclusion };
+                seleccionSucursalActiva, ...estado };
             }) };
         }) };
     });

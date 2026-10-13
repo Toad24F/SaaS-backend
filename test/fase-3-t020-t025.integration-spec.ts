@@ -1,6 +1,7 @@
 import { conBaseMigrada } from './support/mariadb';
 import { ConfiguracionAgendaService } from '../src/disponibilidad/configuracion-agenda.service';
 import { AuditoriaService } from '../src/auditoria/auditoria.service';
+import { AutorizacionService } from '../src/auth/services/autorizacion.service';
 import type { DataSource } from 'typeorm';
 
 const inicial = { modo: 'ventana_libre', intervaloMinutos: 15,
@@ -9,7 +10,7 @@ const nueva = { modo: 'agenda_compacta', intervaloMinutos: 5,
   anticipacionMinutos: 0, diasFuturos: 0 } as const;
 
 function servicio(db: DataSource, auditoria = new AuditoriaService()) {
-  return new ConfiguracionAgendaService(db, auditoria);
+  return new ConfiguracionAgendaService(db, auditoria, new AutorizacionService());
 }
 
 async function actores(db: DataSource) {

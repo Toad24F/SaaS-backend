@@ -2,7 +2,7 @@
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion-fase-3.md) y la [especificación](spec-modulo-2.md). Todos los RF citados son locales a esta especificación. Los identificadores M01–M08 y T01–T18 remiten a los módulos y grupos de pruebas del plan.
 
-Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T025 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
+Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T030 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
 
 Marcar una casilla únicamente después de comprobar su línea **Hecho cuando:** y conservar evidencia con RF, comando o revisión, resultado y limitaciones. Las tareas de tests incluyen preparar el caso y ejecutarlo; las de cierre pueden aprovechar resultados de la misma revisión sin repetir comprobaciones innecesarias. Si una tarea supera su alcance estimado, dividir el trabajo restante antes de marcarla. Las pruebas omitidas por falta de MariaDB u otro impedimento quedan pendientes.
 
@@ -109,19 +109,21 @@ Evidencia, flujo, archivos y pruebas de M2-T020–M2-T025: [configuración de ag
 
 M02; decisiones D02–D03; pruebas T02–T04.
 
-- [ ] **M2-T026 — Añadir permisos específicos de disponibilidad** · 20 min · Depende de: M2-T004 · RF-01, RF-08–RF-09, RF-29–RF-30, RF-40
+Evidencia, flujo, archivos y pruebas de M2-T026–M2-T030: [permisos y oferta efectiva](evidencia-t026-t030.md).
+
+- [x] **M2-T026 — Añadir permisos específicos de disponibilidad** · 20 min · Depende de: M2-T004 · RF-01, RF-08–RF-09, RF-29–RF-30, RF-40
   Hecho cuando: administrador y recepción pueden consultar al negocio, Profesional solo a sí mismo y solo administrador configura; no se añaden permisos de gestión a recepción ni acceso operativo al superadmin.
 
-- [ ] **M2-T027 — Resolver actor, pertenencia y acceso actual** · 25 min · Depende de: M2-T026 · RF-08–RF-10, RF-30, RF-40, RF-45
+- [x] **M2-T027 — Resolver actor, pertenencia y acceso actual** · 25 min · Depende de: M2-T026 · RF-08–RF-10, RF-30, RF-40, RF-45
   Hecho cuando: el contexto usa cuenta, negocio, sesión y política de licencia actuales; distingue 401, 403 y 404 conforme al plan y no confía en IDs de negocio o permisos antiguos del token.
 
-- [ ] **M2-T028 — Extraer la lectura interna de oferta** · 25 min · Depende de: M2-T027 · RF-09, RF-11–RF-12
+- [x] **M2-T028 — Extraer la lectura interna de oferta** · 25 min · Depende de: M2-T027 · RF-09, RF-11–RF-12
   Hecho cuando: el colaborador acepta el contexto de lectura autorizado y devuelve asignación y seis estados fuente sin abrir otra transacción ni elevar los permisos de recepción.
 
-- [ ] **M2-T029 — Aplicar oferta efectiva a las nuevas consultas** · 20 min · Depende de: M2-T028 · RF-11–RF-12, RF-30
+- [x] **M2-T029 — Aplicar oferta efectiva a las nuevas consultas** · 20 min · Depende de: M2-T028 · RF-11–RF-12, RF-30
   Hecho cuando: cada estado inactivo o selección ausente excluye nuevas ranuras públicas y manuales, conserva preferencias e identifica el motivo solo para actores autorizados.
 
-- [ ] **M2-T030 — Probar estados, permisos y continuidad de oferta** · 25 min · Depende de: M2-T029, M2-T003 · RF-08–RF-12, RF-30, RF-40
+- [x] **M2-T030 — Probar estados, permisos y continuidad de oferta** · 25 min · Depende de: M2-T029, M2-T003 · RF-08–RF-12, RF-30, RF-40
   Hecho cuando: se prueba cada estado por separado, perfil propio/ajeno, selección vacía, reactivación y dos negocios; el contrato anterior de oferta sigue cumpliéndose.
 
 ## 5. Proyección de atención con anclajes
