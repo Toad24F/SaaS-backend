@@ -26,6 +26,7 @@ export class SucursalesController {
   }
 
   @Get()
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL)
   async listar(@CurrentUser() actor: JwtPayload) {
     return (await this.sucursales.listar(actor.sub)).map((sucursal) => this.presentar(sucursal));
   }
