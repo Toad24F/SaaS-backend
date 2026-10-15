@@ -222,19 +222,19 @@ M05; decisiones D04–D06 y D09–D11; pruebas T05–T12.
 
 M07; decisiones D02, D10, D14 y D15; pruebas T01–T04 y T15.
 
-- [ ] **M2-T057 — Definir entradas de configuración y sus errores** · 15 min · Depende de: M2-T020 · RF-01–RF-06, RF-45
+- [x] **M2-T057 — Definir entradas de configuración y sus errores** · 15 min · Depende de: M2-T020 · RF-01–RF-06, RF-45
   Hecho cuando: el contrato exige los cuatro campos camelCase y rechaza valores ausentes/extra no admitidos sin coerciones que conviertan fracciones o valores desconocidos en válidos.
 
-- [ ] **M2-T058 — Validar consultas por fechas y modalidad** · 20 min · Depende de: M2-T027 · RF-08–RF-09, RF-28–RF-30, RF-42–RF-45
+- [x] **M2-T058 — Validar consultas por fechas y modalidad** · 20 min · Depende de: M2-T027 · RF-08–RF-09, RF-28–RF-30, RF-42–RF-45
   Hecho cuando: se validan IDs, fechas, rangos inclusivos de hasta 31 días y modalidad pública por defecto; 32 días y rangos invertidos se rechazan sin limitar el horizonte configurable.
 
-- [ ] **M2-T059 — Validar fecha y hora de una consulta puntual** · 15 min · Depende de: M2-T058, M2-T036 · RF-18–RF-19, RF-29–RF-30, RF-45
+- [x] **M2-T059 — Validar fecha y hora de una consulta puntual** · 15 min · Depende de: M2-T058, M2-T036 · RF-18–RF-19, RF-29–RF-30, RF-45
   Hecho cuando: la entrada puntual acepta minutos válidos y rechaza horas imposibles/ambiguas, IDs inválidos y cualquier identidad de apartado aportada para excluir ocupaciones.
 
-- [ ] **M2-T060 — Exponer lectura y reemplazo de configuración** · 20 min · Depende de: M2-T057, M2-T023, M2-T027 · RF-01–RF-07, RF-09–RF-10
+- [x] **M2-T060 — Exponer lectura y reemplazo de configuración** · 20 min · Depende de: M2-T057, M2-T023, M2-T027 · RF-01–RF-07, RF-09–RF-10
   Hecho cuando: GET/PUT de configuración se registran como privados y exclusivos del administrador; devuelven valores efectivos y preservan el reemplazo íntegro.
 
-- [ ] **M2-T061 — Exponer consulta privada de ranuras** · 20 min · Depende de: M2-T058, M2-T048, M2-T051, M2-T052 · RF-08–RF-34, RF-42–RF-45
+- [x] **M2-T061 — Exponer consulta privada de ranuras** · 20 min · Depende de: M2-T058, M2-T048, M2-T051, M2-T052 · RF-08–RF-34, RF-42–RF-45
   Hecho cuando: GET /disponibilidad aplica permisos y modalidad, devuelve el contrato del plan y no habilita consulta anónima por indicar modalidad pública.
 
 - [ ] **M2-T062 — Exponer validación puntual sin reservar** · 20 min · Depende de: M2-T059, M2-T053 · RF-08–RF-30, RF-31–RF-35, RF-42–RF-45

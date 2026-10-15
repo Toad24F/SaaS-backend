@@ -6,24 +6,28 @@ import { DisponibilidadHttpModule } from './disponibilidad-http.module';
 import { OcupacionesModule } from './ocupaciones.module';
 import { ConfiguracionAgendaService } from './configuracion-agenda.service';
 import { OcupacionesService } from './ocupaciones.service';
+import { DisponibilidadController } from './disponibilidad.controller';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 // Protege la separación entre el dominio, la lectura de ocupaciones y HTTP.
 describe('M2-T004: composición base del motor', () => {
-  it('registra los tres módulos en la aplicación sin publicar controladores nuevos', () => {
+  it('registra el único controlador privado en el módulo HTTP', () => {
     const raiz = Reflect.getMetadata(MODULE_METADATA.IMPORTS, AppModule) as unknown[];
     expect(raiz).toEqual(expect.arrayContaining([
       DisponibilidadModule, DisponibilidadHttpModule,
     ]));
     const dominio = Reflect.getMetadata(MODULE_METADATA.IMPORTS, DisponibilidadModule) as unknown[];
     expect(dominio).toContain(OcupacionesModule);
-    for (const modulo of [DisponibilidadModule, DisponibilidadHttpModule, OcupacionesModule]) {
+    for (const modulo of [DisponibilidadModule, OcupacionesModule]) {
       expect(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, modulo) ?? []).toEqual([]);
     }
+    expect(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, DisponibilidadHttpModule))
+      .toEqual([DisponibilidadController]);
     // M04 incorpora un lector interno; ninguno de estos módulos publica escritores.
     expect(Reflect.getMetadata(MODULE_METADATA.PROVIDERS, DisponibilidadModule))
       .toContain(ConfiguracionAgendaService);
-    expect(Reflect.getMetadata(MODULE_METADATA.PROVIDERS, DisponibilidadHttpModule) ?? [])
-      .toEqual([]);
+    expect(Reflect.getMetadata(MODULE_METADATA.PROVIDERS, DisponibilidadHttpModule))
+      .toContain(RolesGuard);
     expect(Reflect.getMetadata(MODULE_METADATA.PROVIDERS, OcupacionesModule))
       .toContain(OcupacionesService);
   });

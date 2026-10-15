@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DisponibilidadModule } from './disponibilidad.module';
+import { AuthModule } from '../auth/auth.module';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { DisponibilidadController } from './disponibilidad.controller';
 
-// Reserva el límite HTTP privado; las rutas se incorporan en M2-T060–T071.
-@Module({ imports: [DisponibilidadModule] })
+// Compone autenticación y dominio; las rutas no importan escritores de reservas.
+@Module({ imports: [AuthModule, DisponibilidadModule],
+  controllers: [DisponibilidadController], providers: [RolesGuard] })
 export class DisponibilidadHttpModule {}
