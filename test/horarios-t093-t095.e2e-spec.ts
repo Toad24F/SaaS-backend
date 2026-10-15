@@ -63,10 +63,12 @@ async function conHttp(ejecutar: (app: INestApplication, datos: {
         perfiles.push(usuarioId);
       }
       const sucursales: number[] = [];
-      for (const zona of ['America/New_York', 'America/Phoenix']) {
+      // Las dos zonas comparten negocio, pero cada sucursal requiere nombre único.
+      for (const [indice, zona] of ['America/New_York', 'America/Phoenix'].entries()) {
         const alta = await db.query(`INSERT INTO sucursales
           (negocio_id,nombre,direccion,telefono,zona_horaria)
-          VALUES (?,'Sede','Calle Uno','6141234567',?)`, [negocios[0], zona]);
+          VALUES (?,?,'Calle Uno','6141234567',?)`,
+        [negocios[0], `Sede ${indice + 1}`, zona]);
         sucursales.push(Number(alta.insertId));
         await db.query(`INSERT INTO personal_sucursales
           (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)`,
