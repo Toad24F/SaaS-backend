@@ -42,6 +42,8 @@ export interface ResultadoDisponibilidad {
   zonaHoraria: string;
   calculadoEn: Date;
   modalidad: 'publica' | 'manual';
+  /** Valores efectivos usados en esta misma lectura, incluida la estrategia. */
+  reglas: import('./configuracion-agenda.validador').ValoresConfiguracionAgenda;
   ranuras: Array<{ inicioUtc: Date; finUtc: Date }>;
   omisiones: Array<{ fechaLocal: string; motivo: string }>;
 }

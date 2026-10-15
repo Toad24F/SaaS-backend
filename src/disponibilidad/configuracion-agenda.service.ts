@@ -8,6 +8,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { ConfiguracionAgenda } from './entities/configuracion-agenda.entity';
+import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
 import { CONFIGURACION_INICIAL, validarConfiguracionAgenda,
   ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
 
@@ -24,6 +25,17 @@ export class ConfiguracionAgendaService {
     const actor = await this.actor(this.db.manager, actorId);
     const fila = await this.db.getRepository(ConfiguracionAgenda)
       .findOneBy({ negocioId: actor.negocioId! });
+    return fila ? this.valores(fila) : { ...CONFIGURACION_INICIAL };
+  }
+
+  /** El motor usa el mismo gestor e instante que sus demás fuentes. */
+  async consultarEnContexto(contexto: ContextoDisponibilidad):
+    Promise<ValoresConfiguracionAgenda> {
+    if (!contexto.manager.queryRunner?.isTransactionActive) {
+      throw new Error('La lectura de configuración requiere una transacción activa.');
+    }
+    const fila = await contexto.manager.getRepository(ConfiguracionAgenda)
+      .findOneBy({ negocioId: contexto.negocioId });
     return fila ? this.valores(fila) : { ...CONFIGURACION_INICIAL };
   }
 

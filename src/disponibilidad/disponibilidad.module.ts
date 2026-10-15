@@ -8,13 +8,16 @@ import { ContextoDisponibilidadService } from './contexto-disponibilidad.service
 import { OfertaEfectivaService } from './oferta-efectiva.service';
 import { BloqueosAplicablesService } from './bloqueos-aplicables.service';
 import { AtencionInternaService } from './atencion-interna.service';
+import { MotorDisponibilidadService } from './motor-disponibilidad.service';
+import { RELOJ, RelojSistema } from '../comun/reloj';
 
 // El dominio recibirá las fuentes de ocupación sin importar controladores HTTP.
 // Importar módulos compartidos evita instancias paralelas de auditoría o licencia.
 @Module({ imports: [OcupacionesModule, AuditoriaModule, LicenciasModule],
   providers: [ConfiguracionAgendaService, ContextoDisponibilidadService,
     OfertaEfectivaService, BloqueosAplicablesService, AtencionInternaService,
-    AutorizacionService],
+    AutorizacionService, MotorDisponibilidadService,
+    { provide: RELOJ, useClass: RelojSistema }],
   exports: [ConfiguracionAgendaService, ContextoDisponibilidadService,
-    OfertaEfectivaService, AtencionInternaService] })
+    OfertaEfectivaService, AtencionInternaService, MotorDisponibilidadService] })
 export class DisponibilidadModule {}

@@ -32,6 +32,9 @@ export class OfertaEfectivaService {
       this.autorizacion.exigir(contexto.rol, Permiso.VALIDAR_DISPONIBILIDAD_MANUAL);
     }
     const { manager, negocioId, personalId } = contexto;
+    if (!manager.queryRunner?.isTransactionActive) {
+      throw new Error('La lectura de oferta requiere una transacción activa.');
+    }
     // Todas las búsquedas usan negocioId obtenido del actor, nunca un ID de petición.
     const [sucursal, servicio, cuenta, asignacion, seleccion, combinacion] = await Promise.all([
       manager.getRepository(Sucursal).findOneBy({ negocioId, id: sucursalId }),
@@ -49,7 +52,9 @@ export class OfertaEfectivaService {
       atencionActiva: asignacion?.activo ?? false,
       seleccionSucursalActiva: combinacion?.activo ?? false };
     // La puerta de oferta se aplica antes de generar ranuras, sin mutar preferencias.
+    // El motor toma zona y duración de esta misma lectura, sin consultar otro repositorio.
     return { negocioId, personalId, sucursalId, servicioId, modalidad, fuentes,
+      zonaHoraria: sucursal.zonaHoraria, duracionMinutos: servicio.duracionMinutos,
       ...derivarEstadoOferta(fuentes) };
   }
 }

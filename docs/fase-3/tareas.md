@@ -179,22 +179,22 @@ M04; decisiones D05–D08; pruebas T06, T07 y T12.
 
 M05; decisiones D04–D06 y D09–D11; pruebas T05–T12.
 
-- [ ] **M2-T044 — Unificar reloj y contexto de lectura del motor** · 25 min · Depende de: M2-T021, M2-T029, M2-T034, M2-T036, M2-T041 · RF-07, RF-10–RF-15, RF-31–RF-34, RF-42–RF-44
+- [x] **M2-T044 — Unificar reloj y contexto de lectura del motor** · 25 min · Depende de: M2-T021, M2-T029, M2-T034, M2-T036, M2-T041 · RF-07, RF-10–RF-15, RF-31–RF-34, RF-42–RF-44
   Hecho cuando: configuración, oferta, atención y ocupaciones se leen con el mismo contexto transaccional e instante del reloj, sin consultas escapadas a repositorios o relojes independientes.
 
-- [ ] **M2-T045 — Generar inicios desde anclajes originales** · 20 min · Depende de: M2-T044, M2-T035 · RF-16–RF-17, RF-21–RF-22
+- [x] **M2-T045 — Generar inicios desde anclajes originales** · 20 min · Depende de: M2-T044, M2-T035 · RF-16–RF-17, RF-21–RF-22
   Hecho cuando: cada bloque genera su secuencia con el paso configurado; los límites compartidos no duplican candidatos y los cortes por restricciones no cambian el anclaje.
 
-- [ ] **M2-T046 — Filtrar candidatos por duración y ocupaciones** · 20 min · Depende de: M2-T045 · RF-11–RF-12, RF-15–RF-20, RF-31–RF-34
+- [x] **M2-T046 — Filtrar candidatos por duración y ocupaciones** · 20 min · Depende de: M2-T045 · RF-11–RF-12, RF-15–RF-20, RF-31–RF-34
   Hecho cuando: solo sobreviven intervalos con servicio completo, oferta vigente, atención continua y ausencia de empalmes en cualquier sucursal; se admiten extremos exactamente contiguos.
 
-- [ ] **M2-T047 — Aplicar anticipación y horizonte local** · 20 min · Depende de: M2-T046 · RF-04–RF-05, RF-24, RF-27–RF-28, RF-43
+- [x] **M2-T047 — Aplicar anticipación y horizonte local** · 20 min · Depende de: M2-T046 · RF-04–RF-05, RF-24, RF-27–RF-28, RF-43
   Hecho cuando: se aceptan los límites exactos de anticipación y último día local, incluidos ceros; un horizonte sin candidatos devuelve vacío sin cambiar la configuración.
 
-- [ ] **M2-T048 — Completar Ventana Libre y su resultado** · 20 min · Depende de: M2-T047 · RF-19, RF-21–RF-22, RF-42–RF-43
+- [x] **M2-T048 — Completar Ventana Libre y su resultado** · 20 min · Depende de: M2-T047 · RF-19, RF-21–RF-22, RF-42–RF-43
   Hecho cuando: se devuelven todos los candidatos válidos ordenados y únicos, con combinación, zona, reglas, instante de cálculo y omisiones, sin datos privados de las ocupaciones.
 
-- [ ] **M2-T049 — Iniciar grupos independientes en Agenda Compacta** · 20 min · Depende de: M2-T047 · RF-23–RF-24, RF-27
+- [x] **M2-T049 — Iniciar grupos independientes en Agenda Compacta** · 20 min · Depende de: M2-T047 · RF-23–RF-24, RF-27
   Hecho cuando: cada bloque/tramo vacío ofrece su primer candidato válido sin esperar otro tramo o día; 10:07 más 30 minutos con paso 15 ofrece 10:45 si cabe el servicio.
 
 - [ ] **M2-T050 — Buscar candidatos antes y después de ocupaciones** · 25 min · Depende de: M2-T049, M2-T041 · RF-15–RF-17, RF-21, RF-25, RF-31, RF-33
