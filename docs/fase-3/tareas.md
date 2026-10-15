@@ -197,25 +197,25 @@ M05; decisiones D04–D06 y D09–D11; pruebas T05–T12.
 - [x] **M2-T049 — Iniciar grupos independientes en Agenda Compacta** · 20 min · Depende de: M2-T047 · RF-23–RF-24, RF-27
   Hecho cuando: cada bloque/tramo vacío ofrece su primer candidato válido sin esperar otro tramo o día; 10:07 más 30 minutos con paso 15 ofrece 10:45 si cabe el servicio.
 
-- [ ] **M2-T050 — Buscar candidatos antes y después de ocupaciones** · 25 min · Depende de: M2-T049, M2-T041 · RF-15–RF-17, RF-21, RF-25, RF-31, RF-33
+- [x] **M2-T050 — Buscar candidatos antes y después de ocupaciones** · 25 min · Depende de: M2-T049, M2-T041 · RF-15–RF-17, RF-21, RF-25, RF-31, RF-33
   Hecho cuando: se seleccionan los inicios más próximos en ambos lados, ajustados a la secuencia; se respetan los extremos reales de citas que cruzan bloques y las demás ocupaciones.
 
-- [ ] **M2-T051 — Resolver huecos sin candidatos contiguos** · 20 min · Depende de: M2-T050 · RF-23–RF-27, RF-34
+- [x] **M2-T051 — Resolver huecos sin candidatos contiguos** · 20 min · Depende de: M2-T050 · RF-23–RF-27, RF-34
   Hecho cuando: si no queda candidato próximo válido se ofrece el primer inicio restante del tramo; al expirar una referencia se recalcula la oferta y otro día sigue siendo elegible.
 
-- [ ] **M2-T052 — Calcular inicios válidos por minuto en manual** · 20 min · Depende de: M2-T046 · RF-08–RF-12, RF-29–RF-30
+- [x] **M2-T052 — Calcular inicios válidos por minuto en manual** · 20 min · Depende de: M2-T046 · RF-08–RF-12, RF-29–RF-30
   Hecho cuando: la modalidad manual ofrece cualquier minuto válido desde ahora, omite únicamente las cuatro restricciones comerciales y mantiene permisos, licencia, oferta y condiciones físicas.
 
-- [ ] **M2-T053 — Validar un inicio puntual con el mismo motor** · 20 min · Depende de: M2-T048, M2-T051, M2-T052 · RF-15–RF-30, RF-31–RF-35, RF-42–RF-45
+- [x] **M2-T053 — Validar un inicio puntual con el mismo motor** · 20 min · Depende de: M2-T048, M2-T051, M2-T052 · RF-15–RF-30, RF-31–RF-35, RF-42–RF-45
   Hecho cuando: un inicio público debe pertenecer a la oferta actual de su estrategia; el manual cumple cabida y acceso; el resultado indica fin y causas sin crear cita ni apartado.
 
-- [ ] **M2-T054 — Probar selección y ajuste de Agenda Compacta** · 25 min · Depende de: M2-T053, M2-T038 · RF-16–RF-17, RF-21–RF-27, RF-31, RF-33–RF-34
+- [x] **M2-T054 — Probar selección y ajuste de Agenda Compacta** · 25 min · Depende de: M2-T053, M2-T038 · RF-16–RF-17, RF-21–RF-27, RF-31, RF-33–RF-34
   Hecho cuando: pasan grupos independientes, ambos lados, duración no múltiplo del paso, referencia de otro servicio, apartado vigente/expirado y apertura de otro grupo sin llenar otro día.
 
-- [ ] **M2-T055 — Probar límites públicos con reloj controlado** · 20 min · Depende de: M2-T048, M2-T049 · RF-02–RF-05, RF-24, RF-27–RF-28, RF-43
+- [x] **M2-T055 — Probar límites públicos con reloj controlado** · 20 min · Depende de: M2-T048, M2-T049 · RF-02–RF-05, RF-24, RF-27–RF-28, RF-43
   Hecho cuando: pasan 10:45 en el ejemplo acordado, anticipación exacta/0, horizonte 0/60, último día incluido, medianoche local y anticipación superior al horizonte.
 
-- [ ] **M2-T056 — Probar excepciones comerciales y límites manuales** · 20 min · Depende de: M2-T052, M2-T030, M2-T043 · RF-08–RF-12, RF-15–RF-19, RF-29–RF-31
+- [x] **M2-T056 — Probar excepciones comerciales y límites manuales** · 20 min · Depende de: M2-T052, M2-T030, M2-T043 · RF-08–RF-12, RF-15–RF-19, RF-29–RF-31
   Hecho cuando: 10:07 es válido pese a paso público 15 cuando está libre; pasado, descanso, cierre, oferta inactiva y cita en otra sucursal siguen rechazándose.
 
 ## 8. Superficie HTTP privada y errores
