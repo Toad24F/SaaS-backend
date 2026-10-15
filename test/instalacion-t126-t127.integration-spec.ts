@@ -26,15 +26,16 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
         // La instalación SQL autónoma debe incluir la relación nueva además de las históricas.
         expect(nombres).toContain('personal_servicios_sucursales');
         for (const tabla of nombres) {
-          // La comparación incluye las fuentes nuevas sin omitir las tablas históricas.
+          // Comparamos por nombre para incluir todas las columnas sin exigir el
+          // orden físico de ALTER TABLE frente al SQL de instalación directa.
           const [columnas] = await conexion.query(`SELECT COLUMN_NAME nombre, COLUMN_TYPE tipo,
             IS_NULLABLE anulable, COLUMN_DEFAULT defecto, EXTRA extra
             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=?
-            ORDER BY ORDINAL_POSITION`, [migradaNombre, tabla]);
+            ORDER BY COLUMN_NAME`, [migradaNombre, tabla]);
           const [referencia] = await conexion.query(`SELECT COLUMN_NAME nombre, COLUMN_TYPE tipo,
             IS_NULLABLE anulable, COLUMN_DEFAULT defecto, EXTRA extra
             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=?
-            ORDER BY ORDINAL_POSITION`, [nombre, tabla]);
+            ORDER BY COLUMN_NAME`, [nombre, tabla]);
           expect(referencia).toEqual(columnas);
         }
         // Fase 3 compara también índices, CHECK y FKs, no solo tipos de columna.
@@ -78,7 +79,7 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
         }
         expect(migrada.options).toMatchObject({ synchronize: false, migrationsRun: false });
         const antes = await migrada.query('SELECT COUNT(*) total FROM migrations');
-        expect(Number(antes[0].total)).toBe(23);
+        expect(Number(antes[0].total)).toBe(26);
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const despues = await migrada.query('SELECT COUNT(*) total FROM migrations');
         expect(despues).toEqual(antes);

@@ -23,8 +23,8 @@ async function actores(db: DataSource) {
     for (const rol of ['admin_negocio', 'recepcionista']) {
       const cuenta = await db.query(`INSERT INTO usuarios
         (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-        VALUES (?,'Actor',?,'hash',?,1,CURRENT_TIMESTAMP(6))`,
-      [negocioId, `agenda-${rol}-${n}@example.test`, rol]);
+        VALUES (?,?,?,'hash',?,1,CURRENT_TIMESTAMP(6))`,
+      [negocioId, `Actor ${rol}`, `agenda-${rol}-${n}@example.test`, rol]);
       altas.push(Number(cuenta.insertId));
     }
     ids.push({ negocio: negocioId, admin: altas[0], recepcion: altas[1], ajeno: 0 });

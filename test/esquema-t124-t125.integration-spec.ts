@@ -21,10 +21,12 @@ async function metadatos(conexion: { query: (sql: string, valores?: unknown[]) =
       Object.entries(fila).map(([clave, valor]) => [clave, valor === null ? null : String(valor)]),
     ));
   };
+  // Las migraciones ALTER agregan columnas al final; el SQL de instalación puede
+  // declararlas antes sin cambiar el contrato de tipos, índices o restricciones.
   const columnas = await consultar(`SELECT TABLE_NAME tabla, COLUMN_NAME columna,
     COLUMN_TYPE tipo, IS_NULLABLE anulable, COLUMN_DEFAULT defecto, EXTRA extra
     FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME IN (${tablas.map(() => '?')})
-    ORDER BY TABLE_NAME, ORDINAL_POSITION`);
+    ORDER BY TABLE_NAME, COLUMN_NAME`);
   const indices = await consultar(`SELECT TABLE_NAME tabla, INDEX_NAME indice,
     SEQ_IN_INDEX orden, COLUMN_NAME columna, NON_UNIQUE no_unico
     FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = ?

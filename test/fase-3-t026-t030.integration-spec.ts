@@ -21,8 +21,8 @@ function servicios() {
 async function cuenta(db: DataSource, negocioId: number | null, rol: string, sufijo: string) {
   const alta = await db.query(`INSERT INTO usuarios
     (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-    VALUES (?,'Actor',?,'hash',?,1,CURRENT_TIMESTAMP(6))`,
-  [negocioId, `oferta-${sufijo}@example.test`, rol]);
+    VALUES (?,?,?,'hash',?,1,CURRENT_TIMESTAMP(6))`,
+  [negocioId, `Actor ${sufijo}`, `oferta-${sufijo}@example.test`, rol]);
   return Number(alta.insertId);
 }
 

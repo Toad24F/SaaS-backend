@@ -2,7 +2,7 @@
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion-fase-3.md) y la [especificación](spec-modulo-2.md). Todos los RF citados son locales a esta especificación. Los identificadores M01–M08 y T01–T18 remiten a los módulos y grupos de pruebas del plan.
 
-Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T030 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
+Hay **91 tareas de fase 3** y **9 tareas de verificación diferida**. M2-T001–M2-T038 están hechas; las demás siguen pendientes. Están estimadas entre 15 y 25 minutos y ordenadas de modo que sus dependencias aparecen antes. Las dependencias enumeradas son acumulativas; un rango incluye ambos extremos. El orden no convierte tareas independientes en dependencias adicionales.
 
 Marcar una casilla únicamente después de comprobar su línea **Hecho cuando:** y conservar evidencia con RF, comando o revisión, resultado y limitaciones. Las tareas de tests incluyen preparar el caso y ejecutarlo; las de cierre pueden aprovechar resultados de la misma revisión sin repetir comprobaciones innecesarias. Si una tarea supera su alcance estimado, dividir el trabajo restante antes de marcarla. Las pruebas omitidas por falta de MariaDB u otro impedimento quedan pendientes.
 
@@ -130,28 +130,30 @@ Evidencia, flujo, archivos y pruebas de M2-T026–M2-T030: [permisos y oferta ef
 
 M03; decisiones D04–D05; pruebas T05, T06 y T08.
 
-- [ ] **M2-T031 — Conservar origen e inicio de los bloques** · 25 min · Depende de: M2-T004 · RF-13, RF-18–RF-19, RF-21, RF-23
+Evidencia, flujo, archivos, pruebas y fallos históricos ajenos al tramo: [M2-T031–M2-T038](evidencia-t031-t038.md).
+
+- [x] **M2-T031 — Conservar origen e inicio de los bloques** · 25 min · Depende de: M2-T004 · RF-13, RF-18–RF-19, RF-21, RF-23
   Hecho cuando: la proyección interna conserva identidad, origen semanal/excepción, fecha, zona y extremos originales; la respuesta pública anterior de atención no añade cambios incompatibles.
 
-- [ ] **M2-T032 — Compartir resolución de semana y excepción** · 20 min · Depende de: M2-T031 · RF-13, RF-18–RF-19
+- [x] **M2-T032 — Compartir resolución de semana y excepción** · 20 min · Depende de: M2-T031 · RF-13, RF-18–RF-19
   Hecho cuando: una excepción reemplaza solo el día y sucursal correspondientes, incluida la excepción vacía; las demás franjas conservan su origen y anclaje.
 
-- [ ] **M2-T033 — Extraer lectura interna de bloqueos aplicables** · 25 min · Depende de: M2-T027, M2-T031 · RF-09, RF-13–RF-14, RF-40
+- [x] **M2-T033 — Extraer lectura interna de bloqueos aplicables** · 25 min · Depende de: M2-T027, M2-T031 · RF-09, RF-13–RF-14, RF-40
   Hecho cuando: la lectura autorizada usa el contexto recibido y resuelve bloqueos personales/colectivos y de una/todas las sucursales; las rutas existentes de gestión mantienen sus permisos.
 
-- [ ] **M2-T034 — Descontar descansos y unión de bloqueos** · 20 min · Depende de: M2-T032, M2-T033 · RF-13–RF-14, RF-21, RF-23
+- [x] **M2-T034 — Descontar descansos y unión de bloqueos** · 20 min · Depende de: M2-T032, M2-T033 · RF-13–RF-14, RF-21, RF-23
   Hecho cuando: cada tramo resultante conserva su bloque original y ninguna excepción anula descansos o bloqueos; quitar una restricción deja las restantes.
 
-- [ ] **M2-T035 — Comprobar cabida en atención continua** · 20 min · Depende de: M2-T034 · RF-15–RF-17, RF-21
+- [x] **M2-T035 — Comprobar cabida en atención continua** · 20 min · Depende de: M2-T034 · RF-15–RF-17, RF-21
   Hecho cuando: los intervalos de inicio incluido/fin excluido permiten límites exactos y citas entre bloques consecutivos de la misma sucursal, sin fusionar sus anclajes.
 
-- [ ] **M2-T036 — Conservar reglas de horas locales y omisiones** · 20 min · Depende de: M2-T032 · RF-18–RF-19, RF-42
+- [x] **M2-T036 — Conservar reglas de horas locales y omisiones** · 20 min · Depende de: M2-T032 · RF-18–RF-19, RF-42
   Hecho cuando: las horas explícitas inexistentes o repetidas se rechazan y las recurrencias afectadas se omiten con motivo, reutilizando las reglas vigentes del calendario.
 
-- [ ] **M2-T037 — Probar atención, cortes y continuidad** · 25 min · Depende de: M2-T035, M2-T036 · RF-13–RF-19, RF-21, RF-23
+- [x] **M2-T037 — Probar atención, cortes y continuidad** · 25 min · Depende de: M2-T035, M2-T036 · RF-13–RF-19, RF-21, RF-23
   Hecho cuando: pasan excepción vacía, bloqueos superpuestos, fin exacto, un minuto de empalme y cita 10:30–11:30 entre bloques 09:00–11:00 y 11:00–13:00.
 
-- [ ] **M2-T038 — Probar que las restricciones no reanclan** · 20 min · Depende de: M2-T037 · RF-16–RF-17, RF-21–RF-23
+- [x] **M2-T038 — Probar que las restricciones no reanclan** · 20 min · Depende de: M2-T037 · RF-16–RF-17, RF-21–RF-23
   Hecho cuando: con anclaje 09:00 y paso 15, un descanso hasta 10:07 conserva 10:15; se preservan bloques independientes, sus límites y las omisiones del contrato anterior.
 
 ## 6. Lectura de ocupaciones

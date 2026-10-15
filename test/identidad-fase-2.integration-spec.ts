@@ -6,7 +6,7 @@ describe('M1-T013: migración incremental de identidad en MariaDB temporal', () 
       const migraciones = await db.query('SELECT name FROM migrations ORDER BY id');
       // Se conserva el orden histórico aunque se agreguen migraciones posteriores.
       // Las migraciones nuevas se agregan después de las 19 históricas.
-      expect(migraciones).toHaveLength(24);
+      expect(migraciones).toHaveLength(26);
       expect(migraciones[4].name).toContain('IdentidadPendiente');
       const columnas = await db.query(`SELECT COLUMN_NAME AS nombre FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'negocios'`);

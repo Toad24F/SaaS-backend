@@ -25,10 +25,10 @@ async function preparar(db: Parameters<Parameters<typeof conBaseMigrada>[0]>[0])
   await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
     [usuario.id, negocio.id]);
   const sucursales: number[] = [];
-  for (const zona of ['America/New_York', 'America/Phoenix']) {
+  for (const [indice, zona] of ['America/New_York', 'America/Phoenix'].entries()) {
     const alta = await db.query(`INSERT INTO sucursales
       (negocio_id,nombre,direccion,telefono,zona_horaria)
-      VALUES (?,'Sede','Calle Uno','6141234567',?)`, [negocio.id, zona]);
+      VALUES (?,?,'Calle Uno','6141234567',?)`, [negocio.id, `Sede ${indice + 1}`, zona]);
     sucursales.push(Number(alta.insertId));
     await db.query(`INSERT INTO personal_sucursales
       (negocio_id,personal_id,sucursal_id) VALUES (?,?,?)`,
