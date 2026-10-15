@@ -160,19 +160,19 @@ Evidencia, flujo, archivos, pruebas y fallos históricos ajenos al tramo: [M2-T0
 
 M04; decisiones D05–D08; pruebas T06, T07 y T12.
 
-- [ ] **M2-T039 — Consultar citas ocupantes de todas las sucursales** · 25 min · Depende de: M2-T009, M2-T027 · RF-09, RF-15, RF-18, RF-20, RF-31–RF-32
+- [x] **M2-T039 — Consultar citas ocupantes de todas las sucursales** · 25 min · Depende de: M2-T009, M2-T027 · RF-09, RF-15, RF-18, RF-20, RF-31–RF-32
   Hecho cuando: la consulta por negocio y Profesional lee el intervalo guardado de toda cita no cancelada que cruce el rango, aunque comience fuera, tenga otro servicio o distinta fecha local.
 
-- [ ] **M2-T040 — Consultar apartados vigentes con reloj** · 20 min · Depende de: M2-T011, M2-T027 · RF-09, RF-15, RF-18, RF-33–RF-34
+- [x] **M2-T040 — Consultar apartados vigentes con reloj** · 20 min · Depende de: M2-T011, M2-T027 · RF-09, RF-15, RF-18, RF-33–RF-34
   Hecho cuando: solo ocupan los apartados no liberados con ahora menor que expira_en; se usa el reloj recibido y no se requiere limpieza física.
 
-- [ ] **M2-T041 — Unificar ocupaciones para el motor** · 20 min · Depende de: M2-T039, M2-T040 · RF-15, RF-18, RF-25, RF-31–RF-34
+- [x] **M2-T041 — Unificar ocupaciones para el motor** · 20 min · Depende de: M2-T039, M2-T040 · RF-15, RF-18, RF-25, RF-31–RF-34
   Hecho cuando: la proyección común conserva tipo y extremos reales, excluye canceladas/expirados y no expone clientes ni titulares en resultados de disponibilidad.
 
-- [ ] **M2-T042 — Probar estados y vencimiento exacto en BD** · 25 min · Depende de: M2-T041, M2-T014 · RF-15, RF-18, RF-31–RF-34
+- [x] **M2-T042 — Probar estados y vencimiento exacto en BD** · 25 min · Depende de: M2-T041, M2-T014 · RF-15, RF-18, RF-31–RF-34
   Hecho cuando: cada estado no cancelado ocupa; cancelar libera solo esa ocupación; apartados vigentes, liberados y vencidos en el instante exacto se distinguen aun conservando las filas.
 
-- [ ] **M2-T043 — Probar colisiones entre zonas y servicios** · 20 min · Depende de: M2-T042, M2-T036 · RF-15, RF-18–RF-20, RF-31–RF-34
+- [x] **M2-T043 — Probar colisiones entre zonas y servicios** · 20 min · Depende de: M2-T042, M2-T036 · RF-15, RF-18–RF-20, RF-31–RF-34
   Hecho cuando: ocupaciones de otra sucursal/servicio y distinto día local impiden el empalme real; cambiar duración de 30 a 45 no modifica el intervalo de la cita existente.
 
 ## 7. Cálculo de disponibilidad

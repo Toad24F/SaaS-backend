@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
+import { OcupacionesService } from './ocupaciones.service';
 
-// Punto de composición de la futura lectura de citas y apartados (M2-T039–T044).
-// Aún no registra repositorios porque las entidades se incorporan en M2-T008–T011.
-@Module({})
+// Exporta el lector de fuentes reales; el motor le pasará su transacción y reloj.
+@Module({ providers: [OcupacionesService], exports: [OcupacionesService] })
 export class OcupacionesModule {}
