@@ -237,19 +237,19 @@ M07; decisiones D02, D10, D14 y D15; pruebas T01–T04 y T15.
 - [x] **M2-T061 — Exponer consulta privada de ranuras** · 20 min · Depende de: M2-T058, M2-T048, M2-T051, M2-T052 · RF-08–RF-34, RF-42–RF-45
   Hecho cuando: GET /disponibilidad aplica permisos y modalidad, devuelve el contrato del plan y no habilita consulta anónima por indicar modalidad pública.
 
-- [ ] **M2-T062 — Exponer validación puntual sin reservar** · 20 min · Depende de: M2-T059, M2-T053 · RF-08–RF-30, RF-31–RF-35, RF-42–RF-45
+- [x] **M2-T062 — Exponer validación puntual sin reservar** · 20 min · Depende de: M2-T059, M2-T053 · RF-08–RF-30, RF-31–RF-35, RF-42–RF-45
   Hecho cuando: POST /disponibilidad/validar devuelve válido o causas funcionales con el fin calculado; repetirlo no inserta ni altera citas o apartados.
 
-- [ ] **M2-T063 — Distinguir vacío legítimo y fallo técnico** · 20 min · Depende de: M2-T061, M2-T062, M2-T060 · RF-06, RF-09, RF-12, RF-19, RF-42–RF-45
+- [x] **M2-T063 — Distinguir vacío legítimo y fallo técnico** · 20 min · Depende de: M2-T061, M2-T062, M2-T060 · RF-06, RF-09, RF-12, RF-19, RF-42–RF-45
   Hecho cuando: se mantienen 400/401/403/404, vacío legítimo con 200 y validación negativa con 200; fallos temporales 503 e inesperados 500 no devuelven ranuras parciales ni SQL o trazas.
 
-- [ ] **M2-T064 — Probar acceso y aislamiento de las rutas nuevas** · 25 min · Depende de: M2-T063, M2-T014 · RF-01, RF-08–RF-12, RF-29–RF-30, RF-45
+- [x] **M2-T064 — Probar acceso y aislamiento de las rutas nuevas** · 25 min · Depende de: M2-T063, M2-T014 · RF-01, RF-08–RF-12, RF-29–RF-30, RF-45
   Hecho cuando: HTTP prueba administrador, recepción, Profesional propio/ajeno, superadmin, dos negocios y ausencia de sesión; recepción no adquiere gestión ni configuración.
 
-- [ ] **M2-T065 — Probar acceso con sesión abierta y licencia** · 20 min · Depende de: M2-T064 · RF-10, RF-30
+- [x] **M2-T065 — Probar acceso con sesión abierta y licencia** · 20 min · Depende de: M2-T064 · RF-10, RF-30
   Hecho cuando: con reloj controlado una sesión abierta accede antes de 48 horas y falla exactamente en el límite/después; también falla al vencer antes y con cuenta o sesión inactiva.
 
-- [ ] **M2-T066 — Probar entradas, errores y reintentos** · 25 min · Depende de: M2-T063, M2-T024 · RF-06, RF-09, RF-12, RF-19, RF-42–RF-45
+- [x] **M2-T066 — Probar entradas, errores y reintentos** · 25 min · Depende de: M2-T063, M2-T024 · RF-06, RF-09, RF-12, RF-19, RF-42–RF-45
   Hecho cuando: HTTP distingue día lleno, oferta inactiva, rango inválido, hora ambigua, caída de BD y fallo del motor; un reintento recuperado no duplica escrituras ni muestra datos privados.
 
 ## 9. Identificación de citas afectadas
