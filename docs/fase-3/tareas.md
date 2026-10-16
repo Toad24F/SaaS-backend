@@ -303,22 +303,22 @@ M08; decisiones D08, D11 y D12; pruebas T13. Implementa preparación y colaborac
 
 Pruebas T07, T15–T17 y gates del plan. T18 no condiciona el cierre documental de la fase 3 y sigue pendiente de integración real.
 
-- [ ] **M2-T080 — Verificar duración conservada de extremo a extremo** · 20 min · Depende de: M2-T061, M2-T077, M2-T071 · RF-07, RF-15, RF-20, RF-31, RF-35–RF-36, RF-38–RF-41
+- [x] **M2-T080 — Verificar duración conservada de extremo a extremo** · 20 min · Depende de: M2-T061, M2-T077, M2-T071 · RF-07, RF-15, RF-20, RF-31, RF-35–RF-36, RF-38–RF-41
   Hecho cuando: editar un servicio de 30 a 45 cambia nuevas ranuras, preserva la cita de prueba y rechaza un apartado incompatible sin alterar compromisos previos.
 
-- [ ] **M2-T081 — Probar lectura coherente con cambios concurrentes** · 25 min · Depende de: M2-T044, M2-T061, M2-T025 · RF-07, RF-10–RF-14, RF-31–RF-34, RF-42–RF-44
+- [x] **M2-T081 — Probar lectura coherente con cambios concurrentes** · 25 min · Depende de: M2-T044, M2-T061, M2-T025 · RF-07, RF-10–RF-14, RF-31–RF-34, RF-42–RF-44
   Hecho cuando: dos conexiones coordinadas cambian configuración/oferta durante una consulta y el resultado corresponde a una lectura coherente, sin mezclar estados ni convertir un fallo en vacío.
 
-- [ ] **M2-T082 — Verificar compatibilidad de los contratos anteriores** · 25 min · Depende de: M2-T073, M2-T064, M2-T003, M2-T038 · RF-08–RF-14, RF-18–RF-19, RF-38–RF-45
+- [x] **M2-T082 — Verificar compatibilidad de los contratos anteriores** · 25 min · Depende de: M2-T073, M2-T064, M2-T003, M2-T038 · RF-08–RF-14, RF-18–RF-19, RF-38–RF-45
   Hecho cuando: las suites relevantes del módulo 1 y fix conservan respuestas de oferta/atención, omisiones y permisos; recepción sigue sin modificar horarios, bloqueos o catálogo.
 
-- [ ] **M2-T083 — Revisar omisiones de datos sensibles** · 15 min · Depende de: M2-T066, M2-T071, M2-T076, M2-T023 · RF-01, RF-09, RF-33–RF-36, RF-40, RF-42–RF-45
+- [x] **M2-T083 — Revisar omisiones de datos sensibles** · 15 min · Depende de: M2-T066, M2-T071, M2-T076, M2-T023 · RF-01, RF-09, RF-33–RF-36, RF-40, RF-42–RF-45
   Hecho cuando: respuestas y auditoría nuevas no contienen clientes, titular_hash, tokens utilizables, SQL ni trazas internas; se mantiene el error uniforme para referencias ajenas.
 
-- [ ] **M2-T084 — Verificar compilación del backend** · 20 min · Depende de: M2-T001–M2-T083 · RF-01–RF-45
+- [x] **M2-T084 — Verificar compilación del backend** · 20 min · Depende de: M2-T001–M2-T083 · RF-01–RF-45
   Hecho cuando: npm run build termina correctamente desde la raíz y se registra la revisión comprobada; cualquier fallo permanece como impedimento explícito para cerrar.
 
-- [ ] **M2-T085 — Verificar lint sin errores** · 15 min · Depende de: M2-T084 · RF-01–RF-45
+- [x] **M2-T085 — Verificar lint sin errores** · 15 min · Depende de: M2-T084 · RF-01–RF-45
   Hecho cuando: npm run lint termina correctamente sobre la entrega y queda registrada la evidencia; no se marca aprobado si hubo errores.
 
 - [ ] **M2-T086 — Verificar la suite unitaria final** · 20 min · Depende de: M2-T085 · RF-01–RF-45

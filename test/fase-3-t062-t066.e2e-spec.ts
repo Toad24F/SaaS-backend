@@ -78,6 +78,124 @@ async function escenario(ejecutar: (datos: {
 }
 
 describe('M2-T062–T066: validación y errores HTTP', () => {
+  it('T080 edita duración por HTTP y conserva la cita mientras rechaza el apartado previo', async () => {
+    await escenario(async ({ app, db, a, tokens, sesionAdmin }) => {
+      const http = app.getHttpServer();
+      const cliente = await db.query('SELECT id FROM clientes WHERE negocio_id=? LIMIT 1',
+        [a.id]);
+      const cita = await db.query(`INSERT INTO citas (negocio_id,personal_id,
+        sucursal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
+        estado,folio,origen) VALUES (?,?,?,?,?,'2026-07-06 16:00:00',
+        '2026-07-06 16:30:00','America/Chihuahua','confirmada',?,'manual')`,
+      [a.id, a.personalId, a.sucursales[0], a.servicios[0], cliente[0].id,
+        'T080-HTTP']);
+      const hash = 'e'.repeat(64);
+      const apartado = await db.query(`INSERT INTO bloqueos_temporales
+        (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,
+        fin_utc,expira_en,titular_hash) VALUES (?,?,?,?,?,?,?,?)`,
+      [a.id, a.personalId, a.sucursales[0], a.servicios[0],
+        new Date('2026-07-06T17:00:00Z'), new Date('2026-07-06T17:30:00Z'),
+        new Date('2026-07-06T18:00:00Z'), hash]);
+      const query = { personalId: a.personalId, sucursalId: a.sucursales[0],
+        servicioId: a.servicios[0], desde: '2026-07-06', hasta: '2026-07-06' };
+      const consultar = () => request(http).get('/disponibilidad')
+        .auth(tokens.admin, { type: 'bearer' }).query(query);
+      const antes = (await consultar().expect(200)).body;
+      expect(antes.ranuras).toEqual(expect.arrayContaining([
+        expect.objectContaining({ inicioUtc: '2026-07-06T16:30:00.000Z',
+          finUtc: '2026-07-06T17:00:00.000Z' })]));
+      await request(http).patch(`/servicios/${a.servicios[0]}`)
+        .auth(tokens.admin, { type: 'bearer' })
+        .send({ duracionMinutos: 45 }).expect(200);
+      const despues = (await consultar().expect(200)).body;
+      expect(despues.ranuras.some((ranura: { inicioUtc: string }) =>
+        ranura.inicioUtc === '2026-07-06T16:30:00.000Z')).toBe(false);
+      expect(despues.ranuras).toEqual(expect.arrayContaining([
+        expect.objectContaining({ inicioUtc: '2026-07-06T17:30:00.000Z',
+          finUtc: '2026-07-06T18:15:00.000Z' })]));
+      const actor = await db.query('SELECT usuario_id FROM sesiones WHERE id=?',
+        [sesionAdmin]);
+      const revalidado = await db.transaction('READ COMMITTED', (manager) =>
+        app.get(MotorDisponibilidadService).revalidarEnTransaccion(manager,
+          { sub: Number(actor[0].usuario_id), sesionId: sesionAdmin },
+          { personalId: a.personalId, sucursalId: a.sucursales[0],
+            servicioId: a.servicios[0], fechaLocal: '2026-07-06',
+            horaInicio: '11:00', modalidad: 'manual',
+            apartadoPropio: { id: Number(apartado.insertId), titularHash: hash } }));
+      expect(revalidado).toMatchObject({ valido: false,
+        motivos: expect.arrayContaining(['apartado_no_vigente_o_incompatible']) });
+      // La edición operativa no reescribe intervalos guardados ni consume el apartado.
+      const historica = await db.query('SELECT fin_utc,estado FROM citas WHERE id=?',
+        [cita.insertId]);
+      const retenido = await db.query('SELECT fin_utc,liberado_en FROM bloqueos_temporales WHERE id=?',
+        [apartado.insertId]);
+      expect(new Date(historica[0].fin_utc).toISOString()).toBe('2026-07-06T16:30:00.000Z');
+      expect(historica[0].estado).toBe('confirmada');
+      expect(new Date(retenido[0].fin_utc).toISOString()).toBe('2026-07-06T17:30:00.000Z');
+      expect(retenido[0].liberado_en).toBeNull();
+    });
+  });
+
+  it('T083 omite datos privados en las cinco rutas y en la auditoría nueva', async () => {
+    await escenario(async ({ app, db, a, b, tokens }) => {
+      const http = app.getHttpServer();
+      const cliente = await db.query('SELECT id FROM clientes WHERE negocio_id=? LIMIT 1',
+        [a.id]);
+      await db.query('UPDATE clientes SET nombre_completo=? WHERE id=?',
+        ['CLIENTE-PRIVADO-T083', cliente[0].id]);
+      const hash = 'f'.repeat(64);
+      await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,
+        servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
+        estado,folio,origen) VALUES (?,?,?,?,?,'2026-07-06 16:30:00',
+        '2026-07-06 17:00:00','America/Chihuahua','confirmada',?,'manual')`,
+      [a.id, a.personalId, a.sucursales[0], a.servicios[0], cliente[0].id,
+        'FOLIO-PRIVADO-T083']);
+      await db.query(`INSERT INTO bloqueos_temporales
+        (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,
+        fin_utc,expira_en,titular_hash) VALUES (?,?,?,?,?,?,?,?)`,
+      [a.id, a.personalId, a.sucursales[0], a.servicios[0],
+        new Date('2026-07-06T17:00:00Z'), new Date('2026-07-06T17:30:00Z'),
+        new Date('2026-07-06T18:00:00Z'), hash]);
+      const auth = (solicitud: request.Test) => solicitud.auth(tokens.admin,
+        { type: 'bearer' });
+      const base = { personalId: a.personalId, sucursalId: a.sucursales[0],
+        servicioId: a.servicios[0] };
+      const cuerpos = [
+        (await auth(request(http).get('/disponibilidad/configuracion')).expect(200)).body,
+        (await auth(request(http).put('/disponibilidad/configuracion'))
+          .send({ modo: 'ventana_libre', intervaloMinutos: 10,
+            anticipacionMinutos: 15, diasFuturos: 60 }).expect(200)).body,
+        (await auth(request(http).get('/disponibilidad')).query({ ...base,
+          desde: '2026-07-06', hasta: '2026-07-06' }).expect(200)).body,
+        (await auth(request(http).post('/disponibilidad/validar')).send({ ...base,
+          fechaLocal: '2026-07-06', horaInicio: '10:30' }).expect(200)).body,
+      ];
+      await db.query('UPDATE servicios SET activo=0 WHERE id=?', [a.servicios[0]]);
+      cuerpos.push((await auth(request(http).get('/disponibilidad/citas-afectadas'))
+        .query({ desde: '2026-07-06', hasta: '2026-07-06' }).expect(200)).body);
+      // Las respuestas solo transportan estado operativo; tampoco exponen secretos en errores.
+      for (const cuerpo of cuerpos) {
+        expect(JSON.stringify(cuerpo)).not.toMatch(/CLIENTE-PRIVADO-T083|FOLIO-PRIVADO-T083|titular_hash|titularHash|password_hash|stack|SELECT/i);
+        expect(JSON.stringify(cuerpo)).not.toContain(hash);
+        expect(JSON.stringify(cuerpo)).not.toContain(tokens.admin);
+      }
+      const ajeno = await auth(request(http).get('/disponibilidad'))
+        .query({ ...base, sucursalId: b.sucursales[0],
+          desde: '2026-07-06', hasta: '2026-07-06' }).expect(404);
+      const inexistente = await auth(request(http).get('/disponibilidad'))
+        .query({ ...base, sucursalId: 2147483647,
+          desde: '2026-07-06', hasta: '2026-07-06' }).expect(404);
+      expect(ajeno.body).toEqual(inexistente.body);
+      const eventos = await db.query(`SELECT accion,valores_antes,valores_despues
+        FROM eventos_auditoria WHERE negocio_id=? AND accion='configuracion_agenda_modificada'`,
+      [a.id]);
+      expect(eventos).toHaveLength(1);
+      expect(JSON.stringify(eventos)).not.toMatch(/CLIENTE-PRIVADO-T083|FOLIO-PRIVADO-T083|titular_hash|titularHash|password_hash|token|SELECT/i);
+      expect(JSON.stringify(eventos)).not.toContain(hash);
+      expect(JSON.stringify(eventos)).not.toContain(tokens.admin);
+    });
+  });
+
   it('valida sin escribir, respeta roles/negocios y distingue vacío de error', async () => {
     await escenario(async ({ app, db, a, b, tokens, otroPerfil }) => {
       const http = app.getHttpServer();
