@@ -321,22 +321,22 @@ Pruebas T07, T15–T17 y gates del plan. T18 no condiciona el cierre documental 
 - [x] **M2-T085 — Verificar lint sin errores** · 15 min · Depende de: M2-T084 · RF-01–RF-45
   Hecho cuando: npm run lint termina correctamente sobre la entrega y queda registrada la evidencia; no se marca aprobado si hubo errores.
 
-- [ ] **M2-T086 — Verificar la suite unitaria final** · 20 min · Depende de: M2-T085 · RF-01–RF-45
+- [x] **M2-T086 — Verificar la suite unitaria final** · 20 min · Depende de: M2-T085 · RF-01–RF-45
   Hecho cuando: npm test -- --runInBand pasa en la revisión final, con resultados de las reglas del motor identificados y sin presentar RF-37 como prueba de reservas reales.
 
-- [ ] **M2-T087 — Verificar integración de modelo y configuración** · 25 min · Depende de: M2-T086 · RF-01–RF-12, RF-18, RF-20, RF-31–RF-41
+- [x] **M2-T087 — Verificar integración de modelo y configuración** · 25 min · Depende de: M2-T086 · RF-01–RF-12, RF-18, RF-20, RF-31–RF-41
   Hecho cuando: las suites relevantes de test:integration sobre bases temporales pasan para migración, paridad, pertenencia, configuración, bajas e historial y su evidencia identifica los RF cubiertos.
 
-- [ ] **M2-T088 — Verificar integración temporal y concurrencia de lecturas** · 25 min · Depende de: M2-T087 · RF-07–RF-34, RF-38–RF-45
+- [x] **M2-T088 — Verificar integración temporal y concurrencia de lecturas** · 25 min · Depende de: M2-T087 · RF-07–RF-34, RF-38–RF-45
   Hecho cuando: las suites relevantes de test:integration pasan para lectura coherente, carreras de configuración, ocupaciones, expiración y afectaciones; las pruebas T18 siguen identificadas como futuras.
 
-- [ ] **M2-T089 — Verificar recorridos HTTP de fase 3** · 25 min · Depende de: M2-T088 · RF-01–RF-45
+- [x] **M2-T089 — Verificar recorridos HTTP de fase 3** · 25 min · Depende de: M2-T088 · RF-01–RF-45
   Hecho cuando: las suites relevantes de test:e2e pasan para las cinco rutas, roles, límites de licencia, validación y errores; no se atribuye a esos recorridos confirmación real de citas.
 
-- [ ] **M2-T090 — Documentar el contrato entregado y sus límites** · 20 min · Depende de: M2-T089 · RF-01–RF-45
+- [x] **M2-T090 — Documentar el contrato entregado y sus límites** · 20 min · Depende de: M2-T089 · RF-01–RF-45
   Hecho cuando: la referencia de la entrega recoge rutas, permisos, valores iniciales, errores, rango técnico de 31 días y distinción entre validación y reserva; sus enlaces son válidos y los pendientes RF-35–RF-37 quedan visibles.
 
-- [ ] **M2-T091 — Cerrar trazabilidad de la fase 3** · 20 min · Depende de: M2-T090, M2-T001 · RF-01–RF-45
+- [x] **M2-T091 — Cerrar trazabilidad de la fase 3** · 20 min · Depende de: M2-T090, M2-T001 · RF-01–RF-45
   Hecho cuando: los 12 criterios de la spec se vinculan con evidencias de esta revisión o con obligaciones futuras explícitas; todas las tareas aplicables tienen evidencia y ninguna prueba omitida aparece como aprobada.
 
 ## 12. Verificación diferida a módulos 3 y 4
