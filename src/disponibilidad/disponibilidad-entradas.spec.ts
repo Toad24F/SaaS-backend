@@ -38,6 +38,7 @@ describe('M2-T057–T059: entradas HTTP sin coerciones', () => {
     expect(validarInicioPuntual(puntual, 'America/Chihuahua')).toMatchObject({
       ...puntual, modalidad: 'publica' });
     for (const mala of [{ ...puntual, apartadoId: 1 },
+      { ...puntual, apartadoPropio: { id: 1, titularHash: 'a'.repeat(64) } },
       { ...puntual, titularHash: 'x' }, { ...puntual, personalId: 0 },
       { ...puntual, horaInicio: '24:00' }, { ...puntual, horaInicio: '10:07:30' },
       { ...puntual, fechaLocal: '2026-02-30' }]) {

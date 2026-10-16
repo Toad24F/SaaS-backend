@@ -281,22 +281,22 @@ M06; decisiones D03 y D13; pruebas T14 y T15.
 
 M08; decisiones D08, D11 y D12; pruebas T13. Implementa preparación y colaboración del motor, no el flujo de reservas.
 
-- [ ] **M2-T074 — Definir validación en transacción del escritor** · 20 min · Depende de: M2-T053, M2-T044 · RF-10–RF-12, RF-15, RF-30, RF-35
+- [x] **M2-T074 — Definir validación en transacción del escritor** · 20 min · Depende de: M2-T053, M2-T044 · RF-10–RF-12, RF-15, RF-30, RF-35
   Hecho cuando: el contrato interno admite contexto autorizado y transacción recibida, reevalúa el estado vigente y no crea reservas ni ofrece al HTTP un comprobante de disponibilidad garantizada.
 
-- [ ] **M2-T075 — Validar propiedad y combinación del apartado** · 25 min · Depende de: M2-T074, M2-T040 · RF-09, RF-20, RF-33–RF-36
+- [x] **M2-T075 — Validar propiedad y combinación del apartado** · 25 min · Depende de: M2-T074, M2-T040 · RF-09, RF-20, RF-33–RF-36
   Hecho cuando: el motor solo admite excluir un apartado cuyo titular hash, negocio, Profesional, sucursal, servicio, intervalo y vigencia se comprueban; expiración o incompatibilidad obliga a obtener disponibilidad vigente.
 
-- [ ] **M2-T076 — Excluir únicamente el apartado propio comprobado** · 20 min · Depende de: M2-T075 · RF-15, RF-31–RF-36
+- [x] **M2-T076 — Excluir únicamente el apartado propio comprobado** · 20 min · Depende de: M2-T075 · RF-15, RF-31–RF-36
   Hecho cuando: la exclusión interna conserva las demás ocupaciones, incluso de la misma sucursal o servicio, y nunca queda accesible mediante un ID arbitrario en HTTP.
 
-- [ ] **M2-T077 — Probar revalidación y apartado propio** · 25 min · Depende de: M2-T076, M2-T014, M2-T062 · RF-09–RF-12, RF-15, RF-20, RF-30, RF-35–RF-36
+- [x] **M2-T077 — Probar revalidación y apartado propio** · 25 min · Depende de: M2-T076, M2-T014, M2-T062 · RF-09–RF-12, RF-15, RF-20, RF-30, RF-35–RF-36
   Hecho cuando: pruebas de colaboración rechazan cambios de oferta/horario/duración, apartado expirado, titular o combinación distintos y otra ocupación; quedan rotuladas como no equivalentes a una reserva real.
 
-- [ ] **M2-T078 — Documentar coordinación de futuros escritores** · 20 min · Depende de: M2-T077 · RF-07, RF-10–RF-15, RF-30–RF-39
+- [x] **M2-T078 — Documentar coordinación de futuros escritores** · 20 min · Depende de: M2-T077 · RF-07, RF-10–RF-15, RF-30–RF-39
   Hecho cuando: el contrato identifica fila común por Profesional, orden de bloqueos, relectura y reloj después de esperar, consumo atómico, rollback y coordinación con cambios colectivos; RF-37 queda pendiente de evidencia con escritores reales.
 
-- [ ] **M2-T079 — Preparar aceptación de integración T18** · 15 min · Depende de: M2-T078 · RF-10–RF-12, RF-15, RF-18, RF-30–RF-37
+- [x] **M2-T079 — Preparar aceptación de integración T18** · 15 min · Depende de: M2-T078 · RF-10–RF-12, RF-15, RF-18, RF-30–RF-37
   Hecho cuando: cada caso diferido al final de este documento tiene precondición de módulo 3/4, dos conexiones y resultado esperado, sin añadir escritores ficticios ni marcarlo aprobado.
 
 ## 11. Integración, regresión y cierre de fase 3

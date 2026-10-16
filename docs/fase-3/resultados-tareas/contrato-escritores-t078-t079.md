@@ -1,0 +1,31 @@
+# Contrato de coordinación para los escritores de reservas — M2-T078–M2-T079
+
+Este documento prepara la conexión de los módulos 3 y 4. El módulo 2 **solo lee y revalida**: `MotorDisponibilidadService.revalidarEnTransaccion` recibe un `EntityManager` con transacción activa, la identidad autorizada del actor, la combinación, inicio local y modalidad y, opcionalmente, `{id, titularHash}` de un apartado propio. No abre otra transacción, no crea ni confirma citas, no libera ni consume apartados y su respuesta no es un comprobante de reserva. El escritor público del módulo 3 deberá aportar un contexto de solicitante autorizado equivalente antes de integrarse; el contrato actual reautoriza una sesión interna y no publica una exclusión en HTTP.
+
+## Flujo exigido al futuro escritor
+
+1. Autenticar o autorizar al solicitante y resolver su negocio sin aceptar `negocioId` ni un titular de apartado elegido libremente por el cliente. El módulo 3 deriva el hash del titular desde una credencial propia comprobada y solo pasa el hash a la colaboración interna; nunca persiste un token utilizable.
+2. Abrir una transacción de base de datos. Tomar los recursos en el orden compartido: usuarios, negocio, licencia, sucursal, servicio y fila de `personal`, con IDs ascendentes dentro de cada clase; bloquear después las ocupaciones involucradas. La fila de `personal` del Profesional es el bloqueo común para todas sus sucursales y servicios. Los escritores de citas y apartados, su liberación, consumo y cancelación deberán usar ese mismo protocolo. No abrir una instantánea de lectura que pueda quedar vieja antes de esperar ese bloqueo; usar lecturas posteriores al bloqueo, por ejemplo con `READ COMMITTED`.
+3. Después de obtener el bloqueo, capturar otra vez el reloj y llamar a `revalidarEnTransaccion` con **el mismo manager**. El método relee en esa transacción sesión, cuenta, licencia, configuración, oferta, horario, bloqueos y ocupaciones. Para excluir un apartado comprueba negocio, Profesional, sucursal, servicio, hash de titular, inicio y fin UTC exactos, ausencia de liberación y `ahora < expiraEn`. El fin solicitado se calcula con la duración vigente. Si el apartado ya no coincide, se rechaza la confirmación y se requiere disponibilidad nueva; no se mueve ni extiende.
+4. Si la revalidación es negativa, abortar sin escribir. Si es positiva, insertar la ocupación y, cuando proceda, consumir el apartado propio **dentro de esa transacción**. Un intento incompatible o un consumo repetido responde 409 y revierte íntegramente. Una cita confirmada guarda inicio, fin y zona originales; cambios posteriores de duración no los recalculan. Enviar mensajes y otros efectos externos solo después del commit.
+5. Los cambios colectivos de horario, bloqueos, oferta o configuración deben coordinarse con los mismos recursos y con todos los perfiles afectados, incluidos perfiles que puedan entrar al alcance por altas o cambios de asignación. Bloquear varios IDs en orden ascendente y auditar el orden de bloqueo de esas operaciones antes de integrar escritores, para evitar interbloqueos. Un cambio operativo válido que confirma después de una cita conserva la cita y permite identificar sus causas vigentes.
+
+El contrato de colaboración probado aquí verifica condiciones con datos de prueba, pero **RF-35–RF-37 no son integración completa**. En particular, el método no impone el bloqueo de fila ni realiza el commit: esas obligaciones pertenecen a todos los escritores reales de los módulos 3 y 4. M2-I001–M2-I009 permanecen pendientes.
+
+## Aceptación diferida T18
+
+Precondición común: módulos 3/4 con escritores reales conectados al protocolo anterior; MariaDB migrada y desechable, dos conexiones independientes y barreras de sincronización reproducibles. Las pruebas observarán filas finales, respuesta HTTP y rollback. Ninguna se acredita con dos promesas en una misma conexión ni con dobles del motor.
+
+| Caso pendiente | Preparación y dos conexiones | Resultado esperado |
+| --- | --- | --- |
+| M2-I001 | Con los escritores reales disponibles, abrir conexiones A/B a la misma base temporal; detenerlas mediante barreras antes y después del bloqueo común. | El ejecutor reproduce el orden sin tocar la base cotidiana y libera conexiones/rollback al fallar. |
+| M2-I002 | A/B confirman el mismo intervalo para el mismo Profesional y combinación. | Una confirma; la otra recibe 409. Queda una sola ocupación y ningún efecto parcial. |
+| M2-I003 | A/B confirman intervalos parcialmente solapados de distintas sucursales y, cuando corresponda, fechas locales diferentes. | Una confirma; la otra recibe 409 por solapamiento UTC del Profesional. |
+| M2-I004 | A crea o conserva apartado público mientras B intenta cita manual incompatible del mismo Profesional. | La modalidad manual no evita el bloqueo común; solo una ocupación incompatible sobrevive. |
+| M2-I005 | A espera el bloqueo y el reloj alcanza exactamente `expiraEn`; B libera el recurso. | A relee después de esperar, no consume el apartado expirado y exige disponibilidad vigente. |
+| M2-I006 | A intenta confirmar después de consulta previa; B cambia configuración, oferta o duración antes de que A obtenga el bloqueo. | A refleja el orden confirmado y revalida las condiciones actuales; un apartado con fin incompatible se rechaza. |
+| M2-I007 | A confirma mientras B cambia horario, bloqueo colectivo o asignación que alcanza a ese Profesional. | Si B confirma primero, A rechaza la reserva incompatible; si A confirma primero, B conserva la cita y la consulta de afectaciones muestra la causa. |
+| M2-I008 | A espera el bloqueo y durante la espera vence la licencia o se alcanza exactamente el límite de 48 horas de suspensión manual. | A relee licencia y reloj tras esperar y no confirma, aunque la sesión estuviera abierta. |
+| M2-I009 | A/B intentan consumir el mismo apartado; se inyecta además un fallo entre consumo e inserción y se reintenta. | Consumo único, una sola cita, 409 para el conflicto y rollback que conserva el estado previo cuando falla la transacción. |
+
+Estos nueve casos son criterios de aceptación preparados, **no resultados aprobados**. Se ejecutarán solo cuando existan los escritores reales y la coordinación colectiva correspondiente.
