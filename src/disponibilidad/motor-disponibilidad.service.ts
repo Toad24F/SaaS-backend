@@ -174,7 +174,7 @@ export class MotorDisponibilidadService {
       personalId, sucursalId, servicioId, desde, hasta,
       zonaHoraria: oferta.zonaHoraria, calculadoEn: ahora,
       modalidad, reglas, ranuras: [], omisiones: [] };
-    const atencion: ProyeccionAtencion = { bloques: [], tramos: [], omisiones: [] };
+    const atencion: ProyeccionAtencion = { bloques: [], tramos: [], descansos: [], omisiones: [] };
     const ocupaciones: Ocupacion[] = [];
     if (!oferta.ofrecido) return { resultado, oferta, atencion, ocupaciones };
     const proyeccion = await this.atencion.consultar(contexto, sucursalId, desde, hasta);

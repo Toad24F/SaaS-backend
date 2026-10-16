@@ -9,7 +9,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ConfiguracionAgendaService } from './configuracion-agenda.service';
 import { MotorDisponibilidadService } from './motor-disponibilidad.service';
-import { validarConsultaDisponibilidad, validarInicioPuntual } from './disponibilidad-entradas';
+import { CitasAfectadasService } from './citas-afectadas.service';
+import { validarConsultaCitasAfectadas, validarConsultaDisponibilidad,
+  validarInicioPuntual } from './disponibilidad-entradas';
 
 const CODIGOS_TEMPORALES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT',
   'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_LOCK_WAIT_TIMEOUT',
@@ -32,7 +34,8 @@ function relanzarErrorConsulta(error: unknown): never {
 @Roles(Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA, Rol.PROFESIONAL)
 export class DisponibilidadController {
   constructor(private readonly configuracion: ConfiguracionAgendaService,
-    private readonly motor: MotorDisponibilidadService) {}
+    private readonly motor: MotorDisponibilidadService,
+    private readonly afectadas: CitasAfectadasService) {}
 
   @Get('configuracion')
   @Roles(Rol.ADMIN_NEGOCIO)
@@ -56,6 +59,16 @@ export class DisponibilidadController {
       // El motor vuelve a comprobar sesión, licencia, negocio y perfil en su instantánea.
       return await this.motor.consultar(actor, datos.personalId, datos.sucursalId,
         datos.servicioId, datos.desde, datos.hasta, datos.modalidad);
+    } catch (error) { relanzarErrorConsulta(error); }
+  }
+
+  @Get('citas-afectadas')
+  async consultarCitasAfectadas(@CurrentUser() actor: JwtPayload,
+    @Query() entrada: unknown) {
+    try {
+      const datos = validarConsultaCitasAfectadas(entrada);
+      // El servicio resuelve negocio y perfiles actuales antes de leer citas.
+      return await this.afectadas.consultar(actor, datos);
     } catch (error) { relanzarErrorConsulta(error); }
   }
 

@@ -28,6 +28,7 @@ export interface ContextoDisponibilidad {
   negocioId: number;
   personalId: number;
 }
+export type AccesoDisponibilidad = Omit<ContextoDisponibilidad, 'personalId'>;
 
 /** Reconstruye acceso actual sin confiar en rol ni negocio incluidos en el token. */
 @Injectable()
@@ -43,13 +44,30 @@ export class ContextoDisponibilidadService {
     personalId: number,
     ahora: Date,
   ): Promise<ContextoDisponibilidad> {
+    if (!Number.isSafeInteger(personalId) || personalId <= 0) {
+      throw new BadRequestException('Profesional inválido.');
+    }
+    const acceso = await this.resolverAcceso(manager, token, ahora);
+    // Un ID ajeno o inexistente produce el mismo 404; solo después se comprueba perfil propio.
+    const perfil = await manager.getRepository(Personal).findOneBy({
+      id: personalId,
+      negocioId: acceso.negocioId,
+    });
+    if (!perfil) throw new NotFoundException('Profesional no disponible.');
+    if (acceso.rol === Rol.PROFESIONAL && acceso.actorId !== perfil.id) {
+      throw new ForbiddenException('Profesional no autorizado.');
+    }
+    return { ...acceso, personalId: perfil.id };
+  }
+
+  /** Autoriza una lectura con varios perfiles sin escoger un perfil arbitrario. */
+  async resolverAcceso(manager: EntityManager,
+    token: Pick<JwtPayload, 'sub' | 'sesionId'>, ahora: Date):
+    Promise<AccesoDisponibilidad> {
     if (!manager.queryRunner?.isTransactionActive) {
       throw new Error(
         'La lectura de disponibilidad requiere una transacción activa.',
       );
-    }
-    if (!Number.isSafeInteger(personalId) || personalId <= 0) {
-      throw new BadRequestException('Profesional inválido.');
     }
     if (
       !token ||
@@ -99,22 +117,12 @@ export class ContextoDisponibilidadService {
       }).permitido
     )
       throw new UnauthorizedException('Acceso actual no disponible.');
-    // Un ID ajeno o inexistente produce el mismo 404; solo después se comprueba perfil propio.
-    const perfil = await manager.getRepository(Personal).findOneBy({
-      id: personalId,
-      negocioId: actor.negocioId,
-    });
-    if (!perfil) throw new NotFoundException('Profesional no disponible.');
-    if (actor.rol === Rol.PROFESIONAL && actor.id !== perfil.id) {
-      throw new ForbiddenException('Profesional no autorizado.');
-    }
     return {
       manager,
       ahora: new Date(ahora),
       actorId: actor.id,
       rol: actor.rol,
       negocioId: actor.negocioId,
-      personalId: perfil.id,
     };
   }
 }

@@ -19,6 +19,13 @@ export interface InicioPuntualEntrada {
   modalidad: 'publica' | 'manual';
 }
 
+export interface ConsultaCitasAfectadasEntrada {
+  desde: string;
+  hasta: string;
+  personalId?: number;
+  sucursalId?: number;
+}
+
 function objetoConCampos(entrada: unknown, permitidos: readonly string[],
   obligatorios: readonly string[]): Record<string, unknown> {
   if (entrada === null || typeof entrada !== 'object' || Array.isArray(entrada)) {
@@ -103,4 +110,24 @@ export function validarInicioPuntual(entrada: unknown, zonaHoraria?: string):
   return { personalId, sucursalId, servicioId,
     fechaLocal: datos.fechaLocal, horaInicio: datos.horaInicio,
     modalidad: modalidad(datos.modalidad) };
+}
+
+/** Comparte el límite de 31 fechas; ambos filtros son opcionales para el administrador. */
+export function validarConsultaCitasAfectadas(entrada: unknown):
+  ConsultaCitasAfectadasEntrada {
+  const datos = objetoConCampos(entrada,
+    ['desde', 'hasta', 'personalId', 'sucursalId'], ['desde', 'hasta']);
+  if (typeof datos.desde !== 'string' || typeof datos.hasta !== 'string') {
+    throw new BadRequestException('Fechas de citas afectadas inválidas.');
+  }
+  validarFechaLocal(datos.desde);
+  validarFechaLocal(datos.hasta);
+  const dias = (Date.parse(`${datos.hasta}T00:00:00Z`) -
+    Date.parse(`${datos.desde}T00:00:00Z`)) / 86400000;
+  if (dias < 0 || dias >= 31) {
+    throw new BadRequestException('Rango de citas afectadas inválido.');
+  }
+  return { desde: datos.desde, hasta: datos.hasta,
+    ...(datos.personalId === undefined ? {} : { personalId: idQuery(datos.personalId) }),
+    ...(datos.sucursalId === undefined ? {} : { sucursalId: idQuery(datos.sucursalId) }) };
 }

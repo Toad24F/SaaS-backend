@@ -29,6 +29,8 @@ export interface OmisionAtencion {
 export interface ProyeccionAtencion {
   bloques: BloqueOriginal[];
   tramos: TramoEfectivo[];
+  descansos: Array<{ bloqueId: number; origen: 'semanal' | 'excepcion';
+    inicioUtc: Date; finUtc: Date }>;
   omisiones: OmisionAtencion[];
 }
 
@@ -47,7 +49,7 @@ export function seleccionarFranjas(fechaLocal: string, sucursalId: number,
 export function proyectarAtencion(fechaLocal: string, sucursalId: number, zonaHoraria: string,
   semana: FranjaSemanalFuente[], excepciones: ExcepcionFuente[],
   restricciones: Intervalo[]): ProyeccionAtencion {
-  const resultado: ProyeccionAtencion = { bloques: [], tramos: [], omisiones: [] };
+  const resultado: ProyeccionAtencion = { bloques: [], tramos: [], descansos: [], omisiones: [] };
   for (const franja of seleccionarFranjas(fechaLocal, sucursalId, semana, excepciones)) {
     // La recurrencia afectada por DST se omite; un extremo explícito inválido se rechaza.
     const modo = franja.origen === 'semanal' ? 'recurrencia' : 'estricto';
@@ -71,6 +73,10 @@ export function proyectarAtencion(fechaLocal: string, sucursalId: number, zonaHo
     const bloque: BloqueOriginal = { id: franja.id, origen: franja.origen, fechaLocal,
       sucursalId, zonaHoraria, inicioUtc: jornada.inicio, finUtc: jornada.fin };
     resultado.bloques.push(bloque);
+    // La procedencia del descanso permite explicar citas afectadas sin inferirla
+    // desde un tramo ya recortado por otros bloqueos.
+    if (descanso) resultado.descansos.push({ bloqueId: franja.id,
+      origen: franja.origen, inicioUtc: descanso.inicio, finUtc: descanso.fin });
     const cortes = descanso ? [descanso, ...restricciones] : restricciones;
     for (const tramo of restarRestricciones([jornada], cortes)) {
       resultado.tramos.push({ bloque, inicioUtc: tramo.inicio, finUtc: tramo.fin });

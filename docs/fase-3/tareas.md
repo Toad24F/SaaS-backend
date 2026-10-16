@@ -256,25 +256,25 @@ M07; decisiones D02, D10, D14 y D15; pruebas T01–T04 y T15.
 
 M06; decisiones D03 y D13; pruebas T14 y T15.
 
-- [ ] **M2-T067 — Consultar candidatas sin descartar estados inactivos** · 20 min · Depende de: M2-T039, M2-T027 · RF-09, RF-20, RF-38–RF-40
+- [x] **M2-T067 — Consultar candidatas sin descartar estados inactivos** · 20 min · Depende de: M2-T039, M2-T027 · RF-09, RF-20, RF-38–RF-40
   Hecho cuando: la lectura por fechas/sucursal/perfil incluye citas no canceladas de recursos desactivados, conserva su intervalo guardado y limita al Profesional a sí mismo.
-
-- [ ] **M2-T068 — Calcular causas de horario, descanso y bloqueo** · 25 min · Depende de: M2-T067, M2-T034, M2-T035 · RF-20, RF-38, RF-40–RF-41
+3
+- [x] **M2-T068 — Calcular causas de horario, descanso y bloqueo** · 25 min · Depende de: M2-T067, M2-T034, M2-T035 · RF-20, RF-38, RF-40–RF-41
   Hecho cuando: cada cita identifica falta de atención, descanso y todos los bloqueos que la afecten, con referencias verificables; la duración se obtiene de la cita.
 
-- [ ] **M2-T069 — Calcular causas por desactivación o retiro** · 20 min · Depende de: M2-T067, M2-T028 · RF-11–RF-12, RF-39–RF-41
+- [x] **M2-T069 — Calcular causas por desactivación o retiro** · 20 min · Depende de: M2-T067, M2-T028 · RF-11–RF-12, RF-39–RF-41
   Hecho cuando: las citas futuras identifican cada estado de oferta inactivo o asignación/selección retirada, incluso cuando el recurso ya no produce ranuras.
 
-- [ ] **M2-T070 — Componer causas vigentes sin cambiar citas** · 20 min · Depende de: M2-T068, M2-T069 · RF-07, RF-20, RF-31–RF-32, RF-38–RF-41
+- [x] **M2-T070 — Componer causas vigentes sin cambiar citas** · 20 min · Depende de: M2-T068, M2-T069 · RF-07, RF-20, RF-31–RF-32, RF-38–RF-41
   Hecho cuando: la consulta reúne causas sin duplicados, elimina las que desaparecen, conserva las demás y no cambia estado/intervalo, libera ocupaciones ni envía mensajes.
 
-- [ ] **M2-T071 — Exponer consulta privada de afectaciones** · 20 min · Depende de: M2-T070, M2-T058, M2-T063 · RF-09, RF-20, RF-38–RF-45
+- [x] **M2-T071 — Exponer consulta privada de afectaciones** · 20 min · Depende de: M2-T070, M2-T058, M2-T063 · RF-09, RF-20, RF-38–RF-45
   Hecho cuando: GET /disponibilidad/citas-afectadas filtra por negocio y perfil permitido, interpreta fechas por sucursal y devuelve solo IDs operativos, intervalo y causas.
 
-- [ ] **M2-T072 — Probar cambios de horario y bloqueos con citas** · 25 min · Depende de: M2-T071, M2-T014 · RF-20, RF-31–RF-32, RF-38, RF-40–RF-41
+- [x] **M2-T072 — Probar cambios de horario y bloqueos con citas** · 25 min · Depende de: M2-T071, M2-T014 · RF-20, RF-31–RF-32, RF-38, RF-40–RF-41
   Hecho cuando: guardar un cambio válido identifica sus citas afectadas sin cancelarlas; retirar uno de dos bloqueos mantiene la otra causa y cancelar una cita la retira del listado.
 
-- [ ] **M2-T073 — Probar estados de oferta y causas excluidas** · 25 min · Depende de: M2-T071, M2-T030 · RF-07, RF-20, RF-39–RF-41
+- [x] **M2-T073 — Probar estados de oferta y causas excluidas** · 25 min · Depende de: M2-T071, M2-T030 · RF-07, RF-20, RF-39–RF-41
   Hecho cuando: se identifica cada desactivación futura y su reactivación; cambiar modo, paso, anticipación, horizonte o duración del catálogo no marca por sí solo una cita; HTTP deniega perfiles/negocios ajenos.
 
 ## 10. Contrato interno para reservas posteriores

@@ -69,7 +69,7 @@ export class AtencionInternaService {
     const fuentesExcepcion = [...porFecha.values()];
     const restricciones = await this.bloqueos.consultar(contexto, sucursalId,
       desde, hasta, sede.zonaHoraria);
-    const resultado: ProyeccionAtencion = { bloques: [], tramos: [], omisiones: [] };
+    const resultado: ProyeccionAtencion = { bloques: [], tramos: [], descansos: [], omisiones: [] };
     // La fecha es civil de la sucursal; solo los extremos se comparan en UTC.
     for (let dia = inicio; dia <= fin; dia += 86400000) {
       const fechaLocal = new Date(dia).toISOString().slice(0, 10);
@@ -77,6 +77,7 @@ export class AtencionInternaService {
         fuentesSemana, fuentesExcepcion, restricciones);
       resultado.bloques.push(...diario.bloques);
       resultado.tramos.push(...diario.tramos);
+      resultado.descansos.push(...diario.descansos);
       resultado.omisiones.push(...diario.omisiones);
     }
     return resultado;
