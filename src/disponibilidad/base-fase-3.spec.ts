@@ -8,6 +8,11 @@ import { ConfiguracionAgendaService } from './configuracion-agenda.service';
 import { OcupacionesService } from './ocupaciones.service';
 import { DisponibilidadController } from './disponibilidad.controller';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { ConfiguracionAgenda } from './entities/configuracion-agenda.entity';
+import { Cita } from './entities/cita.entity';
+import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
+import { Cliente } from './entities/cliente.entity';
 
 // Protege la separación entre el dominio, la lectura de ocupaciones y HTTP.
 describe('M2-T004: composición base del motor', () => {
@@ -39,5 +44,18 @@ describe('M2-T004: composición base del motor', () => {
       .not.toContain(DisponibilidadHttpModule);
     expect(Reflect.getMetadata(MODULE_METADATA.IMPORTS, DisponibilidadModule) ?? [])
       .not.toContain(DisponibilidadHttpModule);
+  });
+
+  it('registra las entidades persistidas del motor en el DataSource de la aplicación', () => {
+    const imports = [DisponibilidadModule, OcupacionesModule]
+      .flatMap((modulo) => (Reflect.getMetadata(MODULE_METADATA.IMPORTS, modulo) as unknown[]) ?? []);
+    const repositorios = imports.flatMap((modulo) =>
+      (modulo as { exports?: { provide?: string }[] }).exports ?? []);
+    // forFeature registra metadatos con autoLoadEntities y publica estos repositorios.
+    for (const entidad of [ConfiguracionAgenda, Cliente, Cita, BloqueoTemporal]) {
+      expect(repositorios).toContainEqual(expect.objectContaining({
+        provide: getRepositoryToken(entidad),
+      }));
+    }
   });
 });
