@@ -9,7 +9,8 @@ function siguienteDia(fecha: string): string {
 }
 
 /** Un bloque colectivo se interpreta de nuevo en la zona de cada sede afectada. */
-export function intervaloBloqueo(datos: DatosBloqueo, zona: string): Intervalo {
+export function intervaloBloqueo(datos: Pick<DatosBloqueo,
+  'fechaInicio' | 'fechaFin' | 'inicioMinutos' | 'finMinutos'>, zona: string): Intervalo {
   const diaCompleto = datos.inicioMinutos === null;
   const fechaFin = diaCompleto ? siguienteDia(datos.fechaFin) :
     datos.finMinutos === 1440 ? siguienteDia(datos.fechaFin) : datos.fechaFin;

@@ -15,6 +15,7 @@ import { Sesion } from '../auth/entities/sesion.entity';
 import { Rol } from '../auth/enums/rol.enum';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
 import { Usuario } from './entities/usuario.entity';
+import { esConflictoNombreUsuario, normalizarNombreUsuario } from './normalizar-nombre';
 
 export interface CrearRecepcionista {
   actorUsuarioId: number;
@@ -79,7 +80,7 @@ export class UsuariosService {
    * nunca puede asignarlos. Cuenta y auditoría comparten la misma transacción.
    */
   async crearRecepcionista(datos: CrearRecepcionista): Promise<Usuario> {
-    const nombre = datos.nombre.trim().replace(/\s+/g, ' ');
+    const nombre = normalizarNombreUsuario(datos.nombre);
     const email = datos.email.trim().toLowerCase();
     if (!nombre || !email) {
       throw new BadRequestException('Nombre y correo son obligatorios.');
@@ -132,6 +133,9 @@ export class UsuariosService {
     } catch (error) {
       const codigo = (error as { driverError?: { code?: string } }).driverError?.code
         ?? (error as { code?: string }).code;
+      if (esConflictoNombreUsuario(error)) {
+        throw new ConflictException('El nombre ya está registrado en este negocio.');
+      }
       if (codigo === 'ER_DUP_ENTRY') {
         throw new ConflictException('El correo ya está registrado.');
       }

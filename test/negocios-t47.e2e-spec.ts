@@ -195,7 +195,9 @@ describe('T47 — administración HTTP de negocios', () => {
         [null, 123, '   '].map((valor) => ({ ...alta, [campo]: valor }))),
         { ...alta, nombre: 'a'.repeat(151) }, { ...alta, identificadorPublico: 'a'.repeat(101) },
         { ...alta, emailAdministrador: 'no-es-correo' }, { ...alta, emailAdministrador: `${'a'.repeat(145)}@example.test` },
-        { ...alta, rfc: 'a'.repeat(14) }, ...[0, -1, 1.5, '2', 4294967296, null].map((limiteSucursales) => ({ ...alta, limiteSucursales }))];
+        { ...alta, rfc: 'a'.repeat(14) }, { ...alta, rfc: 'ABC010101AB' },
+        { ...alta, rfc: 'ABC010101AB12' }, { ...alta, rfc: 'AB1010101AB1' },
+        ...[0, -1, 1.5, '2', 4294967296, null].map((limiteSucursales) => ({ ...alta, limiteSucursales }))];
       for (const body of invalidos) await crear(app, tokens[Rol.SUPERADMIN], body).expect(400);
       for (const campo of ['modalidad', 'periodo', 'plan', 'rol', 'actorUsuarioId', 'negocioId', 'ahora']) {
         const respuesta = await crear(app, tokens[Rol.SUPERADMIN], { ...alta, [campo]: 'no-permitido' }).expect(400);

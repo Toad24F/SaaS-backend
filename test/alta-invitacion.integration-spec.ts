@@ -79,6 +79,16 @@ describe('M1-T035: alta mediante invitación sin cuenta', () => {
     });
   });
 
+  it.each(['', 'ABC010101AB', 'ABC010101AB12', 'AB1010101AB1', 'ABC000000AB1'])
+    ('rechaza RFC con formato inválido (%s) sin crear negocio', async (rfc) => {
+    await conBaseMigrada(async (db) => {
+      const superadmin = await actor(db);
+      await expect(servicio(db).crearNegocio({ ...datos, rfc, actorUsuarioId: superadmin.id }))
+        .rejects.toBeInstanceOf(BadRequestException);
+      expect(await db.getRepository(Negocio).count()).toBe(0);
+    });
+  });
+
   it('rechaza RFC ausente y actor inactivo sin crear negocio', async () => {
     await conBaseMigrada(async (db) => {
       const superadmin = await actor(db);

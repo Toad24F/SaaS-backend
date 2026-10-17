@@ -7,6 +7,8 @@ import { validarFechaLocal, resolverIntervaloLocal } from './calendario';
 import { HorarioPersonal } from './entities/horario-personal.entity';
 import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
+import { seleccionarFranjas, type ExcepcionFuente,
+  type FranjaSemanalFuente } from '../disponibilidad/proyeccion-atencion';
 
 interface FranjaFecha {
   inicioMinutos: number; finMinutos: number;
@@ -43,12 +45,23 @@ export class AtencionService {
         ON f.negocio_id = e.negocio_id AND f.excepcion_id = e.id
       WHERE e.negocio_id = ? AND e.personal_id = ? AND e.fecha_local BETWEEN ? AND ?`,
     [negocioId, personalId, desde, hasta]);
-    const porFecha = new Map<string, FranjaFecha[]>();
+    const porFecha = new Map<string, ExcepcionFuente>();
     for (const fila of excepciones) {
       const clave = `${fila.fecha}:${fila.sucursalId}`;
-      if (!porFecha.has(clave)) porFecha.set(clave, []);
-      if (fila.id !== null) porFecha.get(clave)!.push(fila);
+      if (!porFecha.has(clave)) porFecha.set(clave, { sucursalId: fila.sucursalId,
+        fechaLocal: fila.fecha, franjas: [] });
+      if (fila.id !== null) porFecha.get(clave)!.franjas.push({ id: fila.id,
+        inicioMinutos: fila.inicioMinutos, finMinutos: fila.finMinutos,
+        descansoInicioMinutos: fila.descansoInicioMinutos,
+        descansoFinMinutos: fila.descansoFinMinutos });
     }
+    const fuentesSemana: FranjaSemanalFuente[] = semana.filter((fila) =>
+      fila.sucursalId !== null && fila.inicioMinutos !== null && fila.finMinutos !== null)
+      .map((fila) => ({ id: fila.id, sucursalId: fila.sucursalId!,
+        diaSemana: fila.diaSemana, inicioMinutos: fila.inicioMinutos!,
+        finMinutos: fila.finMinutos!, descansoInicioMinutos: fila.descansoInicioMinutos,
+        descansoFinMinutos: fila.descansoFinMinutos }));
+    const fuentesExcepcion = [...porFecha.values()];
     const bloques = (await this.bloqueos.listar(actorId)).filter((fila) =>
       (fila.personalId === null || fila.personalId === personalId) &&
       fila.fechaInicio <= hasta && fila.fechaFin >= desde);
@@ -57,12 +70,11 @@ export class AtencionService {
     const omisiones: { fecha: string; sucursalId: number; motivo: string }[] = [];
     for (let dia = inicio; dia <= fin; dia += 86400000) {
       const fecha = new Date(dia).toISOString().slice(0, 10);
-      const diaSemana = new Date(dia).getUTCDay();
       for (const sede of sedes) {
-        const clave = `${fecha}:${sede.id}`;
-        const franjas: FranjaFecha[] = porFecha.has(clave) ? porFecha.get(clave)! :
-          semana.filter((fila) => fila.sucursalId === sede.id && fila.diaSemana === diaSemana)
-            .map((fila) => fila as FranjaFecha);
+        // La respuesta anterior conserva su forma; ambos lectores comparten la
+        // sustitución exacta de semana por excepción, incluida la cabecera vacía.
+        const franjas = seleccionarFranjas(fecha, sede.id,
+          fuentesSemana, fuentesExcepcion);
         const restricciones = bloques.filter((fila) => fila.sucursalId === null ||
           fila.sucursalId === sede.id).map((fila) => intervaloBloqueo(fila, sede.zonaHoraria));
         for (const franja of franjas) {

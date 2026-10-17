@@ -3,6 +3,11 @@
 ## Proyecto
 Plataforma de citas multi-negocio y multi-sucursal. Backend con NestJS, TypeScript, TypeORM y MariaDB/MySQL; frontend con HTML, CSS y JavaScript. Incluye disponibilidad, reservas, panel administrativo, WhatsApp y reportes PDF.
 
+## Fase activa
+- Trabajar sobre la fase 3, módulo 2: Motor Inteligente de Disponibilidad y Reglas de Agenda.
+- Implementar el motor y su consulta por personal autorizado; preparar contratos internos para reservas posteriores sin adelantar el portal público ni los escritores reales de citas y apartados.
+- Usar como fuente normativa `docs/fase-3/constitucion-fase-3.md`, `docs/fase-3/spec-modulo-2.md`, `docs/fase-3/plan.md` y `docs/fase-3/tareas.md`.
+
 ## Comandos
 Desde `backend/`:
 - Desarrollo: `npm run start:dev`
@@ -29,22 +34,40 @@ Desde `backend/`:
 - Registrar sucursales con nombre, dirección, teléfono, URL de Google Maps y notas de llegada; registrar servicios con nombre, costo y duración aproximada en minutos.
 - Permitir personal con cuenta y rol Profesional. Este puede consultar su horario y gestionar sus propias horas, descansos, bloqueos temporales y la activación o desactivación de los servicios que ofrece, respetando su negocio y permisos.
 - Permitir que un profesional trabaje en varias sucursales, incluso durante un mismo día, con asignaciones por día y franja horaria; impedir empalmes de sus horarios y citas entre sucursales, incluso con solicitudes simultáneas.
+- Configurar por negocio el modo de agenda, intervalo entre inicios, anticipación mínima y horizonte futuro. Los valores efectivos iniciales son Ventana Libre, 15 minutos de intervalo, 15 minutos de anticipación y 60 días futuros; la escritura de configuración es exclusiva del Administrador y debe reemplazar el conjunto completo de forma atómica.
+- Admitir solo intervalos públicos de 5, 10, 15, 20, 30 o 60 minutos; anticipación no negativa en múltiplos de 5 y horizonte en días enteros no negativos. Limitar cada consulta a un rango inclusivo máximo de 31 fechas, sin reducir por ello el horizonte configurable.
+- Ofrecer una combinación solo si están activos y pertenecen al negocio la sucursal, la cuenta del Profesional, el servicio, la selección individual, la atención del Profesional en la sucursal y la selección del servicio en esa sucursal.
+- Calcular la disponibilidad con la duración completa del servicio, horarios semanales o su sustitución especial, descansos, bloqueos y ocupaciones. Permitir extremos contiguos y cruzar bloques consecutivos únicamente cuando la atención del mismo Profesional y sucursal sea continua.
+- Interpretar fechas y recurrencias en la zona horaria IANA de la sucursal, rechazar horas locales ambiguas o inexistentes y comparar ocupaciones entre sucursales mediante intervalos UTC. Conservar en cada cita confirmada su inicio, fin y zona originales; los cambios de duración solo afectan reservas nuevas.
+- En Ventana Libre, conservar la secuencia de inicios anclada al comienzo de cada bloque original y mostrar todos los candidatos válidos. En Agenda Compacta, formar grupos independientes por bloque o tramo, ofrecer candidatos válidos próximos antes y después de ocupaciones y permitir otro grupo o día sin exigir llenar el anterior.
+- Distinguir la modalidad pública de la manual. La manual omite solo compactación, intervalo público, anticipación y horizonte; mantiene permisos, licencia, oferta activa, duración, horario, bloqueos, ausencia de empalmes y rechazo de inicios pasados.
+- Tratar toda cita no cancelada y todo apartado vigente como ocupación del Profesional en cualquiera de sus sucursales y servicios. Un apartado está vigente solo mientras no esté liberado y `ahora < expira_en`; almacenar únicamente `titular_hash`, nunca un token utilizable.
+- Capturar un único instante mediante reloj inyectable y efectuar cada cálculo con una lectura transaccional coherente de configuración, oferta, horarios y ocupaciones. No convertir fallos técnicos en una agenda vacía ni devolver resultados parciales.
+- La consulta de disponibilidad no garantiza la reserva. Los futuros escritores deben revalidar dentro de su propia transacción, serializar por una fila común del Profesional independientemente de la sucursal, releer después de esperar el bloqueo y confirmar la ocupación de forma atómica; un conflicto de reserva será 409.
+- Guardar cambios operativos válidos aunque afecten citas existentes e identificar sus causas vigentes sin cancelar, reprogramar ni alterar automáticamente esas citas. La desaparición de una causa no elimina otras causas aplicables.
 - El portal de reservas es público por negocio; no hay registro libre de negocios.
 - Guardar secretos en variables de entorno y contraseñas como hash; no incluir contraseñas ni códigos utilizables en logs o auditoría.
 - No incluir pagos anticipados de citas ni ampliar el alcance sin solicitud.
+- En fase 3 no implementar la consulta anónima ni las pantallas del portal, formulario, contador o ciclo de apartados; creación o confirmación de reservas; calendario y ciclo de vida de citas; WhatsApp; reportes PDF; ni pagos. Solo preparar los contratos necesarios definidos por el módulo 2.
 
 ## Documentación y precedencia
+- La constitución y especificación de fase 3 prevalecen para el motor de disponibilidad sobre cualquier regla anterior incompatible. Sus RF-01–RF-45 son locales a `docs/fase-3/spec-modulo-2.md`.
+- Seguir `docs/fase-3/plan.md` para arquitectura, persistencia, contratos HTTP, decisiones de concurrencia y estrategia de pruebas; ejecutar las tareas de `docs/fase-3/tareas.md` respetando dependencias y criterios de terminado.
 - Los acuerdos de fase 2 recogidos aquí sustituyen las reglas incompatibles de fase 1, en particular sucursales ilimitadas, entrega manual de códigos, creación anticipada de administradores incompletos y bloqueo inmediato por suspensión manual.
 - Consultar `docs/fase-1-auth/spec/spec-auth.md` y `docs/fase-1-auth/plan-auth.md` como antecedentes; conservar sus reglas compatibles y las evidencias históricas, sin atribuirles cobertura de funcionalidades nuevas.
 - Conservar la documentación original del módulo 1 en `docs/fase-2-modulo-1/` como antecedente de su implementación.
 - Consultar `docs/Fix-modulo-1/constitucion.md`, `spec-fix.md`, `plan.md` y `tareas.md` para los ajustes del módulo 1. Su especificación prevalece sobre las reglas incompatibles de fase 2 relativas a creación y edición de servicios por el Profesional, estados individuales y oferta por sucursal; las demás reglas compatibles siguen vigentes. Los RF-01–RF-10 del fix son locales a esa especificación.
 - Distinguir requisitos, planes y tareas de funcionalidad implementada: las pruebas y evidencias históricas de fases anteriores no acreditan los ajustes del fix.
+- No presentar RF-35–RF-37 como integración completa hasta que los módulos 3/4 conecten sus escritores reales y pasen las verificaciones diferidas M2-I001–M2-I009; los dobles de prueba del motor solo acreditan el contrato de colaboración.
 
 ## Pruebas
 - Cubrir aislamiento entre negocios, permisos por rol, activación con correo y código, consumo único, vencimiento y envío de correos, incluidos fallos de entrega.
 - Probar la definición y modificación del límite de sucursales, las altas concurrentes y la gestión del Profesional sobre sus propios servicios y horarios entre sucursales.
 - Probar acceso antes de las 48 horas y rechazo en el límite exacto y después, incluidas sesiones abiertas; verificar conservación de datos, aviso previo al vencimiento y consulta de días restantes.
 - Probar vencimientos, renovaciones y transiciones concurrentes con reloj controlado, sin pérdida ni duplicación de tiempo ni de eventos de auditoría.
+- Para fase 3, cubrir configuración y reemplazo atómico, permisos de Administrador/Recepción/Profesional, aislamiento, oferta efectiva, duración, límites exactos, modalidades, bloques continuos, zonas horarias y cambios de hora con reloj controlado.
+- Probar ocupaciones de todas las sucursales y servicios del Profesional: solo Cancelada libera una cita; un apartado libera al vencer exactamente o al marcarse liberado. Cubrir lecturas coherentes ante cambios concurrentes y citas afectadas sin mutarlas.
+- Verificar las cinco rutas privadas previstas: `GET/PUT /disponibilidad/configuracion`, `GET /disponibilidad`, `POST /disponibilidad/validar` y `GET /disponibilidad/citas-afectadas`. Mantener 200 para vacío legítimo o validación funcional negativa, 400/401/403/404 según contrato, 503 para fallos temporales y 500 para inesperados, sin filtrar SQL, trazas ni datos privados.
 
 ## Al terminar
 - Para cambios de código, ejecutar compilación, lint y pruebas relevantes al cambio. Para cambios exclusivamente documentales, verificar coherencia y rutas referenciadas.

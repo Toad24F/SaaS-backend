@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
@@ -17,6 +17,7 @@ import {
   EstadoAltaAdministrador,
 } from './entities/alta-administrador.entity';
 import { ReservaCorreoService } from './reserva-correo.service';
+import { esConflictoNombreUsuario, normalizarNombreUsuario } from '../usuarios/normalizar-nombre';
 
 export interface ActivarCuenta {
   codigo: string;
@@ -41,7 +42,8 @@ export class ActivacionesService {
 
   async activarAdministrador(datos: ActivarCuenta) {
     const { nombre, passwordHash } = await this.prepararCredenciales(datos);
-    return this.codigos.consumir(
+    try {
+      return await this.codigos.consumir(
       this.usuarios.manager.connection,
       {
         //Cuenta, reserva y consumo comparten la transacción.
@@ -218,12 +220,18 @@ export class ActivacionesService {
           activadoEn: new Date(datos.ahora),
         };
       },
-    );
+      );
+    } catch (error) {
+      if (esConflictoNombreUsuario(error)) {
+        throw new ConflictException('El nombre ya está registrado en este negocio.');
+      }
+      throw error;
+    }
   }
 
   private async prepararCredenciales(datos: ActivarCuenta) {
     //prepara el nombre y el hash de la contraseña del usuario a partir de los datos proporcionados, validando que sean correctos
-    const nombre = typeof datos.nombre === 'string' ? datos.nombre.trim() : '';
+    const nombre = typeof datos.nombre === 'string' ? normalizarNombreUsuario(datos.nombre) : '';
     if (
       !nombre ||
       nombre.length > 150 ||

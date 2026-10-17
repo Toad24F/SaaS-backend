@@ -5,18 +5,24 @@ export type RecursoEliminable = 'sucursal' | 'servicio' | 'profesional';
 
 interface Relacion { tabla: string; columna: string; etiqueta: string }
 
-// Solo tablas ya instaladas por migraciones; futuras citas añadirán su relación aquí.
+// Las ocupaciones se revisan primero para comunicar por qué se conserva el historial.
 const RELACIONES: Record<RecursoEliminable, Relacion[]> = {
   sucursal: [
+    { tabla: 'citas', columna: 'sucursal_id', etiqueta: 'citas' },
+    { tabla: 'bloqueos_temporales', columna: 'sucursal_id', etiqueta: 'apartados' },
     { tabla: 'personal_sucursales', columna: 'sucursal_id', etiqueta: 'asignaciones' },
     { tabla: 'horarios_personal', columna: 'sucursal_id', etiqueta: 'horarios' },
     { tabla: 'excepciones_horario', columna: 'sucursal_id', etiqueta: 'excepciones' },
     { tabla: 'bloqueos_horario', columna: 'sucursal_id', etiqueta: 'bloqueos' },
   ],
   servicio: [
+    { tabla: 'citas', columna: 'servicio_id', etiqueta: 'citas' },
+    { tabla: 'bloqueos_temporales', columna: 'servicio_id', etiqueta: 'apartados' },
     { tabla: 'personal_servicios', columna: 'servicio_id', etiqueta: 'selecciones' },
   ],
   profesional: [
+    { tabla: 'citas', columna: 'personal_id', etiqueta: 'citas' },
+    { tabla: 'bloqueos_temporales', columna: 'personal_id', etiqueta: 'apartados' },
     { tabla: 'personal_sucursales', columna: 'personal_id', etiqueta: 'asignaciones' },
     { tabla: 'personal_servicios', columna: 'personal_id', etiqueta: 'servicios' },
     { tabla: 'horarios_personal', columna: 'personal_id', etiqueta: 'horarios' },

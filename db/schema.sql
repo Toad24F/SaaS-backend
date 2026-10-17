@@ -1,5 +1,5 @@
--- Esquema de entrega: autenticacion, negocios y licencias (RF-01 a RF-38).
--- Base: ../db/schema.sql; requisitos: spec/spec-auth.md y docs/plan.md.
+-- Esquema de instalación nueva: autenticación, módulo 1 y fuentes de fase 3.
+-- Requisitos vigentes de disponibilidad: docs/fase-3/spec-modulo-2.md y plan.md.
 -- Instalacion NUEVA. No es una migracion de la base existente.
 -- Objetivo: MariaDB 10.6+ / MySQL 8.0.16+ con InnoDB y CHECK habilitados.
 -- No ejecutar con opciones que ignoren errores (por ejemplo, --force).
@@ -7,8 +7,8 @@
 -- Si esta base ya existe, CREATE DATABASE falla: detener la importacion.
 -- No se incluyen DROP, TRUNCATE, usuarios, contrasenas ni datos iniciales.
 --
--- Cambios: negocios y usuarios; nuevas licencias, codigos_acceso, sesiones,
--- eventos_auditoria y limites_intentos. Las otras 10 tablas se conservan.
+-- Incluye negocios, usuarios, licencias, catálogo, horarios, configuración y
+-- fuentes de ocupación; los flujos de reserva se implementarán después.
 -- Las tablas de autenticacion parten de las migraciones T15 a T18; el tramo
 -- incremental de identidad de fase 2 se aplica al final de este script.
 --
@@ -19,8 +19,8 @@
 -- * Alta, activacion y consumo de codigo son atomicos y de un solo uso.
 -- * Login y cambios de contrasena coordinan el bloqueo de la cuenta.
 -- * Roles, pertenencia y vigencia se revalidan en cada solicitud.
--- * Las tablas originales de citas aun requieren el trabajo posterior
---   de pertenencia entre recursos y exclusion de reservas concurrentes.
+-- * Las citas y apartados de fase 3 ya conservan pertenencia e intervalos UTC;
+--   la exclusion concurrente requiere los escritores reales de reservas.
 --
 
 SET NAMES utf8mb4;
@@ -68,8 +68,15 @@ CREATE TABLE usuarios (
   admin_negocio_unico  INT UNSIGNED GENERATED ALWAYS AS (
     CASE WHEN rol = 'admin_negocio' THEN negocio_id ELSE NULL END
   ) STORED,
+  nombre_negocio_unico VARCHAR(180) GENERATED ALWAYS AS (
+    CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL
+      THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre)))
+      ELSE NULL
+    END
+  ) STORED,
   UNIQUE KEY uq_usuarios_email (email),
   UNIQUE KEY uq_usuario_admin_negocio (admin_negocio_unico),
+  UNIQUE KEY uq_usuarios_negocio_nombre (nombre_negocio_unico),
   UNIQUE KEY uq_usuarios_negocio_id (negocio_id, id),
   CONSTRAINT fk_usuarios_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id),
   CONSTRAINT chk_usuarios_rol_negocio CHECK (
@@ -276,11 +283,15 @@ CREATE TABLE sucursales (
   zona_horaria   VARCHAR(64) NOT NULL,
   url_google_maps VARCHAR(2048) NULL,
   notas_llegada  TEXT NULL, -- instrucciones para el cliente al llegar a la sucursal
+  nombre_negocio_unico VARCHAR(180) GENERATED ALWAYS AS
+    (CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL
+      THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END) STORED,
   activo         BOOLEAN NOT NULL DEFAULT TRUE,
   creado_en      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   CONSTRAINT fk_sucursales_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
   UNIQUE KEY uq_sucursales_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_sucursales_negocio_nombre (nombre_negocio_unico),
   INDEX idx_sucursales_negocio_activo (negocio_id, activo),
   CONSTRAINT chk_sucursales_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT chk_sucursales_direccion CHECK (CHAR_LENGTH(TRIM(direccion)) > 0),
@@ -302,9 +313,13 @@ CREATE TABLE servicios (
   creado_en         DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   descripcion       TEXT NULL,
   creador_personal_id INT UNSIGNED NULL,
+  nombre_negocio_unico VARCHAR(180) GENERATED ALWAYS AS
+    (CASE WHEN negocio_id IS NOT NULL AND nombre IS NOT NULL
+      THEN CONCAT(negocio_id, ':', LOWER(TRIM(nombre))) ELSE NULL END) STORED,
   CONSTRAINT fk_servicios_negocio
     FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
   UNIQUE KEY uq_servicios_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_servicios_negocio_nombre (nombre_negocio_unico),
   INDEX idx_servicios_negocio_activo (negocio_id, activo),
   INDEX idx_servicios_creador (negocio_id, creador_personal_id),
   CONSTRAINT chk_servicios_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
@@ -500,71 +515,110 @@ CREATE TABLE bloqueos_horario (
 ) ENGINE=InnoDB;
 
 
--- 8. CLIENTES
--- Por qué: guarda los datos capturados en el formulario público, con telefono VARCHAR(10) validación exigida.
--- De dónde: Módulo 3, "Validación de Datos: Captura obligatoria de Nombre completo, Teléfono a 10 dígitos (para WhatsApp)".
+-- FASE 3, MÓDULO 2: configuración opcional por negocio.
+-- La PK impide duplicados; leer valores efectivos no inserta una fila.
+CREATE TABLE configuracion_agenda (
+  negocio_id INT UNSIGNED NOT NULL,
+  modo VARCHAR(20) NOT NULL DEFAULT 'ventana_libre',
+  intervalo_minutos INT UNSIGNED NOT NULL DEFAULT 15,
+  anticipacion_minutos INT UNSIGNED NOT NULL DEFAULT 15,
+  dias_futuros INT UNSIGNED NOT NULL DEFAULT 60,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (negocio_id),
+  CONSTRAINT fk_configuracion_agenda_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_agenda_modo CHECK (modo IN ('ventana_libre','agenda_compacta')),
+  CONSTRAINT chk_agenda_intervalo CHECK (intervalo_minutos IN (5,10,15,20,30,60)),
+  CONSTRAINT chk_agenda_anticipacion CHECK (anticipacion_minutos MOD 5 = 0)
+) ENGINE=InnoDB;
+
+-- 8. CLIENTES: base referencial; captura y consulta corresponden al módulo 3.
 CREATE TABLE clientes (
-  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  negocio_id       INT UNSIGNED NOT NULL,
-  nombre_completo  VARCHAR(150) NOT NULL,
-  telefono         VARCHAR(10)  NOT NULL,   -- 10 dígitos, validado en backend
-  email            VARCHAR(150) NULL,
-  creado_en        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_clientes_negocio
-    FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE,
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  nombre_completo VARCHAR(150) NOT NULL,
+  telefono VARCHAR(10) NOT NULL,
+  email VARCHAR(150) NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_clientes_negocio_id (negocio_id, id),
   UNIQUE KEY uq_cliente_por_negocio (negocio_id, telefono),
-  INDEX idx_clientes_negocio (negocio_id)
+  CONSTRAINT fk_clientes_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_clientes_nombre CHECK (CHAR_LENGTH(TRIM(nombre_completo)) > 0),
+  CONSTRAINT chk_clientes_telefono CHECK (CHAR_LENGTH(telefono) = 10)
 ) ENGINE=InnoDB;
 
--- 9. CITAS
--- Por qué: es la tabla central del sistema; el campo estado replica el ciclo de vida exigido, origen distingue 
--- reserva pública de agendamiento manual, y folio da el número de control mostrado en la confirmación.
--- De dónde: Módulo 4; Control de Ciclo de Vida de la Cita: Pendiente, Confirmada, Completada, Cancelada o No Asistió (No-Show)
--- Módulo 3; Confirmación Inmediata: Pantalla de confirmación y folio de control
--- Módulo 4, Agendamiento Manual: Opción para que el recepcionista o médico agende citas directamente.
+-- 9. CITAS: inicio y fin UTC preservan la duración aceptada, incluso si cambia el servicio.
 CREATE TABLE citas (
-  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  negocio_id        INT UNSIGNED NOT NULL,
-  sucursal_id       INT UNSIGNED NOT NULL,
-  personal_id       INT UNSIGNED NOT NULL,
-  servicio_id       INT UNSIGNED NOT NULL,
-  cliente_id        INT UNSIGNED NOT NULL,
-  fecha             DATE NOT NULL,
-  hora_inicio       TIME NOT NULL,
-  hora_fin          TIME NOT NULL,
-  estado            ENUM('pendiente','confirmada','completada','cancelada','no_asistio')
-                     NOT NULL DEFAULT 'pendiente',
-  motivo_consulta   TEXT NULL,
-  folio             VARCHAR(20) NOT NULL UNIQUE,
-  origen            ENUM('portal_publico','manual') NOT NULL DEFAULT 'portal_publico',
-  creado_en         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_citas_negocio   FOREIGN KEY (negocio_id)  REFERENCES negocios(id)   ON DELETE CASCADE,
-  CONSTRAINT fk_citas_sucursal  FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE RESTRICT,
-  CONSTRAINT fk_citas_personal  FOREIGN KEY (personal_id) REFERENCES personal(id)   ON DELETE RESTRICT,
-  CONSTRAINT fk_citas_servicio  FOREIGN KEY (servicio_id) REFERENCES servicios(id)  ON DELETE RESTRICT,
-  CONSTRAINT fk_citas_cliente   FOREIGN KEY (cliente_id)  REFERENCES clientes(id)   ON DELETE RESTRICT,
-  CONSTRAINT chk_citas_horas CHECK (hora_fin > hora_inicio),
-  -- clave para el motor de disponibilidad: buscar choques rápido
-  INDEX idx_citas_disponibilidad (negocio_id, personal_id, fecha, hora_inicio, hora_fin)
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  sucursal_id INT UNSIGNED NOT NULL,
+  personal_id INT UNSIGNED NOT NULL,
+  servicio_id INT UNSIGNED NOT NULL,
+  cliente_id INT UNSIGNED NOT NULL,
+  inicio_utc DATETIME(3) NOT NULL,
+  fin_utc DATETIME(3) NOT NULL,
+  zona_horaria_reserva VARCHAR(64) NOT NULL,
+  estado ENUM('pendiente','confirmada','completada','cancelada','no_asistio')
+    NOT NULL DEFAULT 'pendiente',
+  motivo_consulta TEXT NULL,
+  folio VARCHAR(20) NOT NULL,
+  origen ENUM('portal_publico','manual') NOT NULL DEFAULT 'portal_publico',
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_citas_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_citas_folio (folio),
+  INDEX idx_citas_personal_inicio (negocio_id, personal_id, inicio_utc),
+  INDEX idx_citas_sucursal_inicio (negocio_id, sucursal_id, inicio_utc),
+  INDEX idx_citas_cliente (negocio_id, cliente_id),
+  INDEX idx_citas_servicio (negocio_id, servicio_id),
+  CONSTRAINT fk_citas_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_citas_sucursal FOREIGN KEY (negocio_id, sucursal_id)
+    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_citas_personal FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_citas_servicio FOREIGN KEY (negocio_id, servicio_id)
+    REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_citas_cliente FOREIGN KEY (negocio_id, cliente_id)
+    REFERENCES clientes(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_citas_intervalo CHECK (fin_utc > inicio_utc),
+  CONSTRAINT chk_citas_zona CHECK (CHAR_LENGTH(TRIM(zona_horaria_reserva)) > 0)
 ) ENGINE=InnoDB;
 
--- 10. BLOQUEOS TEMPORALES (prevención de concurrencia)
--- Por qué: existe como tabla separada (no dentro de citas) porque es un registro de corta duración que expira, 
--- no una cita real; evita que dos clientes reserven el mismo horario mientras uno llena el formulario.
--- De dónde: Módulo 3, "Prevención de Concurrencia: Bloqueo temporal del horario mientras el usuario completa el 
--- formulario para evitar que dos personas reserven el mismo espacio simultáneamente".
+-- 10. APARTADOS: expirar o liberar deja de ocupar sin borrar el registro.
+-- Solo se conserva el hash del titular; nunca un token utilizable.
 CREATE TABLE bloqueos_temporales (
-  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  negocio_id     INT UNSIGNED NOT NULL,
-  personal_id    INT UNSIGNED NOT NULL,
-  fecha          DATE NOT NULL,
-  hora_inicio    TIME NOT NULL,
-  hora_fin       TIME NOT NULL,
-  session_token  VARCHAR(100) NOT NULL,
-  expira_en      TIMESTAMP NOT NULL,
-  CONSTRAINT fk_bt_negocio  FOREIGN KEY (negocio_id)  REFERENCES negocios(id)  ON DELETE CASCADE,
-  CONSTRAINT fk_bt_personal FOREIGN KEY (personal_id) REFERENCES personal(id) ON DELETE CASCADE,
-  INDEX idx_bt_vigencia (negocio_id, personal_id, fecha, expira_en)
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  personal_id INT UNSIGNED NOT NULL,
+  sucursal_id INT UNSIGNED NOT NULL,
+  servicio_id INT UNSIGNED NOT NULL,
+  inicio_utc DATETIME(3) NOT NULL,
+  fin_utc DATETIME(3) NOT NULL,
+  expira_en DATETIME(3) NOT NULL,
+  liberado_en DATETIME(3) NULL,
+  titular_hash CHAR(64) NOT NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_bt_negocio_id (negocio_id, id),
+  INDEX idx_bt_personal_inicio (negocio_id, personal_id, inicio_utc),
+  INDEX idx_bt_personal_expira (negocio_id, personal_id, expira_en),
+  INDEX idx_bt_sucursal (negocio_id, sucursal_id),
+  INDEX idx_bt_servicio (negocio_id, servicio_id),
+  CONSTRAINT fk_bt_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bt_personal FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bt_sucursal FOREIGN KEY (negocio_id, sucursal_id)
+    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bt_servicio FOREIGN KEY (negocio_id, servicio_id)
+    REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_bt_intervalo CHECK (fin_utc > inicio_utc),
+  CONSTRAINT chk_bt_hash CHECK (CHAR_LENGTH(titular_hash) = 64)
 ) ENGINE=InnoDB;
 
 -- 11. NOTIFICACIONES WHATSAPP (bitácora de envíos)

@@ -208,6 +208,20 @@ describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
       expect(evento).toMatchObject({ actorUsuarioId: usuarios[1].id,
         negocioId: usuarios[1].negocioId });
       expect(JSON.stringify(evento)).not.toMatch(/password|hash|password-segura-t83/i);
+      await request(app.getHttpServer()).post('/recepcionistas')
+        .auth(tokens[1], { type: 'bearer' }).send({
+          emailRecepcionista: 'otra-nueva@example.test', nombre: '  Nueva   Persona  ',
+          password: 'password-segura-t83',
+        }).expect(409);
+      await request(app.getHttpServer()).post('/recepcionistas')
+        .auth(tokens[1], { type: 'bearer' }).send({
+          emailRecepcionista: 'otro-admin@example.test', nombre: 'admin_negocio-a',
+          password: 'password-segura-t83',
+        }).expect(409);
+      await request(app.getHttpServer()).post('/profesionales')
+        .auth(tokens[1], { type: 'bearer' }).send({ nombre: 'Nueva Persona',
+          correo: 'prof-nueva@example.test', password: 'Clave-profesional-123', especialidad: 'Estilismo' })
+        .expect(409);
       await request(app.getHttpServer()).post('/auth/activar-recepcionista')
         .send({ codigo: 'retirado', nombre: 'Recepción', password: 'password-segura-t83' })
         .expect(404);

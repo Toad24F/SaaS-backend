@@ -20,6 +20,7 @@ import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { validarRecurrencias } from '../horarios/calendario';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
+import { derivarEstadoOferta } from '../disponibilidad/estado-oferta';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
   SeleccionarServiciosDto } from './dto/profesionales.dto';
@@ -27,6 +28,7 @@ import { Personal } from './entities/personal.entity';
 import { PersonalSucursal } from './entities/personal-sucursal.entity';
 import { PersonalServicio } from './entities/personal-servicio.entity';
 import { PersonalServicioSucursal } from './entities/personal-servicio-sucursal.entity';
+import { esConflictoNombreUsuario, normalizarNombreUsuario } from '../usuarios/normalizar-nombre';
 
 export interface PerfilProfesional {
   id: number; negocioId: number; usuarioId: number;
@@ -53,7 +55,7 @@ export class ProfesionalesService {
   async crear(actorId: number, entrada: CrearProfesionalDto, ahora: Date): Promise<PerfilProfesional> {
     const datos = this.validar(CrearProfesionalDto, entrada);
     const correo = datos.correo.toLowerCase();
-    const nombre = datos.nombre.replace(/\s+/g, ' ');
+    const nombre = normalizarNombreUsuario(datos.nombre);
     const passwordHash = await this.contrasenas.generarHash(datos.password);
     try {
       return await transaccionIdentidad(this.perfiles.manager, async (manager) => {
@@ -111,8 +113,8 @@ export class ProfesionalesService {
           especialidad: perfil.especialidad };
         const correo = datos.correo?.toLowerCase();
         const cambioCorreo = correo !== undefined && correo !== usuario.email;
-        const cambioNombre = datos.nombre !== undefined &&
-          datos.nombre.replace(/\s+/g, ' ') !== usuario.nombre;
+        const nombreNormalizado = datos.nombre === undefined ? undefined : normalizarNombreUsuario(datos.nombre);
+        const cambioNombre = nombreNormalizado !== undefined && nombreNormalizado !== usuario.nombre;
         const cambioEspecialidad = datos.especialidad !== undefined &&
           datos.especialidad !== perfil.especialidad;
         if (cambioCorreo) {
@@ -124,7 +126,7 @@ export class ProfesionalesService {
           usuario.email = correo;
           usuario.correoVersion += 1;
         }
-        if (cambioNombre) usuario.nombre = datos.nombre!.replace(/\s+/g, ' ');
+        if (cambioNombre) usuario.nombre = nombreNormalizado!;
         if (hash !== undefined) usuario.passwordHash = hash;
         if (cambioEspecialidad) {
           perfil.especialidad = datos.especialidad!;
@@ -385,19 +387,14 @@ export class ProfesionalesService {
               const seleccionGeneralActiva = seleccionPorServicio.get(servicio.id)?.activo ?? false;
               const seleccionSucursalActiva = combinacionPorClave
                 .get(`${sucursal.id}:${servicio.id}`)?.activo ?? false;
-              const motivosExclusion: string[] = [];
-              if (!cuenta.activo) motivosExclusion.push('cuenta_inactiva');
-              if (!sucursal.activo) motivosExclusion.push('sucursal_inactiva');
-              if (!servicio.activo) motivosExclusion.push('servicio_inactivo');
-              if (!seleccionGeneralActiva) motivosExclusion.push('servicio_no_seleccionado');
-              if (!asignacion.activo) motivosExclusion.push('atencion_inactiva');
-              if (!seleccionSucursalActiva) {
-                motivosExclusion.push('servicio_no_ofrecido_en_sucursal');
-              }
+              // La consulta previa y el motor comparten la misma regla de seis estados.
+              const estado = derivarEstadoOferta({ asignado: true,
+                cuentaActiva: cuenta.activo, sucursalActiva: sucursal.activo,
+                servicioActivo: servicio.activo, seleccionGeneralActiva,
+                atencionActiva: asignacion.activo, seleccionSucursalActiva });
               return { id: servicio.id, nombre: servicio.nombre,
                 servicioActivo: servicio.activo, seleccionGeneralActiva,
-                seleccionSucursalActiva, ofrecido: motivosExclusion.length === 0,
-                motivosExclusion };
+                seleccionSucursalActiva, ...estado };
             }) };
         }) };
     });
@@ -623,6 +620,9 @@ export class ProfesionalesService {
   private conflictoCorreo(error: unknown): never {
     const codigo = (error as { driverError?: { code?: string } }).driverError?.code
       ?? (error as { code?: string }).code;
+    if (esConflictoNombreUsuario(error)) {
+      throw new ConflictException('El nombre ya está registrado en este negocio.');
+    }
     if (codigo === 'ER_DUP_ENTRY') throw new ConflictException('El correo ya está registrado.');
     throw error;
   }

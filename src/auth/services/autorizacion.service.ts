@@ -13,6 +13,10 @@ export enum Permiso {
   GESTIONAR_HORARIO = 'gestionar_horario',
   GESTIONAR_BLOQUEOS = 'gestionar_bloqueos',
   GESTIONAR_SERVICIOS_PROPIOS = 'gestionar_servicios_propios',
+  VER_SUCURSALES_PROPIAS = 'ver_sucursales_propias',
+  CONFIGURAR_AGENDA = 'configurar_agenda',
+  CONSULTAR_DISPONIBILIDAD = 'consultar_disponibilidad',
+  VALIDAR_DISPONIBILIDAD_MANUAL = 'validar_disponibilidad_manual',
 }
 
 // La matriz es cerrada: ningún rol hereda facultades de otro por coincidencia de negocio.
@@ -24,6 +28,9 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.GESTIONAR_LIMITE_SUCURSALES,
   ]),
   [Rol.ADMIN_NEGOCIO]: new Set([
+    Permiso.CONFIGURAR_AGENDA,
+    Permiso.CONSULTAR_DISPONIBILIDAD,
+    Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
     Permiso.GESTIONAR_RECEPCIONISTAS,
     Permiso.GESTIONAR_CATALOGO,
     Permiso.CREAR_EDITAR_SERVICIOS,
@@ -32,12 +39,19 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.GESTIONAR_BLOQUEOS,
     Permiso.GESTIONAR_SERVICIOS_PROPIOS,
   ]),
-  [Rol.RECEPCIONISTA]: new Set(),
+  // Solo lectura/validación de disponibilidad; no hereda gestión de horarios u oferta.
+  [Rol.RECEPCIONISTA]: new Set([
+    Permiso.CONSULTAR_DISPONIBILIDAD,
+    Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
+  ]),
   [Rol.PROFESIONAL]: new Set([
+    Permiso.CONSULTAR_DISPONIBILIDAD,
+    Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
     Permiso.CREAR_EDITAR_SERVICIOS,
     Permiso.GESTIONAR_HORARIO,
     Permiso.GESTIONAR_BLOQUEOS,
     Permiso.GESTIONAR_SERVICIOS_PROPIOS,
+    Permiso.VER_SUCURSALES_PROPIAS,
   ]),
 };
 
@@ -58,23 +72,39 @@ export interface RecursoAutorizado {
 export class AutorizacionService {
   exigir(rol: Rol, permiso: Permiso): void {
     if (!PERMISOS_POR_ROL[rol]?.has(permiso)) {
-      throw new ForbiddenException('Acceso denegado: privilegios insuficientes.');
+      throw new ForbiddenException(
+        'Acceso denegado: privilegios insuficientes.',
+      );
     }
   }
 
   /** Comprueba la pertenencia actual y la propiedad personal además del rol. */
-  exigirSobreRecurso(actor: ActorAutorizado, permiso: Permiso, recurso: RecursoAutorizado): void {
+  exigirSobreRecurso(
+    actor: ActorAutorizado,
+    permiso: Permiso,
+    recurso: RecursoAutorizado,
+  ): void {
     this.exigir(actor.rol, permiso);
     if (actor.negocioId === null || actor.negocioId !== recurso.negocioId) {
       throw new ForbiddenException('Acceso denegado: negocio no autorizado.');
     }
-    if (actor.rol === Rol.PROFESIONAL &&
-      (recurso.alcanceEquipo || recurso.usuarioId === undefined || recurso.usuarioId !== actor.id)) {
-      throw new ForbiddenException('Acceso denegado: Profesional no autorizado.');
+    if (
+      actor.rol === Rol.PROFESIONAL &&
+      (recurso.alcanceEquipo ||
+        recurso.usuarioId === undefined ||
+        recurso.usuarioId !== actor.id)
+    ) {
+      throw new ForbiddenException(
+        'Acceso denegado: Profesional no autorizado.',
+      );
     }
   }
 
-  exigirNegocioPropio(rol: Rol, negocioActor: number | null, negocioDestino: number): void {
+  exigirNegocioPropio(
+    rol: Rol,
+    negocioActor: number | null,
+    negocioDestino: number,
+  ): void {
     this.exigir(rol, Permiso.GESTIONAR_RECEPCIONISTAS);
     if (negocioActor === null || negocioActor !== negocioDestino) {
       throw new ForbiddenException('Acceso denegado: negocio no autorizado.');
@@ -84,7 +114,9 @@ export class AutorizacionService {
   exigirRecuperacionAdministrador(rolActor: Rol, rolDestino: Rol): void {
     this.exigir(rolActor, Permiso.AUTORIZAR_RECUPERACION_ADMIN);
     if (rolDestino !== Rol.ADMIN_NEGOCIO) {
-      throw new ForbiddenException('La recuperación solo admite administradores.');
+      throw new ForbiddenException(
+        'La recuperación solo admite administradores.',
+      );
     }
   }
 }

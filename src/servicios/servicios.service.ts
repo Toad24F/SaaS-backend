@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
@@ -17,6 +17,7 @@ import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.en
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { CrearServicioDto, EditarServicioDto } from './dto/servicio.dto';
 import { Servicio } from './entities/servicio.entity';
+import { esConflictoNombreServicio, normalizarNombreServicio } from './normalizar-nombre-servicio';
 
 /** Opera el catálogo global con negocio derivado del actor y auditoría transaccional. */
 @Injectable()
@@ -42,11 +43,19 @@ export class ServiciosService {
         throw new ForbiddenException('Perfil Profesional no disponible.');
       }
       const repo = manager.getRepository(Servicio);
-      const servicio = await repo.save(repo.create({ negocioId: actor.negocioId!,
-        nombre: datos.nombre, costo: this.costo(datos.costo),
-        duracionMinutos: datos.duracionMinutos, activo: true,
-        descripcion: datos.descripcion ?? null,
-        creadorPersonalId: perfil?.id ?? null }));
+      let servicio: Servicio;
+      try {
+        servicio = await repo.save(repo.create({ negocioId: actor.negocioId!,
+          nombre: normalizarNombreServicio(datos.nombre), costo: this.costo(datos.costo),
+          duracionMinutos: datos.duracionMinutos, activo: true,
+          descripcion: datos.descripcion ?? null,
+          creadorPersonalId: perfil?.id ?? null }));
+      } catch (error) {
+        if (esConflictoNombreServicio(error)) {
+          throw new ConflictException('El nombre del Servicio ya está registrado en este negocio.');
+        }
+        throw error;
+      }
       if (perfil) {
         // Catálogo, selección propia, sucursales y auditoría se confirman juntos.
         await manager.getRepository(PersonalServicio).save({ negocioId: actor.negocioId!,
@@ -91,13 +100,20 @@ export class ServiciosService {
         throw new ForbiddenException('Solo el autor puede editar este servicio.');
       }
       const antes = this.campos(servicio);
-      if (datos.nombre !== undefined) servicio.nombre = datos.nombre;
+      if (datos.nombre !== undefined) servicio.nombre = normalizarNombreServicio(datos.nombre);
       if (datos.costo !== undefined) servicio.costo = this.costo(datos.costo);
       if (datos.duracionMinutos !== undefined) servicio.duracionMinutos = datos.duracionMinutos;
       if (datos.descripcion !== undefined) servicio.descripcion = datos.descripcion;
       const despues = this.campos(servicio);
       if (JSON.stringify(antes) !== JSON.stringify(despues)) {
-        await manager.getRepository(Servicio).save(servicio);
+        try {
+          await manager.getRepository(Servicio).save(servicio);
+        } catch (error) {
+          if (esConflictoNombreServicio(error)) {
+            throw new ConflictException('El nombre del Servicio ya está registrado en este negocio.');
+          }
+          throw error;
+        }
         await this.registrar(manager, actor, servicio, 'servicio_editado', antes, despues);
       }
       return servicio;

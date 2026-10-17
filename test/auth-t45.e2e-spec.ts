@@ -71,9 +71,11 @@ describe('T45 — login, perfil y logout HTTP', () => {
       const token = primera.body.accessToken;
       const perfil = await request(app.getHttpServer()).get('/auth/profile')
         .auth(token, { type: 'bearer' }).expect(200);
+      // El perfil autenticado expone el nombre vigente del negocio desde la base.
       expect(perfil.body.user).toEqual({
         sub: usuario.id, nombre: usuario.nombre, email: usuario.email,
-        rol: usuario.rol, negocioId: usuario.negocioId, sesionId: expect.any(String),
+        rol: usuario.rol, negocioId: usuario.negocioId,
+        negocioNombre: 'Negocio T45', sesionId: expect.any(String),
       });
       expect(JSON.stringify([primera.body, perfil.body])).not.toContain(usuario.passwordHash);
       const payload = app.get(JwtService).verify(token);
