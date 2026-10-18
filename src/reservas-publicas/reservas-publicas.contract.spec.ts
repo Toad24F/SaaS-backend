@@ -4,9 +4,10 @@ import { ReservasPublicasHttpModule } from './reservas-publicas-http.module';
 import type { SeleccionPublica, ResultadoReservaPublica } from './contratos';
 
 describe('M3-T007: frontera de módulos públicos', () => {
-  it('separa dominio y HTTP sin registrar todavía controladores de escritura', () => {
+  it('separa dominio y HTTP; solo registra la inicialización de sesión pública', () => {
     expect(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, ReservasPublicasModule) ?? []).toEqual([]);
-    expect(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, ReservasPublicasHttpModule) ?? []).toEqual([]);
+    expect(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, ReservasPublicasHttpModule) ?? [])
+      .toHaveLength(1);
     const seleccion: SeleccionPublica = {
       personalId: 1, sucursalId: 2, servicioId: 3,
       fechaLocal: '2026-10-20', horaInicio: '10:00',

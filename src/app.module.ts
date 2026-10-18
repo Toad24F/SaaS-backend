@@ -67,7 +67,7 @@ import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publica
     // Compone el motor y su límite HTTP sin activar rutas ni escritores de reservas.
     DisponibilidadModule,
     DisponibilidadHttpModule,
-    // La frontera pública existe sin rutas de escritura hasta integrar persistencia y coordinación.
+    // Inicializa la sesión pública; apartados y reservas se habilitan en tareas posteriores.
     ReservasPublicasHttpModule,
   ],
   controllers: [AppController],

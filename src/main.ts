@@ -5,7 +5,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors(); // para que el frontend pueda hacer peticiones
+  // El portal se sirve en el mismo origen; CORS administrativo no admite cookies.
+  app.enableCors({ credentials: false });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

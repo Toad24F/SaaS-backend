@@ -96,22 +96,22 @@ E1; M03–M05 y M07; D06–D09, D12; T10.
 
 E1–E2; M01–M02; D01–D02, D11; T01.
 
-- [ ] **M3-T025 — Resolver negocio y política de acceso público** · 20 min · Depende de: M3-T007, M3-T004 · RF-01–RF-04, RF-31
+- [x] **M3-T025 — Resolver negocio y política de acceso público** · 20 min · Depende de: M3-T007, M3-T004 · RF-01–RF-04, RF-31
   Hecho cuando: el resolver usa el slug y puedeAceptarReserva, devuelve negocio autorizado sin crear usuario y rechaza negocio inexistente, no activado o sin acceso.
 
-- [ ] **M3-T026 — Emitir y comprobar credencial anónima** · 25 min · Depende de: M3-T015, M3-T025 · RF-01–RF-02, RF-11, RF-25, RF-29, RF-42
+- [x] **M3-T026 — Emitir y comprobar credencial anónima** · 25 min · Depende de: M3-T015, M3-T025 · RF-01–RF-02, RF-11, RF-25, RF-29, RF-42
   Hecho cuando: la credencial aleatoria viaja en cookie con atributos previstos; el servidor deriva su hash y reutiliza una fila por negocio sin guardar el valor utilizable.
 
-- [ ] **M3-T027 — Exponer inicialización de sesión pública** · 20 min · Depende de: M3-T026 · RF-01, RF-11, RF-25, RF-29, RF-42
+- [x] **M3-T027 — Exponer inicialización de sesión pública** · 20 min · Depende de: M3-T026 · RF-01, RF-11, RF-25, RF-29, RF-42
   Hecho cuando: POST /sesion puede repetirse con la cookie existente sin duplicar identidad y no requiere JWT ni datos de contacto.
 
-- [ ] **M3-T028 — Proteger origen y mutaciones públicas** · 25 min · Depende de: M3-T027 · RF-02, RF-29, RF-42–RF-43
+- [x] **M3-T028 — Proteger origen y mutaciones públicas** · 25 min · Depende de: M3-T027 · RF-02, RF-29, RF-42–RF-43
   Hecho cuando: las mutaciones exigen origen permitido y protección CSRF compatible con las liberaciones; no se habilita CORS con credenciales para orígenes arbitrarios.
 
-- [ ] **M3-T029 — Definir respuestas públicas y redacción de registros** · 20 min · Depende de: M3-T007, M3-T028 · RF-02, RF-13, RF-29, RF-42–RF-43
+- [x] **M3-T029 — Definir respuestas públicas y redacción de registros** · 20 min · Depende de: M3-T007, M3-T028 · RF-02, RF-13, RF-29, RF-42–RF-43
   Hecho cuando: las proyecciones omiten RFC, correo administrativo y datos ajenos; respuestas personales usan no-store y los logs no contienen cookies, contacto, notas ni huellas.
 
-- [ ] **M3-T030 — Separar contexto de cálculo de autorización** · 25 min · Depende de: M3-T002, M3-T007 · RF-01–RF-04, RF-14–RF-18, RF-31–RF-33
+- [x] **M3-T030 — Separar contexto de cálculo de autorización** · 25 min · Depende de: M3-T002, M3-T007 · RF-01–RF-04, RF-14–RF-18, RF-31–RF-33
   Hecho cuando: el contexto común contiene manager, instante, negocio y Profesional; la autorización interna conserva rol/sesión y el contexto público no necesita un usuario ficticio.
 
 - [ ] **M3-T031 — Adaptar entradas privadas al contexto compartido** · 25 min · Depende de: M3-T030 · RF-02–RF-04, RF-14–RF-18, RF-29
