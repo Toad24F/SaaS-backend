@@ -42,8 +42,8 @@ export class ContextoDisponibilidadService {
     private readonly politicaLicencia: PoliticaAccesoLicenciaService,
   ) {}
 
-  /** El resolver público ya autorizó el negocio; aquí se comprueba el perfil
-   * con el mismo manager transaccional, sin crear un usuario ficticio. */
+  /** Relee acceso y perfil en la transacción del cálculo o del escritor;
+   * la autorización HTTP previa no sustituye esta comprobación. */
   async resolverPublico(manager: EntityManager, negocioId: number,
     personalId: number, ahora: Date): Promise<ContextoPublicoDisponibilidad> {
     if (!manager.queryRunner?.isTransactionActive) {
@@ -53,6 +53,12 @@ export class ContextoDisponibilidadService {
       !Number.isSafeInteger(personalId) || personalId <= 0 ||
       !Number.isFinite(ahora.getTime())) {
       throw new BadRequestException('Contexto público inválido.');
+    }
+    const negocio = await manager.getRepository(Negocio).findOneBy({ id: negocioId });
+    const licencia = await manager.getRepository(Licencia).findOneBy({ negocioId });
+    if (!negocio || !licencia || !this.politicaLicencia.puedeAceptarReserva(
+      negocio.activadoEn !== null, licencia, ahora)) {
+      throw new NotFoundException('Portal no disponible para reservar.');
     }
     const perfil = await manager.getRepository(Personal)
       .findOneBy({ negocioId, id: personalId });

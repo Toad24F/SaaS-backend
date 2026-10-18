@@ -114,19 +114,19 @@ E1–E2; M01–M02; D01–D02, D11; T01.
 - [x] **M3-T030 — Separar contexto de cálculo de autorización** · 25 min · Depende de: M3-T002, M3-T007 · RF-01–RF-04, RF-14–RF-18, RF-31–RF-33
   Hecho cuando: el contexto común contiene manager, instante, negocio y Profesional; la autorización interna conserva rol/sesión y el contexto público no necesita un usuario ficticio.
 
-- [ ] **M3-T031 — Adaptar entradas privadas al contexto compartido** · 25 min · Depende de: M3-T030 · RF-02–RF-04, RF-14–RF-18, RF-29
+- [x] **M3-T031 — Adaptar entradas privadas al contexto compartido** · 25 min · Depende de: M3-T030 · RF-02–RF-04, RF-14–RF-18, RF-29
   Hecho cuando: las entradas existentes siguen reconstruyendo sesión y permisos antes de llamar al cálculo; la modalidad manual conserva su control privado.
 
-- [ ] **M3-T032 — Añadir consulta pública al motor compartido** · 25 min · Depende de: M3-T030, M3-T025, M3-T031 · RF-01–RF-04, RF-14–RF-18
+- [x] **M3-T032 — Añadir consulta pública al motor compartido** · 25 min · Depende de: M3-T030, M3-T025, M3-T031 · RF-01–RF-04, RF-14–RF-18
   Hecho cuando: el motor calcula desde un contexto público autorizado en una lectura coherente, con un instante y modalidad pública obligatoria, sin duplicar el algoritmo.
 
-- [ ] **M3-T033 — Adaptar revalidación transaccional al contexto público** · 25 min · Depende de: M3-T032, M3-T016 · RF-18, RF-20–RF-22, RF-29, RF-31–RF-35
+- [x] **M3-T033 — Adaptar revalidación transaccional al contexto público** · 25 min · Depende de: M3-T032, M3-T016 · RF-18, RF-20–RF-22, RF-29, RF-31–RF-35
   Hecho cuando: la revalidación recibe la transacción del escritor y solo excluye el apartado propio comprobado; no abre otra transacción ni autoriza exclusiones desde HTTP.
 
-- [ ] **M3-T034 — Probar regresión de las cinco rutas privadas** · 25 min · Depende de: M3-T031, M3-T032, M3-T033 · RF-01–RF-04, RF-14–RF-18, RF-29
+- [x] **M3-T034 — Probar regresión de las cinco rutas privadas** · 25 min · Depende de: M3-T031, M3-T032, M3-T033 · RF-01–RF-04, RF-14–RF-18, RF-29
   Hecho cuando: las pruebas de las cinco rutas conservan permisos, aislamiento y errores previos; abrir la consulta pública no habilita escritura de configuración ni modo manual anónimo.
 
-- [ ] **M3-T035 — Probar cookie, origen y privacidad** · 25 min · Depende de: M3-T027, M3-T028, M3-T029 · RF-01–RF-03, RF-11, RF-13, RF-29, RF-42–RF-43
+- [x] **M3-T035 — Probar cookie, origen y privacidad** · 25 min · Depende de: M3-T027, M3-T028, M3-T029 · RF-01–RF-03, RF-11, RF-13, RF-29, RF-42–RF-43
   Hecho cuando: HTTP rechaza credenciales u origen inválidos, no revela recursos ajenos y verifica no-store y ausencia de secretos en los registros capturados.
 
 ## 4. Catálogo y disponibilidad por HTTP

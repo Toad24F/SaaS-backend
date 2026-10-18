@@ -5,7 +5,8 @@ import { timingSafeEqual } from 'node:crypto';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { resolverInstanteLocal, validarFechaLocal } from '../horarios/calendario';
-import { ContextoDisponibilidadService } from './contexto-disponibilidad.service';
+import { ContextoDisponibilidadService,
+  type ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 import { ConfiguracionAgendaService } from './configuracion-agenda.service';
 import { OfertaEfectivaService } from './oferta-efectiva.service';
 import { AtencionInternaService } from './atencion-interna.service';
@@ -36,6 +37,9 @@ export interface RevalidacionEscritura {
   modalidad: Modalidad;
   apartadoPropio?: ApartadoPropioComprobable;
 }
+
+/** El escritor público no recibe modalidad: siempre aplica reglas públicas. */
+export type RevalidacionPublica = Omit<RevalidacionEscritura, 'modalidad'>;
 
 export interface ResultadoValidacionInicio {
   valido: boolean;
@@ -127,9 +131,33 @@ export class MotorDisponibilidadService {
     }
     // El reloj se lee una vez antes de abrir la lectura REPEATABLE READ.
     const ahora = this.reloj.ahora();
-    return this.db.transaction('REPEATABLE READ', async (manager) =>
-      (await this.calcular(manager, token, personalId, sucursalId, servicioId,
-        desde, hasta, modalidad, ahora)).resultado);
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      // La entrada privada reconstruye sesión, rol, negocio y Profesional antes de calcular.
+      const contexto = await this.contextos.resolver(manager, token, personalId, ahora);
+      return (await this.calcular(contexto, sucursalId, servicioId,
+        desde, hasta, modalidad)).resultado;
+    });
+  }
+
+  /** Entrada interna del portal: la política y el perfil se releen dentro de
+   * la misma instantánea que configuración, oferta, horarios y ocupaciones. */
+  async consultarPublico(negocioId: number, personalId: number,
+    sucursalId: number, servicioId: number, desde: string, hasta: string):
+    Promise<ResultadoDisponibilidad> {
+    validarFechaLocal(desde);
+    validarFechaLocal(hasta);
+    const dias = (Date.parse(`${hasta}T00:00:00Z`) -
+      Date.parse(`${desde}T00:00:00Z`)) / 86400000;
+    if (dias < 0 || dias >= 31) {
+      throw new BadRequestException('Rango de disponibilidad inválido.');
+    }
+    const ahora = this.reloj.ahora();
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      const contexto = await this.contextos.resolverPublico(manager, negocioId,
+        personalId, ahora);
+      return (await this.calcular(contexto, sucursalId, servicioId,
+        desde, hasta, 'publica')).resultado;
+    });
   }
 
   /** Usa el mismo cálculo y la misma instantánea para validar un inicio preciso. */
@@ -143,8 +171,9 @@ export class MotorDisponibilidadService {
     }
     const ahora = this.reloj.ahora();
     return this.db.transaction('REPEATABLE READ', async (manager) => {
-      const lectura = await this.calcular(manager, token, personalId, sucursalId,
-        servicioId, fechaLocal, fechaLocal, modalidad, ahora);
+      const contexto = await this.contextos.resolver(manager, token, personalId, ahora);
+      const lectura = await this.calcular(contexto, sucursalId,
+        servicioId, fechaLocal, fechaLocal, modalidad);
       return this.evaluarInicio(lectura, sucursalId, fechaLocal,
         horaInicio, modalidad, ahora);
     });
@@ -167,6 +196,32 @@ export class MotorDisponibilidadService {
     const ahora = this.reloj.ahora();
     const contexto = await this.contextos.resolver(manager, token,
       entrada.personalId, ahora);
+    return this.revalidarConContexto(contexto, entrada);
+  }
+
+  /** El escritor público aporta su manager tras esperar los bloqueos; no se
+   * permite elegir modalidad ni abrir otra transacción desde esta entrada. */
+  async revalidarPublicoEnTransaccion(manager: EntityManager, negocioId: number,
+    entrada: RevalidacionPublica): Promise<ResultadoValidacionInicio> {
+    if (!manager.queryRunner?.isTransactionActive) {
+      throw new Error('La revalidación requiere una transacción activa del escritor.');
+    }
+    const ahora = this.reloj.ahora();
+    const contexto = await this.contextos.resolverPublico(manager, negocioId,
+      entrada.personalId, ahora);
+    return this.revalidarConContexto(contexto, { ...entrada, modalidad: 'publica' });
+  }
+
+  /** Compartir esta comprobación mantiene iguales las reglas de ocupación para
+   * escritores privados y públicos; la exclusión se decide solo aquí. */
+  private async revalidarConContexto(contexto: ContextoCalculoDisponibilidad,
+    entrada: RevalidacionEscritura): Promise<ResultadoValidacionInicio> {
+    validarModalidad(entrada.modalidad);
+    validarFechaLocal(entrada.fechaLocal);
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(entrada.horaInicio)) {
+      throw new BadRequestException('Hora de inicio inválida.');
+    }
+    const { manager, ahora } = contexto;
     const oferta = await this.oferta.consultar(contexto, entrada.sucursalId,
       entrada.servicioId, entrada.modalidad);
     if (!Number.isSafeInteger(oferta.duracionMinutos) || oferta.duracionMinutos <= 0) {
@@ -194,9 +249,9 @@ export class MotorDisponibilidadService {
         apartado.liberadoEn === null && ahora < apartado.expiraEn);
       if (apartadoValido) excluirApartadoId = propio.id;
     }
-    const lectura = await this.calcular(manager, token, entrada.personalId,
-      entrada.sucursalId, entrada.servicioId, entrada.fechaLocal,
-      entrada.fechaLocal, entrada.modalidad, ahora, excluirApartadoId);
+    const lectura = await this.calcular(contexto, entrada.sucursalId,
+      entrada.servicioId, entrada.fechaLocal,
+      entrada.fechaLocal, entrada.modalidad, excluirApartadoId);
     return this.evaluarInicio(lectura, entrada.sucursalId, entrada.fechaLocal,
       entrada.horaInicio, entrada.modalidad, ahora, !apartadoValido);
   }
@@ -250,12 +305,11 @@ export class MotorDisponibilidadService {
   }
 
   /** Todos los lectores reciben el mismo manager y el instante ya capturado. */
-  private async calcular(manager: EntityManager,
-    token: Pick<JwtPayload, 'sub' | 'sesionId'>, personalId: number,
+  private async calcular(contexto: ContextoCalculoDisponibilidad,
     sucursalId: number, servicioId: number, desde: string, hasta: string,
-    modalidad: Modalidad, ahora: Date,
+    modalidad: Modalidad,
     excluirApartadoId?: number): Promise<LecturaMotor> {
-    const contexto = await this.contextos.resolver(manager, token, personalId, ahora);
+    const { personalId, ahora } = contexto;
     const reglas = await this.configuracion.consultarEnContexto(contexto);
     const oferta = await this.oferta.consultar(contexto, sucursalId,
       servicioId, modalidad);

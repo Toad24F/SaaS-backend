@@ -89,6 +89,8 @@ describe('M3-T025–T030: entrada pública y contexto sin usuario', () => {
     await conBaseMigrada(async (db) => {
       const reloj = new RelojPrueba(AHORA);
       const { negocios: [a, b] } = await crearEscenarioPortal(db, reloj);
+      await db.query(`INSERT INTO licencias (negocio_id,creado_en,habilitada_en,vence_en)
+        VALUES (?,'2026-01-01','2026-01-01','2027-01-01')`, [a.id]);
       const modulo = await Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(DataSource).useValue(db)
         .overrideProvider(RELOJ).useValue(reloj).compile();

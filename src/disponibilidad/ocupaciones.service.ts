@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
 import { Cita } from './entities/cita.entity';
-import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import type { ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 import type { Ocupacion } from './contratos-internos';
 
 /** Compara intervalos UTC semiabiertos: tocar un extremo no es empalme. */
@@ -14,7 +14,7 @@ export function ocupacionesQueSeEmpalman(ocupaciones: readonly Ocupacion[],
 /** Lee las dos fuentes persistidas sin restringir sucursal, servicio ni fecha local. */
 @Injectable()
 export class OcupacionesService {
-  async consultar(contexto: ContextoDisponibilidad, desdeUtc: Date,
+  async consultar(contexto: ContextoCalculoDisponibilidad, desdeUtc: Date,
     hastaUtc: Date): Promise<Ocupacion[]> {
     const { manager, negocioId, personalId, ahora } = contexto;
     if (!manager.queryRunner?.isTransactionActive) {

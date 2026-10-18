@@ -8,7 +8,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { ConfiguracionAgenda } from './entities/configuracion-agenda.entity';
-import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import type { ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 import { CONFIGURACION_INICIAL, validarConfiguracionAgenda,
   ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
 
@@ -29,7 +29,7 @@ export class ConfiguracionAgendaService {
   }
 
   /** El motor usa el mismo gestor e instante que sus demás fuentes. */
-  async consultarEnContexto(contexto: ContextoDisponibilidad):
+  async consultarEnContexto(contexto: ContextoCalculoDisponibilidad):
     Promise<ValoresConfiguracionAgenda> {
     if (!contexto.manager.queryRunner?.isTransactionActive) {
       throw new Error('La lectura de configuración requiere una transacción activa.');
