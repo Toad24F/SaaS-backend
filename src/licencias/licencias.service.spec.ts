@@ -6,6 +6,7 @@ import { Licencia } from './entities/licencia.entity';
 import { LicenciasService } from './licencias.service';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
 import { EnvioCorreo } from '../correos/entities/envio-correo.entity';
+import { Negocio } from '../negocios/entities/negocio.entity';
 
 describe('Renovación anual durante suspensión (T051)', () => {
   const inicio = new Date('2026-02-28T12:00:00.000Z');
@@ -20,24 +21,36 @@ describe('Renovación anual durante suspensión (T051)', () => {
       ...estado,
     });
     const actor = Object.assign(new Usuario(), { id: 3, rol: Rol.SUPERADMIN });
+    // El doble registra los bloqueos para comprobar el orden sin una base real.
+    const orden: string[] = [];
     const repositorioLicencia = {
-      createQueryBuilder: () => ({ setLock() { return this; }, where() { return this; }, getOne: async () => licencia }),
+      findOneBy: async () => { orden.push('referencia'); return licencia; },
+      createQueryBuilder: () => ({ setLock() { orden.push('licencia'); return this; },
+        where() { return this; }, getOne: async () => licencia }),
       save: jest.fn(async (valor: Licencia) => Object.assign(licencia, valor)),
     };
     const consultaEnvios = { update() { return this; }, set() { return this; },
       where() { return this; }, andWhere() { return this; },
       execute: jest.fn().mockResolvedValue({ affected: 0 }) };
     const manager = {
-      getRepository: (entidad: typeof Licencia | typeof Usuario | typeof EnvioCorreo) =>
+      getRepository: (entidad: typeof Licencia | typeof Usuario | typeof EnvioCorreo | typeof Negocio) =>
         entidad === Licencia ? repositorioLicencia : entidad === EnvioCorreo
-          ? { createQueryBuilder: () => consultaEnvios } : { findOneBy: async () => actor },
+          ? { createQueryBuilder: () => consultaEnvios } :
+          entidad === Negocio ? { createQueryBuilder: () => ({
+            setLock() { orden.push('negocio'); return this; },
+            where() { return this; }, getOne: async () => ({ id: 8 }),
+          }) } : { createQueryBuilder: () => ({
+            setLock() { orden.push('usuario'); return this; },
+            where() { return this; }, getOne: async () => actor,
+          }) },
     };
     // El doble acepta el aislamiento explícito que usa la transición real.
     const repositorio = { manager: { transaction: (_aislamiento: string,
       operacion: (tx: typeof manager) => unknown) => operacion(manager) } };
     const auditoria = { registrar: jest.fn().mockResolvedValue(undefined) };
     return { instancia: new LicenciasService(repositorio as never, new AutorizacionService(),
-      new CalendarioLicenciasService(), auditoria as unknown as AuditoriaService), licencia, auditoria };
+      new CalendarioLicenciasService(), auditoria as unknown as AuditoriaService),
+      licencia, auditoria, orden };
   }
 
   it('suma el año calendario al remanente y conserva la suspensión efectiva', async () => {
@@ -53,6 +66,7 @@ describe('Renovación anual durante suspensión (T051)', () => {
     expect(caso.auditoria.registrar).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       accion: 'licencia_renovada',
     }));
+    expect(caso.orden.slice(0, 4)).toEqual(['usuario', 'referencia', 'negocio', 'licencia']);
   });
 
   it('renueva durante la gracia sin retirar ni reiniciar el bloqueo programado', async () => {

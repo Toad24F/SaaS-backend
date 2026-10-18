@@ -41,6 +41,8 @@ export class ConfiguracionAgendaService {
 
   async guardar(actorId: number, entrada: unknown): Promise<ValoresConfiguracionAgenda> {
     const nuevos = validarConfiguracionAgenda(entrada);
+    // READ COMMITTED permite observar la última configuración tras esperar la
+    // barrera del negocio; el reemplazo y la auditoría siguen siendo atómicos.
     return transaccionIdentidad(this.db, async (manager) => {
       const actor = await this.actor(manager, actorId);
       // El negocio padre serializa también la primera escritura, cuando aún no hay fila.
@@ -62,7 +64,7 @@ export class ConfiguracionAgendaService {
         accion: 'configuracion_agenda_modificada', valoresAntes: { ...anteriores },
         valoresDespues: { ...nuevos } });
       return nuevos;
-    });
+    }, 'READ COMMITTED');
   }
 
   private async actor(manager: EntityManager, id: number): Promise<Usuario> {

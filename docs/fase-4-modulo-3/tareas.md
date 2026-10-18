@@ -164,25 +164,25 @@ E2; M02; T02 y T04.
 
 E3; M07; D05; T11. Este bloque precede a la habilitación de escritores.
 
-- [ ] **M3-T045 — Inventariar el orden de bloqueos de los escritores existentes** · 25 min · Depende de: M3-T002, M3-T033 · RF-03–RF-04, RF-20, RF-31–RF-35
+- [x] **M3-T045 — Inventariar el orden de bloqueos de los escritores existentes** · 25 min · Depende de: M3-T002, M3-T033 · RF-03–RF-04, RF-20, RF-31–RF-35
   Hecho cuando: una tabla identifica servicios/métodos que modifican usuarios, licencia, negocio, oferta, configuración, horarios y asignaciones, señalando inversiones respecto al orden del plan.
 
-- [ ] **M3-T046 — Preparar transacción pública y reintentos acotados** · 25 min · Depende de: M3-T045, M3-T006, M3-T018 · RF-20–RF-22, RF-31–RF-35, RF-39–RF-43
+- [x] **M3-T046 — Preparar transacción pública y reintentos acotados** · 25 min · Depende de: M3-T045, M3-T006, M3-T018 · RF-20–RF-22, RF-31–RF-35, RF-39–RF-43
   Hecho cuando: el colaborador usa READ COMMITTED, rollback íntegro y reintentos acotados con claves estables; agotamiento técnico no se presenta como horario ocupado.
 
-- [ ] **M3-T047 — Coordinar sesión, operación e intento** · 25 min · Depende de: M3-T046, M3-T015, M3-T018 · RF-25–RF-29, RF-39–RF-42
+- [x] **M3-T047 — Coordinar sesión, operación e intento** · 25 min · Depende de: M3-T046, M3-T015, M3-T018 · RF-25–RF-29, RF-39–RF-42
   Hecho cuando: los escritores pueden bloquear sesión y operación/intento antes del dominio; la creación simultánea de una misma fila converge a una única identidad.
 
-- [ ] **M3-T048 — Implementar adquisición ordenada de recursos de reserva** · 25 min · Depende de: M3-T046, M3-T045 · RF-02–RF-04, RF-18, RF-20, RF-31–RF-35
+- [x] **M3-T048 — Implementar adquisición ordenada de recursos de reserva** · 25 min · Depende de: M3-T046, M3-T045 · RF-02–RF-04, RF-18, RF-20, RF-31–RF-35
   Hecho cuando: el colaborador toma usuarios, negocio, licencia, sucursales, servicios, perfiles y ocupaciones en el orden previsto, con IDs ascendentes y perfil común entre sucursales.
 
-- [ ] **M3-T049 — Alinear mutaciones de usuario y perfil** · 25 min · Depende de: M3-T048 · RF-04, RF-20, RF-31–RF-33
+- [x] **M3-T049 — Alinear mutaciones de usuario y perfil** · 25 min · Depende de: M3-T048 · RF-04, RF-20, RF-31–RF-33
   Hecho cuando: las rutas identificadas de cuenta/perfil dejan de tomar usuario después del perfil y conservan sus validaciones y permisos.
 
-- [ ] **M3-T050 — Alinear transiciones de licencia con reservas** · 25 min · Depende de: M3-T048 · RF-03, RF-31–RF-33
+- [x] **M3-T050 — Alinear transiciones de licencia con reservas** · 25 min · Depende de: M3-T048 · RF-03, RF-31–RF-33
   Hecho cuando: renovación, suspensión, reactivación y conciliación usan los recursos comunes que impiden una escritura pública basada en un estado de licencia obsoleto.
 
-- [ ] **M3-T051 — Alinear configuración y cambios de sucursal** · 25 min · Depende de: M3-T048 · RF-04, RF-14–RF-15, RF-31–RF-33
+- [x] **M3-T051 — Alinear configuración y cambios de sucursal** · 25 min · Depende de: M3-T048 · RF-04, RF-14–RF-15, RF-31–RF-33
   Hecho cuando: las mutaciones identificadas de configuración y sucursal respetan la barrera del negocio y el orden compartido, incluyendo cambio de zona y desactivación.
 
 - [ ] **M3-T052 — Alinear catálogo y selecciones de servicio** · 25 min · Depende de: M3-T048 · RF-04, RF-18, RF-30–RF-33

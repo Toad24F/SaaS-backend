@@ -103,8 +103,9 @@ export class ProfesionalesService {
     try {
       return await transaccionIdentidad(this.perfiles.manager, async (manager) => {
         const actor = await this.actor(manager, actorId);
+        // La cuenta común precede al perfil en todas las escrituras públicas.
+        const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
         const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
-        const usuario = await this.bloquearUsuario(manager, perfil);
         // Un perfil histórico sigue consultable, pero su siguiente edición completa el dato.
         if (!perfil.especialidad?.trim() && datos.especialidad === undefined) {
           throw new BadRequestException('La especialidad es obligatoria para editar este Profesional.');
@@ -145,15 +146,15 @@ export class ProfesionalesService {
               accesoRenovado: hash !== undefined });
         }
         return this.vista(perfil, usuario);
-      });
+      }, 'READ COMMITTED');
     } catch (error) { return this.conflictoCorreo(error); }
   }
 
   async cambiarEstado(actorId: number, id: number, activo: boolean, ahora: Date): Promise<void> {
     await transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
       const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
-      const usuario = await this.bloquearUsuario(manager, perfil);
       if (usuario.activo === activo) return;
       await manager.getRepository(Usuario).update(usuario.id, { activo });
       // Revocar en la misma transacción impide reusar sesiones al reactivar.
@@ -161,15 +162,15 @@ export class ProfesionalesService {
       await this.registrar(manager, actor, perfil,
         activo ? 'profesional_reactivado' : 'profesional_desactivado',
         { activo: usuario.activo }, { activo });
-    });
+    }, 'READ COMMITTED');
   }
 
   async eliminar(actorId: number, id: number): Promise<void> {
     try {
       await transaccionIdentidad(this.perfiles.manager, async (manager) => {
         const actor = await this.actor(manager, actorId);
-        const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
-        const usuario = await this.bloquearUsuario(manager, perfil);
+        const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
+        await this.bloquearPerfil(manager, actor.negocioId!, id);
         await exigirEliminacionElegible(manager, 'profesional', actor.negocioId!, id, usuario.id);
         // El alta se conserva; se libera únicamente su FK a la cuenta que se retira.
         await manager.query(`UPDATE eventos_auditoria SET usuario_id = NULL
@@ -186,7 +187,7 @@ export class ProfesionalesService {
           accion: 'profesional_eliminado',
           valoresAntes: { nombre: usuario.nombre, correo: usuario.email, activo: usuario.activo },
           valoresDespues: null });
-      });
+      }, 'READ COMMITTED');
     } catch (error) { conflictoEliminacion(error); }
   }
 
@@ -587,12 +588,14 @@ export class ProfesionalesService {
     return perfil;
   }
 
-  private async bloquearUsuario(manager: EntityManager, perfil: Personal): Promise<Usuario> {
+  private async bloquearUsuario(manager: EntityManager, negocioId: number,
+    id: number): Promise<Usuario> {
     const usuario = await manager.getRepository(Usuario).createQueryBuilder('usuario')
       .setLock('pessimistic_write')
       .where('usuario.id = :id AND usuario.negocioId = :negocioId AND usuario.rol = :rol',
-        { id: perfil.id, negocioId: perfil.negocioId, rol: Rol.PROFESIONAL }).getOne();
-    if (!usuario) throw new ConflictException('Cuenta Profesional no disponible.');
+        { id, negocioId, rol: Rol.PROFESIONAL }).getOne();
+    // El cambio de orden no debe distinguir cuenta ajena de perfil inexistente.
+    if (!usuario) throw new NotFoundException('Profesional no disponible.');
     return usuario;
   }
 
