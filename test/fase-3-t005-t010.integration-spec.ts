@@ -63,9 +63,13 @@ describe('M2-T005–T010: persistencia mínima en MariaDB temporal', () => {
         nombreCompleto: 'Ana Cliente', telefono: '6141234567', email: null }));
       expect(await clientes.findOneByOrFail({ id: cliente.id })).toMatchObject({
         negocioId: a.negocioId, nombreCompleto: 'Ana Cliente', telefono: '6141234567' });
-      await expect(db.query(`INSERT INTO clientes
-        (negocio_id,nombre_completo,telefono) VALUES (?,'Duplicado','6141234567')`,
-      [a.negocioId])).rejects.toThrow();
+      // Desde M3-T011 el teléfono puede compartirse; la cita conserva su cliente original.
+      const familiar = await db.query(`INSERT INTO clientes
+        (negocio_id,nombre_completo,telefono) VALUES (?,'Familiar','6141234567')`,
+      [a.negocioId]);
+      expect(Number(familiar.insertId)).not.toBe(cliente.id);
+      expect((await clientes.findOneByOrFail({ id: cliente.id })).nombreCompleto)
+        .toBe('Ana Cliente');
       const citas = db.getRepository(Cita);
       const inicioUtc = new Date('2026-10-20T15:00:00.123Z');
       const finUtc = new Date('2026-10-20T15:30:00.789Z');

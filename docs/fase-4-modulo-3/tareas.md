@@ -41,22 +41,22 @@ E1; M01–M07; T01, T10 y T11.
 
 E1; M03–M05 y M07; D06–D09, D12; T10.
 
-- [ ] **M3-T008 — Migrar sesiones públicas** · 25 min · Depende de: M3-T007, M3-T003 · RF-25–RF-29, RF-42
+- [x] **M3-T008 — Migrar sesiones públicas** · 25 min · Depende de: M3-T007, M3-T003 · RF-25–RF-29, RF-42
   Hecho cuando: la migración crea identidad por negocio y hash, generación y fechas; no almacena la credencial utilizable y deja preparada la referencia anulable al apartado.
 
-- [ ] **M3-T009 — Migrar operaciones de apartado** · 25 min · Depende de: M3-T008 · RF-18–RF-27, RF-30, RF-33
+- [x] **M3-T009 — Migrar operaciones de apartado** · 25 min · Depende de: M3-T008 · RF-18–RF-27, RF-30, RF-33
   Hecho cuando: la migración incorpora clave única por sesión/negocio, selección, generación, estado y resultado; las referencias circulares quedan reservadas para la tarea de relaciones.
 
-- [ ] **M3-T010 — Ampliar apartados con precio y contexto público** · 25 min · Depende de: M3-T009 · RF-19–RF-30, RF-31–RF-35
+- [x] **M3-T010 — Ampliar apartados con precio y contexto público** · 25 min · Depende de: M3-T009 · RF-19–RF-30, RF-31–RF-35
   Hecho cuando: se añaden costo exacto, zona, sesión, generación y operación sin alterar intervalos, expiraciones ni titulares previos; las filas históricas admiten los nuevos datos ausentes.
 
-- [ ] **M3-T011 — Permitir teléfonos repetidos por negocio** · 15 min · Depende de: M3-T003, M3-T002 · RF-08–RF-13, RF-36
+- [x] **M3-T011 — Permitir teléfonos repetidos por negocio** · 15 min · Depende de: M3-T003, M3-T002 · RF-08–RF-13, RF-36
   Hecho cuando: la migración sustituye únicamente la unicidad negocio/teléfono por índice no único y conserva IDs, nombres, teléfonos y referencias de clientes existentes.
 
-- [ ] **M3-T012 — Añadir datos históricos de reserva a las citas** · 25 min · Depende de: M3-T011 · RF-12, RF-30, RF-34–RF-38
+- [x] **M3-T012 — Añadir datos históricos de reserva a las citas** · 25 min · Depende de: M3-T011 · RF-12, RF-30, RF-34–RF-38
   Hecho cuando: la migración añade costo, contacto y nombres del resumen, anulables para datos anteriores, sin inventar valores ni cambiar folios, estados o intervalos.
 
-- [ ] **M3-T013 — Migrar intentos de reserva** · 25 min · Depende de: M3-T008, M3-T010, M3-T012 · RF-34–RF-43
+- [x] **M3-T013 — Migrar intentos de reserva** · 25 min · Depende de: M3-T008, M3-T010, M3-T012 · RF-34–RF-43
   Hecho cuando: existen estados preparado/registrado/no_registrado, huella, apartado y cita; las claves de intento y cita no nula tienen la unicidad prevista.
 
 - [ ] **M3-T014 — Completar relaciones compuestas y referencias circulares** · 25 min · Depende de: M3-T009, M3-T010, M3-T013 · RF-02, RF-20, RF-25, RF-29, RF-34–RF-42
