@@ -59,22 +59,22 @@ E1; M03–M05 y M07; D06–D09, D12; T10.
 - [x] **M3-T013 — Migrar intentos de reserva** · 25 min · Depende de: M3-T008, M3-T010, M3-T012 · RF-34–RF-43
   Hecho cuando: existen estados preparado/registrado/no_registrado, huella, apartado y cita; las claves de intento y cita no nula tienen la unicidad prevista.
 
-- [ ] **M3-T014 — Completar relaciones compuestas y referencias circulares** · 25 min · Depende de: M3-T009, M3-T010, M3-T013 · RF-02, RF-20, RF-25, RF-29, RF-34–RF-42
+- [x] **M3-T014 — Completar relaciones compuestas y referencias circulares** · 25 min · Depende de: M3-T009, M3-T010, M3-T013 · RF-02, RF-20, RF-25, RF-29, RF-34–RF-42
   Hecho cuando: sesión, operación, apartado e intento solo enlazan recursos de su negocio, las referencias opcionales permiten su creación ordenada y no hay borrados en cascada de citas.
 
-- [ ] **M3-T015 — Representar sesión y operación en TypeORM** · 25 min · Depende de: M3-T014 · RF-18–RF-29, RF-42
+- [x] **M3-T015 — Representar sesión y operación en TypeORM** · 25 min · Depende de: M3-T014 · RF-18–RF-29, RF-42
   Hecho cuando: las dos entidades reflejan columnas, estados, índices y referencias de sus migraciones sin persistir tokens.
 
-- [ ] **M3-T016 — Actualizar la entidad de apartado** · 20 min · Depende de: M3-T010, M3-T015 · RF-19–RF-30, RF-31–RF-35
+- [x] **M3-T016 — Actualizar la entidad de apartado** · 20 min · Depende de: M3-T010, M3-T015 · RF-19–RF-30, RF-31–RF-35
   Hecho cuando: la entidad conserva el cálculo de vigencia existente y representa costo decimal, zona, generación y referencias públicas, admitiendo filas históricas.
 
-- [ ] **M3-T017 — Actualizar entidades de cliente y cita** · 25 min · Depende de: M3-T011, M3-T012 · RF-08–RF-13, RF-30, RF-34–RF-38
+- [x] **M3-T017 — Actualizar entidades de cliente y cita** · 25 min · Depende de: M3-T011, M3-T012 · RF-08–RF-13, RF-30, RF-34–RF-38
   Hecho cuando: el cliente ya no impone teléfono único y la cita representa las copias históricas y el costo sin cambiar el enum de estados.
 
-- [ ] **M3-T018 — Representar intentos de reserva** · 20 min · Depende de: M3-T013, M3-T016, M3-T017 · RF-34–RF-43
+- [x] **M3-T018 — Representar intentos de reserva** · 20 min · Depende de: M3-T013, M3-T016, M3-T017 · RF-34–RF-43
   Hecho cuando: la entidad del intento coincide con estados, unicidad y referencias de la migración y no introduce un estado procesando persistente.
 
-- [ ] **M3-T019 — Registrar entidades y orden de migraciones** · 20 min · Depende de: M3-T015, M3-T016, M3-T017, M3-T018 · RF-02, RF-20, RF-34–RF-42
+- [x] **M3-T019 — Registrar entidades y orden de migraciones** · 20 min · Depende de: M3-T015, M3-T016, M3-T017, M3-T018 · RF-02, RF-20, RF-34–RF-42
   Hecho cuando: la configuración usada por aplicación y CLI descubre todas las entidades y migra una base vacía sin errores de metadatos.
 
 - [ ] **M3-T020 — Sincronizar SQL de sesiones y operaciones** · 20 min · Depende de: M3-T014, M3-T015 · RF-18–RF-29, RF-42

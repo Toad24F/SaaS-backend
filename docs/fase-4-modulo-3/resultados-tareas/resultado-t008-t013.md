@@ -12,7 +12,7 @@ Fecha: 18 de octubre de 2026. Este lote añade seis migraciones incrementales. N
 | `1760000029000-TelefonosCompartidos.ts` | Cambia solo el índice negocio/teléfono de clientes a no único; conserva la identidad por ID y las referencias existentes. |
 | `1760000030000-HistoriaCitasPublicas.ts` | Añade costo aceptado, contacto y nombres del resumen a citas. El historial anterior queda con valores desconocidos (`NULL`). |
 | `1760000031000-IntentosReservaPublica.ts` | Crea intentos con estados `preparado`, `registrado` y `no_registrado`; impone unicidad de clave por sesión y cita no nula. |
-| `test/fase-4-t008-t013.integration-spec.ts` | Prueba esquema, unicidad, actualización desde fase 3, conservación de datos, teléfono compartido e intentos terminales. |
+| `test/fase-4-t008-t013.integration-spec.ts` | Prueba esquema, unicidad, actualización desde fase 3, conservación de datos, teléfono compartido e intentos terminales. Desde T014 revierte también la migración de relaciones antes de simular fase 3. |
 | `test/fase-3-t005-t010.integration-spec.ts` | Actualiza una expectativa histórica: ahora comprueba que dos clientes pueden compartir teléfono sin cambiar el nombre del primero. |
 | `test/identidad-fase-2.integration-spec.ts` | Comprueba que la migración histórica de identidad conserva su posición sin exigir un total fijo de migraciones. |
 | `test/envios-correo.integration-spec.ts` | Compara el historial aplicado con las migraciones descubiertas; mantiene la prueba de la bandeja. |
@@ -36,7 +36,7 @@ La prueba nueva se ejecutó primero y falló porque faltaba `sesiones_reserva_pu
 | --- | --- |
 | Sesiones | Columnas, ausencia de token, generación inicial, puntero nulo y unicidad del hash dentro del negocio. |
 | Operaciones | Clave duplicada rechazada en la misma sesión, reutilización permitida en otra sesión y estado inicial. |
-| Actualización | Retrocede solo las seis migraciones, siembra datos de fase 3 y vuelve a migrar; compara IDs, nombres, teléfonos, folios, estados, intervalos, expiraciones y hashes. Comprueba campos históricos nulos, segundo cliente con teléfono compartido e importes decimales exactos. |
+| Actualización | Retrocede las migraciones del portal hasta fase 3, siembra datos anteriores y vuelve a migrar; compara IDs, nombres, teléfonos, folios, estados, intervalos, expiraciones y hashes. Comprueba campos históricos nulos, segundo cliente con teléfono compartido e importes decimales exactos. |
 | Intentos | Clave duplicada rechazada, estados inicial y terminal, y una cita no nula asignable a un solo intento. |
 
 | Comando | Resultado |

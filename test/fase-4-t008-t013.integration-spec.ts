@@ -10,6 +10,7 @@ const migracionesPortal = [
   'TelefonosCompartidos1760000029000',
   'HistoriaCitasPublicas1760000030000',
   'IntentosReservaPublica1760000031000',
+  'RelacionesReservaPublica1760000032000',
 ];
 
 async function columnas(db: DataSource, tabla: string): Promise<string[]> {
@@ -68,7 +69,7 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
 
   it('conserva datos anteriores al actualizar y admite teléfono compartido', async () => {
     await conBaseMigrada(async (db) => {
-      // Retrocede solo las seis migraciones de este lote para simular fase 3.
+      // Retrocede también las relaciones de T014 para reconstruir fase 3.
       for (const nombre of [...migracionesPortal].reverse()) {
         const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');
         expect(ultima.name).toBe(nombre);
