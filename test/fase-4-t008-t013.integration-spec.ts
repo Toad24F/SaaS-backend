@@ -80,6 +80,12 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
       const previo = await db.query('SELECT id,negocio_id,nombre_completo,telefono FROM clientes ORDER BY id');
       const citas = await db.query('SELECT id,folio,estado,inicio_utc,fin_utc FROM citas ORDER BY id');
       const apartados = await db.query('SELECT id,inicio_utc,fin_utc,expira_en,titular_hash FROM bloqueos_temporales ORDER BY id');
+      // La ocupación heredada depende del plazo y de la liberación, no de los
+      // nuevos campos públicos que todavía no existían en fase 3.
+      const ocupacion = `SELECT id FROM bloqueos_temporales
+        WHERE liberado_en IS NULL AND expira_en > ? ORDER BY id`;
+      const instante = '2026-10-20 12:00:00.000';
+      const vigentesAntes = await db.query(ocupacion, [instante]);
       await db.runMigrations({ transaction: 'each' });
       expect(await db.query('SELECT id,negocio_id,nombre_completo,telefono FROM clientes ORDER BY id'))
         .toEqual(previo);
@@ -87,6 +93,8 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
         .toEqual(citas);
       expect(await db.query('SELECT id,inicio_utc,fin_utc,expira_en,titular_hash FROM bloqueos_temporales ORDER BY id'))
         .toEqual(apartados);
+      expect(await db.query(ocupacion, [instante])).toEqual(vigentesAntes);
+      expect(vigentesAntes).toHaveLength(2);
       const [cita] = await db.query('SELECT * FROM citas ORDER BY id LIMIT 1');
       expect([cita.costo_aceptado, cita.nombre_contacto, cita.telefono_contacto,
         cita.nombre_negocio, cita.nombre_servicio, cita.nombre_sucursal,

@@ -77,19 +77,19 @@ E1; M03–M05 y M07; D06–D09, D12; T10.
 - [x] **M3-T019 — Registrar entidades y orden de migraciones** · 20 min · Depende de: M3-T015, M3-T016, M3-T017, M3-T018 · RF-02, RF-20, RF-34–RF-42
   Hecho cuando: la configuración usada por aplicación y CLI descubre todas las entidades y migra una base vacía sin errores de metadatos.
 
-- [ ] **M3-T020 — Sincronizar SQL de sesiones y operaciones** · 20 min · Depende de: M3-T014, M3-T015 · RF-18–RF-29, RF-42
+- [x] **M3-T020 — Sincronizar SQL de sesiones y operaciones** · 20 min · Depende de: M3-T014, M3-T015 · RF-18–RF-29, RF-42
   Hecho cuando: db/schema.sql contiene las nuevas tablas de sesión y operación con los mismos índices y relaciones que las migraciones.
 
-- [ ] **M3-T021 — Sincronizar SQL de apartados, citas e intentos** · 25 min · Depende de: M3-T020, M3-T019 · RF-02, RF-12, RF-19–RF-43
+- [x] **M3-T021 — Sincronizar SQL de apartados, citas e intentos** · 25 min · Depende de: M3-T020, M3-T019 · RF-02, RF-12, RF-19–RF-43
   Hecho cuando: el esquema refleja los cambios restantes, admite teléfonos repetidos y no rellena importes históricos con el catálogo actual.
 
-- [ ] **M3-T022 — Probar instalación limpia y equivalencia del esquema** · 25 min · Depende de: M3-T021, M3-T019 · RF-02, RF-12, RF-20, RF-29, RF-34–RF-39
+- [x] **M3-T022 — Probar instalación limpia y equivalencia del esquema** · 25 min · Depende de: M3-T021, M3-T019 · RF-02, RF-12, RF-20, RF-29, RF-34–RF-39
   Hecho cuando: la instalación por migraciones y la del SQL producen las tablas, columnas e índices esperados en bases desechables.
 
-- [ ] **M3-T023 — Probar actualización desde fase 3** · 25 min · Depende de: M3-T022, M3-T004 · RF-12, RF-20, RF-30, RF-36–RF-38
+- [x] **M3-T023 — Probar actualización desde fase 3** · 25 min · Depende de: M3-T022, M3-T004 · RF-12, RF-20, RF-30, RF-36–RF-38
   Hecho cuando: con datos previos, la actualización conserva conteos, IDs, intervalos y estados; los nuevos campos desconocidos permanecen nulos y los apartados previos siguen ocupando.
 
-- [ ] **M3-T024 — Probar referencias y unicidad de operaciones** · 25 min · Depende de: M3-T019, M3-T004 · RF-02, RF-12–RF-13, RF-25, RF-29, RF-34, RF-39–RF-42
+- [x] **M3-T024 — Probar referencias y unicidad de operaciones** · 25 min · Depende de: M3-T019, M3-T004 · RF-02, RF-12–RF-13, RF-25, RF-29, RF-34, RF-39–RF-42
   Hecho cuando: la base rechaza referencias entre negocios y claves repetidas de una sesión, permite teléfono repetido y distingue claves iguales usadas por sesiones distintas.
 
 ## 3. Acceso público y adaptación del motor

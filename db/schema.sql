@@ -544,7 +544,8 @@ CREATE TABLE clientes (
   creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_clientes_negocio_id (negocio_id, id),
-  UNIQUE KEY uq_cliente_por_negocio (negocio_id, telefono),
+  -- El teléfono puede compartirse entre personas; sirve para buscar, no para identificar.
+  INDEX idx_cliente_por_negocio_telefono (negocio_id, telefono),
   CONSTRAINT fk_clientes_negocio FOREIGN KEY (negocio_id)
     REFERENCES negocios(id) ON DELETE RESTRICT,
   CONSTRAINT chk_clientes_nombre CHECK (CHAR_LENGTH(TRIM(nombre_completo)) > 0),
@@ -568,6 +569,14 @@ CREATE TABLE citas (
   folio VARCHAR(20) NOT NULL,
   origen ENUM('portal_publico','manual') NOT NULL DEFAULT 'portal_publico',
   creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  -- La copia de lo aceptado se llena solo en reservas nuevas; el legado queda NULL.
+  costo_aceptado DECIMAL(10,2) NULL,
+  nombre_contacto VARCHAR(150) NULL,
+  telefono_contacto VARCHAR(10) NULL,
+  nombre_negocio VARCHAR(150) NULL,
+  nombre_servicio VARCHAR(150) NULL,
+  nombre_sucursal VARCHAR(150) NULL,
+  nombre_profesional VARCHAR(150) NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_citas_negocio_id (negocio_id, id),
   UNIQUE KEY uq_citas_folio (folio),
@@ -586,7 +595,9 @@ CREATE TABLE citas (
   CONSTRAINT fk_citas_cliente FOREIGN KEY (negocio_id, cliente_id)
     REFERENCES clientes(negocio_id, id) ON DELETE RESTRICT,
   CONSTRAINT chk_citas_intervalo CHECK (fin_utc > inicio_utc),
-  CONSTRAINT chk_citas_zona CHECK (CHAR_LENGTH(TRIM(zona_horaria_reserva)) > 0)
+  CONSTRAINT chk_citas_zona CHECK (CHAR_LENGTH(TRIM(zona_horaria_reserva)) > 0),
+  CONSTRAINT chk_citas_costo_aceptado CHECK
+    (costo_aceptado IS NULL OR costo_aceptado >= 0)
 ) ENGINE=InnoDB;
 
 -- 10. APARTADOS: expirar o liberar deja de ocupar sin borrar el registro.
@@ -603,12 +614,20 @@ CREATE TABLE bloqueos_temporales (
   liberado_en DATETIME(3) NULL,
   titular_hash CHAR(64) NOT NULL,
   creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  -- El contexto de portal es anulable para apartados creados antes de esta fase.
+  costo_aceptado DECIMAL(10,2) NULL,
+  zona_horaria_apartado VARCHAR(64) NULL,
+  sesion_id INT UNSIGNED NULL,
+  generacion BIGINT UNSIGNED NULL,
+  operacion_id BIGINT UNSIGNED NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_bt_negocio_id (negocio_id, id),
   INDEX idx_bt_personal_inicio (negocio_id, personal_id, inicio_utc),
   INDEX idx_bt_personal_expira (negocio_id, personal_id, expira_en),
   INDEX idx_bt_sucursal (negocio_id, sucursal_id),
   INDEX idx_bt_servicio (negocio_id, servicio_id),
+  INDEX idx_bt_sesion (negocio_id, sesion_id),
+  INDEX idx_bt_operacion (negocio_id, operacion_id),
   CONSTRAINT fk_bt_negocio FOREIGN KEY (negocio_id)
     REFERENCES negocios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_bt_personal FOREIGN KEY (negocio_id, personal_id)
@@ -618,8 +637,112 @@ CREATE TABLE bloqueos_temporales (
   CONSTRAINT fk_bt_servicio FOREIGN KEY (negocio_id, servicio_id)
     REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT,
   CONSTRAINT chk_bt_intervalo CHECK (fin_utc > inicio_utc),
-  CONSTRAINT chk_bt_hash CHECK (CHAR_LENGTH(titular_hash) = 64)
+  CONSTRAINT chk_bt_hash CHECK (CHAR_LENGTH(titular_hash) = 64),
+  CONSTRAINT chk_bt_costo_aceptado CHECK
+    (costo_aceptado IS NULL OR costo_aceptado >= 0)
 ) ENGINE=InnoDB;
+
+-- FASE 4, MÓDULO 3: la sesión anónima conserva solo el hash de titular,
+-- su generación y el puntero al apartado concedido en el mismo negocio.
+CREATE TABLE sesiones_reserva_publica (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  titular_hash CHAR(64) NOT NULL,
+  generacion BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  apartado_actual_id INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_srp_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_srp_negocio_hash (negocio_id, titular_hash),
+  INDEX idx_srp_apartado (negocio_id, apartado_actual_id),
+  CONSTRAINT fk_srp_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_srp_hash CHECK (CHAR_LENGTH(titular_hash) = 64)
+) ENGINE=InnoDB;
+
+-- Cada clave deduplica una selección dentro de su sesión. El apartado
+-- resultante puede ser NULL mientras la operación está preparada.
+CREATE TABLE operaciones_apartado (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  sesion_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) NOT NULL,
+  generacion BIGINT UNSIGNED NOT NULL,
+  seleccion_hash CHAR(64) NOT NULL,
+  personal_id INT UNSIGNED NOT NULL,
+  sucursal_id INT UNSIGNED NOT NULL,
+  servicio_id INT UNSIGNED NOT NULL,
+  fecha_local DATE NOT NULL,
+  hora_inicio TIME(0) NOT NULL,
+  estado ENUM('preparada','concedida','rechazada','sustituida')
+    NOT NULL DEFAULT 'preparada',
+  apartado_id INT UNSIGNED NULL,
+  causa_publica VARCHAR(64) NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_oa_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_oa_sesion_clave (negocio_id, sesion_id, clave),
+  INDEX idx_oa_apartado (negocio_id, apartado_id),
+  CONSTRAINT fk_oa_sesion FOREIGN KEY (negocio_id, sesion_id)
+    REFERENCES sesiones_reserva_publica(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_oa_seleccion_hash CHECK (CHAR_LENGTH(seleccion_hash) = 64)
+) ENGINE=InnoDB;
+
+-- El intento conserva el resultado de registro y permite recuperar un
+-- envío incierto con su clave, sin usar teléfono o folio como identidad.
+CREATE TABLE intentos_reserva_publica (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  sesion_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) NOT NULL,
+  apartado_id INT UNSIGNED NOT NULL,
+  formulario_hash CHAR(64) NULL,
+  estado ENUM('preparado','registrado','no_registrado')
+    NOT NULL DEFAULT 'preparado',
+  causa_publica VARCHAR(64) NULL,
+  cita_id INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_irp_negocio_id (negocio_id, id),
+  UNIQUE KEY uq_irp_sesion_clave (negocio_id, sesion_id, clave),
+  UNIQUE KEY uq_irp_cita (negocio_id, cita_id),
+  INDEX idx_irp_apartado (negocio_id, apartado_id),
+  CONSTRAINT fk_irp_sesion FOREIGN KEY (negocio_id, sesion_id)
+    REFERENCES sesiones_reserva_publica(negocio_id, id) ON DELETE RESTRICT,
+  CONSTRAINT chk_irp_formulario_hash CHECK
+    (formulario_hash IS NULL OR CHAR_LENGTH(formulario_hash) = 64)
+) ENGINE=InnoDB;
+
+-- Las FKs compuestas se agregan tras crear las tablas para cerrar el ciclo
+-- sesión → apartado → operación sin permitir referencias entre negocios.
+ALTER TABLE sesiones_reserva_publica
+  ADD CONSTRAINT fk_srp_apartado FOREIGN KEY (negocio_id, apartado_actual_id)
+    REFERENCES bloqueos_temporales(negocio_id, id) ON DELETE RESTRICT;
+ALTER TABLE operaciones_apartado
+  ADD CONSTRAINT fk_oa_personal FOREIGN KEY (negocio_id, personal_id)
+    REFERENCES personal(negocio_id, id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_oa_sucursal FOREIGN KEY (negocio_id, sucursal_id)
+    REFERENCES sucursales(negocio_id, id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_oa_servicio FOREIGN KEY (negocio_id, servicio_id)
+    REFERENCES servicios(negocio_id, id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_oa_apartado FOREIGN KEY (negocio_id, apartado_id)
+    REFERENCES bloqueos_temporales(negocio_id, id) ON DELETE RESTRICT;
+ALTER TABLE bloqueos_temporales
+  ADD CONSTRAINT fk_bt_sesion FOREIGN KEY (negocio_id, sesion_id)
+    REFERENCES sesiones_reserva_publica(negocio_id, id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_bt_operacion FOREIGN KEY (negocio_id, operacion_id)
+    REFERENCES operaciones_apartado(negocio_id, id) ON DELETE RESTRICT;
+ALTER TABLE intentos_reserva_publica
+  ADD CONSTRAINT fk_irp_apartado FOREIGN KEY (negocio_id, apartado_id)
+    REFERENCES bloqueos_temporales(negocio_id, id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_irp_cita FOREIGN KEY (negocio_id, cita_id)
+    REFERENCES citas(negocio_id, id) ON DELETE RESTRICT;
 
 -- 11. NOTIFICACIONES WHATSAPP (bitácora de envíos)
 -- -Por qué: es una bitácora de envíos (no solo un campo booleano) porque hay que distinguir el tipo de mensaje 

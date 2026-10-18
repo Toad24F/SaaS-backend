@@ -38,9 +38,11 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
             ORDER BY COLUMN_NAME`, [nombre, tabla]);
           expect(referencia).toEqual(columnas);
         }
-        // Fase 3 compara también índices, CHECK y FKs, no solo tipos de columna.
+        // Las tablas del portal deben coincidir también en índices, CHECK y FKs;
+        // una columna coincidente por sí sola no protege los límites de negocio.
         for (const tabla of ['configuracion_agenda', 'clientes', 'citas',
-          'bloqueos_temporales']) {
+          'bloqueos_temporales', 'sesiones_reserva_publica',
+          'operaciones_apartado', 'intentos_reserva_publica']) {
           expect(nombres).toContain(tabla);
           const fechas = `SELECT COLUMN_NAME columna,
             DATETIME_PRECISION precisionTemporal FROM information_schema.COLUMNS
