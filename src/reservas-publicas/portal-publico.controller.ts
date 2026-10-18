@@ -1,11 +1,14 @@
-import { BadRequestException, Body, Controller, HttpException,
-  InternalServerErrorException, Param, Post, Req, Res,
+import { BadRequestException, Body, Controller, Get, HttpException,
+  InternalServerErrorException, Param, Post, Query, Req, Res,
   ServiceUnavailableException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import type { Request, Response } from 'express';
 import { ResolverNegocioPublicoService } from './resolver-negocio-publico.service';
 import { ProteccionPortalService, COOKIE_RESERVA } from './proteccion-portal.service';
 import { SesionReservaPublicaService } from './sesion-reserva-publica.service';
+import { CatalogoPublicoService } from './catalogo-publico.service';
+import { validarCatalogoPublico, validarDisponibilidadPublica } from './entradas-publicas';
+import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
 
 const CODIGOS_TEMPORALES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT',
   'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_LOCK_WAIT_TIMEOUT',
@@ -29,12 +32,37 @@ function errorPublico(error: unknown): never {
     mensaje: 'No se pudo iniciar la reserva.', accion: 'reintentar' });
 }
 
-/** Única ruta pública de este lote: crea o reutiliza la identidad del navegador. */
+/** Rutas de lectura anónima y creación de identidad del navegador. */
 @Controller('publico/negocios/:slug')
 export class PortalPublicoController {
   constructor(private readonly negocios: ResolverNegocioPublicoService,
     private readonly proteccion: ProteccionPortalService,
-    private readonly sesiones: SesionReservaPublicaService) {}
+    private readonly sesiones: SesionReservaPublicaService,
+    private readonly catalogo: CatalogoPublicoService,
+    private readonly motor: MotorDisponibilidadService) {}
+
+  @Get('catalogo')
+  async consultarCatalogo(@Param('slug') slug: string, @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response) {
+    // El portal consulta sin sesión; la respuesta no arrastra un catálogo obsoleto.
+    res.setHeader('Cache-Control', 'no-store');
+    try { return await this.catalogo.consultar(slug, validarCatalogoPublico(query)); }
+    catch (error) { errorPublico(error); }
+  }
+
+  @Get('disponibilidad')
+  async consultarDisponibilidad(@Param('slug') slug: string, @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    try {
+      // El slug determina el tenant y el motor vuelve a autorizar dentro de
+      // su instantánea junto con configuración, horarios y ocupaciones.
+      const entrada = validarDisponibilidadPublica(query);
+      const negocio = await this.negocios.resolver(slug);
+      return await this.motor.consultarPublico(negocio.id, entrada.personalId,
+        entrada.sucursalId, entrada.servicioId, entrada.desde, entrada.hasta);
+    } catch (error) { errorPublico(error); }
+  }
 
   @Post('sesion')
   async iniciar(@Param('slug') slug: string, @Body() cuerpo: unknown,

@@ -133,19 +133,19 @@ E1–E2; M01–M02; D01–D02, D11; T01.
 
 E2; M02; T02 y T04.
 
-- [ ] **M3-T036 — Consultar servicios de oferta efectiva** · 20 min · Depende de: M3-T032, M3-T029 · RF-02–RF-04, RF-13
+- [x] **M3-T036 — Consultar servicios de oferta efectiva** · 20 min · Depende de: M3-T032, M3-T029 · RF-02–RF-04, RF-13
   Hecho cuando: el catálogo devuelve solo servicios con al menos una combinación efectiva del negocio, con nombre, costo y duración públicos.
 
-- [ ] **M3-T037 — Consultar sucursales y Profesionales compatibles** · 25 min · Depende de: M3-T036 · RF-02, RF-04–RF-06
+- [x] **M3-T037 — Consultar sucursales y Profesionales compatibles** · 25 min · Depende de: M3-T036 · RF-02, RF-04–RF-06
   Hecho cuando: los filtros progresivos devuelven únicamente sucursales y Profesionales compatibles; IDs ajenos no filtran nombres ni oferta de otro negocio.
 
-- [ ] **M3-T038 — Exponer el catálogo progresivo** · 20 min · Depende de: M3-T037 · RF-01–RF-06, RF-13
+- [x] **M3-T038 — Exponer el catálogo progresivo** · 20 min · Depende de: M3-T037 · RF-01–RF-06, RF-13
   Hecho cuando: GET /catalogo valida filtros y devuelve la proyección pública, sin exigir sesión administrativa ni publicar el catálogo de la demo.
 
-- [ ] **M3-T039 — Validar entrada de disponibilidad pública** · 20 min · Depende de: M3-T032 · RF-02, RF-14–RF-15, RF-17
+- [x] **M3-T039 — Validar entrada de disponibilidad pública** · 20 min · Depende de: M3-T032 · RF-02, RF-14–RF-15, RF-17
   Hecho cuando: las entradas validan IDs, fecha/hora y hasta 31 fechas inclusivas; rechazan negocioId, modalidad manual, titularHash y exclusiones aportadas por cliente.
 
-- [ ] **M3-T040 — Exponer disponibilidad pública** · 20 min · Depende de: M3-T039, M3-T029 · RF-14–RF-17
+- [x] **M3-T040 — Exponer disponibilidad pública** · 20 min · Depende de: M3-T039, M3-T029 · RF-14–RF-17
   Hecho cuando: GET /disponibilidad devuelve ranuras, zona e instante del cálculo; el horizonte configurable puede superar 31 fechas aunque cada petición quede acotada.
 
 - [ ] **M3-T041 — Normalizar errores del portal** · 25 min · Depende de: M3-T040, M3-T038, M3-T035 · RF-03, RF-10, RF-16–RF-17, RF-29, RF-32–RF-33, RF-40–RF-43

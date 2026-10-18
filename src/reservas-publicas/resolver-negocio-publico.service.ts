@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Licencia } from '../licencias/entities/licencia.entity';
@@ -22,6 +22,14 @@ export class ResolverNegocioPublicoService {
   /** Slug, activación y licencia se leen en una instantánea; 404 uniforme
    * impide distinguir negocios ajenos, pendientes o suspendidos. */
   async resolver(slug: string): Promise<NegocioPublicoAutorizado> {
+    const ahora = this.reloj.ahora();
+    return this.db.transaction('REPEATABLE READ', (manager) =>
+      this.resolverEnContexto(manager, slug, ahora));
+  }
+
+  /** Reutiliza la misma instantánea para autorizar el catálogo y leer su oferta. */
+  async resolverEnContexto(manager: EntityManager, slug: string,
+    ahora: Date): Promise<NegocioPublicoAutorizado> {
     // El alta histórica admite identificadores sin una gramática de guiones;
     // la búsqueda exacta conserva esos enlaces y el URL se escapa al emitir cookie.
     if (typeof slug !== 'string' || !slug || slug.length > 100 ||
@@ -29,17 +37,14 @@ export class ResolverNegocioPublicoService {
         caracter.charCodeAt(0) === 127)) {
       throw new NotFoundException('Portal no disponible para reservar.');
     }
-    const ahora = this.reloj.ahora();
-    return this.db.transaction('REPEATABLE READ', async (manager) => {
-      const negocio = await manager.getRepository(Negocio).findOneBy({ slug });
-      if (!negocio) throw new NotFoundException('Portal no disponible para reservar.');
-      const licencia = await manager.getRepository(Licencia)
-        .findOneBy({ negocioId: negocio.id });
-      if (!licencia || !this.politica.puedeAceptarReserva(
-        negocio.activadoEn !== null, licencia, ahora)) {
-        throw new NotFoundException('Portal no disponible para reservar.');
-      }
-      return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
-    });
+    const negocio = await manager.getRepository(Negocio).findOneBy({ slug });
+    if (!negocio) throw new NotFoundException('Portal no disponible para reservar.');
+    const licencia = await manager.getRepository(Licencia)
+      .findOneBy({ negocioId: negocio.id });
+    if (!licencia || !this.politica.puedeAceptarReserva(
+      negocio.activadoEn !== null, licencia, ahora)) {
+      throw new NotFoundException('Portal no disponible para reservar.');
+    }
+    return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
   }
 }

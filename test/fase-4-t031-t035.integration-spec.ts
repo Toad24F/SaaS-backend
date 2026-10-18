@@ -146,7 +146,7 @@ describe('M3-T031–T035: motor compartido y regresión privada', () => {
       await auth(request(http).get('/disponibilidad').query({ ...base,
         personalId: b.personalId, desde: FECHA, hasta: FECHA })).expect(404);
       await request(http).get('/publico/negocios/portal-prueba-1/disponibilidad')
-        .query({ ...base, desde: FECHA, hasta: FECHA, modalidad: 'manual' }).expect(404);
+        .query({ ...base, desde: FECHA, hasta: FECHA, modalidad: 'manual' }).expect(400);
       const original = { origen: process.env.PORTAL_PUBLICO_ORIGEN,
         secreto: process.env.PORTAL_CSRF_SECRET };
       process.env.PORTAL_PUBLICO_ORIGEN = 'https://citas.example.test';
