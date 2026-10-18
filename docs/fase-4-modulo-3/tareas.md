@@ -207,19 +207,19 @@ E3; M07; D05; T11. Este bloque precede a la habilitación de escritores.
 
 E3; M03; D03–D05, D07; T05–T07.
 
-- [ ] **M3-T058 — Validar selección y clave de operación de apartado** · 20 min · Depende de: M3-T039, M3-T057 · RF-18, RF-25, RF-29–RF-30, RF-43
+- [x] **M3-T058 — Validar selección y clave de operación de apartado** · 20 min · Depende de: M3-T039, M3-T057 · RF-18, RF-25, RF-29–RF-30, RF-43
   Hecho cuando: la entrada acepta selección y clave opaca, rechaza precio/fin/titular ajenos y distingue repetición del mismo contenido de clave reutilizada con otra selección.
 
-- [ ] **M3-T059 — Liberar un apartado propio exacto** · 25 min · Depende de: M3-T016, M3-T047, M3-T048, M3-T057 · RF-24, RF-26–RF-29
+- [x] **M3-T059 — Liberar un apartado propio exacto** · 25 min · Depende de: M3-T016, M3-T047, M3-T048, M3-T057 · RF-24, RF-26–RF-29
   Hecho cuando: el servicio comprueba negocio, titular, ID y generación, libera idempotentemente y nunca toca un reemplazo posterior ni una cita ya registrada.
 
-- [ ] **M3-T060 — Confirmar liberación antes del nuevo apartado** · 25 min · Depende de: M3-T059, M3-T058 · RF-24–RF-27, RF-33
+- [x] **M3-T060 — Confirmar liberación antes del nuevo apartado** · 25 min · Depende de: M3-T059, M3-T058 · RF-24–RF-27, RF-33
   Hecho cuando: una transacción deduplica operación, incrementa generación, libera el anterior y guarda preparada la nueva operación; su commit termina antes de buscar el nuevo hueco.
 
-- [ ] **M3-T061 — Conceder el nuevo apartado tras revalidar** · 25 min · Depende de: M3-T060, M3-T033, M3-T005 · RF-18–RF-22, RF-25, RF-30–RF-33
+- [x] **M3-T061 — Conceder el nuevo apartado tras revalidar** · 25 min · Depende de: M3-T060, M3-T033, M3-T005 · RF-18–RF-22, RF-25, RF-30–RF-33
   Hecho cuando: la segunda transacción comprueba generación actual y disponibilidad, guarda costo/zona y vence cinco minutos después de concederlo; actualiza el apartado actual de sesión.
 
-- [ ] **M3-T062 — Resolver operaciones repetidas, sustituidas o interrumpidas** · 25 min · Depende de: M3-T061 · RF-21, RF-25–RF-26, RF-33, RF-43
+- [x] **M3-T062 — Resolver operaciones repetidas, sustituidas o interrumpidas** · 25 min · Depende de: M3-T061 · RF-21, RF-25–RF-26, RF-33, RF-43
   Hecho cuando: repetir una concesión conserva expiración, una rechazada no concede y una generación antigua no altera la actual; el fallo entre fases se retoma con la misma clave.
 
 - [ ] **M3-T063 — Consultar estado y vigencia del apartado propio** · 20 min · Depende de: M3-T061, M3-T059 · RF-19, RF-22–RF-23, RF-26, RF-29
