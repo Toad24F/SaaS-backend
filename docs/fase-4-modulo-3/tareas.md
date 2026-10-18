@@ -185,22 +185,22 @@ E3; M07; D05; T11. Este bloque precede a la habilitación de escritores.
 - [x] **M3-T051 — Alinear configuración y cambios de sucursal** · 25 min · Depende de: M3-T048 · RF-04, RF-14–RF-15, RF-31–RF-33
   Hecho cuando: las mutaciones identificadas de configuración y sucursal respetan la barrera del negocio y el orden compartido, incluyendo cambio de zona y desactivación.
 
-- [ ] **M3-T052 — Alinear catálogo y selecciones de servicio** · 25 min · Depende de: M3-T048 · RF-04, RF-18, RF-30–RF-33
+- [x] **M3-T052 — Alinear catálogo y selecciones de servicio** · 25 min · Depende de: M3-T048 · RF-04, RF-18, RF-30–RF-33
   Hecho cuando: cambios de costo/duración y selecciones individuales o por sucursal quedan coordinados con las filas que relee el escritor público.
 
-- [ ] **M3-T053 — Coordinar altas y cambios de asignación** · 25 min · Depende de: M3-T049, M3-T051 · RF-04, RF-14, RF-20, RF-31–RF-33
+- [x] **M3-T053 — Coordinar altas y cambios de asignación** · 25 min · Depende de: M3-T049, M3-T051 · RF-04, RF-14, RF-20, RF-31–RF-33
   Hecho cuando: toda ruta inventariada que agrega, retira o cambia una asignación respeta la barrera de negocio y no introduce un perfil fuera del alcance de un cambio colectivo concurrente.
 
-- [ ] **M3-T054 — Coordinar horarios semanales y excepciones** · 25 min · Depende de: M3-T053 · RF-14–RF-15, RF-20, RF-31–RF-33
+- [x] **M3-T054 — Coordinar horarios semanales y excepciones** · 25 min · Depende de: M3-T053 · RF-14–RF-15, RF-20, RF-31–RF-33
   Hecho cuando: horarios y excepciones toman los perfiles necesarios en orden; una prelectura obsoleta reinicia la operación sin adquirir recursos en orden inverso.
 
-- [ ] **M3-T055 — Coordinar bloqueos individuales y colectivos** · 25 min · Depende de: M3-T054 · RF-14, RF-20, RF-31–RF-33
+- [x] **M3-T055 — Coordinar bloqueos individuales y colectivos** · 25 min · Depende de: M3-T054 · RF-14, RF-20, RF-31–RF-33
   Hecho cuando: los cambios de bloqueos cubren todos los perfiles afectados bajo la barrera de negocio, incluidas asignaciones concurrentes.
 
-- [ ] **M3-T056 — Probar regresión de las mutaciones coordinadas** · 25 min · Depende de: M3-T049, M3-T050, M3-T051, M3-T052, M3-T053, M3-T054, M3-T055 · RF-03–RF-04, RF-14, RF-20, RF-31–RF-33
+- [x] **M3-T056 — Probar regresión de las mutaciones coordinadas** · 25 min · Depende de: M3-T049, M3-T050, M3-T051, M3-T052, M3-T053, M3-T054, M3-T055 · RF-03–RF-04, RF-14, RF-20, RF-31–RF-33
   Hecho cuando: las suites relevantes del catálogo, licencia y horarios conservan permisos y resultados; no quedan inversiones conocidas del inventario sin resolver.
 
-- [ ] **M3-T057 — Verificar preparación del protocolo común** · 20 min · Depende de: M3-T047, M3-T056, M3-T034, M3-T043, M3-T044 · RF-02–RF-04, RF-14–RF-15, RF-18–RF-22, RF-25, RF-31–RF-35
+- [x] **M3-T057 — Verificar preparación del protocolo común** · 20 min · Depende de: M3-T047, M3-T056, M3-T034, M3-T043, M3-T044 · RF-02–RF-04, RF-14–RF-15, RF-18–RF-22, RF-25, RF-31–RF-35
   Hecho cuando: la matriz del inventario identifica la coordinación aplicada a cada escritor y el control de espera con dos conexiones pasa; la habilitación externa continúa cerrada hasta probar escritores reales.
 
 ## 6. Apartados, reemplazo y liberación

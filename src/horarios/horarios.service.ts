@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { bloquearNegocioAgenda, bloquearRecursosAgenda } from '../comun/bloqueos-coordinados';
 import { Personal } from '../profesionales/entities/personal.entity';
 import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -50,6 +51,7 @@ export class HorariosService {
     desde: string): Promise<FilaSemana[]> {
     if (!Array.isArray(entrada)) throw new BadRequestException('franjas: debe ser un arreglo.');
     return transaccionIdentidad(this.franjas.manager, async (manager) => {
+      await this.bloquearAgenda(manager, negocioId, personalId);
       const perfil = await manager.getRepository(Personal).createQueryBuilder('perfil')
         .setLock('pessimistic_write')
         .where('perfil.id = :personalId AND perfil.negocioId = :negocioId',
@@ -116,7 +118,7 @@ export class HorariosService {
       }
       return guardadas.map((fila) => this.vista(fila)).sort((a, b) =>
         a.diaSemana - b.diaSemana || a.orden - b.orden || a.id - b.id);
-    });
+    }, 'READ COMMITTED');
   }
 
   async consultarExcepciones(negocioId: number, personalId: number): Promise<VistaExcepcion[]> {
@@ -156,6 +158,7 @@ export class HorariosService {
       return franja;
     });
     return transaccionIdentidad(this.franjas.manager, async (manager) => {
+      await this.bloquearAgenda(manager, negocioId, personalId);
       await this.bloquearPerfil(manager, negocioId, personalId);
       await this.exigirSucursal(manager, negocioId, personalId, sucursalId);
       const repo = manager.getRepository(ExcepcionHorario);
@@ -198,7 +201,7 @@ export class HorariosService {
       }
       cabecera.franjas = guardadas;
       return this.vistaExcepcion(cabecera);
-    });
+    }, 'READ COMMITTED');
   }
 
   async retirarExcepcion(negocioId: number, personalId: number, fechaLocal: string,
@@ -208,6 +211,7 @@ export class HorariosService {
       throw new BadRequestException('sucursalId: debe ser entero positivo.');
     }
     await transaccionIdentidad(this.franjas.manager, async (manager) => {
+      await this.bloquearAgenda(manager, negocioId, personalId);
       await this.bloquearPerfil(manager, negocioId, personalId);
       const repo = manager.getRepository(ExcepcionHorario);
       const actuales = await this.cargarExcepciones(manager, negocioId, personalId);
@@ -225,7 +229,16 @@ export class HorariosService {
       await manager.getRepository(FranjaExcepcionHorario).delete({ negocioId,
         excepcionId: anterior.id });
       await repo.delete({ id: anterior.id, negocioId, personalId });
-    });
+    }, 'READ COMMITTED');
+  }
+
+  private async bloquearAgenda(manager: Repository<HorarioPersonal>['manager'], negocioId: number,
+    personalId: number): Promise<void> {
+    await bloquearNegocioAgenda(manager, negocioId);
+    // Las asignaciones quedan estables tras la barrera; sedes antes de perfil.
+    const asignadas = await manager.getRepository(PersonalSucursal).findBy({ negocioId, personalId });
+    await bloquearRecursosAgenda(manager, negocioId, 'sucursal',
+      asignadas.map((fila) => fila.sucursalId));
   }
 
   private async bloquearPerfil(manager: Repository<HorarioPersonal>['manager'], negocioId: number,

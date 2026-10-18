@@ -15,6 +15,7 @@ import { AutorizacionService, Permiso } from '../auth/services/autorizacion.serv
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
 import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { bloquearNegocioAgenda, bloquearRecursosAgenda } from '../comun/bloqueos-coordinados';
 import { ExcepcionHorario } from '../horarios/entities/excepcion-horario.entity';
 import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { validarRecurrencias } from '../horarios/calendario';
@@ -60,6 +61,9 @@ export class ProfesionalesService {
     try {
       return await transaccionIdentidad(this.perfiles.manager, async (manager) => {
         const actor = await this.actor(manager, actorId);
+        // Un perfil nuevo entra en el alcance de bloqueos colectivos solo tras
+        // cruzar la barrera que usan esos escritores para descubrir el equipo.
+        await bloquearNegocioAgenda(manager, actor.negocioId!);
         const repoUsuario = manager.getRepository(Usuario);
         const usuario = await repoUsuario.save(repoUsuario.create({ negocioId: actor.negocioId!,
           nombre, email: correo, passwordHash, rol: Rol.PROFESIONAL, activo: true,
@@ -73,7 +77,7 @@ export class ProfesionalesService {
         await this.registrar(manager, actor, perfil, 'profesional_creado', null,
           { nombre, correo, especialidad: datos.especialidad, activo: true });
         return this.vista(perfil, usuario);
-      });
+      }, 'READ COMMITTED');
     } catch (error) { return this.conflictoCorreo(error); }
   }
 
@@ -203,8 +207,14 @@ export class ProfesionalesService {
     const datos = this.validar(AsignarSucursalesDto, entrada);
     return transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
-      const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const ids = [...datos.sucursalIds].sort((a, b) => a - b);
+      const previas = await manager.getRepository(PersonalSucursal).findBy({
+        negocioId: actor.negocioId!, personalId: id });
+      // La barrera estabiliza el conjunto; sedes antiguas y nuevas preceden al perfil.
+      await bloquearRecursosAgenda(manager, actor.negocioId!, 'sucursal',
+        [...ids, ...previas.map((fila) => fila.sucursalId)]);
+      const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
       if (ids.length) {
         const propias = await manager.getRepository(Sucursal).findBy({
           id: In(ids), negocioId: actor.negocioId! });
@@ -250,7 +260,7 @@ export class ProfesionalesService {
       await this.registrar(manager, actor, perfil, 'profesional_sucursales_modificadas',
         { sucursalIds: anteriores }, { sucursalIds: ids });
       return ids;
-    });
+    }, 'READ COMMITTED');
   }
 
   async listarServicios(actorId: number, id: number): Promise<OpcionServicioProfesional[]> {
@@ -278,6 +288,13 @@ export class ProfesionalesService {
     const datos = this.validar(SeleccionarServiciosDto, entrada);
     await transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actorServicios(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      const asignadas = await manager.getRepository(PersonalSucursal).findBy({
+        negocioId: actor.negocioId!, personalId: id });
+      await bloquearRecursosAgenda(manager, actor.negocioId!, 'sucursal',
+        asignadas.map((fila) => fila.sucursalId));
+      // Servicios primero, perfil después: nunca se espera catálogo con el perfil retenido.
+      await bloquearRecursosAgenda(manager, actor.negocioId!, 'servicio', datos.servicioIds);
       const perfil = await this.perfilParaServicios(manager, actor, id, true);
       const repo = manager.getRepository(PersonalServicio);
       const actuales = await repo.findBy({ negocioId: actor.negocioId!, personalId: id });
@@ -320,7 +337,7 @@ export class ProfesionalesService {
       }
       await this.registrar(manager, actor, perfil, 'profesional_servicios_modificados',
         { servicioIds: antes }, { servicioIds: ids });
-    });
+    }, 'READ COMMITTED');
     return this.listarServicios(actorId, id);
   }
 
@@ -414,6 +431,8 @@ export class ProfesionalesService {
     if (typeof activo !== 'boolean') throw new BadRequestException('activo: debe ser booleano.');
     return transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actorServicios(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      await bloquearRecursosAgenda(manager, actor.negocioId!, 'sucursal', [sucursalId]);
       // Horarios y excepciones bloquean esta misma fila; la validación no puede quedar obsoleta.
       const perfil = await this.perfilParaServicios(manager, actor, id, true);
       const asignacion = await this.exigirAsignacion(manager, actor.negocioId!, id, sucursalId);
@@ -425,7 +444,7 @@ export class ProfesionalesService {
       await this.registrar(manager, actor, perfil, 'profesional_atencion_sucursal_modificada',
         { sucursalId, activo: asignacion.activo }, { sucursalId, activo });
       return { sucursalId, activo };
-    });
+    }, 'READ COMMITTED');
   }
 
   async listarServiciosSucursal(actorId: number, id: number, sucursalId: number) {
@@ -449,6 +468,9 @@ export class ProfesionalesService {
     const datos = this.validar(SeleccionarServiciosDto, entrada);
     await transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actorServicios(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      await bloquearRecursosAgenda(manager, actor.negocioId!, 'sucursal', [sucursalId]);
+      await bloquearRecursosAgenda(manager, actor.negocioId!, 'servicio', datos.servicioIds);
       const perfil = await this.perfilParaServicios(manager, actor, id, true);
       await this.exigirAsignacion(manager, actor.negocioId!, id, sucursalId);
       const ids = [...datos.servicioIds].sort((a, b) => a - b);
@@ -482,7 +504,7 @@ export class ProfesionalesService {
         negocioId: actor.negocioId!, personalId: id, sucursalId, servicioId })));
       await this.registrar(manager, actor, perfil, 'profesional_servicios_sucursal_modificados',
         { sucursalId, servicioIds: antes }, { sucursalId, servicioIds: ids });
-    });
+    }, 'READ COMMITTED');
     return this.listarServiciosSucursal(actorId, id, sucursalId);
   }
 
