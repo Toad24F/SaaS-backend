@@ -26,6 +26,7 @@ import { CorreosHttpModule } from './correos/correos-http.module';
 import { OperacionModule } from './operacion/operacion.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.module';
+import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publicas-http.module';
 
 @Module({
   imports: [
@@ -66,6 +67,8 @@ import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.m
     // Compone el motor y su límite HTTP sin activar rutas ni escritores de reservas.
     DisponibilidadModule,
     DisponibilidadHttpModule,
+    // La frontera pública existe sin rutas de escritura hasta integrar persistencia y coordinación.
+    ReservasPublicasHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

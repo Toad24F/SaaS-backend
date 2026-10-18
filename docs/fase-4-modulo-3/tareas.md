@@ -16,25 +16,25 @@ Los cambios del backend se harán desde la raíz de SaaS-backend y los del front
 
 E1; M01–M07; T01, T10 y T11.
 
-- [ ] **M3-T001 — Preparar la matriz de aceptación** · 15 min · Depende de: ninguna · RF-01–RF-43
+- [x] **M3-T001 — Preparar la matriz de aceptación** · 15 min · Depende de: ninguna · RF-01–RF-43
   Hecho cuando: la matriz relaciona los 43 RF y los ocho criterios de finalización con grupos T01–T12, separando evidencia nueva de antecedentes y de M2-I004 diferido.
 
-- [ ] **M3-T002 — Identificar los contratos que deben conservarse** · 20 min · Depende de: M3-T001 · RF-01–RF-04, RF-14–RF-18, RF-34, RF-38
+- [x] **M3-T002 — Identificar los contratos que deben conservarse** · 20 min · Depende de: M3-T001 · RF-01–RF-04, RF-14–RF-18, RF-34, RF-38
   Hecho cuando: quedan registrados las cinco rutas privadas, sus permisos, los límites del motor y el estado inicial pendiente; la demo no figura como funcionalidad pública implementada.
 
-- [ ] **M3-T003 — Preparar una base desechable de integración** · 20 min · Depende de: M3-T002 · RF-02, RF-20, RF-35
+- [x] **M3-T003 — Preparar una base desechable de integración** · 20 min · Depende de: M3-T002 · RF-02, RF-20, RF-35
   Hecho cuando: el ejecutor crea y elimina una base de prueba y rechaza usar la base cotidiana; una ejecución de comprobación termina sin modificar datos de desarrollo.
 
-- [ ] **M3-T004 — Preparar datos de dos negocios y varios Profesionales** · 25 min · Depende de: M3-T003 · RF-02–RF-04, RF-12, RF-14–RF-15, RF-20
+- [x] **M3-T004 — Preparar datos de dos negocios y varios Profesionales** · 25 min · Depende de: M3-T003 · RF-02–RF-04, RF-12, RF-14–RF-15, RF-20
   Hecho cuando: los fixtures crean oferta activa/inactiva, dos sucursales con zonas distintas, teléfonos compartibles y ocupaciones; su limpieza es comprobable.
 
-- [ ] **M3-T005 — Preparar controles del reloj y fallos de escritura** · 20 min · Depende de: M3-T004 · RF-19–RF-23, RF-31, RF-35, RF-40
+- [x] **M3-T005 — Preparar controles del reloj y fallos de escritura** · 20 min · Depende de: M3-T004 · RF-19–RF-23, RF-31, RF-35, RF-40
   Hecho cuando: las pruebas pueden avanzar hasta un milisegundo antes, exactamente y después del vencimiento, e inyectar un fallo antes del commit sin modificar el reloj del sistema.
 
-- [ ] **M3-T006 — Preparar dos conexiones y barreras de concurrencia** · 25 min · Depende de: M3-T003, M3-T005 · RF-20, RF-25, RF-33, RF-35, RF-39–RF-41
+- [x] **M3-T006 — Preparar dos conexiones y barreras de concurrencia** · 25 min · Depende de: M3-T003, M3-T005 · RF-20, RF-25, RF-33, RF-35, RF-39–RF-41
   Hecho cuando: un caso de control demuestra espera y continuación entre dos conexiones independientes, con rollback y cierre garantizados al fallar; todavía no acredita carreras del escritor real.
 
-- [ ] **M3-T007 — Declarar módulos y contratos de reservas públicas** · 20 min · Depende de: M3-T002 · RF-01–RF-04, RF-18, RF-29, RF-31, RF-39–RF-43
+- [x] **M3-T007 — Declarar módulos y contratos de reservas públicas** · 20 min · Depende de: M3-T002 · RF-01–RF-04, RF-18, RF-29, RF-31, RF-39–RF-43
   Hecho cuando: los módulos de dominio y HTTP tienen responsabilidades y tipos de entrada/salida separados, sin registrar todavía rutas capaces de crear ocupaciones.
 
 ## 2. Persistencia y migraciones
