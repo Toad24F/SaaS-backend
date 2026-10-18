@@ -148,16 +148,16 @@ E2; M02; T02 y T04.
 - [x] **M3-T040 — Exponer disponibilidad pública** · 20 min · Depende de: M3-T039, M3-T029 · RF-14–RF-17
   Hecho cuando: GET /disponibilidad devuelve ranuras, zona e instante del cálculo; el horizonte configurable puede superar 31 fechas aunque cada petición quede acotada.
 
-- [ ] **M3-T041 — Normalizar errores del portal** · 25 min · Depende de: M3-T040, M3-T038, M3-T035 · RF-03, RF-10, RF-16–RF-17, RF-29, RF-32–RF-33, RF-40–RF-43
+- [x] **M3-T041 — Normalizar errores del portal** · 25 min · Depende de: M3-T040, M3-T038, M3-T035 · RF-03, RF-10, RF-16–RF-17, RF-29, RF-32–RF-33, RF-40–RF-43
   Hecho cuando: el mapeo distingue 400/401/403/404/409/500/503 y respuesta vacía válida; las causas públicas tienen mensaje y acción y no incluyen SQL ni trazas.
 
-- [ ] **M3-T042 — Probar selección y oferta pública** · 25 min · Depende de: M3-T038, M3-T004, M3-T041 · RF-02–RF-06, RF-13
+- [x] **M3-T042 — Probar selección y oferta pública** · 25 min · Depende de: M3-T038, M3-T004, M3-T041 · RF-02–RF-06, RF-13
   Hecho cuando: los casos desactivan cada nivel de oferta y cambian servicio/sucursal; ninguna combinación inválida ni dato privado aparece en las respuestas.
 
-- [ ] **M3-T043 — Probar límites públicos y fallos de lectura** · 25 min · Depende de: M3-T040, M3-T041, M3-T005 · RF-14, RF-16–RF-17, RF-43
+- [x] **M3-T043 — Probar límites públicos y fallos de lectura** · 25 min · Depende de: M3-T040, M3-T041, M3-T005 · RF-14, RF-16–RF-17, RF-43
   Hecho cuando: pasan rango inclusivo de 31 fechas, rechazo de 32, anticipación/horizonte exactos, vacío legítimo y fallos técnicos sin ranuras parciales.
 
-- [ ] **M3-T044 — Probar continuidad, zonas y estrategias** · 25 min · Depende de: M3-T040, M3-T004, M3-T005 · RF-14–RF-15, RF-18, RF-20
+- [x] **M3-T044 — Probar continuidad, zonas y estrategias** · 25 min · Depende de: M3-T040, M3-T004, M3-T005 · RF-14–RF-15, RF-18, RF-20
   Hecho cuando: casos sobre el motor compartido cubren DST, extremos contiguos, bloques continuos, descansos y ambos modos mediante la entrada pública.
 
 ## 5. Protocolo de escritura y mutaciones concurrentes
