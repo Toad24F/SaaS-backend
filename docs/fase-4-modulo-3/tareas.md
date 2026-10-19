@@ -222,10 +222,10 @@ E3; M03; D03–D05, D07; T05–T07.
 - [x] **M3-T062 — Resolver operaciones repetidas, sustituidas o interrumpidas** · 25 min · Depende de: M3-T061 · RF-21, RF-25–RF-26, RF-33, RF-43
   Hecho cuando: repetir una concesión conserva expiración, una rechazada no concede y una generación antigua no altera la actual; el fallo entre fases se retoma con la misma clave.
 
-- [ ] **M3-T063 — Consultar estado y vigencia del apartado propio** · 20 min · Depende de: M3-T061, M3-T059 · RF-19, RF-22–RF-23, RF-26, RF-29
+- [x] **M3-T063 — Consultar estado y vigencia del apartado propio** · 20 min · Depende de: M3-T061, M3-T059 · RF-19, RF-22–RF-23, RF-26, RF-29
   Hecho cuando: la consulta devuelve estado, expiración y hora del servidor solo al titular; distingue liberación, sustitución y vencimiento sin depender de borrado físico.
 
-- [ ] **M3-T064 — Exponer las tres rutas de apartado** · 25 min · Depende de: M3-T062, M3-T063, M3-T028, M3-T041 · RF-18–RF-30, RF-33, RF-43
+- [x] **M3-T064 — Exponer las tres rutas de apartado** · 25 min · Depende de: M3-T062, M3-T063, M3-T028, M3-T041 · RF-18–RF-30, RF-33, RF-43
   Hecho cuando: crear, consultar y liberar aplican los contratos HTTP y la propiedad; liberar sigue permitido al titular cuando la licencia impide nuevas concesiones.
 
 - [ ] **M3-T065 — Probar plazo inmutable y vencimiento exacto** · 25 min · Depende de: M3-T064, M3-T005 · RF-19–RF-23, RF-27, RF-31

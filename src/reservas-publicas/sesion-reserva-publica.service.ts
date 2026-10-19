@@ -14,6 +14,13 @@ export interface SesionIniciada {
 export class SesionReservaPublicaService {
   constructor(@InjectDataSource() private readonly db: DataSource) {}
 
+  /** La cookie bien formada solo autoriza si su hash existe en este negocio. */
+  async exigirCredencial(negocioId: number, titularHash: string): Promise<void> {
+    const existente = await this.db.getRepository(SesionReservaPublica)
+      .findOneBy({ negocioId, titularHash });
+    if (!existente) throw new UnauthorizedException('Reinicie la sesión pública.');
+  }
+
   async iniciar(negocioId: number, recibida: string | null): Promise<SesionIniciada> {
     const credencial = recibida ?? randomBytes(32).toString('base64url');
     const titularHash = createHash('sha256').update(credencial).digest('hex');

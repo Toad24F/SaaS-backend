@@ -1,5 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.entity';
 import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
@@ -21,21 +23,63 @@ export interface ResultadoApartado {
   zonaHoraria: string | null;
 }
 
-/** Concede apartados en dos commits: la liberación anterior no se revierte por
- * un fallo del nuevo horario. Las rutas HTTP se incorporarán en M3-T064. */
+export interface EstadoApartadoPropio {
+  apartadoId: number;
+  generacion: string;
+  estado: 'vigente' | 'liberado' | 'sustituido' | 'vencido';
+  expiraEn: Date;
+  servidorAhora: Date;
+}
+
+/** Concede apartados en dos commits y conserva una lectura histórica del estado. */
 @Injectable()
 export class ApartadosService {
-  constructor(@Inject(RELOJ) private readonly reloj: Reloj,
+  constructor(@InjectDataSource() private readonly db: DataSource,
+    @Inject(RELOJ) private readonly reloj: Reloj,
     private readonly coordinacion: CoordinacionReservaPublicaService,
     private readonly motor: MotorDisponibilidadService) {}
 
   async solicitar(negocioId: number, titularHash: string, entrada: unknown): Promise<ResultadoApartado> {
+    return (await this.solicitarConMeta(negocioId, titularHash, entrada)).resultado;
+  }
+
+  /** Indica si la clave ya existía para distinguir creación HTTP de repetición. */
+  async solicitarConMeta(negocioId: number, titularHash: string, entrada: unknown):
+    Promise<{ resultado: ResultadoApartado; repetida: boolean; servidorAhora: Date }> {
     const seleccion = validarSolicitudApartado(entrada);
     // La misma clave retoma una preparación tras una caída entre las fases.
-    await this.coordinacion.transaccion(seleccion.clave, (manager) =>
+    const repetida = await this.coordinacion.transaccion(seleccion.clave, (manager) =>
       this.preparar(manager, negocioId, titularHash, seleccion));
-    return this.coordinacion.transaccion(seleccion.clave, (manager) =>
+    const resultado = await this.coordinacion.transaccion(seleccion.clave, (manager) =>
       this.conceder(manager, negocioId, titularHash, seleccion));
+    return { resultado, repetida, servidorAhora: this.reloj.ahora() };
+  }
+
+  /** Lee sesión y apartado en una sola instantánea; la fila histórica no se
+   * borra al liberar o vencer y el reloj se captura una sola vez. */
+  async consultar(negocioId: number, titularHash: string,
+    apartadoId: number): Promise<EstadoApartadoPropio> {
+    if (!Number.isSafeInteger(apartadoId) || apartadoId < 1) {
+      throw new NotFoundException('Apartado no disponible.');
+    }
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      const sesion = await manager.getRepository(SesionReservaPublica)
+        .findOneBy({ negocioId, titularHash });
+      if (!sesion) throw new NotFoundException('Apartado no disponible.');
+      const apartado = await manager.getRepository(BloqueoTemporal).findOneBy({
+        id: apartadoId, negocioId, sesionId: sesion.id, titularHash });
+      if (!apartado || apartado.generacion === null) {
+        throw new NotFoundException('Apartado no disponible.');
+      }
+      const servidorAhora = this.reloj.ahora();
+      // La generación separa un apartado sustituido de uno liberado por su
+      // titular; la igualdad exacta con expiraEn ya cuenta como vencimiento.
+      const estado = sesion.generacion !== apartado.generacion ? 'sustituido' :
+        apartado.liberadoEn !== null ? 'liberado' :
+          servidorAhora >= apartado.expiraEn ? 'vencido' : 'vigente';
+      return { apartadoId, generacion: apartado.generacion, estado,
+        expiraEn: apartado.expiraEn, servidorAhora };
+    });
   }
 
   async liberar(negocioId: number, titularHash: string, apartadoId: number,
@@ -68,15 +112,17 @@ export class ApartadosService {
   }
 
   private async preparar(manager: EntityManager, negocioId: number, titularHash: string,
-    seleccion: SolicitudApartado): Promise<void> {
+    seleccion: SolicitudApartado): Promise<boolean> {
     const sesion = await this.coordinacion.bloquearSesion(manager, negocioId, titularHash);
     // Rechazar referencias ajenas antes de insertar una operación evita filtrar
     // nombres de restricciones SQL y conserva el apartado previo intacto.
     await this.exigirRecursosPropios(manager, negocioId, seleccion);
+    const existente = await manager.getRepository(OperacionApartado).findOneBy({
+      negocioId, sesionId: sesion.id, clave: seleccion.clave });
     const generacion = (BigInt(sesion.generacion) + 1n).toString();
     const operacion = await this.coordinacion.bloquearOCrearOperacion(manager, sesion,
       seleccion.clave, { ...this.camposSeleccion(seleccion), generacion });
-    if (operacion.generacion !== generacion) return;
+    if (operacion.generacion !== generacion) return true;
     const anterior = sesion.apartadoActualId === null ? null :
       await manager.getRepository(BloqueoTemporal).findOneBy({
         id: sesion.apartadoActualId, negocioId, sesionId: sesion.id,
@@ -97,6 +143,7 @@ export class ApartadosService {
     // Commit de esta fase deja durable la liberación aun si la revalidación falla.
     await manager.getRepository(SesionReservaPublica).update({ id: sesion.id, negocioId },
       { generacion, apartadoActualId: null });
+    return Boolean(existente);
   }
 
   private async conceder(manager: EntityManager, negocioId: number, titularHash: string,

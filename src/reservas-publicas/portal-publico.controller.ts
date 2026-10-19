@@ -1,6 +1,7 @@
-import { BadRequestException, Body, Controller, Get,
-  Param, Post, Query, Req, Res } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get,
+  Param, Post, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 import { ResolverNegocioPublicoService } from './resolver-negocio-publico.service';
 import { ProteccionPortalService, COOKIE_RESERVA } from './proteccion-portal.service';
 import { SesionReservaPublicaService } from './sesion-reserva-publica.service';
@@ -8,6 +9,7 @@ import { CatalogoPublicoService } from './catalogo-publico.service';
 import { validarCatalogoPublico, validarDisponibilidadPublica } from './entradas-publicas';
 import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
 import { normalizarErrorPublico } from './errores-publicos';
+import { ApartadosService } from './apartados.service';
 
 /** Rutas de lectura anónima y creación de identidad del navegador. */
 @Controller('publico/negocios/:slug')
@@ -16,7 +18,22 @@ export class PortalPublicoController {
     private readonly proteccion: ProteccionPortalService,
     private readonly sesiones: SesionReservaPublicaService,
     private readonly catalogo: CatalogoPublicoService,
-    private readonly motor: MotorDisponibilidadService) {}
+    private readonly motor: MotorDisponibilidadService,
+    private readonly apartados: ApartadosService) {}
+
+  private titular(req: Request): { credencial: string; hash: string } {
+    const credencial = this.proteccion.leerCredencial(req);
+    if (!credencial) throw new UnauthorizedException('Reinicie la sesión pública.');
+    // La identidad nunca procede del cuerpo ni de una cabecera editable.
+    return { credencial, hash: createHash('sha256').update(credencial).digest('hex') };
+  }
+
+  private idApartado(id: string): number {
+    if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) {
+      throw new BadRequestException('Apartado inválido.');
+    }
+    return Number(id);
+  }
 
   @Get('catalogo')
   async consultarCatalogo(@Param('slug') slug: string, @Query() query: unknown,
@@ -64,6 +81,65 @@ export class PortalPublicoController {
       res.status(sesion.nueva ? 201 : 200);
       return { negocio: { slug: negocio.slug, nombre: negocio.nombre },
         csrfToken: this.proteccion.tokenCsrf(sesion.credencial) };
+    } catch (error) { throw normalizarErrorPublico(error); }
+  }
+
+  @Post('apartados')
+  async crearApartado(@Param('slug') slug: string, @Body() cuerpo: unknown,
+    @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Cookie, Origin');
+    try {
+      const titular = this.titular(req);
+      this.proteccion.exigirMutacion(req, titular.credencial);
+      const negocio = await this.negocios.resolver(slug);
+      await this.sesiones.exigirCredencial(negocio.id, titular.hash);
+      const { resultado, repetida, servidorAhora } = await this.apartados.solicitarConMeta(
+        negocio.id, titular.hash, cuerpo);
+      if (resultado.estado !== 'concedida') {
+        throw new ConflictException('Apartado no concedido.');
+      }
+      res.status(repetida ? 200 : 201);
+      return { ...resultado, servidorAhora };
+    } catch (error) { throw normalizarErrorPublico(error); }
+  }
+
+  @Get('apartados/:id')
+  async consultarApartado(@Param('slug') slug: string, @Param('id') id: string,
+    @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Cookie');
+    try {
+      const titular = this.titular(req);
+      const apartadoId = this.idApartado(id);
+      const negocio = await this.negocios.resolver(slug);
+      await this.sesiones.exigirCredencial(negocio.id, titular.hash);
+      return await this.apartados.consultar(negocio.id, titular.hash, apartadoId);
+    } catch (error) { throw normalizarErrorPublico(error); }
+  }
+
+  @Post('apartados/:id/liberar')
+  async liberarApartado(@Param('slug') slug: string, @Param('id') id: string,
+    @Body() cuerpo: unknown, @Req() req: Request,
+    @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Cookie, Origin');
+    try {
+      const titular = this.titular(req);
+      this.proteccion.exigirMutacion(req, titular.credencial);
+      const apartadoId = this.idApartado(id);
+      if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo) ||
+        Object.keys(cuerpo).length !== 1 ||
+        !/^[1-9]\d*$/.test((cuerpo as Record<string, unknown>).generacion as string)) {
+        throw new BadRequestException('Generación inválida.');
+      }
+      // Solo la liberación evita el cierre de licencia; propiedad y CSRF siguen vigentes.
+      const negocio = await this.negocios.resolverParaLiberar(slug);
+      await this.sesiones.exigirCredencial(negocio.id, titular.hash);
+      await this.apartados.liberar(negocio.id, titular.hash, apartadoId,
+        (cuerpo as { generacion: string }).generacion);
+      res.status(204);
+      return;
     } catch (error) { throw normalizarErrorPublico(error); }
   }
 }

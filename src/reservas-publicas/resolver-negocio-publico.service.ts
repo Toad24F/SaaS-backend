@@ -30,6 +30,25 @@ export class ResolverNegocioPublicoService {
   /** Reutiliza la misma instantánea para autorizar el catálogo y leer su oferta. */
   async resolverEnContexto(manager: EntityManager, slug: string,
     ahora: Date): Promise<NegocioPublicoAutorizado> {
+    const negocio = await this.buscarNegocio(manager, slug);
+    const licencia = await manager.getRepository(Licencia)
+      .findOneBy({ negocioId: negocio.id });
+    if (!licencia || !this.politica.puedeAceptarReserva(
+      negocio.activadoEn !== null, licencia, ahora)) {
+      throw new NotFoundException('Portal no disponible para reservar.');
+    }
+    return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
+  }
+
+  /** La liberación de un apartado propio sigue disponible si venció la licencia. */
+  async resolverParaLiberar(slug: string): Promise<NegocioPublicoAutorizado> {
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      const negocio = await this.buscarNegocio(manager, slug);
+      return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
+    });
+  }
+
+  private async buscarNegocio(manager: EntityManager, slug: string): Promise<Negocio> {
     // El alta histórica admite identificadores sin una gramática de guiones;
     // la búsqueda exacta conserva esos enlaces y el URL se escapa al emitir cookie.
     if (typeof slug !== 'string' || !slug || slug.length > 100 ||
@@ -39,12 +58,6 @@ export class ResolverNegocioPublicoService {
     }
     const negocio = await manager.getRepository(Negocio).findOneBy({ slug });
     if (!negocio) throw new NotFoundException('Portal no disponible para reservar.');
-    const licencia = await manager.getRepository(Licencia)
-      .findOneBy({ negocioId: negocio.id });
-    if (!licencia || !this.politica.puedeAceptarReserva(
-      negocio.activadoEn !== null, licencia, ahora)) {
-      throw new NotFoundException('Portal no disponible para reservar.');
-    }
-    return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
+    return negocio;
   }
 }
