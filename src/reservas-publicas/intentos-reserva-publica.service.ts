@@ -104,6 +104,16 @@ export class IntentosReservaPublicaService {
       if (!iguales) throw new ConflictException('Clave reutilizada con otro contenido.');
     }
     if (intento.estado === 'preparado') return null;
+    return this.proyectarRegistradoEnTransaccion(manager, intento);
+  }
+
+  /** El resolutor ya comprobó propiedad con sesión e intento bloqueados;
+   * puede recuperar un resultado sin pedir de nuevo datos de contacto. */
+  async proyectarRegistradoEnTransaccion(manager: EntityManager,
+    intento: IntentoReservaPublica): Promise<ResultadoReservaPublica> {
+    if (intento.estado !== 'registrado') {
+      throw new ConflictException('Intento sin resultado registrado.');
+    }
     if (intento.formularioHash === null || intento.citaId === null) {
       throw new Error('Resultado de intento incompleto.');
     }

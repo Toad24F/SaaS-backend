@@ -259,22 +259,22 @@ E4; M04–M05; D06–D10; T03, T07–T09.
 - [x] **M3-T073 — Reconocer resultado existente o clave incompatible** · 20 min · Depende de: M3-T072, M3-T071 · RF-35, RF-39–RF-42
   Hecho cuando: el colaborador devuelve la reserva ya registrada para igual contenido sin requerir apartado vigente y rechaza cambio de contenido o intento terminal no registrado.
 
-- [ ] **M3-T074 — Revalidar un intento nuevo bajo los bloqueos comunes** · 25 min · Depende de: M3-T072, M3-T073, M3-T033, M3-T057 · RF-03, RF-18, RF-20–RF-22, RF-29, RF-31–RF-33
+- [x] **M3-T074 — Revalidar un intento nuevo bajo los bloqueos comunes** · 25 min · Depende de: M3-T072, M3-T073, M3-T033, M3-T057 · RF-03, RF-18, RF-20–RF-22, RF-29, RF-31–RF-33
   Hecho cuando: la entrada del escritor relee acceso y oferta tras esperar, comprueba apartado propio, duración e intervalo, y produce negativa funcional sin insertar cita.
 
-- [ ] **M3-T075 — Preparar copia histórica y folio de la reserva** · 20 min · Depende de: M3-T017, M3-T069, M3-T074 · RF-12, RF-30, RF-36–RF-37
+- [x] **M3-T075 — Preparar copia histórica y folio de la reserva** · 20 min · Depende de: M3-T017, M3-T069, M3-T074 · RF-12, RF-30, RF-36–RF-37
   Hecho cuando: la proyección toma costo del apartado, UTC/zona validados y nombres/contacto normalizados; genera un folio compatible con la unicidad sin usar teléfono como identidad.
 
-- [ ] **M3-T076 — Guardar cliente, cita, consumo y resultado juntos** · 25 min · Depende de: M3-T075, M3-T074, M3-T073 · RF-08, RF-12, RF-30–RF-39
+- [x] **M3-T076 — Guardar cliente, cita, consumo y resultado juntos** · 25 min · Depende de: M3-T075, M3-T074, M3-T073 · RF-08, RF-12, RF-30–RF-39
   Hecho cuando: el escritor crea cliente nuevo y una cita pendiente, consume el apartado, retira su puntero y enlaza el intento en un solo commit; no envía efectos externos.
 
-- [ ] **M3-T077 — Probar fallos entre escrituras de reserva** · 25 min · Depende de: M3-T076, M3-T005 · RF-34–RF-36, RF-39
+- [x] **M3-T077 — Probar fallos entre escrituras de reserva** · 25 min · Depende de: M3-T076, M3-T005 · RF-34–RF-36, RF-39
   Hecho cuando: fallos después de cliente, cita y antes de resultado revierten todos los cambios; el apartado conserva el vencimiento anterior y no hay clientes o citas huérfanos.
 
-- [ ] **M3-T078 — Resolver un intento existente bajo exclusión** · 25 min · Depende de: M3-T076, M3-T059, M3-T047 · RF-28, RF-35, RF-39–RF-43
+- [x] **M3-T078 — Resolver un intento existente bajo exclusión** · 25 min · Depende de: M3-T076, M3-T059, M3-T047 · RF-28, RF-35, RF-39–RF-43
   Hecho cuando: el resolutor devuelve el resultado registrado o cierra como no registrado y libera solo su apartado; espera al escritor o informa 503 sin inferir ausencia.
 
-- [ ] **M3-T079 — Cerrar una clave cuya preparación no llegó** · 25 min · Depende de: M3-T078, M3-T072 · RF-35, RF-39–RF-42
+- [x] **M3-T079 — Cerrar una clave cuya preparación no llegó** · 25 min · Depende de: M3-T078, M3-T072 · RF-35, RF-39–RF-42
   Hecho cuando: el resolutor crea un registro terminal propio para la clave ausente y una preparación o reserva tardía con esa clave no puede insertar cita.
 
 - [ ] **M3-T080 — Exponer preparación y registro de reserva** · 25 min · Depende de: M3-T076, M3-T070, M3-T028, M3-T041 · RF-08–RF-13, RF-30–RF-40, RF-42–RF-43
