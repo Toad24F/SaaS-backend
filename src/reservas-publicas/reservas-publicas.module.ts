@@ -15,8 +15,8 @@ import { IntentosReservaPublicaService } from './intentos-reserva-publica.servic
 import { RegistroReservaPublicaService } from './registro-reserva-publica.service';
 import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.service';
 
-/** Frontera del dominio M01–M05: apartado, escritor y resolutor son internos
- * hasta que las rutas públicas y sus verificaciones se habiliten en T080–T081. */
+/** Frontera del dominio M01–M05: exporta los colaboradores de apartado,
+ * registro y resolución para la capa HTTP con autorización pública propia. */
 // forFeature hace visibles las tres entidades al servidor con autoLoadEntities.
 @Module({ imports: [DisponibilidadModule, LicenciasModule, TypeOrmModule.forFeature([
   SesionReservaPublica, OperacionApartado, IntentoReservaPublica,

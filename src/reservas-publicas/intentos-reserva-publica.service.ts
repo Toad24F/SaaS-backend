@@ -41,6 +41,12 @@ export class IntentosReservaPublicaService {
 
   async preparar(negocioId: number, titularHash: string,
     entrada: unknown): Promise<IntentoPreparado> {
+    return (await this.prepararConMeta(negocioId, titularHash, entrada)).resultado;
+  }
+
+  /** El estado HTTP se decide dentro de la exclusión, sin preconsultas sujetas a carreras. */
+  async prepararConMeta(negocioId: number, titularHash: string,
+    entrada: unknown): Promise<{ resultado: IntentoPreparado; repetida: boolean }> {
     const { clave, apartadoId } = validarPreparacion(entrada);
     return this.coordinacion.transaccion(clave, async (manager) => {
       const sesion = await this.coordinacion.bloquearSesion(manager, negocioId, titularHash);
@@ -53,7 +59,7 @@ export class IntentosReservaPublicaService {
         if (existente.apartadoId !== apartadoId || existente.estado === 'no_registrado') {
           throw new ConflictException('Clave de intento incompatible o cerrada.');
         }
-        return { id: existente.id, apartadoId, estado: existente.estado };
+        return { resultado: { id: existente.id, apartadoId, estado: existente.estado }, repetida: true };
       }
       // Solo un apartado propio, actual, público y vigente puede originar un
       // intento nuevo. La preparación nunca cambia su expiraEn ni su puntero.
@@ -67,7 +73,7 @@ export class IntentosReservaPublicaService {
       }
       const intento = await this.coordinacion.bloquearOCrearIntento(manager, sesion,
         clave, apartadoId);
-      return { id: intento.id, apartadoId, estado: 'preparado' };
+      return { resultado: { id: intento.id, apartadoId, estado: 'preparado' }, repetida: false };
     });
   }
 

@@ -277,23 +277,25 @@ E4; M04–M05; D06–D10; T03, T07–T09.
 - [x] **M3-T079 — Cerrar una clave cuya preparación no llegó** · 25 min · Depende de: M3-T078, M3-T072 · RF-35, RF-39–RF-42
   Hecho cuando: el resolutor crea un registro terminal propio para la clave ausente y una preparación o reserva tardía con esa clave no puede insertar cita.
 
-- [ ] **M3-T080 — Exponer preparación y registro de reserva** · 25 min · Depende de: M3-T076, M3-T070, M3-T028, M3-T041 · RF-08–RF-13, RF-30–RF-40, RF-42–RF-43
+- [x] **M3-T080 — Exponer preparación y registro de reserva** · 25 min · Depende de: M3-T076, M3-T070, M3-T028, M3-T041 · RF-08–RF-13, RF-30–RF-40, RF-42–RF-43
   Hecho cuando: POST /intentos y POST /intentos/:id/reservar aplican propiedad, validaciones, creación/repetición y errores sin aceptar estado, precio o fin del cliente.
 
-- [ ] **M3-T081 — Exponer resolución de envío incierto** · 20 min · Depende de: M3-T079, M3-T080 · RF-03, RF-28, RF-35, RF-39–RF-43
+- [x] **M3-T081 — Exponer resolución de envío incierto** · 20 min · Depende de: M3-T079, M3-T080 · RF-03, RF-28, RF-35, RF-39–RF-43
   Hecho cuando: POST /intentos/:id/resolver solo recupera intentos propios, funciona para resultados guardados tras bloqueo de licencia y no crea una ruta de consulta por teléfono/folio.
 
-- [ ] **M3-T082 — Probar resultado pendiente y teléfonos compartidos** · 25 min · Depende de: M3-T080, M3-T004 · RF-08–RF-13, RF-34, RF-36–RF-38
+- [x] **M3-T082 — Probar resultado pendiente y teléfonos compartidos** · 25 min · Depende de: M3-T080, M3-T004 · RF-08–RF-13, RF-34, RF-36–RF-38
   Hecho cuando: dos reservas con el mismo teléfono y nombres distintos conservan sus datos; resumen y folio son correctos y la cita pendiente no vence ni libera su intervalo.
 
-- [ ] **M3-T083 — Probar conservación de costo y datos históricos** · 25 min · Depende de: M3-T080, M3-T081 · RF-12, RF-30, RF-36–RF-37, RF-39
+- [x] **M3-T083 — Probar conservación de costo y datos históricos** · 25 min · Depende de: M3-T080, M3-T081 · RF-12, RF-30, RF-36–RF-37, RF-39
   Hecho cuando: cambiar costo durante apartado respeta el anterior; un apartado nuevo toma el nuevo; editar catálogo tras el registro no cambia el resumen recuperado ni el contacto.
 
-- [ ] **M3-T084 — Probar invalidación por cambios de oferta y duración** · 25 min · Depende de: M3-T080, M3-T004 · RF-03–RF-04, RF-18, RF-31–RF-32
+- [x] **M3-T084 — Probar invalidación por cambios de oferta y duración** · 25 min · Depende de: M3-T080, M3-T004 · RF-03–RF-04, RF-18, RF-31–RF-32
   Hecho cuando: una selección que dejó de estar activa o cuyo intervalo ya no coincide se rechaza al guardar; tampoco se consumen apartados expirados o ajenos.
 
-- [ ] **M3-T085 — Probar seguridad y errores de recuperación** · 25 min · Depende de: M3-T081, M3-T035 · RF-02–RF-03, RF-13, RF-29, RF-40–RF-43
+- [x] **M3-T085 — Probar seguridad y errores de recuperación** · 25 min · Depende de: M3-T081, M3-T035 · RF-02–RF-03, RF-13, RF-29, RF-40–RF-43
   Hecho cuando: cookie ajena, clave inexistente de otra sesión y negocio distinto no revelan reservas; pérdida de credencial y fallos técnicos no se convierten en éxito ni fracaso falso.
+
+Evidencia de M3-T080–M3-T085: [resultado, flujo HTTP y pruebas](resultados-tareas/resultado-t080-t085.md).
 
 ## 8. Carreras con escritores públicos reales
 

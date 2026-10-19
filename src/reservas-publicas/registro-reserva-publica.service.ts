@@ -25,7 +25,7 @@ interface CopiaHistorica {
   costo: string; zona: string;
 }
 
-/** Escritor interno: HTTP se incorpora en T080 después de verificar el contrato. */
+/** Escritor atómico compartido por la frontera HTTP y las pruebas de dominio. */
 @Injectable()
 export class RegistroReservaPublicaService {
   constructor(@InjectDataSource() private readonly db: DataSource,
@@ -36,6 +36,12 @@ export class RegistroReservaPublicaService {
 
   async registrar(negocioId: number, titularHash: string, clave: string,
     entrada: unknown): Promise<ResultadoReservaPublica> {
+    return (await this.registrarConMeta(negocioId, titularHash, clave, entrada)).resultado;
+  }
+
+  /** Informa creación o repetición desde la misma transacción que guarda la cita. */
+  async registrarConMeta(negocioId: number, titularHash: string, clave: string,
+    entrada: unknown): Promise<{ resultado: ResultadoReservaPublica; repetida: boolean }> {
     const contacto = validarContactoReservaPublica(entrada);
     const huella = huellaContactoReservaPublica(contacto);
     return this.coordinacion.transaccion(clave, async (manager) => {
@@ -48,7 +54,7 @@ export class RegistroReservaPublicaService {
       // Una respuesta perdida se reproduce antes de comprobar vigencia comercial
       // o del apartado; el resultado durable jamás crea una segunda cita.
       const anterior = await this.intentos.reconocerEnTransaccion(manager, intento, huella);
-      if (anterior) return anterior;
+      if (anterior) return { resultado: anterior, repetida: true };
       const previo = await manager.getRepository(BloqueoTemporal).findOneBy({
         id: intento.apartadoId, negocioId, sesionId: sesion.id, titularHash });
       if (!previo) throw new NotFoundException('Apartado no disponible.');
@@ -105,8 +111,9 @@ export class RegistroReservaPublicaService {
       if (instanteFinal >= apartado.expiraEn || validacion.inicioUtc <= instanteFinal) {
         throw new ConflictException('Apartado vencido o inicio pasado.');
       }
-      return this.guardarTodo(manager, sesion, intento, apartado, contacto,
+      const resultado = await this.guardarTodo(manager, sesion, intento, apartado, contacto,
         huella, validacion.inicioUtc, validacion.finUtc, copia, instanteFinal);
+      return { resultado, repetida: false };
     });
   }
 

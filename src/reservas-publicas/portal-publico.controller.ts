@@ -10,8 +10,11 @@ import { validarCatalogoPublico, validarDisponibilidadPublica } from './entradas
 import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
 import { normalizarErrorPublico } from './errores-publicos';
 import { ApartadosService } from './apartados.service';
+import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
+import { RegistroReservaPublicaService } from './registro-reserva-publica.service';
+import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.service';
 
-/** Rutas de lectura anónima y creación de identidad del navegador. */
+/** Frontera pública: selección, apartados, reserva y recuperación del envío propio. */
 @Controller('publico/negocios/:slug')
 export class PortalPublicoController {
   constructor(private readonly negocios: ResolverNegocioPublicoService,
@@ -19,7 +22,82 @@ export class PortalPublicoController {
     private readonly sesiones: SesionReservaPublicaService,
     private readonly catalogo: CatalogoPublicoService,
     private readonly motor: MotorDisponibilidadService,
-    private readonly apartados: ApartadosService) {}
+    private readonly apartados: ApartadosService,
+    private readonly intentos: IntentosReservaPublicaService,
+    private readonly registro: RegistroReservaPublicaService,
+    private readonly resolucion: ResolucionReservaPublicaService) {}
+
+  /** :id es la clave opaca del navegador, utilizable incluso si preparar no llegó.
+   * El ID SQL permanece interno; sesión y negocio acotan siempre esa clave. */
+  private claveIntento(id: string): string {
+    if (!/^[A-Za-z0-9_-]{16,64}$/.test(id)) {
+      throw new BadRequestException('Clave de intento inválida.');
+    }
+    return id;
+  }
+
+  @Post('intentos')
+  async prepararIntento(@Param('slug') slug: string, @Body() cuerpo: unknown,
+    @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Cookie, Origin');
+    try {
+      const titular = this.titular(req);
+      this.proteccion.exigirMutacion(req, titular.credencial);
+      const negocio = await this.negocios.resolver(slug);
+      await this.sesiones.exigirCredencial(negocio.id, titular.hash);
+      const { resultado, repetida } = await this.intentos.prepararConMeta(negocio.id, titular.hash, cuerpo);
+      res.status(repetida ? 200 : 201);
+      return { id: (cuerpo as { clave: string }).clave,
+        apartadoId: resultado.apartadoId, estado: resultado.estado };
+    } catch (error) { throw normalizarErrorPublico(error); }
+  }
+
+  @Post('intentos/:id/reservar')
+  async reservarIntento(@Param('slug') slug: string, @Param('id') id: string,
+    @Body() cuerpo: unknown, @Req() req: Request,
+    @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Cookie, Origin');
+    try {
+      const titular = this.titular(req);
+      this.proteccion.exigirMutacion(req, titular.credencial);
+      const clave = this.claveIntento(id);
+      // Una repetición registrada debe llegar al escritor aun sin licencia.
+      // Para un envío nuevo el motor autoriza bajo los bloqueos del dominio.
+      const negocio = await this.negocios.resolverParaLiberar(slug);
+      await this.sesiones.exigirCredencial(negocio.id, titular.hash);
+      const { resultado, repetida } = await this.registro.registrarConMeta(
+        negocio.id, titular.hash, clave, cuerpo);
+      res.status(repetida ? 200 : 201);
+      return resultado;
+    } catch (error) { throw normalizarErrorPublico(error); }
+  }
+
+  @Post('intentos/:id/resolver')
+  async resolverIntento(@Param('slug') slug: string, @Param('id') id: string,
+    @Body() cuerpo: unknown, @Req() req: Request,
+    @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Cookie, Origin');
+    try {
+      const titular = this.titular(req);
+      this.proteccion.exigirMutacion(req, titular.credencial);
+      const clave = this.claveIntento(id);
+      if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo) ||
+        Object.keys(cuerpo).length !== 1 || !Object.hasOwn(cuerpo, 'apartadoId')) {
+        throw new BadRequestException('Resolución inválida.');
+      }
+      const negocio = await this.negocios.resolverParaLiberar(slug);
+      await this.sesiones.exigirCredencial(negocio.id, titular.hash);
+      // El servicio valida el ID y cierra la ausencia de forma durable bajo
+      // exclusión: un timeout nunca se transforma aquí en no_registrado.
+      const resultado = await this.resolucion.resolver(negocio.id, titular.hash,
+        clave, (cuerpo as { apartadoId: number }).apartadoId);
+      res.status(200);
+      return resultado;
+    } catch (error) { throw normalizarErrorPublico(error); }
+  }
 
   private titular(req: Request): { credencial: string; hash: string } {
     const credencial = this.proteccion.leerCredencial(req);

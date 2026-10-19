@@ -40,7 +40,8 @@ export class ResolverNegocioPublicoService {
     return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
   }
 
-  /** La liberación de un apartado propio sigue disponible si venció la licencia. */
+  /** Liberación y recuperación propias siguen disponibles si venció la licencia.
+   * Una escritura nueva debe autorizar la licencia dentro de su transacción. */
   async resolverParaLiberar(slug: string): Promise<NegocioPublicoAutorizado> {
     return this.db.transaction('REPEATABLE READ', async (manager) => {
       const negocio = await this.buscarNegocio(manager, slug);
