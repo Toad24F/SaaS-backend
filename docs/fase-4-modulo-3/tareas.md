@@ -228,16 +228,16 @@ E3; M03; D03–D05, D07; T05–T07.
 - [x] **M3-T064 — Exponer las tres rutas de apartado** · 25 min · Depende de: M3-T062, M3-T063, M3-T028, M3-T041 · RF-18–RF-30, RF-33, RF-43
   Hecho cuando: crear, consultar y liberar aplican los contratos HTTP y la propiedad; liberar sigue permitido al titular cuando la licencia impide nuevas concesiones.
 
-- [ ] **M3-T065 — Probar plazo inmutable y vencimiento exacto** · 25 min · Depende de: M3-T064, M3-T005 · RF-19–RF-23, RF-27, RF-31
+- [x] **M3-T065 — Probar plazo inmutable y vencimiento exacto** · 25 min · Depende de: M3-T064, M3-T005 · RF-19–RF-23, RF-27, RF-31
   Hecho cuando: con reloj controlado se verifica el límite exacto de cinco minutos y que consultas, errores y repetición de operación no amplían el plazo.
 
-- [ ] **M3-T066 — Probar reemplazo fallido y generación obsoleta** · 25 min · Depende de: M3-T064, M3-T006 · RF-24–RF-27, RF-29, RF-33
+- [x] **M3-T066 — Probar reemplazo fallido y generación obsoleta** · 25 min · Depende de: M3-T064, M3-T006 · RF-24–RF-27, RF-29, RF-33
   Hecho cuando: si el nuevo horario falla, el anterior sigue liberado; dos generaciones y avisos atrasados no dejan dos apartados vigentes ni liberan el más reciente.
 
-- [ ] **M3-T067 — Probar interrupción entre fases de apartado** · 25 min · Depende de: M3-T062, M3-T006 · RF-21, RF-25–RF-26, RF-33, RF-43
+- [x] **M3-T067 — Probar interrupción entre fases de apartado** · 25 min · Depende de: M3-T062, M3-T006 · RF-21, RF-25–RF-26, RF-33, RF-43
   Hecho cuando: un fallo después del primer commit conserva la liberación; el reintento con la misma clave concede una sola vez o devuelve una negativa terminal.
 
-- [ ] **M3-T068 — Probar propiedad, precio y filas históricas** · 25 min · Depende de: M3-T064, M3-T023, M3-T004 · RF-02, RF-20, RF-29–RF-30, RF-43
+- [x] **M3-T068 — Probar propiedad, precio y filas históricas** · 25 min · Depende de: M3-T064, M3-T023, M3-T004 · RF-02, RF-20, RF-29–RF-30, RF-43
   Hecho cuando: otro titular no consulta/libera el apartado, el costo proviene del catálogo y un apartado previo sin contexto público sigue ocupando sin ser consumible desde el portal.
 
 ## 7. Registro pendiente y recuperación de envíos
