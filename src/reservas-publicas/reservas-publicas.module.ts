@@ -11,6 +11,7 @@ import { ProteccionPortalService } from './proteccion-portal.service';
 import { CatalogoPublicoService } from './catalogo-publico.service';
 import { CoordinacionReservaPublicaService } from './coordinacion-reserva-publica.service';
 import { ApartadosService } from './apartados.service';
+import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 
 /** Frontera del dominio M01–M05; el escritor interno de apartados todavía no expone rutas. */
 // forFeature hace visibles las tres entidades al servidor con autoLoadEntities.
@@ -18,8 +19,8 @@ import { ApartadosService } from './apartados.service';
   SesionReservaPublica, OperacionApartado, IntentoReservaPublica,
 ])], providers: [ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,
-  CoordinacionReservaPublicaService, ApartadosService], exports: [DisponibilidadModule,
+  CoordinacionReservaPublicaService, ApartadosService, IntentosReservaPublicaService], exports: [DisponibilidadModule,
   ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,
-  CoordinacionReservaPublicaService, ApartadosService] })
+  CoordinacionReservaPublicaService, ApartadosService, IntentosReservaPublicaService] })
 export class ReservasPublicasModule {}

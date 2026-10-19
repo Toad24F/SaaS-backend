@@ -244,19 +244,19 @@ E3; M03; D03–D05, D07; T05–T07.
 
 E4; M04–M05; D06–D10; T03, T07–T09.
 
-- [ ] **M3-T069 — Validar contacto y límites de captura en servidor** · 20 min · Depende de: M3-T007, M3-T041 · RF-08–RF-11, RF-43
+- [x] **M3-T069 — Validar contacto y límites de captura en servidor** · 20 min · Depende de: M3-T007, M3-T041 · RF-08–RF-11, RF-43
   Hecho cuando: nombre admite acentos y hasta 150 caracteres; teléfono normaliza espacios, guiones y +52 a diez dígitos; notas admiten hasta 2.000 y el cuerpo se limita a 32 KiB sin truncar.
 
-- [ ] **M3-T070 — Probar validaciones y normalización** · 20 min · Depende de: M3-T069 · RF-08–RF-11, RF-43
+- [x] **M3-T070 — Probar validaciones y normalización** · 20 min · Depende de: M3-T069 · RF-08–RF-11, RF-43
   Hecho cuando: pasan casos válidos y límites exactos, y se rechazan vacíos, letras/prefijos inválidos y excesos con mensajes de campo, sin código de verificación telefónica.
 
-- [ ] **M3-T071 — Calcular huella segura del envío normalizado** · 20 min · Depende de: M3-T069, M3-T018 · RF-13, RF-39, RF-42–RF-43
+- [x] **M3-T071 — Calcular huella segura del envío normalizado** · 20 min · Depende de: M3-T069, M3-T018 · RF-13, RF-39, RF-42–RF-43
   Hecho cuando: la huella HMAC usa secreto de entorno, es estable para entradas equivalentes y no incorpora datos de contacto ni secretos a logs o errores.
 
-- [ ] **M3-T072 — Preparar intento vinculado al apartado propio** · 25 min · Depende de: M3-T018, M3-T064, M3-T047 · RF-29, RF-31, RF-39–RF-42
+- [x] **M3-T072 — Preparar intento vinculado al apartado propio** · 25 min · Depende de: M3-T018, M3-T064, M3-T047 · RF-29, RF-31, RF-39–RF-42
   Hecho cuando: preparar la misma clave devuelve el mismo intento, verifica titular/combinación y no renueva el apartado ni acepta reabrir un intento terminal.
 
-- [ ] **M3-T073 — Reconocer resultado existente o clave incompatible** · 20 min · Depende de: M3-T072, M3-T071 · RF-35, RF-39–RF-42
+- [x] **M3-T073 — Reconocer resultado existente o clave incompatible** · 20 min · Depende de: M3-T072, M3-T071 · RF-35, RF-39–RF-42
   Hecho cuando: el colaborador devuelve la reserva ya registrada para igual contenido sin requerir apartado vigente y rechaza cambio de contenido o intento terminal no registrado.
 
 - [ ] **M3-T074 — Revalidar un intento nuevo bajo los bloqueos comunes** · 25 min · Depende de: M3-T072, M3-T073, M3-T033, M3-T057 · RF-03, RF-18, RF-20–RF-22, RF-29, RF-31–RF-33
