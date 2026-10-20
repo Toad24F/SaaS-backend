@@ -383,25 +383,25 @@ E5; M06; D02–D03, D10–D11; T02, T03 y T12. Trabajo en frontend-saas.
 - [x] **M3-T109 — Liberar al volver, recargar o abandonar** · 25 min · Depende de: M3-T108, M3-T059 · RF-24, RF-26–RF-29
       Hecho cuando: volver envía liberación del ID/generación correctos; salida usa aviso de mejor esfuerzo y una recarga ordinaria reinicia sin restaurar el formulario.
 
-- [ ] **M3-T110 — Persistir marcador mínimo antes del envío** · 20 min · Depende de: M3-T106, M3-T072 · RF-28, RF-39–RF-42
+- [x] **M3-T110 — Persistir marcador mínimo antes del envío** · 20 min · Depende de: M3-T106, M3-T072 · RF-28, RF-39–RF-42
       Hecho cuando: sessionStorage recibe solo negocio, apartado y clave de intento antes de preparar/enviar; no se cambia esa clave por timeout ni se incluyen datos de contacto.
 
-- [ ] **M3-T111 — Conectar envío de reserva y repetición** · 25 min · Depende de: M3-T110, M3-T105, M3-T080 · RF-08–RF-10, RF-31–RF-35, RF-39–RF-43
+- [x] **M3-T111 — Conectar envío de reserva y repetición** · 25 min · Depende de: M3-T110, M3-T105, M3-T080 · RF-08–RF-10, RF-31–RF-35, RF-39–RF-43
       Hecho cuando: se prepara y envía el intento, se manejan errores de campo/conflicto y el reintento usa el mismo contenido normalizado; un resultado incierto bloquea nuevas reservas.
 
-- [ ] **M3-T112 — Resolver resultados inciertos y recargas** · 25 min · Depende de: M3-T111, M3-T081 · RF-28, RF-35, RF-39–RF-43
+- [x] **M3-T112 — Resolver resultados inciertos y recargas** · 25 min · Depende de: M3-T111, M3-T081 · RF-28, RF-35, RF-39–RF-43
       Hecho cuando: ante recarga con marcador se consulta el resolutor antes de reiniciar; se muestra la cita existente o se reinicia solo tras ausencia terminal comprobada.
 
-- [ ] **M3-T113 — Evitar liberación automática durante un envío** · 20 min · Depende de: M3-T112, M3-T109 · RF-27–RF-28, RF-34–RF-35, RF-40–RF-41
+- [x] **M3-T113 — Evitar liberación automática durante un envío** · 20 min · Depende de: M3-T112, M3-T109 · RF-27–RF-28, RF-34–RF-35, RF-40–RF-41
       Hecho cuando: salir mientras se registra no emite una liberación competidora; las respuestas y avisos atrasados no borran el resultado ni liberan otro apartado.
 
-- [ ] **M3-T114 — Mostrar resumen de reserva pendiente** · 20 min · Depende de: M3-T112 · RF-30, RF-34, RF-36–RF-38, RF-42–RF-43
+- [x] **M3-T114 — Mostrar resumen de reserva pendiente** · 20 min · Depende de: M3-T112 · RF-30, RF-34, RF-36–RF-38, RF-42–RF-43
       Hecho cuando: el resultado presenta folio, nombres, fecha/hora/zona, costo y estado pendiente guardados, sin afirmar envío de WhatsApp ni añadir enlaces de gestión.
 
-- [ ] **M3-T115 — Ajustar navegación móvil y accesibilidad del flujo** · 25 min · Depende de: M3-T114, M3-T102, M3-T103, M3-T105 · RF-05–RF-07, RF-10, RF-16–RF-17, RF-43
+- [x] **M3-T115 — Ajustar navegación móvil y accesibilidad del flujo** · 25 min · Depende de: M3-T114, M3-T102, M3-T103, M3-T105 · RF-05–RF-07, RF-10, RF-16–RF-17, RF-43
       Hecho cuando: todos los pasos funcionan en ancho móvil sin desbordamiento horizontal, con foco visible, etiquetas y anuncios de error/estado accesibles.
 
-- [ ] **M3-T116 — Probar estado y respuestas desordenadas del portal** · 25 min · Depende de: M3-T101, M3-T106, M3-T112 · RF-05–RF-06, RF-10, RF-23, RF-28, RF-32, RF-39–RF-41
+- [x] **M3-T116 — Probar estado y respuestas desordenadas del portal** · 25 min · Depende de: M3-T101, M3-T106, M3-T112 · RF-05–RF-06, RF-10, RF-23, RF-28, RF-32, RF-39–RF-41
       Hecho cuando: las pruebas Node cubren invalidación de selecciones, respuesta vieja descartada, conservación en memoria y transición incierta sin iniciar otra reserva.
 
 ## 10. Pruebas de navegador y cierre de seguridad
