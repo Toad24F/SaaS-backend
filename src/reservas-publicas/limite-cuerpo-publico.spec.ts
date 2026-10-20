@@ -1,7 +1,30 @@
-import type { INestApplication } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  type INestApplication,
+  Module,
+  Post,
+} from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import express from 'express';
 import request from 'supertest';
 import { instalarLimiteCuerpoPublico } from './limite-cuerpo-publico';
+
+@Controller()
+class ControladorCuerposPrueba {
+  @Post('auth/login')
+  login(@Body() body: Record<string, unknown>) {
+    return body;
+  }
+
+  @Post('publico/negocios/demo/eco')
+  publico(@Body() body: Record<string, unknown>) {
+    return body;
+  }
+}
+
+@Module({ controllers: [ControladorCuerposPrueba] })
+class ModuloCuerposPrueba {}
 
 describe('M3-T069: límite del JSON crudo del portal', () => {
   // Este servidor mínimo ejerce el parser sin activar todavía la ruta de reserva.
@@ -24,5 +47,28 @@ describe('M3-T069: límite del JSON crudo del portal', () => {
       .set('Content-Type', 'application/json').send(cuerpo).expect(400);
     expect(respuesta.body).toEqual({ codigo: 'portal_400',
       mensaje: 'Reduzca el formulario.', accion: 'corregir' });
+  });
+
+  it('conserva el parser JSON global de Nest para las rutas no públicas', async () => {
+    const modulo = await Test.createTestingModule({
+      imports: [ModuloCuerposPrueba],
+    }).compile();
+    const aplicacion = modulo.createNestApplication();
+    instalarLimiteCuerpoPublico(aplicacion);
+
+    try {
+      await aplicacion.init();
+      const servidor = aplicacion.getHttpServer();
+      await request(servidor).post('/auth/login')
+        .send({ email: 'admin@example.test', password: 'secreto' })
+        .expect(201)
+        .expect({ email: 'admin@example.test', password: 'secreto' });
+      await request(servidor).post('/publico/negocios/demo/eco')
+        .send({ dato: 'publico' })
+        .expect(201)
+        .expect({ dato: 'publico' });
+    } finally {
+      await aplicacion.close();
+    }
   });
 });
