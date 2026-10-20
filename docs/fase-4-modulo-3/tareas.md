@@ -338,8 +338,10 @@ Evidencia de M3-T086–M3-T091: [resultado, carreras y pruebas](resultados-tarea
 
 Evidencia de M3-T092–M3-T096: [resultado, carreras y pruebas](resultados-tareas/resultado-t092-t096.md).
 
-- [ ] **M3-T097 — Revisar evidencia del escritor antes de habilitarlo** · 20 min · Depende de: M3-T065, M3-T066, M3-T067, M3-T068, M3-T082, M3-T083, M3-T084, M3-T085, M3-T087, M3-T088, M3-T089, M3-T090, M3-T091, M3-T092, M3-T093, M3-T094, M3-T096 · RF-02–RF-04, RF-12–RF-15, RF-18–RF-43
+- [x] **M3-T097 — Revisar evidencia del escritor antes de habilitarlo** · 20 min · Depende de: M3-T065, M3-T066, M3-T067, M3-T068, M3-T082, M3-T083, M3-T084, M3-T085, M3-T087, M3-T088, M3-T089, M3-T090, M3-T091, M3-T092, M3-T093, M3-T094, M3-T096 · RF-02–RF-04, RF-12–RF-15, RF-18–RF-43
   Hecho cuando: los casos públicos T05–T11 están aprobados o bloquean habilitación; M2-I004 sigue diferido y no se marca integración total de RF-35–RF-37 del módulo 2.
+
+Evidencia de M3-T097: [revisión de habilitación del escritor](resultados-tareas/resultado-t097.md).
 
 ## 9. Portal web conectado
 
