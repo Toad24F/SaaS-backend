@@ -321,20 +321,22 @@ E4; M03–M05 y M07; T05–T11. Conserva la trazabilidad M2-I indicada en cada c
 
 Evidencia de M3-T086–M3-T091: [resultado, carreras y pruebas](resultados-tareas/resultado-t086-t091.md).
 
-- [ ] **M3-T092 — Probar bloqueo colectivo contra nuevas asignaciones** · 25 min · Depende de: M3-T091, M3-T006, M3-T055, M3-T053 · RF-04, RF-14, RF-20, RF-31–RF-33
+- [x] **M3-T092 — Probar bloqueo colectivo contra nuevas asignaciones** · 25 min · Depende de: M3-T091, M3-T006, M3-T055, M3-T053 · RF-04, RF-14, RF-20, RF-31–RF-33
   Hecho cuando: las barreras reproducen ingreso de un perfil al alcance colectivo y no dejan una reserva incompatible fuera de la coordinación; se completa M2-I007.
 
-- [ ] **M3-T093 — Probar licencia y suspensión durante la espera** · 25 min · Depende de: M3-T080, M3-T081, M3-T006, M3-T005, M3-T050 · RF-03, RF-31–RF-33, RF-39–RF-41
+- [x] **M3-T093 — Probar licencia y suspensión durante la espera** · 25 min · Depende de: M3-T080, M3-T081, M3-T006, M3-T005, M3-T050 · RF-03, RF-31–RF-33, RF-39–RF-41
   Hecho cuando: vencimiento de licencia y límite exacto de 48 horas impiden nuevas reservas tras esperar, pero permiten recuperar un resultado ya guardado; se registra M2-I008.
 
-- [ ] **M3-T094 — Probar doble consumo e idempotencia real** · 25 min · Depende de: M3-T080, M3-T006, M3-T077 · RF-34–RF-35, RF-39, RF-42
+- [x] **M3-T094 — Probar doble consumo e idempotencia real** · 25 min · Depende de: M3-T080, M3-T006, M3-T077 · RF-34–RF-35, RF-39, RF-42
   Hecho cuando: el mismo intento concurrente devuelve una cita y folio; otro intento sobre el mismo apartado recibe conflicto; junto al rollback se acredita M2-I009.
 
-- [ ] **M3-T095 — Probar escritor y resolutor en ambos órdenes** · 25 min · Depende de: M3-T081, M3-T006 · RF-35, RF-39–RF-43
+- [x] **M3-T095 — Probar escritor y resolutor en ambos órdenes** · 25 min · Depende de: M3-T081, M3-T006 · RF-35, RF-39–RF-43
   Hecho cuando: si el escritor gana se recupera su cita; si gana el cierre terminal no llega a crearse; un timeout de espera devuelve incertidumbre, nunca no registrado.
 
-- [ ] **M3-T096 — Probar preparación atrasada y respuesta perdida** · 25 min · Depende de: M3-T095, M3-T005 · RF-28, RF-35, RF-39–RF-42
+- [x] **M3-T096 — Probar preparación atrasada y respuesta perdida** · 25 min · Depende de: M3-T095, M3-T005 · RF-28, RF-35, RF-39–RF-42
   Hecho cuando: resolver antes de preparar impide un registro tardío y perder la respuesta después del commit recupera la misma cita sin depender del plazo del apartado.
+
+Evidencia de M3-T092–M3-T096: [resultado, carreras y pruebas](resultados-tareas/resultado-t092-t096.md).
 
 - [ ] **M3-T097 — Revisar evidencia del escritor antes de habilitarlo** · 20 min · Depende de: M3-T065, M3-T066, M3-T067, M3-T068, M3-T082, M3-T083, M3-T084, M3-T085, M3-T087, M3-T088, M3-T089, M3-T090, M3-T091, M3-T092, M3-T093, M3-T094, M3-T096 · RF-02–RF-04, RF-12–RF-15, RF-18–RF-43
   Hecho cuando: los casos públicos T05–T11 están aprobados o bloquean habilitación; M2-I004 sigue diferido y no se marca integración total de RF-35–RF-37 del módulo 2.
