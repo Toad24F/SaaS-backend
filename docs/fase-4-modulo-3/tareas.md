@@ -301,23 +301,25 @@ Evidencia de M3-T080–M3-T085: [resultado, flujo HTTP y pruebas](resultados-tar
 
 E4; M03–M05 y M07; T05–T11. Conserva la trazabilidad M2-I indicada en cada criterio.
 
-- [ ] **M3-T086 — Probar dos solicitudes sobre el mismo intervalo** · 25 min · Depende de: M3-T080, M3-T006, M3-T064 · RF-18, RF-20, RF-33–RF-35
+- [x] **M3-T086 — Probar dos solicitudes sobre el mismo intervalo** · 25 min · Depende de: M3-T080, M3-T006, M3-T064 · RF-18, RF-20, RF-33–RF-35
   Hecho cuando: dos conexiones con barrera producen una única ocupación incompatible y conflicto para la otra; se adjunta evidencia real de M2-I001 y M2-I002.
 
-- [ ] **M3-T087 — Probar solapamiento entre sucursales** · 25 min · Depende de: M3-T086, M3-T004 · RF-14–RF-15, RF-20, RF-33
+- [x] **M3-T087 — Probar solapamiento entre sucursales** · 25 min · Depende de: M3-T086, M3-T004 · RF-14–RF-15, RF-20, RF-33
   Hecho cuando: se rechazan traslapes parciales del mismo Profesional incluso con fechas locales distintas; un caso de extremos contiguos pasa y se registra M2-I003.
 
-- [ ] **M3-T088 — Probar vencimiento del apartado mientras espera** · 25 min · Depende de: M3-T080, M3-T006, M3-T005 · RF-19–RF-22, RF-31, RF-35
+- [x] **M3-T088 — Probar vencimiento del apartado mientras espera** · 25 min · Depende de: M3-T080, M3-T006, M3-T005 · RF-19–RF-22, RF-31, RF-35
   Hecho cuando: el reloj llega exactamente a expira_en antes de obtener el bloqueo y el escritor no consume el apartado ni crea cita; se registra M2-I005.
 
-- [ ] **M3-T089 — Probar reserva contra oferta, costo y duración** · 25 min · Depende de: M3-T080, M3-T006, M3-T052, M3-T083 · RF-04, RF-18, RF-30–RF-33, RF-36
+- [x] **M3-T089 — Probar reserva contra oferta, costo y duración** · 25 min · Depende de: M3-T080, M3-T006, M3-T052, M3-T083 · RF-04, RF-18, RF-30–RF-33, RF-36
   Hecho cuando: ambos órdenes de commit preservan costo aceptado y revalidan oferta/duración vigentes; se anexa la parte de oferta de M2-I006.
 
-- [ ] **M3-T090 — Probar reserva contra configuración de agenda** · 25 min · Depende de: M3-T080, M3-T006, M3-T051 · RF-14, RF-18, RF-31–RF-33
+- [x] **M3-T090 — Probar reserva contra configuración de agenda** · 25 min · Depende de: M3-T080, M3-T006, M3-T051 · RF-14, RF-18, RF-31–RF-33
   Hecho cuando: cambiar anticipación, horizonte o modo durante la espera no permite reservar usando configuración obsoleta; se completa M2-I006.
 
-- [ ] **M3-T091 — Probar reserva contra horario y excepción** · 25 min · Depende de: M3-T080, M3-T006, M3-T054 · RF-14–RF-15, RF-20, RF-31–RF-33, RF-36
+- [x] **M3-T091 — Probar reserva contra horario y excepción** · 25 min · Depende de: M3-T080, M3-T006, M3-T054 · RF-14–RF-15, RF-20, RF-31–RF-33, RF-36
   Hecho cuando: si la restricción confirma primero la reserva falla; si confirma primero la cita, el cambio válido la conserva y aparece su afectación; evidencia parcial de M2-I007.
+
+Evidencia de M3-T086–M3-T091: [resultado, carreras y pruebas](resultados-tareas/resultado-t086-t091.md).
 
 - [ ] **M3-T092 — Probar bloqueo colectivo contra nuevas asignaciones** · 25 min · Depende de: M3-T091, M3-T006, M3-T055, M3-T053 · RF-04, RF-14, RF-20, RF-31–RF-33
   Hecho cuando: las barreras reproducen ingreso de un perfil al alcance colectivo y no dejan una reserva incompatible fuera de la coordinación; se completa M2-I007.
