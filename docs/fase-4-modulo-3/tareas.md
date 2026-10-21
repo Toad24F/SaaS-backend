@@ -478,8 +478,10 @@ E6; M01–M07; ocho criterios de finalización. Estas tareas no autorizan public
 
       Evidencia: [matriz de integración pública y caso manual diferido](resultados-tareas/resultado-t134.md).
 
-- [ ] **M3-T135 — Documentar instalación, habilitación y recuperación operativa** · 20 min · Depende de: M3-T126, M3-T127, M3-T128, M3-T132 · RF-01–RF-03, RF-17, RF-27, RF-35, RF-39–RF-43
+- [x] **M3-T135 — Documentar instalación, habilitación y recuperación operativa** · 20 min · Depende de: M3-T126, M3-T127, M3-T128, M3-T132 · RF-01–RF-03, RF-17, RF-27, RF-35, RF-39–RF-43
       Hecho cuando: la guía describe migraciones antes de backend/frontend, proxy de mismo origen, configuración sin secretos reales y cierre de nuevas escrituras preservando recuperación, sin borrar citas o intentos.
+
+      Evidencia: [guía operativa, archivos y verificaciones](resultados-tareas/resultado-t135.md).
 
 - [ ] **M3-T136 — Cerrar la matriz RF y criterios de finalización** · 25 min · Depende de: M3-T133, M3-T134, M3-T135 · RF-01–RF-43
       Hecho cuando: cada RF y los ocho criterios apuntan a evidencia de la revisión entregada, las rutas documentales existen y cualquier fallo o pendiente ajeno al alcance queda explícito.
