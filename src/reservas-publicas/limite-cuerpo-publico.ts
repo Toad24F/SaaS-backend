@@ -12,6 +12,10 @@ export function instalarLimiteCuerpoPublico(app: INestApplication): void {
   const manejarExceso: ErrorRequestHandler = (error, _req, res, next) => {
     if (error && typeof error === 'object' && 'type' in error &&
       error.type === 'entity.too.large') {
+      // El parser responde antes del controlador: este error también puede
+      // contener contacto, por lo que nunca debe quedar en caché.
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Vary', 'Cookie, Origin');
       res.status(400).json({ codigo: 'portal_400', mensaje: 'Reduzca el formulario.',
         accion: 'corregir' });
       return;

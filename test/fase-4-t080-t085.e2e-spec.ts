@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { RELOJ } from '../src/comun/reloj';
 import { ResolucionReservaPublicaService } from '../src/reservas-publicas/resolucion-reserva-publica.service';
+import { instalarLimiteCuerpoPublico } from '../src/reservas-publicas/limite-cuerpo-publico';
 import { conBaseMigrada } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
@@ -34,6 +35,8 @@ async function conPortal(ejecutar: (f: Awaited<ReturnType<typeof iniciarFlujo>>)
       .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
     const app = modulo.createNestApplication();
     try {
+      // Reproduce el bootstrap de main: el límite actúa antes del controlador.
+      instalarLimiteCuerpoPublico(app);
       await app.init();
       await ejecutar(await iniciarFlujo(app, db, reloj, a.id, servicioId,
         a.profesionales[0], a.sucursales[0].id));
@@ -77,6 +80,42 @@ async function iniciarFlujo(app: import('@nestjs/common').INestApplication, db: 
 }
 
 describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
+  it('M3-T125: rechaza campos extra y exceso, y protege todas las respuestas personales', async () => {
+    await conPortal(async (f) => {
+      // Cada entrada pasa por su ruta HTTP real; los errores no reflejan datos enviados.
+      const extra = { secretoPrivado: 'SQL titular_hash clave_super_secreta' };
+      const solicitudes = [
+        () => request(f.http).get(`${RUTA}/catalogo`).query(extra),
+        () => request(f.http).get(`${RUTA}/disponibilidad`).query(extra),
+        () => request(f.http).post(`${RUTA}/sesion`).set('Origin', ORIGEN)
+          .set('X-Portal-Inicializacion', '1').send(extra),
+        () => f.post('/apartados', { clave: 'operacion_extra_1234567890', ...extra }),
+        () => f.post('/intentos', { clave: f.clave, apartadoId: f.apartado.apartadoId, ...extra }),
+        () => f.post(`/intentos/${f.clave}/reservar`, { ...CONTACTO, ...extra }),
+        () => f.post(`/intentos/${f.clave}/resolver`, { apartadoId: f.apartado.apartadoId, ...extra }),
+        () => f.post(`/apartados/${f.apartado.apartadoId}/liberar`, {
+          generacion: f.apartado.generacion, ...extra }),
+      ];
+      for (const [indice, solicitud] of solicitudes.entries()) {
+        const respuesta = await solicitud();
+        expect({ indice, estado: respuesta.status }).toEqual({ indice, estado: 400 });
+        expect(respuesta.body).toMatchObject({ codigo: 'portal_400', accion: 'corregir' });
+        expect(JSON.stringify(respuesta.body)).not.toMatch(/SQL|titular_hash|clave_super_secreta/);
+        expect(respuesta.headers['cache-control']).toBe('no-store');
+      }
+      const consulta = await request(f.http).get(`${RUTA}/apartados/${f.apartado.apartadoId}`)
+        .set('Cookie', f.propia.cookie).expect(200);
+      expect(consulta.headers['cache-control']).toBe('no-store');
+      const exceso = JSON.stringify({ nombre: 'Ana', telefono: '6141234567' }) +
+        ' '.repeat(32 * 1024);
+      const grande = await request(f.http).post(`${RUTA}/intentos/${f.clave}/reservar`)
+        .set('Origin', ORIGEN).set('Cookie', f.propia.cookie)
+        .set('X-CSRF-Token', f.propia.csrf).set('Content-Type', 'application/json')
+        .send(exceso).expect(400);
+      expect(grande.body).toMatchObject({ codigo: 'portal_400', accion: 'corregir' });
+      expect(grande.headers['cache-control']).toBe('no-store');
+    });
+  }, 120000);
   it('crea y repite preparación/reserva; valida contacto y rechaza autoridad del navegador', async () => {
     await conPortal(async (f) => {
       const preparado = await f.preparar().expect(201);

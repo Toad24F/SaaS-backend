@@ -47,6 +47,7 @@ describe('M3-T069: límite del JSON crudo del portal', () => {
       .set('Content-Type', 'application/json').send(cuerpo).expect(400);
     expect(respuesta.body).toEqual({ codigo: 'portal_400',
       mensaje: 'Reduzca el formulario.', accion: 'corregir' });
+    expect(respuesta.headers['cache-control']).toBe('no-store');
   });
 
   it('conserva el parser JSON global de Nest para las rutas no públicas', async () => {

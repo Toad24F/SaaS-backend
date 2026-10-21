@@ -434,8 +434,10 @@ E5–E6; M06–M07; T01–T03 y T12.
 
       Evidencia T117–T124: [runner, recorridos y resultados](../../../frontend-saas/docs/fase-4/resultados-tareas/resultado-t117-t124.md).
 
-- [ ] **M3-T125 — Probar límites HTTP y respuestas seguras finales** · 25 min · Depende de: M3-T080, M3-T081, M3-T064, M3-T035 · RF-02–RF-03, RF-08–RF-10, RF-13, RF-17, RF-29, RF-42–RF-43
+- [x] **M3-T125 — Probar límites HTTP y respuestas seguras finales** · 25 min · Depende de: M3-T080, M3-T081, M3-T064, M3-T035 · RF-02–RF-03, RF-08–RF-10, RF-13, RF-17, RF-29, RF-42–RF-43
       Hecho cuando: las rutas rechazan campos desconocidos y cuerpos excesivos; cada error previsto conserva el contrato seguro y ningún resultado personal queda cacheable o registrado con secretos.
+
+      Evidencia: [pruebas HTTP y resultado T125](resultados-tareas/resultado-t125.md).
 
 ## 11. Verificación y preparación de entrega
 
