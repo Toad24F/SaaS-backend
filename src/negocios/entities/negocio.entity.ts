@@ -43,6 +43,12 @@ export class Negocio {
   })
   telefonoContacto: string | null;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  categoria: string | null;
+
+  @Column({ name: 'mostrar_contacto_publico', type: 'boolean', default: false })
+  mostrarContactoPublico: boolean;
+
   // Permanece nulo hasta que el primer administrador completa su activación.
   @Column({ name: 'activado_en', type: 'datetime', precision: 6, nullable: true })
   activadoEn: Date | null;

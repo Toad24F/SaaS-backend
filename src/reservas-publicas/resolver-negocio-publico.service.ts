@@ -11,6 +11,9 @@ export interface NegocioPublicoAutorizado {
   id: number;
   slug: string;
   nombre: string;
+  categoria?: string | null;
+  telefono?: string | null;
+  mostrarContactoPublico?: boolean;
 }
 
 @Injectable()
@@ -37,7 +40,9 @@ export class ResolverNegocioPublicoService {
       negocio.activadoEn !== null, licencia, ahora)) {
       throw new NotFoundException('Portal no disponible para reservar.');
     }
-    return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre };
+    return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre,
+      categoria: negocio.categoria, telefono: negocio.telefonoContacto,
+      mostrarContactoPublico: negocio.mostrarContactoPublico };
   }
 
   /** Liberación y recuperación propias siguen disponibles si venció la licencia.

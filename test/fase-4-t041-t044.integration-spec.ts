@@ -42,6 +42,37 @@ async function conPortal(ejecutar: (f: { db: DataSource; app: INestApplication;
 }
 
 describe('M3-T041–T044: selección, errores y agenda pública', () => {
+  it('proyecta detalles opcionales y respeta la autorización de contacto del negocio', async () => {
+    await conPortal(async ({ db, app, a, servicioId, catalogo }) => {
+      const http = app.getHttpServer();
+      await db.query('UPDATE negocios SET categoria=?, telefono_contacto=?, mostrar_contacto_publico=1 WHERE id=?',
+        ['Estética', '614 123 4567', a.id]);
+      await db.query('UPDATE servicios SET descripcion=? WHERE id=? AND negocio_id=?',
+        ['Corte personalizado', servicioId, a.id]);
+      await db.query('UPDATE personal SET especialidad=? WHERE id=? AND negocio_id=?',
+        ['Estilismo', a.profesionales[0], a.id]);
+      await db.query('UPDATE sucursales SET notas_llegada=? WHERE id=? AND negocio_id=?',
+        ['Entrada lateral', a.sucursales[0].id, a.id]);
+      const leer = async () => (await request(http).get(catalogo).expect(200)).body;
+      const inicial = await leer();
+      expect(inicial.negocio).toMatchObject({ categoria: 'Estética', telefono: '614 123 4567' });
+      expect(inicial.servicios[0].descripcion).toBe('Corte personalizado');
+      const sede = (await request(http).get(catalogo).query({ servicioId }).expect(200)).body;
+      expect(sede.sucursales[0]).toMatchObject({ telefono: expect.any(String),
+        indicaciones: 'Entrada lateral' });
+      const perfil = (await request(http).get(catalogo).query({ servicioId,
+        sucursalId: a.sucursales[0].id }).expect(200)).body;
+      expect(perfil.profesionales[0].especialidad).toBe('Estilismo');
+      await db.query('UPDATE negocios SET mostrar_contacto_publico=0 WHERE id=?', [a.id]);
+      const oculto = await leer();
+      expect(oculto.negocio.telefono).toBeUndefined();
+      expect((await request(http).get(catalogo).query({ servicioId }).expect(200))
+        .body.sucursales[0]).not.toHaveProperty('telefono');
+      expect((await request(http).get(catalogo).query({ servicioId }).expect(200))
+        .body.sucursales[0]).not.toHaveProperty('indicaciones');
+      expect(JSON.stringify(oculto)).not.toContain('portal-prueba-2');
+    });
+  }, 60000);
   it('oculta cada nivel apagado y actualiza opciones al cambiar servicio y sucursal', async () => {
     await conPortal(async ({ db, app, a, b, servicioId, catalogo, disponibilidad, consulta }) => {
       const http = app.getHttpServer();

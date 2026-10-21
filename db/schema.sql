@@ -41,6 +41,8 @@ CREATE TABLE negocios (
   slug              VARCHAR(100) NOT NULL,
   email_contacto    VARCHAR(150) NOT NULL,
   telefono_contacto VARCHAR(20) NULL,
+  categoria         VARCHAR(100) NULL,
+  mostrar_contacto_publico TINYINT(1) NOT NULL DEFAULT 0,
   activado_en       DATETIME(6) NULL,
   creado_en         DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   UNIQUE KEY uq_negocios_slug (slug),

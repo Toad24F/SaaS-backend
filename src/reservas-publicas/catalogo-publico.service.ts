@@ -7,8 +7,10 @@ import type { FiltrosCatalogoPublico } from './entradas-publicas';
 
 interface FilaOferta {
   servicioId: number; servicioNombre: string; costo: string; duracionMinutos: number;
+  descripcion: string | null;
   sucursalId: number; sucursalNombre: string; direccion: string; zonaHoraria: string;
-  personalId: number; personalNombre: string;
+  telefono: string; indicaciones: string | null;
+  personalId: number; personalNombre: string; especialidad: string | null;
 }
 
 @Injectable()
@@ -26,10 +28,11 @@ export class CatalogoPublicoService {
       // nunca convierte un servicio o una sucursal en oferta pública.
       const filas = await manager.query(`SELECT
         s.id AS servicioId, s.nombre AS servicioNombre, s.costo AS costo,
-        s.duracion_minutos AS duracionMinutos,
+        s.duracion_minutos AS duracionMinutos, s.descripcion AS descripcion,
         su.id AS sucursalId, su.nombre AS sucursalNombre,
         su.direccion AS direccion, su.zona_horaria AS zonaHoraria,
-        u.id AS personalId, u.nombre AS personalNombre
+        su.telefono AS telefono, su.notas_llegada AS indicaciones,
+        u.id AS personalId, u.nombre AS personalNombre, p.especialidad AS especialidad
         FROM personal_servicios_sucursales pss
         JOIN personal_sucursales ps ON ps.negocio_id=pss.negocio_id
           AND ps.personal_id=pss.personal_id AND ps.sucursal_id=pss.sucursal_id
@@ -48,17 +51,24 @@ export class CatalogoPublicoService {
       // producen listas vacías en la etapa siguiente sin revelar sus nombres.
       const servicios = [...new Map(filas.map((fila) => [fila.servicioId,
         { id: fila.servicioId, nombre: fila.servicioNombre, costo: fila.costo,
-          duracionMinutos: fila.duracionMinutos }])).values()];
+          duracionMinutos: fila.duracionMinutos,
+          ...(fila.descripcion ? { descripcion: fila.descripcion } : {}) }])).values()];
       const deServicio = filtros.servicioId === undefined ? [] :
         filas.filter((fila) => fila.servicioId === filtros.servicioId);
       const sucursales = [...new Map(deServicio.map((fila) => [fila.sucursalId,
         { id: fila.sucursalId, nombre: fila.sucursalNombre,
-          direccion: fila.direccion, zonaHoraria: fila.zonaHoraria }])).values()];
+          direccion: fila.direccion, zonaHoraria: fila.zonaHoraria,
+          ...(negocio.mostrarContactoPublico ? { telefono: fila.telefono,
+            ...(fila.indicaciones ? { indicaciones: fila.indicaciones } : {}) } : {}) }])).values()];
       const deSucursal = filtros.sucursalId === undefined ? [] :
         deServicio.filter((fila) => fila.sucursalId === filtros.sucursalId);
       const profesionales = [...new Map(deSucursal.map((fila) => [fila.personalId,
-        { id: fila.personalId, nombre: fila.personalNombre }])).values()];
-      return { negocio: { slug: negocio.slug, nombre: negocio.nombre },
+        { id: fila.personalId, nombre: fila.personalNombre,
+          ...(fila.especialidad ? { especialidad: fila.especialidad } : {}) }])).values()];
+      return { negocio: { slug: negocio.slug, nombre: negocio.nombre,
+        ...(negocio.categoria ? { categoria: negocio.categoria } : {}),
+        ...(negocio.mostrarContactoPublico && negocio.telefono ?
+          { telefono: negocio.telefono } : {}) },
         servicios, sucursales, profesionales };
     });
   }
