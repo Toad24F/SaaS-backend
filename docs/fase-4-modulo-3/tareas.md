@@ -465,14 +465,18 @@ E6; M01–M07; ocho criterios de finalización. Estas tareas no autorizan public
 
       Evidencia T130–T131: [integración, HTTP y resultados](resultados-tareas/resultado-t126-t131.md).
 
-- [ ] **M3-T132 — Verificar build y pruebas Node del frontend** · 20 min · Depende de: M3-T116, M3-T118, M3-T119, M3-T120, M3-T121, M3-T122, M3-T123, M3-T124 · RF-01, RF-05–RF-11, RF-15–RF-17, RF-19–RF-30, RF-32, RF-37, RF-39–RF-43
+- [x] **M3-T132 — Verificar build y pruebas Node del frontend** · 20 min · Depende de: M3-T116, M3-T118, M3-T119, M3-T120, M3-T121, M3-T122, M3-T123, M3-T124 · RF-01, RF-05–RF-11, RF-15–RF-17, RF-19–RF-30, RF-32, RF-37, RF-39–RF-43
       Hecho cuando: npm run build y npm test pasan en frontend-saas; se registra que el repositorio no tiene script de lint frontend sin atribuirle una ejecución ficticia.
 
-- [ ] **M3-T133 — Consolidar evidencia de navegador de la revisión final** · 20 min · Depende de: M3-T132, M3-T131 · RF-01–RF-13, RF-15–RF-17, RF-19–RF-30, RF-32–RF-35, RF-37–RF-43
+- [x] **M3-T133 — Consolidar evidencia de navegador de la revisión final** · 20 min · Depende de: M3-T132, M3-T131 · RF-01–RF-13, RF-15–RF-17, RF-19–RF-30, RF-32–RF-35, RF-37–RF-43
       Hecho cuando: los casos de navegador de esta revisión constan aprobados con resultados reproducibles; solo se repiten los afectados si cambió código después de su ejecución.
 
-- [ ] **M3-T134 — Consolidar integración pública y pendientes del módulo 2** · 15 min · Depende de: M3-T130, M3-T131 · RF-03–RF-04, RF-14–RF-15, RF-18–RF-22, RF-30–RF-35, RF-39–RF-41
+      Evidencia: [recorridos Playwright y resultado actual](../../../frontend-saas/docs/fase-4/resultados-tareas/resultado-t133.md).
+
+- [x] **M3-T134 — Consolidar integración pública y pendientes del módulo 2** · 15 min · Depende de: M3-T130, M3-T131 · RF-03–RF-04, RF-14–RF-15, RF-18–RF-22, RF-30–RF-35, RF-39–RF-41
       Hecho cuando: M2-I001–M2-I003 y M2-I005–M2-I009 tienen evidencia con escritores reales; M2-I004 sigue pendiente del escritor manual, sin declarar cerrada toda la integración del módulo 2.
+
+      Evidencia: [matriz de integración pública y caso manual diferido](resultados-tareas/resultado-t134.md).
 
 - [ ] **M3-T135 — Documentar instalación, habilitación y recuperación operativa** · 20 min · Depende de: M3-T126, M3-T127, M3-T128, M3-T132 · RF-01–RF-03, RF-17, RF-27, RF-35, RF-39–RF-43
       Hecho cuando: la guía describe migraciones antes de backend/frontend, proxy de mismo origen, configuración sin secretos reales y cierre de nuevas escrituras preservando recuperación, sin borrar citas o intentos.
