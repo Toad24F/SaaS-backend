@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { RELOJ } from '../src/comun/reloj';
 import { ResolucionReservaPublicaService } from '../src/reservas-publicas/resolucion-reserva-publica.service';
 import { instalarLimiteCuerpoPublico } from '../src/reservas-publicas/limite-cuerpo-publico';
+import { MetricasPortalService } from '../src/reservas-publicas/metricas-portal.service';
 import { conBaseMigrada } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
@@ -80,6 +81,51 @@ async function iniciarFlujo(app: import('@nestjs/common').INestApplication, db: 
 }
 
 describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
+  it('M3-T126: el cierre detiene escrituras nuevas y conserva liberación y recuperación', async () => {
+    await conPortal(async (f) => {
+      const anterior = process.env.PORTAL_PUBLICO_ESCRITURAS;
+      try {
+        await f.preparar().expect(201);
+        process.env.PORTAL_PUBLICO_ESCRITURAS = 'cerradas';
+        await f.post('/apartados', { clave: 'operacion_cerrada_1234567890',
+          servicioId: f.servicioId, personalId: f.personalId, sucursalId: f.sucursalId,
+          fechaLocal: '2026-10-20', horaInicio: '09:00' }).expect(503);
+        await f.reservar().expect(503);
+        expect((await f.resolver().expect(200)).body).toEqual({ estado: 'no_registrado' });
+        await f.post(`/apartados/${f.apartado.apartadoId}/liberar`, {
+          generacion: f.apartado.generacion }).expect(204);
+        expect(f.app.get(MetricasPortalService).consultar().fallo).toBeGreaterThanOrEqual(2);
+        expect((await f.db.query("SELECT COUNT(*) AS n FROM citas WHERE origen='portal_publico'"))[0].n).toBe('0');
+        process.env.PORTAL_PUBLICO_ESCRITURAS = 'habilitadas';
+        const nuevo = await f.apartar('09:00');
+        f.reloj.fijar(new Date(nuevo.expiraEn));
+        const vencido = await request(f.http).get(`${RUTA}/apartados/${nuevo.apartadoId}`)
+          .set('Cookie', f.propia.cookie).expect(200);
+        expect(vencido.body.estado).toBe('vencido');
+        expect(f.app.get(MetricasPortalService).consultar().expiracion).toBe(1);
+      } finally {
+        if (anterior === undefined) delete process.env.PORTAL_PUBLICO_ESCRITURAS;
+        else process.env.PORTAL_PUBLICO_ESCRITURAS = anterior;
+      }
+    });
+  }, 120000);
+
+  it('M3-T126–T127: recupera una cita previa al cierre y cuenta recuperaciones', async () => {
+    await conPortal(async (f) => {
+      const anterior = process.env.PORTAL_PUBLICO_ESCRITURAS;
+      try {
+        await f.preparar().expect(201);
+        const registrada = (await f.reservar().expect(201)).body;
+        process.env.PORTAL_PUBLICO_ESCRITURAS = 'cerradas';
+        expect((await f.reservar().expect(200)).body).toEqual(registrada);
+        expect((await f.resolver().expect(200)).body.resultado).toEqual(registrada);
+        expect(f.app.get(MetricasPortalService).consultar().recuperacion).toBe(2);
+      } finally {
+        if (anterior === undefined) delete process.env.PORTAL_PUBLICO_ESCRITURAS;
+        else process.env.PORTAL_PUBLICO_ESCRITURAS = anterior;
+      }
+    });
+  }, 120000);
   it('M3-T125: rechaza campos extra y exceso, y protege todas las respuestas personales', async () => {
     await conPortal(async (f) => {
       // Cada entrada pasa por su ruta HTTP real; los errores no reflejan datos enviados.

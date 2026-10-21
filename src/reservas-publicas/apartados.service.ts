@@ -13,6 +13,7 @@ import { CoordinacionReservaPublicaService } from './coordinacion-reserva-public
 import { OperacionApartado } from './entities/operacion-apartado.entity';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity';
+import { exigirEscriturasPublicas } from './control-escrituras-publicas';
 
 export interface ResultadoApartado {
   estado: 'concedida' | 'rechazada' | 'sustituida';
@@ -47,6 +48,9 @@ export class ApartadosService {
   async solicitarConMeta(negocioId: number, titularHash: string, entrada: unknown):
     Promise<{ resultado: ResultadoApartado; repetida: boolean; servidorAhora: Date }> {
     const seleccion = validarSolicitudApartado(entrada);
+    // Comprobar antes de la primera transacción evita liberar un apartado
+    // anterior cuando el operador ya cerró nuevas concesiones.
+    exigirEscriturasPublicas();
     // La misma clave retoma una preparación tras una caída entre las fases.
     const repetida = await this.coordinacion.transaccion(seleccion.clave, (manager) =>
       this.preparar(manager, negocioId, titularHash, seleccion));
@@ -148,6 +152,9 @@ export class ApartadosService {
 
   private async conceder(manager: EntityManager, negocioId: number, titularHash: string,
     seleccion: SolicitudApartado): Promise<ResultadoApartado> {
+    // El cierre entre ambos commits impide la nueva ocupación; la liberación
+    // preparada permanece durable conforme al protocolo de dos fases.
+    exigirEscriturasPublicas();
     const sesion = await this.coordinacion.bloquearSesion(manager, negocioId, titularHash);
     const operacion = await manager.getRepository(OperacionApartado)
       .createQueryBuilder('o').setLock('pessimistic_write')

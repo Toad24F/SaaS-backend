@@ -59,10 +59,12 @@ async function sembrarBase(db: DataSource, reloj: RelojPrueba): Promise<BaseCarr
   await db.query('DELETE FROM clientes WHERE negocio_id=?', [negocio.id]);
   await db.query(`INSERT INTO licencias (negocio_id,creado_en,habilitada_en,vence_en)
     VALUES (?,'2026-01-01','2026-01-01','2027-01-01')`, [negocio.id]);
+  // El usuario de prueba nace en el mismo reloj fijo de la carrera; así su
+  // activación nunca precede a creado_en cuando cambia la fecha del host.
   const admin = await db.query(`INSERT INTO usuarios
-    (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-    VALUES (?,'Admin carreras','admin-carreras@example.test','hash','admin_negocio',1,?)`,
-  [negocio.id, AHORA]);
+    (negocio_id,nombre,email,password_hash,rol,activo,creado_en,activado_en)
+    VALUES (?,'Admin carreras','admin-carreras@example.test','hash','admin_negocio',1,?,?)`,
+  [negocio.id, AHORA, AHORA]);
   const servicioId = Number((await db.query(`SELECT id FROM servicios
     WHERE negocio_id=? AND activo=1 LIMIT 1`, [negocio.id]))[0].id);
   const profesionalId = negocio.profesionales[0];

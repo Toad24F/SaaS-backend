@@ -443,23 +443,27 @@ E5–E6; M06–M07; T01–T03 y T12.
 
 E6; M01–M07; ocho criterios de finalización. Estas tareas no autorizan publicar ni activar producción.
 
-- [ ] **M3-T126 — Añadir controles de habilitación y cierre de nuevas reservas** · 25 min · Depende de: M3-T097, M3-T125 · RF-03, RF-17, RF-20, RF-27, RF-35, RF-39–RF-43
+- [x] **M3-T126 — Añadir controles de habilitación y cierre de nuevas reservas** · 25 min · Depende de: M3-T097, M3-T125 · RF-03, RF-17, RF-20, RF-27, RF-35, RF-39–RF-43
       Hecho cuando: con escritura cerrada se rechazan nuevas concesiones y reservas, mientras liberación y recuperación propias siguen operativas; las pruebas verifican ambos modos.
 
-- [ ] **M3-T127 — Registrar métricas operativas sin datos privados** · 20 min · Depende de: M3-T126, M3-T029 · RF-13, RF-17, RF-22, RF-33, RF-40–RF-43
+- [x] **M3-T127 — Registrar métricas operativas sin datos privados** · 20 min · Depende de: M3-T126, M3-T029 · RF-13, RF-17, RF-22, RF-33, RF-40–RF-43
       Hecho cuando: se distinguen conflictos, expiraciones, fallos y recuperaciones usando contadores agregados; los registros capturados no contienen contacto, notas, cookies ni claves utilizables.
 
-- [ ] **M3-T128 — Verificar compilación y lint del backend** · 20 min · Depende de: M3-T126, M3-T127, M3-T125 · RF-01–RF-43
+- [x] **M3-T128 — Verificar compilación y lint del backend** · 20 min · Depende de: M3-T126, M3-T127, M3-T125 · RF-01–RF-43
       Hecho cuando: npm run build y npm run lint pasan en la revisión a entregar, con comandos, revisión y resultados registrados; los fallos impiden marcar la tarea.
 
-- [ ] **M3-T129 — Verificar pruebas unitarias y regresión privada** · 25 min · Depende de: M3-T128, M3-T070, M3-T034, M3-T043, M3-T044 · RF-01–RF-04, RF-08–RF-18, RF-19–RF-23, RF-29, RF-31–RF-43
+- [x] **M3-T129 — Verificar pruebas unitarias y regresión privada** · 25 min · Depende de: M3-T128, M3-T070, M3-T034, M3-T043, M3-T044 · RF-01–RF-04, RF-08–RF-18, RF-19–RF-23, RF-29, RF-31–RF-43
       Hecho cuando: npm test -- --runInBand y las regresiones unitarias relevantes pasan en la revisión final; la evidencia distingue antecedentes de casos nuevos.
 
-- [ ] **M3-T130 — Verificar integración de persistencia y escritores** · 25 min · Depende de: M3-T128, M3-T097, M3-T022, M3-T023, M3-T024, M3-T129 · RF-02–RF-04, RF-12–RF-15, RF-18–RF-43
+      Evidencia T126–T129: [flujo, archivos y verificaciones](resultados-tareas/resultado-t126-t131.md).
+
+- [x] **M3-T130 — Verificar integración de persistencia y escritores** · 25 min · Depende de: M3-T128, M3-T097, M3-T022, M3-T023, M3-T024, M3-T129 · RF-02–RF-04, RF-12–RF-15, RF-18–RF-43
       Hecho cuando: las suites pertinentes de test:integration pasan en base desechable para la revisión final, sin saltar casos de concurrencia por falta de conexión.
 
-- [ ] **M3-T131 — Verificar suites HTTP públicas y privadas afectadas** · 25 min · Depende de: M3-T130, M3-T125 · RF-01–RF-04, RF-08–RF-18, RF-19–RF-43
+- [x] **M3-T131 — Verificar suites HTTP públicas y privadas afectadas** · 25 min · Depende de: M3-T130, M3-T125 · RF-01–RF-04, RF-08–RF-18, RF-19–RF-43
       Hecho cuando: las suites pertinentes de test:e2e pasan y los resultados cubren las nueve rutas públicas, además de preservar las cinco privadas.
+
+      Evidencia T130–T131: [integración, HTTP y resultados](resultados-tareas/resultado-t126-t131.md).
 
 - [ ] **M3-T132 — Verificar build y pruebas Node del frontend** · 20 min · Depende de: M3-T116, M3-T118, M3-T119, M3-T120, M3-T121, M3-T122, M3-T123, M3-T124 · RF-01, RF-05–RF-11, RF-15–RF-17, RF-19–RF-30, RF-32, RF-37, RF-39–RF-43
       Hecho cuando: npm run build y npm test pasan en frontend-saas; se registra que el repositorio no tiene script de lint frontend sin atribuirle una ejecución ficticia.

@@ -47,9 +47,11 @@ describe('M3-T052–T057: mutaciones bajo protocolo común', () => {
     await conBaseMigrada(async (db) => {
       const reloj = new RelojPrueba(AHORA);
       const { negocios: [negocio] } = await crearEscenarioPortal(db, reloj);
+      // La cuenta creada para el escenario comparte el reloj fijo con su
+      // activación; no depende de la fecha de ejecución de la suite.
       const admin = await db.query(`INSERT INTO usuarios
-        (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-        VALUES (?,'Admin','admin-t052@example.test','hash','admin_negocio',1,?)`, [negocio.id, AHORA]);
+        (negocio_id,nombre,email,password_hash,rol,activo,creado_en,activado_en)
+        VALUES (?,'Admin','admin-t052@example.test','hash','admin_negocio',1,?,?)`, [negocio.id, AHORA, AHORA]);
       const servicioId = Number((await db.query('SELECT id FROM servicios WHERE negocio_id=? LIMIT 1',
         [negocio.id]))[0].id);
       const perfilId = negocio.profesionales[0];

@@ -19,6 +19,7 @@ import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity
 import { OperacionApartado } from './entities/operacion-apartado.entity';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
+import { exigirEscriturasPublicas } from './control-escrituras-publicas';
 
 interface CopiaHistorica {
   negocio: string; servicio: string; sucursal: string; profesional: string;
@@ -55,6 +56,9 @@ export class RegistroReservaPublicaService {
       // o del apartado; el resultado durable jamás crea una segunda cita.
       const anterior = await this.intentos.reconocerEnTransaccion(manager, intento, huella);
       if (anterior) return { resultado: anterior, repetida: true };
+      // Una respuesta perdida conserva su resultado; el interruptor solo
+      // detiene el primer commit de una cita todavía no registrada.
+      exigirEscriturasPublicas();
       const previo = await manager.getRepository(BloqueoTemporal).findOneBy({
         id: intento.apartadoId, negocioId, sesionId: sesion.id, titularHash });
       if (!previo) throw new NotFoundException('Apartado no disponible.');
@@ -111,6 +115,9 @@ export class RegistroReservaPublicaService {
       if (instanteFinal >= apartado.expiraEn || validacion.inicioUtc <= instanteFinal) {
         throw new ConflictException('Apartado vencido o inicio pasado.');
       }
+      // Una orden de cierre recibida durante la revalidación se observa antes
+      // del primer INSERT; la transacción revierte sin consumir el apartado.
+      exigirEscriturasPublicas();
       const resultado = await this.guardarTodo(manager, sesion, intento, apartado, contacto,
         huella, validacion.inicioUtc, validacion.finUtc, copia, instanteFinal);
       return { resultado, repetida: false };

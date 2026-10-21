@@ -120,12 +120,14 @@ describe('M3-T045–T051: protocolo común de escritura', () => {
       const licencia = await db.query(`INSERT INTO licencias
         (negocio_id,creado_en,habilitada_en,vence_en)
         VALUES (?,'2026-01-01','2026-01-01','2027-01-01')`, [a.id]);
+      // Las cuentas de prueba se crean y activan en el mismo reloj simulado,
+      // evitando que la fecha real del host invalide el fixture.
       const superadmin = await db.query(`INSERT INTO usuarios
-        (nombre,email,password_hash,rol,activo,activado_en)
-        VALUES ('Super','super-barrera@example.test','hash','superadmin',1,?)`, [AHORA]);
+        (nombre,email,password_hash,rol,activo,creado_en,activado_en)
+        VALUES ('Super','super-barrera@example.test','hash','superadmin',1,?,?)`, [AHORA, AHORA]);
       const admin = await db.query(`INSERT INTO usuarios
-        (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-        VALUES (?,'Admin','admin-barrera@example.test','hash','admin_negocio',1,?)`, [a.id, AHORA]);
+        (negocio_id,nombre,email,password_hash,rol,activo,creado_en,activado_en)
+        VALUES (?,'Admin','admin-barrera@example.test','hash','admin_negocio',1,?,?)`, [a.id, AHORA, AHORA]);
       const modulo = await Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(reloj).compile();
       const app = modulo.createNestApplication();

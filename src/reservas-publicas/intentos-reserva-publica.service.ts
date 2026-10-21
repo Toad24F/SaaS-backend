@@ -10,6 +10,7 @@ import { CoordinacionReservaPublicaService } from './coordinacion-reserva-public
 import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity';
 import { huellaContactoReservaPublica, validarContactoReservaPublica } from './contacto-reserva-publica';
 import type { ResultadoReservaPublica } from './contratos';
+import { exigirEscriturasPublicas } from './control-escrituras-publicas';
 
 interface PreparacionIntento { clave: string; apartadoId: number }
 export interface IntentoPreparado {
@@ -61,6 +62,9 @@ export class IntentosReservaPublicaService {
         }
         return { resultado: { id: existente.id, apartadoId, estado: existente.estado }, repetida: true };
       }
+      // La recuperación de un intento existente sigue disponible; solo se
+      // detiene la creación de intentos nuevos mientras el portal está cerrado.
+      exigirEscriturasPublicas();
       // Solo un apartado propio, actual, público y vigente puede originar un
       // intento nuevo. La preparación nunca cambia su expiraEn ni su puntero.
       const apartado = await manager.getRepository(BloqueoTemporal).findOneBy({

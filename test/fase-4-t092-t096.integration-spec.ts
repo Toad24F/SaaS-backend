@@ -64,14 +64,16 @@ async function sembrarBase(db: DataSource, reloj: RelojPrueba): Promise<BasePrue
   const licencia = await db.query(`INSERT INTO licencias
     (negocio_id,creado_en,habilitada_en,vence_en)
     VALUES (?,'2026-01-01','2026-01-01','2027-01-01')`, [negocio.id]);
+  // El reloj fijo de la carrera también fija la creación de cuentas: una
+  // fecha real posterior haría inválida su activación al avanzar el calendario.
   const admin = await db.query(`INSERT INTO usuarios
-    (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-    VALUES (?,'Admin concurrencia','admin-concurrencia@example.test','hash','admin_negocio',1,?)`,
-  [negocio.id, AHORA]);
+    (negocio_id,nombre,email,password_hash,rol,activo,creado_en,activado_en)
+    VALUES (?,'Admin concurrencia','admin-concurrencia@example.test','hash','admin_negocio',1,?,?)`,
+  [negocio.id, AHORA, AHORA]);
   const superadmin = await db.query(`INSERT INTO usuarios
-    (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-    VALUES (NULL,'Superadmin concurrencia','super-concurrencia@example.test','hash','superadmin',1,?)`,
-  [AHORA]);
+    (negocio_id,nombre,email,password_hash,rol,activo,creado_en,activado_en)
+    VALUES (NULL,'Superadmin concurrencia','super-concurrencia@example.test','hash','superadmin',1,?,?)`,
+  [AHORA, AHORA]);
   const servicioId = Number((await db.query(`SELECT id FROM servicios
     WHERE negocio_id=? AND activo=1 LIMIT 1`, [negocio.id]))[0].id);
   const sucursalId = negocio.sucursales[0].id;

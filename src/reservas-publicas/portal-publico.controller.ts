@@ -13,6 +13,7 @@ import { ApartadosService } from './apartados.service';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 import { RegistroReservaPublicaService } from './registro-reserva-publica.service';
 import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.service';
+import { MetricasPortalService } from './metricas-portal.service';
 
 /** Frontera pública: selección, apartados, reserva y recuperación del envío propio. */
 @Controller('publico/negocios/:slug')
@@ -25,7 +26,18 @@ export class PortalPublicoController {
     private readonly apartados: ApartadosService,
     private readonly intentos: IntentosReservaPublicaService,
     private readonly registro: RegistroReservaPublicaService,
-    private readonly resolucion: ResolucionReservaPublicaService) {}
+    private readonly resolucion: ResolucionReservaPublicaService,
+    private readonly metricas: MetricasPortalService) {}
+
+  /** Clasifica el estado público, sin incorporar la excepción ni la entrada al log. */
+  private errorSeguro(error: unknown) {
+    const publico = normalizarErrorPublico(error);
+    if (publico.getStatus() === 409) this.metricas.contar('conflicto');
+    if (publico.getStatus() === 500 || publico.getStatus() === 503) {
+      this.metricas.contar('fallo');
+    }
+    return publico;
+  }
 
   /** :id es la clave opaca del navegador, utilizable incluso si preparar no llegó.
    * El ID SQL permanece interno; sesión y negocio acotan siempre esa clave. */
@@ -50,7 +62,7 @@ export class PortalPublicoController {
       res.status(repetida ? 200 : 201);
       return { id: (cuerpo as { clave: string }).clave,
         apartadoId: resultado.apartadoId, estado: resultado.estado };
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Post('intentos/:id/reservar')
@@ -69,9 +81,10 @@ export class PortalPublicoController {
       await this.sesiones.exigirCredencial(negocio.id, titular.hash);
       const { resultado, repetida } = await this.registro.registrarConMeta(
         negocio.id, titular.hash, clave, cuerpo);
+      if (repetida) this.metricas.contar('recuperacion');
       res.status(repetida ? 200 : 201);
       return resultado;
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Post('intentos/:id/resolver')
@@ -94,9 +107,10 @@ export class PortalPublicoController {
       // exclusión: un timeout nunca se transforma aquí en no_registrado.
       const resultado = await this.resolucion.resolver(negocio.id, titular.hash,
         clave, (cuerpo as { apartadoId: number }).apartadoId);
+      if (resultado.estado === 'registrado') this.metricas.contar('recuperacion');
       res.status(200);
       return resultado;
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   private titular(req: Request): { credencial: string; hash: string } {
@@ -119,7 +133,7 @@ export class PortalPublicoController {
     // El portal consulta sin sesión; la respuesta no arrastra un catálogo obsoleto.
     res.setHeader('Cache-Control', 'no-store');
     try { return await this.catalogo.consultar(slug, validarCatalogoPublico(query)); }
-    catch (error) { throw normalizarErrorPublico(error); }
+    catch (error) { throw this.errorSeguro(error); }
   }
 
   @Get('disponibilidad')
@@ -133,7 +147,7 @@ export class PortalPublicoController {
       const negocio = await this.negocios.resolver(slug);
       return await this.motor.consultarPublico(negocio.id, entrada.personalId,
         entrada.sucursalId, entrada.servicioId, entrada.desde, entrada.hasta);
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Post('sesion')
@@ -159,7 +173,7 @@ export class PortalPublicoController {
       res.status(sesion.nueva ? 201 : 200);
       return { negocio: { slug: negocio.slug, nombre: negocio.nombre },
         csrfToken: this.proteccion.tokenCsrf(sesion.credencial) };
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Post('apartados')
@@ -179,7 +193,7 @@ export class PortalPublicoController {
       }
       res.status(repetida ? 200 : 201);
       return { ...resultado, servidorAhora };
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Get('apartados/:id')
@@ -192,8 +206,10 @@ export class PortalPublicoController {
       const apartadoId = this.idApartado(id);
       const negocio = await this.negocios.resolver(slug);
       await this.sesiones.exigirCredencial(negocio.id, titular.hash);
-      return await this.apartados.consultar(negocio.id, titular.hash, apartadoId);
-    } catch (error) { throw normalizarErrorPublico(error); }
+      const resultado = await this.apartados.consultar(negocio.id, titular.hash, apartadoId);
+      if (resultado.estado === 'vencido') this.metricas.contar('expiracion');
+      return resultado;
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Post('apartados/:id/liberar')
@@ -218,6 +234,6 @@ export class PortalPublicoController {
         (cuerpo as { generacion: string }).generacion);
       res.status(204);
       return;
-    } catch (error) { throw normalizarErrorPublico(error); }
+    } catch (error) { throw this.errorSeguro(error); }
   }
 }

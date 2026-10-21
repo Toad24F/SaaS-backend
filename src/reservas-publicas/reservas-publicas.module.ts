@@ -14,6 +14,7 @@ import { ApartadosService } from './apartados.service';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 import { RegistroReservaPublicaService } from './registro-reserva-publica.service';
 import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.service';
+import { MetricasPortalService } from './metricas-portal.service';
 
 /** Frontera del dominio M01–M05: exporta los colaboradores de apartado,
  * registro y resolución para la capa HTTP con autorización pública propia. */
@@ -23,9 +24,11 @@ import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.se
 ])], providers: [ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,
   CoordinacionReservaPublicaService, ApartadosService, IntentosReservaPublicaService,
-  RegistroReservaPublicaService, ResolucionReservaPublicaService], exports: [DisponibilidadModule,
+  RegistroReservaPublicaService, ResolucionReservaPublicaService,
+  MetricasPortalService], exports: [DisponibilidadModule,
   ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,
   CoordinacionReservaPublicaService, ApartadosService, IntentosReservaPublicaService,
-  RegistroReservaPublicaService, ResolucionReservaPublicaService] })
+  RegistroReservaPublicaService, ResolucionReservaPublicaService,
+  MetricasPortalService] })
 export class ReservasPublicasModule {}
