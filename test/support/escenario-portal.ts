@@ -17,16 +17,19 @@ export async function crearEscenarioPortal(db: DataSource, reloj: Reloj):
     throw new Error('El escenario público exige una base desechable migrada.');
   }
   const negocios: EscenarioNegocio[] = [];
+  // Creación y activación comparten el reloj de la fixture: usar CURRENT_TIMESTAMP
+  // hacía fallar el CHECK de activación cuando la fecha fija quedaba en el pasado.
+  const ahora = reloj.ahora();
   for (const numero of [1, 2]) {
-    const alta = await db.query('INSERT INTO negocios (nombre,slug,email_contacto,activado_en) VALUES (?,?,?,?)',
-      [`Portal ${numero}`, `portal-prueba-${numero}`, `portal${numero}@example.test`, reloj.ahora()]);
+    const alta = await db.query('INSERT INTO negocios (nombre,slug,email_contacto,activado_en,creado_en) VALUES (?,?,?,?,?)',
+      [`Portal ${numero}`, `portal-prueba-${numero}`, `portal${numero}@example.test`, ahora, ahora]);
     const id = Number(alta.insertId);
     const profesionales: number[] = [];
     for (const indice of [1, 2]) {
       const cuenta = await db.query(`INSERT INTO usuarios
-        (negocio_id,nombre,email,password_hash,rol,activo,activado_en)
-        VALUES (?,?,?,'hash','profesional',1,?)`,
-      [id, `Profesional ${numero}-${indice}`, `portal-prof-${numero}-${indice}@example.test`, reloj.ahora()]);
+        (negocio_id,nombre,email,password_hash,rol,activo,activado_en,creado_en)
+        VALUES (?,?,?,'hash','profesional',1,?,?)`,
+      [id, `Profesional ${numero}-${indice}`, `portal-prof-${numero}-${indice}@example.test`, ahora, ahora]);
       const personalId = Number(cuenta.insertId);
       await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)', [personalId, id]);
       profesionales.push(personalId);

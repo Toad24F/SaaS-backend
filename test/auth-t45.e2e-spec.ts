@@ -66,7 +66,7 @@ describe('T45 — login, perfil y logout HTTP', () => {
       const segunda = await login(app).expect(200);
       expect(primera.body.usuario).toEqual({
         id: usuario.id, nombre: usuario.nombre, email: usuario.email,
-        rol: usuario.rol, negocioId: usuario.negocioId,
+        rol: usuario.rol, negocioId: usuario.negocioId, identificadorPublico: 'negocio-t45',
       });
       const token = primera.body.accessToken;
       const perfil = await request(app.getHttpServer()).get('/auth/profile')
@@ -75,16 +75,45 @@ describe('T45 — login, perfil y logout HTTP', () => {
       expect(perfil.body.user).toEqual({
         sub: usuario.id, nombre: usuario.nombre, email: usuario.email,
         rol: usuario.rol, negocioId: usuario.negocioId,
-        negocioNombre: 'Negocio T45', sesionId: expect.any(String),
+        negocioNombre: 'Negocio T45', identificadorPublico: 'negocio-t45', sesionId: expect.any(String),
       });
       expect(JSON.stringify([primera.body, perfil.body])).not.toContain(usuario.passwordHash);
       const payload = app.get(JwtService).verify(token);
       expect(payload).not.toHaveProperty('passwordHash');
+      expect(payload).not.toHaveProperty('identificadorPublico');
       await request(app.getHttpServer()).post('/auth/logout').auth(token, { type: 'bearer' }).expect(204);
       expect((await db.getRepository(Sesion).findOneByOrFail({ id: payload.sesionId })).revocadaEn).not.toBeNull();
       await request(app.getHttpServer()).get('/auth/profile').auth(token, { type: 'bearer' }).expect(401);
       await request(app.getHttpServer()).post('/auth/logout').auth(token, { type: 'bearer' }).expect(401);
       await request(app.getHttpServer()).get('/auth/profile').auth(segunda.body.accessToken, { type: 'bearer' }).expect(200);
+    });
+  });
+
+  it('perfil devuelve el slug actual del negocio propio aunque el token nombre otro negocio', async () => {
+    await conHttp(async ({ app, db, usuario, reloj }) => {
+      const { body } = await login(app).expect(200);
+      const otro = await db.getRepository(Negocio).save({ nombre: 'Otro negocio', slug: 'otro-negocio-t45',
+        activadoEn: reloj.ahora(), emailContacto: 'otro@example.test', telefonoContacto: null });
+      const jwt = app.get(JwtService);
+      const { exp: _exp, iat: _iat, ...payload } = jwt.verify(body.accessToken);
+      const token = jwt.sign({ ...payload, negocioId: otro.id, identificadorPublico: otro.slug });
+      await db.getRepository(Negocio).update(usuario.negocioId!, { slug: 'negocio-t45-actualizado' });
+      const perfil = await request(app.getHttpServer()).get('/auth/profile').auth(token, { type: 'bearer' }).expect(200);
+      expect(perfil.body.user).toMatchObject({ negocioId: usuario.negocioId, identificadorPublico: 'negocio-t45-actualizado' });
+      expect(perfil.body.user).not.toHaveProperty('negocio');
+      expect((await db.getRepository(Negocio).findOneByOrFail({ id: otro.id })).slug).toBe(otro.slug);
+    });
+  });
+
+  it('login y perfil de superadmin devuelven identificador público nulo', async () => {
+    await conHttp(async ({ app, db, reloj }) => {
+      await db.getRepository(Usuario).save({ negocioId: null, nombre: 'Superadmin T45', email: 'sa-t45@example.test',
+        passwordHash: await new PoliticaContrasenasService().generarHash(password), rol: Rol.SUPERADMIN,
+        activo: true, activadoEn: reloj.ahora() });
+      const { body } = await request(app.getHttpServer()).post('/auth/login').send({ email: 'sa-t45@example.test', password }).expect(200);
+      expect(body.usuario.identificadorPublico).toBeNull();
+      const perfil = await request(app.getHttpServer()).get('/auth/profile').auth(body.accessToken, { type: 'bearer' }).expect(200);
+      expect(perfil.body.user.identificadorPublico).toBeNull();
     });
   });
 

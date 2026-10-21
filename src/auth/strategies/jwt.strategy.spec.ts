@@ -48,6 +48,7 @@ describe('JwtStrategy', () => {
       negocio: Object.assign(new Negocio(), {
         id: 20,
         nombre: 'Negocio actual',
+        slug: 'negocio-actual',
         activadoEn: new Date('2026-09-10T12:00:00Z'),
       }),
     });
@@ -83,9 +84,18 @@ describe('JwtStrategy', () => {
       rol: Rol.RECEPCIONISTA,
       negocioId: 20,
       negocioNombre: usuario.negocio!.nombre,
+      identificadorPublico: 'negocio-actual',
       sesionId: payload.sesionId,
     });
     expect(findById).toHaveBeenCalledWith(1);
+  });
+
+  it.each([Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL, Rol.RECEPCIONISTA])('perfil %s relee el identificador propio e ignora datos antiguos del token', async (rol) => {
+    usuario.rol = rol;
+    const tokenAnterior = { ...payload, negocioId: 999, identificadorPublico: 'ajeno' };
+    await expect(strategy.validate(tokenAnterior)).resolves.toMatchObject({ negocioId: 20, identificadorPublico: 'negocio-actual' });
+    usuario.negocio!.slug = 'negocio-actualizado';
+    await expect(strategy.validate(tokenAnterior)).resolves.toMatchObject({ identificadorPublico: 'negocio-actualizado' });
   });
 
   it('conserva el identificador de sesión persistida recibido en el JWT', async () => {
@@ -157,6 +167,7 @@ describe('JwtStrategy', () => {
       rol: Rol.SUPERADMIN,
       negocioId: null,
       negocioNombre: null,
+      identificadorPublico: null,
     });
   });
 

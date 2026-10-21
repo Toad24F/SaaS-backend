@@ -11,6 +11,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Licencia } from '../licencias/entities/licencia.entity';
 import { PoliticaAccesoLicenciaService } from '../licencias/services/politica-acceso-licencia.service';
 import { RELOJ } from '../comun/reloj';
+import { Negocio } from '../negocios/entities/negocio.entity';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -19,6 +20,7 @@ describe('AuthService', () => {
   const crearSesion = jest.fn();
   const findOneBy = jest.fn();
   const usuarioBloqueado = jest.fn();
+  const findNegocio = jest.fn();
 
   beforeEach(async () => {
     findByEmailWithNegocio.mockReset();
@@ -30,8 +32,9 @@ describe('AuthService', () => {
       suspendidaEn: null,
     });
     usuarioBloqueado.mockReset().mockImplementation(() => findByEmailWithNegocio.mock.results.at(-1)?.value);
+    findNegocio.mockReset().mockResolvedValue({ id: 10, slug: 'negocio-vigente', activadoEn: new Date('2026-09-10T12:00:00Z') });
     // La prueba unitaria simula el manager transaccional; la carrera real se prueba en T54.
-    const manager = { getRepository: () => ({ createQueryBuilder: () => ({
+    const manager = { getRepository: (entity: unknown) => entity === Negocio ? { findOneBy: findNegocio } : ({ createQueryBuilder: () => ({
       setLock: () => ({ where: () => ({ getOne: usuarioBloqueado }) }),
     }), findOneBy }) };
     const module: TestingModule = await Test.createTestingModule({
@@ -66,7 +69,24 @@ describe('AuthService', () => {
     const resultado = await service.login({ email: 'admin@example.com', password: 'contraseña-de-prueba' });
     expect(resultado.accessToken).toBe('token-de-prueba');
     expect(resultado.usuario).not.toHaveProperty('passwordHash');
+    expect(resultado.usuario).toHaveProperty('identificadorPublico', null);
     expect(sign).toHaveBeenCalledTimes(1);
+  });
+
+  // El slug debe salir de la misma lectura transaccional que valida la licencia,
+  // no de la relación cargada antes de esperar el bloqueo del usuario.
+  it.each([Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL, Rol.RECEPCIONISTA])('login %s devuelve el identificador vigente sin incorporarlo al JWT', async (rol) => {
+    findByEmailWithNegocio.mockResolvedValue({
+      id: 2, email: 'negocio@example.test', nombre: 'Usuario', activo: true,
+      rol, negocioId: 10, activadoEn: new Date('2026-09-10T12:00:00Z'),
+      negocio: { id: 10, slug: 'lectura-anterior', activadoEn: new Date('2026-09-10T12:00:00Z') },
+      passwordHash: await bcrypt.hash('contraseña-de-prueba', 4),
+    });
+    const result = await service.login({ email: 'negocio@example.test', password: 'contraseña-de-prueba' });
+    expect(result.usuario).toMatchObject({ negocioId: 10, identificadorPublico: 'negocio-vigente' });
+    expect(findNegocio).toHaveBeenCalledWith({ id: 10 });
+    expect(sign.mock.calls[0][0]).not.toHaveProperty('identificadorPublico');
+    expect(result.usuario).not.toHaveProperty('negocio');
   });
 
   it.each([null, { activo: false }])('rechaza cuentas inexistentes o inactivas: %s', async (usuario) => {
