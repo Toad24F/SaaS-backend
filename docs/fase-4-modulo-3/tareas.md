@@ -408,29 +408,31 @@ E5; M06; D02–D03, D10–D11; T02, T03 y T12. Trabajo en frontend-saas.
 
 E5–E6; M06–M07; T01–T03 y T12.
 
-- [ ] **M3-T117 — Configurar Playwright para portal y API de prueba** · 25 min · Depende de: M3-T098, M3-T003 · RF-01, RF-05–RF-07, RF-25, RF-28, RF-40–RF-41
+- [x] **M3-T117 — Configurar Playwright para portal y API de prueba** · 25 min · Depende de: M3-T098, M3-T003 · RF-01, RF-05–RF-07, RF-25, RF-28, RF-40–RF-41
       Hecho cuando: el runner inicia frontend/API contra base desechable, abre una página pública y cierra recursos al terminar; no utiliza la base cotidiana.
 
-- [ ] **M3-T118 — Probar recorrido móvil completo** · 25 min · Depende de: M3-T117, M3-T115, M3-T082 · RF-01, RF-05–RF-11, RF-15, RF-19, RF-30, RF-34, RF-37
+- [x] **M3-T118 — Probar recorrido móvil completo** · 25 min · Depende de: M3-T117, M3-T115, M3-T082 · RF-01, RF-05–RF-11, RF-15, RF-19, RF-30, RF-34, RF-37
       Hecho cuando: un navegador móvil selecciona oferta, corrige errores, reserva y ve folio/estado pendiente; la base contiene exactamente la cita mostrada.
 
-- [ ] **M3-T119 — Probar teclado, foco y contenido seguro** · 25 min · Depende de: M3-T117, M3-T115 · RF-07–RF-10, RF-13, RF-16–RF-17, RF-43
+- [x] **M3-T119 — Probar teclado, foco y contenido seguro** · 25 min · Depende de: M3-T117, M3-T115 · RF-07–RF-10, RF-13, RF-16–RF-17, RF-43
       Hecho cuando: el recorrido se completa sin ratón, errores y foco resultan comprensibles y las notas con apariencia de HTML no ejecutan ni inyectan contenido.
 
-- [ ] **M3-T120 — Probar pestañas del mismo navegador** · 25 min · Depende de: M3-T117, M3-T108, M3-T109, M3-T066 · RF-19, RF-21–RF-27, RF-29
+- [x] **M3-T120 — Probar pestañas del mismo navegador** · 25 min · Depende de: M3-T117, M3-T108, M3-T109, M3-T066 · RF-19, RF-21–RF-27, RF-29
       Hecho cuando: dos pestañas comparten identidad, mantienen un apartado por negocio y notifican reemplazo; un intento nuevo fallido deja liberado el anterior.
 
-- [ ] **M3-T121 — Probar navegadores distintos y acceso cruzado** · 25 min · Depende de: M3-T117, M3-T099, M3-T085 · RF-01–RF-04, RF-13, RF-20, RF-29, RF-33, RF-42
+- [x] **M3-T121 — Probar navegadores distintos y acceso cruzado** · 25 min · Depende de: M3-T117, M3-T099, M3-T085 · RF-01–RF-04, RF-13, RF-20, RF-29, RF-33, RF-42
       Hecho cuando: dos contextos independientes no acceden a apartados/resultados ajenos y disputan un horario sin generar dos ocupaciones incompatibles.
 
-- [ ] **M3-T122 — Probar recarga normal, salida y cookies bloqueadas** · 25 min · Depende de: M3-T117, M3-T109, M3-T100 · RF-23–RF-28, RF-43
+- [x] **M3-T122 — Probar recarga normal, salida y cookies bloqueadas** · 25 min · Depende de: M3-T117, M3-T109, M3-T100 · RF-23–RF-28, RF-43
       Hecho cuando: recargar sin envío reinicia sin contacto guardado, cerrar sin aviso permite vencer el apartado y cookies bloqueadas muestran imposibilidad de continuar.
 
-- [ ] **M3-T123 — Probar pérdida de respuesta y recarga tras envío** · 25 min · Depende de: M3-T117, M3-T112, M3-T113, M3-T096 · RF-28, RF-35, RF-39–RF-43
+- [x] **M3-T123 — Probar pérdida de respuesta y recarga tras envío** · 25 min · Depende de: M3-T117, M3-T112, M3-T113, M3-T096 · RF-28, RF-35, RF-39–RF-43
       Hecho cuando: interceptar la respuesta después del commit y recargar recupera el mismo folio; interceptar antes del envío permite ausencia terminal sin una cita tardía.
 
-- [ ] **M3-T124 — Probar pestaña suspendida y contador desfasado** · 20 min · Depende de: M3-T117, M3-T107, M3-T108, M3-T065 · RF-19, RF-21–RF-23, RF-26, RF-31
+- [x] **M3-T124 — Probar pestaña suspendida y contador desfasado** · 20 min · Depende de: M3-T117, M3-T107, M3-T108, M3-T065 · RF-19, RF-21–RF-23, RF-26, RF-31
       Hecho cuando: alterar el reloj del navegador o suspender la pestaña no extiende el apartado; al volver se muestra su vigencia real y se impide enviar uno vencido.
+
+      Evidencia T117–T124: [runner, recorridos y resultados](../../../frontend-saas/docs/fase-4/resultados-tareas/resultado-t117-t124.md).
 
 - [ ] **M3-T125 — Probar límites HTTP y respuestas seguras finales** · 25 min · Depende de: M3-T080, M3-T081, M3-T064, M3-T035 · RF-02–RF-03, RF-08–RF-10, RF-13, RF-17, RF-29, RF-42–RF-43
       Hecho cuando: las rutas rechazan campos desconocidos y cuerpos excesivos; cada error previsto conserva el contrato seguro y ningún resultado personal queda cacheable o registrado con secretos.
