@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -6,7 +6,7 @@ import { Servicio } from '../servicios/entities/servicio.entity';
 import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { PersonalServicio } from '../profesionales/entities/personal-servicio.entity';
 import { PersonalServicioSucursal } from '../profesionales/entities/personal-servicio-sucursal.entity';
-import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import type { ContextoCalculoDisponibilidad, ContextoDisponibilidad } from './contexto-disponibilidad.service';
 import { derivarEstadoOferta, type FuentesOferta } from './estado-oferta';
 
 /** Lee la oferta con el manager autorizado; no inicia otra transacción. */
@@ -15,13 +15,13 @@ export class OfertaEfectivaService {
   constructor(private readonly autorizacion: AutorizacionService) {}
 
   /** Puerta previa al motor: no valida horarios ni ocupaciones; solo descarta oferta inactiva. */
-  async filtrarCandidatos<T>(contexto: ContextoDisponibilidad, sucursalId: number,
+  async filtrarCandidatos<T>(contexto: ContextoCalculoDisponibilidad, sucursalId: number,
     servicioId: number, modalidad: 'publica' | 'manual', candidatos: readonly T[]) {
     const oferta = await this.consultar(contexto, sucursalId, servicioId, modalidad);
     return { oferta, candidatos: oferta.ofrecido ? [...candidatos] : [] as T[] };
   }
 
-  async consultar(contexto: ContextoDisponibilidad, sucursalId: number,
+  async consultar(contexto: ContextoCalculoDisponibilidad, sucursalId: number,
     servicioId: number, modalidad: 'publica' | 'manual') {
     if (!Number.isSafeInteger(sucursalId) || sucursalId <= 0 ||
       !Number.isSafeInteger(servicioId) || servicioId <= 0 ||
@@ -29,7 +29,12 @@ export class OfertaEfectivaService {
       throw new BadRequestException('Combinación de disponibilidad inválida.');
     }
     if (modalidad === 'manual') {
-      this.autorizacion.exigir(contexto.rol, Permiso.VALIDAR_DISPONIBILIDAD_MANUAL);
+      // El contexto público jamás aporta rol; solo la entrada privada autoriza manual.
+      if (!('rol' in contexto) || !('actorId' in contexto)) {
+        throw new ForbiddenException('Modalidad manual no autorizada.');
+      }
+      this.autorizacion.exigir((contexto as ContextoDisponibilidad).rol,
+        Permiso.VALIDAR_DISPONIBILIDAD_MANUAL);
     }
     const { manager, negocioId, personalId } = contexto;
     if (!manager.queryRunner?.isTransactionActive) {

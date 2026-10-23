@@ -35,8 +35,8 @@ describe('T61 — instalación desde cero', () => {
         // migraciones pendientes, sin recrear tablas ni modificar datos.
         await expect(segunda.runMigrations({ transaction: 'each' })).resolves.toEqual([]);
         const historial = await segunda.query('SELECT COUNT(*) AS total FROM migrations');
-        // Las migraciones de fase 3 y de nombres únicos amplían el historial.
-        expect(Number(historial[0].total)).toBe(26);
+        // El historial debe contener todas las migraciones descubiertas, aun al crecer el módulo.
+        expect(Number(historial[0].total)).toBe(primera.migrations.length);
       } finally {
         await app?.close();
         process.env.TEST_DB_NAME = entornoAnterior.TEST_DB_NAME;

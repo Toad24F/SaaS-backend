@@ -10,6 +10,7 @@ import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { bloquearNegocioAgenda } from '../comun/bloqueos-coordinados';
 import { Personal } from '../profesionales/entities/personal.entity';
 import { PersonalServicio } from '../profesionales/entities/personal-servicio.entity';
 import { PersonalServicioSucursal } from '../profesionales/entities/personal-servicio-sucursal.entity';
@@ -32,6 +33,7 @@ export class ServiciosService {
     const datos = this.validar(CrearServicioDto, entrada);
     return transaccionIdentidad(this.servicios.manager, async (manager) => {
       const actor = await this.actor(manager, actorId, Permiso.CREAR_EDITAR_SERVICIOS);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       // El perfil bloqueado serializa el alta frente a cambios de asignaciones.
       const perfil = actor.rol === Rol.PROFESIONAL
         ? await manager.getRepository(Personal).createQueryBuilder('perfil')
@@ -69,7 +71,7 @@ export class ServiciosService {
       }
       await this.registrar(manager, actor, servicio, 'servicio_creado', null, this.campos(servicio));
       return servicio;
-    });
+    }, 'READ COMMITTED');
   }
 
   async listar(actorId: number): Promise<Servicio[]> {
@@ -94,6 +96,7 @@ export class ServiciosService {
     }
     return transaccionIdentidad(this.servicios.manager, async (manager) => {
       const actor = await this.actor(manager, actorId, Permiso.CREAR_EDITAR_SERVICIOS);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const servicio = await this.bloquear(manager, actor.negocioId!, id);
       // El autor puede cambiar datos globales, pero no recibe permisos de estado o baja.
       if (actor.rol === Rol.PROFESIONAL && servicio.creadorPersonalId !== actor.id) {
@@ -117,12 +120,13 @@ export class ServiciosService {
         await this.registrar(manager, actor, servicio, 'servicio_editado', antes, despues);
       }
       return servicio;
-    });
+    }, 'READ COMMITTED');
   }
 
   async cambiarEstado(actorId: number, id: number, activo: boolean): Promise<void> {
     await transaccionIdentidad(this.servicios.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const servicio = await this.bloquear(manager, actor.negocioId!, id);
       if (servicio.activo === activo) return;
       // Conserva la fila y sus futuras selecciones; solo cambia la oferta global.
@@ -131,20 +135,21 @@ export class ServiciosService {
       await manager.getRepository(Servicio).save(servicio);
       await this.registrar(manager, actor, servicio,
         activo ? 'servicio_reactivado' : 'servicio_desactivado', antes, this.campos(servicio));
-    });
+    }, 'READ COMMITTED');
   }
 
   async eliminar(actorId: number, id: number): Promise<void> {
     try {
       await transaccionIdentidad(this.servicios.manager, async (manager) => {
         const actor = await this.actor(manager, actorId);
+        await bloquearNegocioAgenda(manager, actor.negocioId!);
         const servicio = await this.bloquear(manager, actor.negocioId!, id);
         // La selección y cualquier evento posterior al alta convierten la baja en conflicto.
         await exigirEliminacionElegible(manager, 'servicio', actor.negocioId!, id);
         await manager.getRepository(Servicio).delete({ id, negocioId: actor.negocioId! });
         await this.registrar(manager, actor, servicio, 'servicio_eliminado',
           this.campos(servicio), null);
-      });
+      }, 'READ COMMITTED');
     } catch (error) { conflictoEliminacion(error); }
   }
 

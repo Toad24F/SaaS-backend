@@ -8,7 +8,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { ConfiguracionAgenda } from './entities/configuracion-agenda.entity';
-import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import type { ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 import { CONFIGURACION_INICIAL, validarConfiguracionAgenda,
   ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
 
@@ -29,7 +29,7 @@ export class ConfiguracionAgendaService {
   }
 
   /** El motor usa el mismo gestor e instante que sus demás fuentes. */
-  async consultarEnContexto(contexto: ContextoDisponibilidad):
+  async consultarEnContexto(contexto: ContextoCalculoDisponibilidad):
     Promise<ValoresConfiguracionAgenda> {
     if (!contexto.manager.queryRunner?.isTransactionActive) {
       throw new Error('La lectura de configuración requiere una transacción activa.');
@@ -41,6 +41,8 @@ export class ConfiguracionAgendaService {
 
   async guardar(actorId: number, entrada: unknown): Promise<ValoresConfiguracionAgenda> {
     const nuevos = validarConfiguracionAgenda(entrada);
+    // READ COMMITTED permite observar la última configuración tras esperar la
+    // barrera del negocio; el reemplazo y la auditoría siguen siendo atómicos.
     return transaccionIdentidad(this.db, async (manager) => {
       const actor = await this.actor(manager, actorId);
       // El negocio padre serializa también la primera escritura, cuando aún no hay fila.
@@ -62,7 +64,7 @@ export class ConfiguracionAgendaService {
         accion: 'configuracion_agenda_modificada', valoresAntes: { ...anteriores },
         valoresDespues: { ...nuevos } });
       return nuevos;
-    });
+    }, 'READ COMMITTED');
   }
 
   private async actor(manager: EntityManager, id: number): Promise<Usuario> {

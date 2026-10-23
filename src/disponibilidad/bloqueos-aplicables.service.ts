@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { intervaloBloqueo } from '../bloqueos/calculo-bloqueos';
 import type { DatosBloqueo } from '../bloqueos/validar-bloqueo';
-import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import type { ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 
 export interface BloqueoAplicable {
   id: number;
@@ -12,7 +12,7 @@ export interface BloqueoAplicable {
 /** Lee bloqueos del mismo tenant y convierte cada uno a UTC en la zona de la sede. */
 @Injectable()
 export class BloqueosAplicablesService {
-  async consultar(contexto: ContextoDisponibilidad, sucursalId: number,
+  async consultar(contexto: ContextoCalculoDisponibilidad, sucursalId: number,
     desde: string, hasta: string, zonaHoraria: string): Promise<BloqueoAplicable[]> {
     const { manager, negocioId, personalId } = contexto;
     if (!manager.queryRunner?.isTransactionActive) {

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { validarFechaLocal } from '../horarios/calendario';
 import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
-import type { ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import type { ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 import { BloqueosAplicablesService } from './bloqueos-aplicables.service';
 import { proyectarAtencion, type ExcepcionFuente,
   type FranjaSemanalFuente, type ProyeccionAtencion } from './proyeccion-atencion';
@@ -12,7 +12,7 @@ import { proyectarAtencion, type ExcepcionFuente,
 export class AtencionInternaService {
   constructor(private readonly bloqueos: BloqueosAplicablesService) {}
 
-  async consultar(contexto: ContextoDisponibilidad, sucursalId: number,
+  async consultar(contexto: ContextoCalculoDisponibilidad, sucursalId: number,
     desde: string, hasta: string): Promise<ProyeccionAtencion> {
     if (!contexto.manager.queryRunner?.isTransactionActive) {
       throw new Error('La lectura de atención requiere una transacción activa.');

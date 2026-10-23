@@ -87,6 +87,14 @@ export async function conBaseHistorica<T>(ejecutar: (contexto: {
   actualizar: () => Promise<unknown>;
 }) => Promise<T>): Promise<T> {
   return conBaseMigrada(async (db) => {
+    // Las FKs circulares del portal impiden retirar tablas de fase 3 directamente.
+    // Se revierten primero solo sus migraciones, dentro de esta base desechable.
+    for (;;) {
+      const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');
+      if (ultima?.name === 'NombreUnicoSucursales1760000025000') break;
+      if (!ultima) throw new Error('No se encontró el límite anterior al portal.');
+      await db.undoLastMigration({ transaction: 'each' });
+    }
     // Se retiran en orden inverso las cuatro tablas vacías y su historial.
     const nuevas = ['ApartadosCanonicos1760000022000', 'CitasCanonicas1760000021000',
       'ClientesBase1760000020000', 'ConfiguracionAgenda1760000019000'];

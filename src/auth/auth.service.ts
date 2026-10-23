@@ -72,7 +72,7 @@ export class AuthService {
 
         // Serializa la creación de sesión frente al cambio y recuperación de clave.
         // Si el hash cambió desde la comparación bcrypt, la clave antigua no crea sesión.
-        const { vigente, sesion } = await this.licencias.manager.transaction(async (manager) => {
+        const { vigente, sesion, identificadorPublico } = await this.licencias.manager.transaction(async (manager) => {
             const vigente = await manager.getRepository(Usuario).createQueryBuilder('usuario')
                 .setLock('pessimistic_write')//bloquea la fila del usuario para evitar cambios concurrentes
                 .where('usuario.id = :id', { id: usuario.id })
@@ -81,6 +81,9 @@ export class AuthService {
                 !vigente.nombre || vigente.passwordHash !== usuario.passwordHash) {
                 throw new UnauthorizedException(MENSAJE_RECHAZO);//si el usuario no es válido, lanza una excepción de no autorizado
             }
+            // El identificador es informativo y procede del negocio revalidado en
+            // esta transacción. Superadmin no tiene un portal de negocio propio.
+            let identificadorPublico: string | null = null;
             if (vigente.rol !== Rol.SUPERADMIN) {//si el rol del usuario no es superadmin, verifica la licencia y el negocio
                 const negocio = vigente.negocioId === null ? null
                     : await manager.getRepository(Negocio).findOneBy({ id: vigente.negocioId });
@@ -95,8 +98,9 @@ export class AuthService {
                 }).permitido) {
                     throw new UnauthorizedException(MENSAJE_RECHAZO);
                 }
+                identificadorPublico = negocio.slug;
             }
-            return { vigente, sesion: await this.sesiones.crearConManager(manager, vigente.id, ahora) };//crea una nueva sesión para el usuario
+            return { vigente, identificadorPublico, sesion: await this.sesiones.crearConManager(manager, vigente.id, ahora) };//crea una nueva sesión para el usuario
         });
 
         // 4. Generar el payload del token JWT
@@ -119,6 +123,7 @@ export class AuthService {
                 email: vigente.email,
                 rol: vigente.rol,
                 negocioId: vigente.negocioId,
+                identificadorPublico,
             },
         };
     }

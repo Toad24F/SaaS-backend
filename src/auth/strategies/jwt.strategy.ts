@@ -86,6 +86,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       rol: usuario.rol,
       negocioId: usuario.negocioId,
       negocioNombre: usuario.negocio?.nombre ?? null,
+      // El enlace usa el slug vigente de la base, nunca uno recibido del token.
+      identificadorPublico: usuario.rol === Rol.SUPERADMIN ? null : usuario.negocio?.slug ?? null,
       sesionId: payload.sesionId,
     } satisfies UsuarioAutenticado;
   }

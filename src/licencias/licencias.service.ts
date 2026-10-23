@@ -6,6 +6,7 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from '../correos/entities/envio-correo.entity';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { Negocio } from '../negocios/entities/negocio.entity';
 import { Licencia } from './entities/licencia.entity';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
 
@@ -127,13 +128,25 @@ export class LicenciasService {
         // una entidad de licencia obtenida antes del rollback de MariaDB.
         // READ COMMITTED evita reutilizar una vista anterior al bloqueo de otra transición.
         await this.licencias.manager.transaction('READ COMMITTED', async (manager) => {
-          const actor = await manager.getRepository(Usuario).findOneBy({ id: actorId });
+          const actor = await manager.getRepository(Usuario).createQueryBuilder('actor')
+            .setLock('pessimistic_read').where('actor.id = :id', { id: actorId }).getOne();
           if (!actor) throw new ForbiddenException('Acceso denegado.');
           this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_LICENCIA);
+          // La prelectura descubre el negocio sin bloquear la licencia. Su fila
+          // se relee bajo FOR UPDATE tras la barrera, dentro de READ COMMITTED.
+          const referencia = await manager.getRepository(Licencia)
+            .findOneBy({ id: licenciaId });
+          if (!referencia) throw new NotFoundException('Licencia no disponible.');
+          const negocio = await manager.getRepository(Negocio).createQueryBuilder('negocio')
+            .setLock('pessimistic_write')
+            .where('negocio.id = :id', { id: referencia.negocioId }).getOne();
+          if (!negocio) throw new NotFoundException('Licencia no disponible.');
           const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
             .setLock('pessimistic_write').where('licencia.id = :id', { id: licenciaId }).getOne();
           // La ausencia del recurso es 404; nunca se filtra un error interno de TypeORM.
-          if (!licencia) throw new NotFoundException('Licencia no disponible.');
+          if (!licencia || licencia.negocioId !== negocio.id) {
+            throw new NotFoundException('Licencia no disponible.');
+          }
           await operacion(manager, actor, licencia);
         });
         return;

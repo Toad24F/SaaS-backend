@@ -25,5 +25,5 @@ import { ConfiguracionAgenda } from './entities/configuracion-agenda.entity';
     { provide: RELOJ, useClass: RelojSistema }],
   exports: [ConfiguracionAgendaService, ContextoDisponibilidadService,
     OfertaEfectivaService, AtencionInternaService, MotorDisponibilidadService,
-    CitasAfectadasService] })
+    CitasAfectadasService, RELOJ] })
 export class DisponibilidadModule {}
