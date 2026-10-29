@@ -13,6 +13,13 @@ import { CitasCanonicas1760000021000 } from '../src/database/migrations/17600000
 import { ApartadosCanonicos1760000022000 } from '../src/database/migrations/1760000022000-ApartadosCanonicos';
 import { NombreUnicoServicios1760000024000 } from '../src/database/migrations/1760000024000-NombreUnicoServicios';
 import { NombreUnicoSucursales1760000025000 } from '../src/database/migrations/1760000025000-NombreUnicoSucursales';
+import { SesionesReservaPublica1760000026000 } from '../src/database/migrations/1760000026000-SesionesReservaPublica';
+import { OperacionesApartado1760000027000 } from '../src/database/migrations/1760000027000-OperacionesApartado';
+import { ContextoApartadosPublicos1760000028000 } from '../src/database/migrations/1760000028000-ContextoApartadosPublicos';
+import { TelefonosCompartidos1760000029000 } from '../src/database/migrations/1760000029000-TelefonosCompartidos';
+import { HistoriaCitasPublicas1760000030000 } from '../src/database/migrations/1760000030000-HistoriaCitasPublicas';
+import { IntentosReservaPublica1760000031000 } from '../src/database/migrations/1760000031000-IntentosReservaPublica';
+import { RelacionesReservaPublica1760000032000 } from '../src/database/migrations/1760000032000-RelacionesReservaPublica';
 
 describe('M1-T060: migración incremental de sucursales', () => {
   it('instala restricciones tenant y conserva negocios previos al aplicar la migración', async () => {
@@ -22,6 +29,15 @@ describe('M1-T060: migración incremental de sucursales', () => {
       // se retiran y restauran junto con el esquema histórico que se prueba.
       const runner = db.createQueryRunner();
       try {
+        // El portal depende de sucursales, citas y apartados: se retira primero.
+        const portal = [new SesionesReservaPublica1760000026000(),
+          new OperacionesApartado1760000027000(),
+          new ContextoApartadosPublicos1760000028000(),
+          new TelefonosCompartidos1760000029000(),
+          new HistoriaCitasPublicas1760000030000(),
+          new IntentosReservaPublica1760000031000(),
+          new RelacionesReservaPublica1760000032000()];
+        for (const migracion of [...portal].reverse()) await migracion.down(runner);
         await new NombreUnicoSucursales1760000025000().down(runner);
         await new NombreUnicoServicios1760000024000().down(runner);
         await new ApartadosCanonicos1760000022000().down(runner);
@@ -48,6 +64,8 @@ describe('M1-T060: migración incremental de sucursales', () => {
         await new ApartadosCanonicos1760000022000().up(runner);
         await new NombreUnicoServicios1760000024000().up(runner);
         await new NombreUnicoSucursales1760000025000().up(runner);
+        // Restaura en orden para que la instalación final conserve todas las FKs.
+        for (const migracion of portal) await migracion.up(runner);
       } finally { await runner.release(); }
       expect(await db.query('SELECT id FROM negocios WHERE id = ?', [existente.insertId]))
         .toHaveLength(1);

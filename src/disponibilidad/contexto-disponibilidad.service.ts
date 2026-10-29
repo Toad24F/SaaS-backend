@@ -19,15 +19,19 @@ import { Licencia } from '../licencias/entities/licencia.entity';
 import { PoliticaAccesoLicenciaService } from '../licencias/services/politica-acceso-licencia.service';
 import { Personal } from '../profesionales/entities/personal.entity';
 
-/** Todos los lectores del motor compartirán este manager y el mismo instante. */
-export interface ContextoDisponibilidad {
+/** Datos mínimos del cálculo, independientes de JWT, rol o cookie. */
+export interface ContextoCalculoDisponibilidad {
   manager: EntityManager;
   ahora: Date;
-  actorId: number;
-  rol: Rol;
   negocioId: number;
   personalId: number;
 }
+/** La autorización privada conserva su actor y rol fuera del contrato común. */
+export interface ContextoDisponibilidad extends ContextoCalculoDisponibilidad {
+  actorId: number;
+  rol: Rol;
+}
+export type ContextoPublicoDisponibilidad = ContextoCalculoDisponibilidad;
 export type AccesoDisponibilidad = Omit<ContextoDisponibilidad, 'personalId'>;
 
 /** Reconstruye acceso actual sin confiar en rol ni negocio incluidos en el token. */
@@ -37,6 +41,30 @@ export class ContextoDisponibilidadService {
     private readonly autorizacion: AutorizacionService,
     private readonly politicaLicencia: PoliticaAccesoLicenciaService,
   ) {}
+
+  /** Relee acceso y perfil en la transacción del cálculo o del escritor;
+   * la autorización HTTP previa no sustituye esta comprobación. */
+  async resolverPublico(manager: EntityManager, negocioId: number,
+    personalId: number, ahora: Date): Promise<ContextoPublicoDisponibilidad> {
+    if (!manager.queryRunner?.isTransactionActive) {
+      throw new Error('La lectura pública requiere una transacción activa.');
+    }
+    if (!Number.isSafeInteger(negocioId) || negocioId <= 0 ||
+      !Number.isSafeInteger(personalId) || personalId <= 0 ||
+      !Number.isFinite(ahora.getTime())) {
+      throw new BadRequestException('Contexto público inválido.');
+    }
+    const negocio = await manager.getRepository(Negocio).findOneBy({ id: negocioId });
+    const licencia = await manager.getRepository(Licencia).findOneBy({ negocioId });
+    if (!negocio || !licencia || !this.politicaLicencia.puedeAceptarReserva(
+      negocio.activadoEn !== null, licencia, ahora)) {
+      throw new NotFoundException('Portal no disponible para reservar.');
+    }
+    const perfil = await manager.getRepository(Personal)
+      .findOneBy({ negocioId, id: personalId });
+    if (!perfil) throw new NotFoundException('Profesional no disponible.');
+    return { manager, ahora: new Date(ahora), negocioId, personalId: perfil.id };
+  }
 
   async resolver(
     manager: EntityManager,

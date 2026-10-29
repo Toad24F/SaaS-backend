@@ -4,6 +4,8 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Personal } from '../../profesionales/entities/personal.entity';
 import { Sucursal } from '../../sucursales/entities/sucursal.entity';
 import { Servicio } from '../../servicios/entities/servicio.entity';
+import { SesionReservaPublica } from '../../reservas-publicas/entities/sesion-reserva-publica.entity';
+import { OperacionApartado } from '../../reservas-publicas/entities/operacion-apartado.entity';
 
 /** Apartado temporal con intervalo UTC y titular almacenado solo como hash. */
 @Entity({ name: 'bloqueos_temporales' })
@@ -12,8 +14,11 @@ import { Servicio } from '../../servicios/entities/servicio.entity';
 @Index('idx_bt_personal_expira', ['negocioId', 'personalId', 'expiraEn'])
 @Index('idx_bt_sucursal', ['negocioId', 'sucursalId'])
 @Index('idx_bt_servicio', ['negocioId', 'servicioId'])
+@Index('idx_bt_sesion', ['negocioId', 'sesionId'])
+@Index('idx_bt_operacion', ['negocioId', 'operacionId'])
 @Check('chk_bt_intervalo', 'fin_utc > inicio_utc')
 @Check('chk_bt_hash', 'CHAR_LENGTH(titular_hash) = 64')
+@Check('chk_bt_costo_aceptado', 'costo_aceptado IS NULL OR costo_aceptado >= 0')
 export class BloqueoTemporal {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -66,6 +71,36 @@ export class BloqueoTemporal {
 
   @Column({ name: 'titular_hash', type: 'char', length: 64 })
   titularHash: string;
+
+  // Los apartados anteriores carecen de precio y contexto público; no se inventan.
+  @Column({ name: 'costo_aceptado', type: 'decimal', precision: 10, scale: 2,
+    nullable: true })
+  costoAceptado: string | null;
+
+  @Column({ name: 'zona_horaria_apartado', type: 'varchar', length: 64,
+    nullable: true })
+  zonaHorariaApartado: string | null;
+
+  @Column({ name: 'sesion_id', type: 'int', unsigned: true, nullable: true })
+  sesionId: number | null;
+
+  @ManyToOne(() => SesionReservaPublica, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([{ name: 'negocio_id', referencedColumnName: 'negocioId',
+    foreignKeyConstraintName: 'fk_bt_sesion' },
+  { name: 'sesion_id', referencedColumnName: 'id' }])
+  sesion: SesionReservaPublica | null;
+
+  @Column({ type: 'bigint', unsigned: true, nullable: true })
+  generacion: string | null;
+
+  @Column({ name: 'operacion_id', type: 'bigint', unsigned: true, nullable: true })
+  operacionId: string | null;
+
+  @ManyToOne(() => OperacionApartado, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([{ name: 'negocio_id', referencedColumnName: 'negocioId',
+    foreignKeyConstraintName: 'fk_bt_operacion' },
+  { name: 'operacion_id', referencedColumnName: 'id' }])
+  operacion: OperacionApartado | null;
 
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
   creadoEn: Date;

@@ -19,6 +19,7 @@ export type OrigenCita = 'portal_publico' | 'manual';
 @Index('idx_citas_servicio', ['negocioId', 'servicioId'])
 @Check('chk_citas_intervalo', 'fin_utc > inicio_utc')
 @Check('chk_citas_zona', 'CHAR_LENGTH(TRIM(zona_horaria_reserva)) > 0')
+@Check('chk_citas_costo_aceptado', 'costo_aceptado IS NULL OR costo_aceptado >= 0')
 export class Cita {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -79,6 +80,30 @@ export class Cita {
 
   @Column({ name: 'motivo_consulta', type: 'text', nullable: true })
   motivoConsulta: string | null;
+
+  // La cita conserva el precio y el resumen tal como se aceptaron al registrarla.
+  // Las filas anteriores mantienen NULL; no se reconstruyen desde el catálogo actual.
+  @Column({ name: 'costo_aceptado', type: 'decimal', precision: 10, scale: 2,
+    nullable: true })
+  costoAceptado: string | null;
+
+  @Column({ name: 'nombre_contacto', type: 'varchar', length: 150, nullable: true })
+  nombreContacto: string | null;
+
+  @Column({ name: 'telefono_contacto', type: 'varchar', length: 10, nullable: true })
+  telefonoContacto: string | null;
+
+  @Column({ name: 'nombre_negocio', type: 'varchar', length: 150, nullable: true })
+  nombreNegocio: string | null;
+
+  @Column({ name: 'nombre_servicio', type: 'varchar', length: 150, nullable: true })
+  nombreServicio: string | null;
+
+  @Column({ name: 'nombre_sucursal', type: 'varchar', length: 150, nullable: true })
+  nombreSucursal: string | null;
+
+  @Column({ name: 'nombre_profesional', type: 'varchar', length: 150, nullable: true })
+  nombreProfesional: string | null;
 
   @Column({ type: 'varchar', length: 20 })
   folio: string;

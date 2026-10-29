@@ -39,7 +39,8 @@ type CamposSucursal = Pick<
   | 'notasLlegada'
 >;
 
-/** Gestiona sucursales serializando el cupo sobre la fila del negocio. */
+/** Gestiona sucursales serializando el cupo sobre la fila del negocio.
+ * Sus escrituras usan READ COMMITTED para releer tras esperar esa barrera. */
 @Injectable()
 export class SucursalesService {
   private readonly horarios = new CoordinacionHorarios();
@@ -94,7 +95,7 @@ export class SucursalesService {
         this.campos(sucursal),
       );
       return sucursal;
-    });
+    }, 'READ COMMITTED');
   }
 
   async listar(actorId: number): Promise<Sucursal[]> {
@@ -196,7 +197,7 @@ export class SucursalesService {
         despues,
       );
       return sucursal;
-    });
+    }, 'READ COMMITTED');
   }
 
   async desactivar(actorId: number, sucursalId: number): Promise<void> {
@@ -225,7 +226,7 @@ export class SucursalesService {
         { activo: true },
         { activo: false },
       );
-    });
+    }, 'READ COMMITTED');
   }
 
   async eliminar(actorId: number, sucursalId: number): Promise<void> {
@@ -261,7 +262,7 @@ export class SucursalesService {
           this.campos(sucursal),
           null,
         );
-      });
+      }, 'READ COMMITTED');
     } catch (error) {
       conflictoEliminacion(error);
     }
@@ -313,7 +314,7 @@ export class SucursalesService {
         { activo: false },
         { activo: true },
       );
-    });
+    }, 'READ COMMITTED');
   }
 
   async consultarCupo(actorId: number) {
@@ -368,7 +369,7 @@ export class SucursalesService {
         );
       }
       return this.cupo(negocio, activas);
-    });
+    }, 'READ COMMITTED');
   }
 
   private validar<T extends object>(tipo: new () => T, valor: T): T {

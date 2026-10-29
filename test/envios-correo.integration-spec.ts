@@ -28,9 +28,8 @@ describe('M1-T026: bandeja durable en MariaDB temporal', () => {
     await conBaseMigrada(async (primera, segunda) => {
       const { uno, codigo } = await datos(primera);
       const migraciones = await primera.query('SELECT name FROM migrations ORDER BY id');
-      // La lista completa incorpora suspensión programada y sucursales.
-      // La persistencia de fase 3 amplía el historial sin alterar la bandeja previa.
-      expect(migraciones).toHaveLength(26);
+      // La bandeja conserva su contrato aunque el historial crezca en fase 4.
+      expect(migraciones.length).toBe(primera.migrations.length);
       const id = (await primera.query(`INSERT INTO envios_correo
         (negocio_id, tipo, correo_destinatario, codigo_acceso_id, clave_dedupe, proximo_intento_en)
         VALUES (?, 'recuperacion', 'admin@example.test', ?, 'recuperacion:1', UTC_TIMESTAMP(6))`,

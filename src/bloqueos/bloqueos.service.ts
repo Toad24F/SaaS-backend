@@ -5,6 +5,7 @@ import type { EntityManager } from 'typeorm';
 import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
+import { bloquearNegocioAgenda, bloquearRecursosAgenda } from '../comun/bloqueos-coordinados';
 import { Personal } from '../profesionales/entities/personal.entity';
 import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -24,21 +25,24 @@ export class BloqueosService {
     const datos = validarBloqueo(entrada);
     return transaccionIdentidad(this.bloqueos.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      await this.bloquearAlcances(manager, actor.negocioId!, [datos]);
       await this.exigirAlcance(manager, actor, datos);
       const repo = manager.getRepository(BloqueoHorario);
       return repo.save(repo.create({ ...datos, negocioId: actor.negocioId!,
         creadorUsuarioId: actor.id }));
-    });
+    }, 'READ COMMITTED');
   }
 
   async editar(actorId: number, id: number,
     cambio: Partial<DatosBloqueo>): Promise<BloqueoHorario> {
     return transaccionIdentidad(this.bloqueos.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const repo = manager.getRepository(BloqueoHorario);
-      const actual = await repo.createQueryBuilder('b').setLock('pessimistic_write')
-        .where('b.id = :id AND b.negocioId = :negocioId',
-          { id, negocioId: actor.negocioId }).getOne();
+      // Prelectura bajo la barrera para descubrir ambos alcances sin retener
+      // la ocupación antes de sucursales y perfiles.
+      const actual = await repo.findOneBy({ id, negocioId: actor.negocioId! });
       if (!actual) throw new NotFoundException('Bloqueo no disponible.');
       await this.fechasCiviles(manager, actor.negocioId!, [actual]);
       // Autoriza el estado previo y el candidato para impedir escalar el alcance al editar.
@@ -50,10 +54,12 @@ export class BloqueosService {
         throw new BadRequestException('Indica un campo de bloqueo.');
       }
       const datos = validarBloqueo({ ...this.datos(actual), ...definidos });
+      await this.bloquearAlcances(manager, actor.negocioId!, [this.datos(actual), datos]);
+      await this.bloquearFila(manager, actor.negocioId!, id);
       await this.exigirAlcance(manager, actor, datos);
       Object.assign(actual, datos);
       return repo.save(actual);
-    });
+    }, 'READ COMMITTED');
   }
 
   async listar(actorId: number, filtro: { personalId?: number; sucursalId?: number } = {})
@@ -107,15 +113,39 @@ export class BloqueosService {
   async eliminar(actorId: number, id: number): Promise<void> {
     await transaccionIdentidad(this.bloqueos.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const repo = manager.getRepository(BloqueoHorario);
-      const actual = await repo.createQueryBuilder('b').setLock('pessimistic_write')
-        .where('b.id = :id AND b.negocioId = :negocioId',
-          { id, negocioId: actor.negocioId }).getOne();
+      const actual = await repo.findOneBy({ id, negocioId: actor.negocioId! });
       if (!actual) throw new NotFoundException('Bloqueo no disponible.');
+      await this.bloquearAlcances(manager, actor.negocioId!, [this.datos(actual)]);
+      await this.bloquearFila(manager, actor.negocioId!, id);
       await this.exigirAlcance(manager, actor, this.datos(actual));
       // El borrado usa exclusivamente la PK autorizada: los bloques solapados permanecen.
       await repo.delete({ id: actual.id, negocioId: actor.negocioId! });
-    });
+    }, 'READ COMMITTED');
+  }
+
+  private async bloquearAlcances(manager: EntityManager, negocioId: number,
+    alcances: DatosBloqueo[]): Promise<void> {
+    const todasSedes = alcances.some((datos) => datos.sucursalId === null);
+    const todosPerfiles = alcances.some((datos) => datos.personalId === null);
+    const sedes = todasSedes ? await manager.getRepository(Sucursal).findBy({ negocioId }) : [];
+    const perfiles = todosPerfiles ? await manager.getRepository(Personal).findBy({ negocioId }) : [];
+    // Las altas de asignación esperan la barrera: un bloque colectivo descubre
+    // todos los perfiles antes de permitir incorporar uno nuevo al equipo.
+    await bloquearRecursosAgenda(manager, negocioId, 'sucursal', [
+      ...sedes.map((fila) => fila.id), ...alcances.flatMap((datos) =>
+        datos.sucursalId === null ? [] : [datos.sucursalId])]);
+    await bloquearRecursosAgenda(manager, negocioId, 'personal', [
+      ...perfiles.map((fila) => fila.id), ...alcances.flatMap((datos) =>
+        datos.personalId === null ? [] : [datos.personalId])]);
+  }
+
+  private async bloquearFila(manager: EntityManager, negocioId: number, id: number): Promise<void> {
+    const fila = await manager.getRepository(BloqueoHorario).createQueryBuilder('b')
+      .setLock('pessimistic_write')
+      .where('b.id = :id AND b.negocioId = :negocioId', { id, negocioId }).getOne();
+    if (!fila) throw new NotFoundException('Bloqueo no disponible.');
   }
 
   private async actor(manager: EntityManager, actorId: number): Promise<Usuario> {

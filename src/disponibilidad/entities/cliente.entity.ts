@@ -5,7 +5,8 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 /** Referencia del cliente para citas; esta fase no publica CRUD de clientes. */
 @Entity({ name: 'clientes' })
 @Index('uq_clientes_negocio_id', ['negocioId', 'id'], { unique: true })
-@Index('uq_cliente_por_negocio', ['negocioId', 'telefono'], { unique: true })
+// El teléfono es un dato de contacto compartible, no la identidad del cliente.
+@Index('idx_cliente_por_negocio_telefono', ['negocioId', 'telefono'])
 @Check('chk_clientes_nombre', 'CHAR_LENGTH(TRIM(nombre_completo)) > 0')
 @Check('chk_clientes_telefono', 'CHAR_LENGTH(telefono) = 10')
 export class Cliente {
