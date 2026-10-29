@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta de trabajo futuro; ninguna tarea está ejecutada o acreditada por este documento.
+Estado: propuesta de trabajo futuro pendiente de aprobación; ALA-T001–ALA-T007 acreditan solo la preparación documental y los controles de prueba del bloque 1. Las tareas posteriores permanecen pendientes.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en esta entrega documental.
 
@@ -19,26 +19,33 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 1. Preparación y controles de prueba
 
-- [ ] **ALA-T001 — Preparar matriz de aceptación** · 15 min · Depende de: ninguna · RF-01–RF-69
+- [x] **ALA-T001 — Preparar matriz de aceptación** · 15 min · Depende de: ninguna · RF-01–RF-69
   Hecho cuando: Existe una matriz RF → área A01–A08 → grupo T01–T16 → criterio de finalización, con RF-63 manual expresamente diferido.
+  Evidencia: [matriz](resultados-tareas/matriz-aceptacion-t001.md) y [resultado de pruebas](resultados-tareas/resultado-t001.md).
 
-- [ ] **ALA-T002 — Alinear las referencias documentales del ajuste** · 15 min · Depende de: ALA-T001 · RF-22–RF-24, RF-36–RF-42, RF-64
+- [x] **ALA-T002 — Alinear las referencias documentales del ajuste** · 15 min · Depende de: ALA-T001 · RF-22–RF-24, RF-36–RF-42, RF-64
   Hecho cuando: La propuesta documental usa inhabilitación y alcance solo backend, identifica precedencias y no atribuye una aprobación inexistente.
+  Evidencia: [resultado del bloque](resultados-tareas/resultado-t002-t007.md).
 
-- [ ] **ALA-T003 — Registrar cambios de contratos y reglas conservadas** · 25 min · Depende de: ALA-T002 · RF-03, RF-15, RF-32–RF-42, RF-60, RF-64–RF-68
+- [x] **ALA-T003 — Registrar cambios de contratos y reglas conservadas** · 25 min · Depende de: ALA-T002 · RF-03, RF-15, RF-32–RF-42, RF-60, RF-64–RF-68
   Hecho cuando: Un inventario enumera entradas retiradas/nuevas, nueve rutas públicas, cinco privadas y permisos que deben conservarse.
+  Evidencia: [inventario](resultados-tareas/inventario-contratos-t003.md) y [resultado](resultados-tareas/resultado-t002-t007.md).
 
-- [ ] **ALA-T004 — Verificar protección de la base de pruebas** · 25 min · Depende de: ALA-T003 · RF-64–RF-65, RF-67
+- [x] **ALA-T004 — Verificar protección de la base de pruebas** · 25 min · Depende de: ALA-T003 · RF-64–RF-65, RF-67
   Hecho cuando: Una comprobación con el ejecutor existente usa una base desechable identificada como test y demuestra rechazo de un destino no autorizado.
+  Evidencia: [resultado de integración](resultados-tareas/resultado-t002-t007.md).
 
-- [ ] **ALA-T005 — Preparar fixtures mínimos del ajuste** · 25 min · Depende de: ALA-T004 · RF-16, RF-22, RF-43, RF-56–RF-58
+- [x] **ALA-T005 — Preparar fixtures mínimos del ajuste** · 25 min · Depende de: ALA-T004 · RF-16, RF-22, RF-43, RF-56–RF-58
   Hecho cuando: Se pueden crear dos negocios, dos sucursales, profesionales distintos y teléfonos compartidos; la limpieza no alcanza bases externas.
+  Evidencia: [resultado de fixtures](resultados-tareas/resultado-t002-t007.md).
 
-- [ ] **ALA-T006 — Verificar reloj y barreras reutilizables** · 25 min · Depende de: ALA-T005 · RF-07, RF-15, RF-59, RF-65
+- [x] **ALA-T006 — Verificar reloj y barreras reutilizables** · 25 min · Depende de: ALA-T005 · RF-07, RF-15, RF-59, RF-65
   Hecho cuando: Un caso de control demuestra avance exacto del reloj y espera entre dos conexiones independientes, con cierre y rollback al fallar.
+  Evidencia: [resultado de reloj y concurrencia](resultados-tareas/resultado-t002-t007.md).
 
-- [ ] **ALA-T007 — Crear plantilla de evidencia por tarea** · 15 min · Depende de: ALA-T006 · RF-01–RF-69
+- [x] **ALA-T007 — Crear plantilla de evidencia por tarea** · 15 min · Depende de: ALA-T006 · RF-01–RF-69
   Hecho cuando: La plantilla exige revisión, RF, comprobación/comando, resultado y pruebas omitidas; distingue preparación documental de funcionalidad acreditada.
+  Evidencia: [plantilla](resultados-tareas/plantilla-evidencia.md) y [resultado](resultados-tareas/resultado-t002-t007.md).
 
 ## 2. Entidades, esquema y migraciones
 

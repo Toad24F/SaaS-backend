@@ -1,12 +1,12 @@
 # Plan — Ajustes de licencias, administración y agenda
 
-Estado: propuesta técnica para revisión. No acredita implementación ni aprobación de la constitución o la especificación. Alcance exclusivo de backend; no modifica el frontend ni inicia tareas de programación.
+Estado: propuesta pendiente de aprobación. No acredita implementación ni aprobación de la constitución o la especificación. Alcance exclusivo de backend; no modifica el frontend ni inicia tareas de programación.
 
 ## 1. Fuentes, alcance y punto de partida
 
 Fuentes normativas: [constitución](constitucion.md) y [especificación](spec.md). Los RF de este plan pertenecen exclusivamente a esta especificación. Se mantienen los contratos compatibles del [módulo 1](../fase-2-modulo-1/spec-modulo-1.md), su [fix](../Fix-modulo-1/spec-fix.md), el [motor](../fase-3-modulo-2/plan.md) y el [portal público](../fase-4-modulo-3/plan.md).
 
-La constitución aún emplea «archivado», menciona una transición operativa y contempla comprobaciones frontend; la especificación y los acuerdos posteriores concretan «inhabilitación», ausencia de negocios operativos y entrega solo backend. Este plan aplica esa concreción sin editar ni declarar aprobada la constitución. Su alineación documental forma parte de la preparación de la implementación.
+La constitución usa ahora «inhabilitación recuperable» y alcance exclusivamente backend, en consonancia con la especificación. La propuesta mantiene sin aprobar tanto estos ajustes como sus precedencias futuras; no modifica todavía las normas vigentes. La afirmación de ausencia de negocios operativos procede del responsable del proyecto y nunca autoriza limpiar una base.
 
 Base observada en el repositorio:
 
