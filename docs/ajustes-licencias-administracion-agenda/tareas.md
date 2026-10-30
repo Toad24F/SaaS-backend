@@ -325,14 +325,17 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 6. Publicación de precios
 
-- [ ] **ALA-T075 — Implementar servicio de configuración de precios** · 25 min · Depende de: ALA-T027 · RF-32, RF-64, RF-69
+- [x] **ALA-T075 — Implementar servicio de configuración de precios** · 25 min · Depende de: ALA-T027 · RF-32, RF-64, RF-69
   Hecho cuando: Solo administrador propio cambia el valor global bajo barrera y auditoría; los campos de contacto no enviados se conservan.
+  Evidencia: [resultado T075–T077](resultados-tareas/resultado-t075-t077.md).
 
-- [ ] **ALA-T076 — Exponer GET y PATCH de publicación** · 25 min · Depende de: ALA-T075 · RF-32, RF-64
+- [x] **ALA-T076 — Exponer GET y PATCH de publicación** · 25 min · Depende de: ALA-T075 · RF-32, RF-64
   Hecho cuando: Consulta devuelve la opción vigente y PATCH acepta mostrarPreciosPublicos sin exigir editar contacto; nuevos servicios heredan el valor global.
+  Evidencia: [resultado T075–T077](resultados-tareas/resultado-t075-t077.md).
 
-- [ ] **ALA-T077 — Crear proyección pública sin importes ocultos** · 25 min · Depende de: ALA-T076 · RF-33–RF-35
+- [x] **ALA-T077 — Crear proyección pública sin importes ocultos** · 25 min · Depende de: ALA-T076 · RF-33–RF-35
   Hecho cuando: Prueba de objetos anidados confirma omisión de todos los campos monetarios, sin sustituirlos por cero/null ni alterar el objeto histórico.
+  Evidencia: [resultado T075–T077](resultados-tareas/resultado-t075-t077.md).
 
 - [ ] **ALA-T078 — Aplicar proyección a catálogo y apartados** · 25 min · Depende de: ALA-T077 · RF-33–RF-35
   Hecho cuando: Ambas respuestas respetan la configuración vigente y el apartado conserva internamente el costo fijado.
