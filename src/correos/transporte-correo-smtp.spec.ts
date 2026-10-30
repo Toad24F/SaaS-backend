@@ -25,6 +25,17 @@ describe('M1-T028: adaptador SMTP configurado y controlado', () => {
       disableFileAccess: true, disableUrlAccess: true });
   });
 
+  it('reutiliza Message-ID al reentregar un mismo aviso lógico', async () => {
+    const sendMail = jest.fn().mockResolvedValue({ messageId: 'smtp-3', accepted: [mensaje.destinatario] });
+    const transporte = new TransporteCorreoSmtp(env, () => ({ sendMail }));
+    const aviso = { ...mensaje, identidadLogica: '487' };
+    await transporte.enviar(aviso);
+    await transporte.enviar(aviso);
+    // El identificador estable ayuda a reconocer la reentrega; SMTP no garantiza deduplicación física.
+    expect(sendMail.mock.calls[0][0].messageId).toBe('<aviso-487@example.test>');
+    expect(sendMail.mock.calls[1][0].messageId).toBe(sendMail.mock.calls[0][0].messageId);
+  });
+
   it.each(['CORREO_REMITENTE', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'])(
     'rechaza configuración faltante %s antes de crear el driver', async (campo) => {
       const fabrica = jest.fn();

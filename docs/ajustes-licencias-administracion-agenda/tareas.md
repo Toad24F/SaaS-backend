@@ -203,20 +203,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Un ciclo controlado procesa umbrales y límites vencidos una sola vez y una ejecución tardía congela al instante originalmente previsto.
   Evidencia: [resultado T041–T045](resultados-tareas/resultado-t041-t045.md).
 
-- [ ] **ALA-T046 — Verificar atomicidad de transición y bandeja** · 25 min · Depende de: ALA-T045 · RF-09, RF-15, RF-69
+- [x] **ALA-T046 — Verificar atomicidad de transición y bandeja** · 25 min · Depende de: ALA-T045 · RF-09, RF-15, RF-69
   Hecho cuando: Un fallo al registrar el aviso revierte la transición y auditoría; ningún estado queda cambiado sin su trabajo durable correspondiente.
+  Evidencia: [resultado T046–T050](resultados-tareas/resultado-t046-t050.md).
 
-- [ ] **ALA-T047 — Verificar fallos y reentrega SMTP** · 25 min · Depende de: ALA-T046 · RF-09, RF-14
+- [x] **ALA-T047 — Verificar fallos y reentrega SMTP** · 25 min · Depende de: ALA-T046 · RF-09, RF-14
   Hecho cuando: Error/timeout no extienden acceso; caída tras aceptación conserva identidad lógica y evidencia el límite de reentrega física.
+  Evidencia: [resultado T046–T050](resultados-tareas/resultado-t046-t050.md).
 
-- [ ] **ALA-T048 — Probar carrera renovación contra suspensión** · 25 min · Depende de: ALA-T047 · RF-11–RF-15
+- [x] **ALA-T048 — Probar carrera renovación contra suspensión** · 25 min · Depende de: ALA-T047 · RF-11–RF-15
   Hecho cuando: Con dos conexiones y ambos órdenes se conservan anualidad, remanente, suspensión y avisos aplicables sin duplicación.
+  Evidencia: [resultado T046–T050](resultados-tareas/resultado-t046-t050.md).
 
-- [ ] **ALA-T049 — Probar carrera renovación contra reactivación** · 25 min · Depende de: ALA-T048 · RF-11–RF-15
+- [x] **ALA-T049 — Probar carrera renovación contra reactivación** · 25 min · Depende de: ALA-T048 · RF-11–RF-15
   Hecho cuando: Ambos órdenes producen el saldo esperado y dejan eventos y correos coherentes con las transiciones realmente realizadas.
+  Evidencia: [resultado T046–T050](resultados-tareas/resultado-t046-t050.md).
 
-- [ ] **ALA-T050 — Verificar acceso HTTP en límites de licencia** · 25 min · Depende de: ALA-T049 · RF-07–RF-08, RF-64
+- [x] **ALA-T050 — Verificar acceso HTTP en límites de licencia** · 25 min · Depende de: ALA-T049 · RF-07–RF-08, RF-64
   Hecho cuando: Sesión ya abierta accede antes del límite y es rechazada en el instante exacto y después; un rol ajeno no gestiona licencias.
+  Evidencia: [resultado T046–T050](resultados-tareas/resultado-t046-t050.md).
 
 ## 4. Cupos de cuentas
 

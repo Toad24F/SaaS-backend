@@ -37,7 +37,8 @@ export class TransporteCorreoSmtp implements TransporteCorreo {
       throw new Error('Configuración de correo inválida.');
     }
     const destinatario = mensaje.destinatario.trim().toLowerCase();
-    if (!CORREO_SIMPLE.test(destinatario) || /[\r\n]/.test(mensaje.asunto)) {
+    if (!CORREO_SIMPLE.test(destinatario) || /[\r\n]/.test(mensaje.asunto) ||
+      (mensaje.identidadLogica !== undefined && !/^\d+$/.test(mensaje.identidadLogica))) {
       throw new Error('Destinatario o asunto de correo inválido.');
     }
     try {
@@ -49,6 +50,10 @@ export class TransporteCorreoSmtp implements TransporteCorreo {
       });
       const resultado = await driver.sendMail({
         from: remitente, to: destinatario, subject: mensaje.asunto, text: mensaje.texto,
+        // Message-ID estable permite identificar reentregas posteriores a una caída sin acuse.
+        ...(mensaje.identidadLogica ? {
+          messageId: `<aviso-${mensaje.identidadLogica}@${remitente.split('@')[1]}>`,
+        } : {}),
         disableFileAccess: true, disableUrlAccess: true,
       });
       if (!resultado.messageId || !resultado.accepted.includes(destinatario)) {

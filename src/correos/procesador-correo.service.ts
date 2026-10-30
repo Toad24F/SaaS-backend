@@ -82,7 +82,10 @@ export class ProcesadorCorreoService {
     if (!mensaje) return this.consultarEstado(toma.id);
     let error: unknown = null;
     // SMTP ocurre fuera de la transacción de dominio y sin persistir el mensaje.
-    try { await this.transporte.enviar(mensaje); } catch (fallo) { error = fallo; }
+    try {
+      // El ID durable acompaña todos los reintentos del mismo trabajo, aun tras un reinicio.
+      await this.transporte.enviar({ ...mensaje, identidadLogica: toma.id });
+    } catch (fallo) { error = fallo; }
     // Una caída aquí deja el lease recuperable: no fingimos un fallo SMTP ni un acuse durable.
     await this.registrarResultado(toma, error);
     return this.consultarEstado(toma.id);
