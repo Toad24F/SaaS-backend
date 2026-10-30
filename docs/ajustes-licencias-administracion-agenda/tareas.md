@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T035 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T040 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -163,20 +163,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Los tres endpoints exigen superadmin y clave, aceptan sus cuerpos previstos y reproducen la operación sin ejecutar una segunda transición.
   Evidencia: [resultado y pruebas](resultados-tareas/resultado-t035.md).
 
-- [ ] **ALA-T036 — Definir deduplicación de los nuevos avisos** · 25 min · Depende de: ALA-T035 · RF-01–RF-15
+- [x] **ALA-T036 — Definir deduplicación de los nuevos avisos** · 25 min · Depende de: ALA-T035 · RF-01–RF-15
   Hecho cuando: Pruebas confirman claves diferentes por umbral/ciclo/operación y estabilidad de la clave al reintentar el mismo aviso.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t036-t040.md).
 
-- [ ] **ALA-T037 — Encolar correo de suspensión programada** · 25 min · Depende de: ALA-T036 · RF-05–RF-06, RF-09
+- [x] **ALA-T037 — Encolar correo de suspensión programada** · 25 min · Depende de: ALA-T036 · RF-05–RF-06, RF-09
   Hecho cuando: Solicitud con plazo positivo deja un aviso con plazo y bloqueo; plazo cero no crea un aviso previo separado.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t036-t040.md).
 
-- [ ] **ALA-T038 — Encolar suspensión efectiva y vencimiento** · 25 min · Depende de: ALA-T037 · RF-05–RF-09
+- [x] **ALA-T038 — Encolar suspensión efectiva y vencimiento** · 25 min · Depende de: ALA-T037 · RF-05–RF-09
   Hecho cuando: Cada límite crea su aviso aplicable; vencimiento primero o simultáneo impide un segundo correo de bloqueo.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t036-t040.md).
 
-- [ ] **ALA-T039 — Encolar revocación y reactivación** · 25 min · Depende de: ALA-T038 · RF-10–RF-11, RF-14
+- [x] **ALA-T039 — Encolar revocación y reactivación** · 25 min · Depende de: ALA-T038 · RF-10–RF-11, RF-14
   Hecho cuando: Las transiciones crean su confirmación correcta y cancelan avisos pendientes incompatibles, sin duplicarlos al repetir.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t036-t040.md).
 
-- [ ] **ALA-T040 — Encolar confirmación de renovación** · 25 min · Depende de: ALA-T039 · RF-12–RF-14
+- [x] **ALA-T040 — Encolar confirmación de renovación** · 25 min · Depende de: ALA-T039 · RF-12–RF-14
   Hecho cuando: Vigente, vencida y suspendida producen confirmación; la última no afirma acceso restablecido.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t036-t040.md).
 
 - [ ] **ALA-T041 — Seleccionar umbrales preventivos de 15 y 7 días** · 25 min · Depende de: ALA-T040 · RF-01–RF-02
   Hecho cuando: Casos antes/en/después de cada umbral eligen el aviso correcto y no existe una nueva ventana de dos días.

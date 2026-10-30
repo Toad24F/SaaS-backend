@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from '../correos/entities/envio-correo.entity';
+import { BandejaCorreoService } from '../correos/bandeja-correo.service';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
@@ -31,6 +32,7 @@ export interface ResultadoOperacionLicencia {
 @Injectable()
 export class LicenciasService {
   private readonly vistaVigencia = new VistaVigenciaLicenciaService();
+  private readonly bandeja = new BandejaCorreoService();
   constructor(
     @InjectRepository(Licencia) private readonly licencias: Repository<Licencia>,
     private readonly autorizacion: AutorizacionService,
@@ -67,19 +69,19 @@ export class LicenciasService {
 
   /** Congela a la hora prevista original, aunque el procesador llegue tarde. */
   async materializarSuspension(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
-    await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
-      await this.congelarSiCorresponde(manager, actor, licencia, ahora);
+    await this.operar(actorId, licenciaId, async (manager, actor, licencia, negocio) => {
+      await this.congelarSiCorresponde(manager, actor, licencia, ahora, negocio);
     });
   }
 
   async reactivar(actorId: number, licenciaId: number, ahora: Date,
     clave?: string): Promise<ResultadoOperacionLicencia> {
     return this.aplicarOperacion(actorId, licenciaId, ahora, AccionOperacionLicencia.REACTIVAR,
-      clave, {}, async (manager, actor, licencia) => {
+      clave, {}, async (manager, actor, licencia, negocio) => {
       if (licencia.suspensionSolicitadaEn == null && licencia.congeladaEn == null
         && licencia.suspendidaEn === null) return false;
       // Si el proceso programado se retrasó, aplica primero la congelación original en esta transacción.
-      await this.congelarSiCorresponde(manager, actor, licencia, ahora);
+      await this.congelarSiCorresponde(manager, actor, licencia, ahora, negocio);
       const antes = { suspensionSolicitadaEn: licencia.suspensionSolicitadaEn?.toISOString() ?? null,
         congeladaEn: licencia.congeladaEn?.toISOString() ?? null,
         venceEn: licencia.venceEn?.toISOString() ?? null };
@@ -92,10 +94,8 @@ export class LicenciasService {
           : Number(licencia.remanenteMs);
         licencia.venceEn = new Date(ahora.getTime() + restante);
         licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
-      } else {
-        // Cancelar la gracia también sustituye la elegibilidad de avisos pendientes.
-        licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
       }
+      // Revocar un bloqueo pendiente conserva la versión del vencimiento natural.
       licencia.suspendidaEn = null;
       licencia.suspensionSolicitadaEn = null;
       licencia.bloqueoProgramadoEn = null;
@@ -114,9 +114,9 @@ export class LicenciasService {
   async renovar(actorId: number, licenciaId: number, ahora: Date,
     clave?: string): Promise<ResultadoOperacionLicencia> {
     return this.aplicarOperacion(actorId, licenciaId, ahora, AccionOperacionLicencia.RENOVAR,
-      clave, {}, async (manager, actor, licencia) => {
+      clave, {}, async (manager, actor, licencia, negocio) => {
       // Una renovación posterior al límite debe actualizar el remanente ya congelado.
-      await this.congelarSiCorresponde(manager, actor, licencia, ahora);
+      await this.congelarSiCorresponde(manager, actor, licencia, ahora, negocio);
       if (licencia.habilitadaEn === null || licencia.venceEn === null) {
         throw new ConflictException('La licencia pendiente no puede renovarse.');
       }
@@ -148,10 +148,10 @@ export class LicenciasService {
   private async aplicarOperacion(actorId: number, licenciaId: number, ahora: Date,
     accion: AccionOperacionLicencia, clave: string | undefined,
     parametros: Record<string, unknown>, transicion: (manager: Repository<Licencia>['manager'],
-      actor: Usuario, licencia: Licencia) => Promise<boolean>): Promise<ResultadoOperacionLicencia> {
+      actor: Usuario, licencia: Licencia, negocio: Negocio) => Promise<boolean>): Promise<ResultadoOperacionLicencia> {
     const claveValida = clave === undefined ? null : validarClaveOperacionLicencia(clave);
     const huella = createHash('sha256').update(JSON.stringify(parametros)).digest('hex');
-    return this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
+    return this.operar(actorId, licenciaId, async (manager, actor, licencia, negocio) => {
       const operaciones = manager.getRepository(OperacionLicencia);
       if (claveValida !== null) {
         const previa = await operaciones.findOneBy({ negocioId: licencia.negocioId,
@@ -163,16 +163,38 @@ export class LicenciasService {
           return JSON.parse(previa.resultadoReducido) as ResultadoOperacionLicencia;
         }
       }
-      const cambio = await transicion(manager, actor, licencia);
+      const revocacion = accion === AccionOperacionLicencia.REACTIVAR &&
+        licencia.congeladaEn === null && licencia.suspendidaEn === null &&
+        licencia.bloqueoProgramadoEn !== null && ahora < licencia.bloqueoProgramadoEn;
+      const cambio = await transicion(manager, actor, licencia, negocio);
       if (!cambio && claveValida !== null) {
         throw new ConflictException('La licencia ya tiene una transición incompatible.');
       }
       const resultado = this.resumirOperacion(licencia, ahora);
+      let operacionId: string | undefined;
       if (cambio && claveValida !== null) {
         // Resultado, auditoría y licencia se confirman en el mismo commit.
-        await operaciones.save(operaciones.create({ negocioId: licencia.negocioId,
+        const guardada = await operaciones.save(operaciones.create({ negocioId: licencia.negocioId,
           licenciaId: licencia.id, actorId: actor.id, clave: claveValida,
           accion, parametrosHash: huella, resultadoReducido: JSON.stringify(resultado) }));
+        operacionId = guardada.id;
+      }
+      if (cambio) {
+        if (accion === AccionOperacionLicencia.SUSPENDER) {
+          // El plazo cero solo genera el aviso inmediato de este ciclo.
+          await this.encolarEvento(manager, negocio, licencia, ahora,
+            licencia.plazoSuspensionDias === 0 ? TipoEnvioCorreo.SUSPENSION_INMEDIATA
+              : TipoEnvioCorreo.SUSPENSION_PROGRAMADA,
+            { versionSuspension: licencia.versionSuspension });
+        } else if (accion === AccionOperacionLicencia.REACTIVAR) {
+          await this.descartarSuspensionPendiente(manager, licencia);
+          if (operacionId) await this.encolarEvento(manager, negocio, licencia, ahora,
+            revocacion ? TipoEnvioCorreo.SUSPENSION_REVOCADA : TipoEnvioCorreo.LICENCIA_REACTIVADA,
+            { operacionLicenciaId: operacionId });
+        } else if (operacionId) {
+          await this.encolarEvento(manager, negocio, licencia, ahora,
+            TipoEnvioCorreo.LICENCIA_RENOVADA, { operacionLicenciaId: operacionId });
+        }
       }
       return resultado;
     });
@@ -193,7 +215,8 @@ export class LicenciasService {
   private async operar<T>(
     actorId: number,
     licenciaId: number,
-    operacion: (manager: Repository<Licencia>['manager'], actor: Usuario, licencia: Licencia) => Promise<T>,
+    operacion: (manager: Repository<Licencia>['manager'], actor: Usuario,
+      licencia: Licencia, negocio: Negocio) => Promise<T>,
   ): Promise<T> {
     for (let intento = 1; intento <= MAX_INTENTOS_CONFLICTO_VISTA; intento++) {
       try {
@@ -220,7 +243,7 @@ export class LicenciasService {
           if (!licencia || licencia.negocioId !== negocio.id) {
             throw new NotFoundException('Licencia no disponible.');
           }
-          return operacion(manager, actor, licencia);
+          return operacion(manager, actor, licencia, negocio);
         });
       } catch (error) {
         // ER_CHECKREAD revierte el intento completo; se reevalúa el estado actual.
@@ -254,7 +277,8 @@ export class LicenciasService {
 
   /** Materializa el bloqueo una sola vez, conservando el saldo al instante previsto. */
   private async congelarSiCorresponde(
-    manager: Repository<Licencia>['manager'], actor: Usuario, licencia: Licencia, ahora: Date,
+    manager: Repository<Licencia>['manager'], actor: Usuario, licencia: Licencia,
+    ahora: Date, negocio: Negocio,
   ): Promise<void> {
     const efectiva = licencia.bloqueoProgramadoEn;
     if (!efectiva || efectiva > ahora || licencia.congeladaEn != null) return;
@@ -263,14 +287,50 @@ export class LicenciasService {
     licencia.suspendidaEn = new Date(efectiva);
     licencia.remanenteMs = anterior === null
       ? null : String(Math.max(0, anterior.getTime() - efectiva.getTime()));
-    // La suspensión efectiva invalida la elegibilidad aunque venceEn se conserve.
-    licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
+    // Si venció antes o exactamente al bloquear, el aviso natural tiene prioridad.
+    const vencioPrimero = anterior !== null && anterior <= efectiva;
+    if (!vencioPrimero) licencia.versionVencimiento = (licencia.versionVencimiento ?? 0) + 1;
     await manager.getRepository(Licencia).save(licencia);
     await this.invalidarAvisos(manager, licencia, true);
     await this.registrar(manager, actor.id, licencia, 'licencia_congelada',
       { venceEn: anterior?.toISOString() ?? null, congeladaEn: null },
       { venceEn: anterior?.toISOString() ?? null, congeladaEn: efectiva.toISOString(),
         remanenteMs: licencia.remanenteMs });
+    if (vencioPrimero) {
+      await this.descartarSuspensionPendiente(manager, licencia);
+      await this.encolarEvento(manager, negocio, licencia, ahora,
+        TipoEnvioCorreo.LICENCIA_VENCIDA,
+        { versionVencimiento: licencia.versionVencimiento });
+    } else if (licencia.plazoSuspensionDias !== 0) {
+      await this.encolarEvento(manager, negocio, licencia, ahora,
+        TipoEnvioCorreo.SUSPENSION_EFECTIVA,
+        { versionSuspension: licencia.versionSuspension });
+    }
+  }
+
+  /** Reutiliza el destinatario de la fila de negocio bloqueada por la operación. */
+  private async encolarEvento(manager: Repository<Licencia>['manager'], negocio: Negocio,
+    licencia: Licencia, ahora: Date, tipo: TipoEnvioCorreo,
+    referencia: { versionVencimiento?: number; versionSuspension?: number;
+      operacionLicenciaId?: string }): Promise<void> {
+    if (!negocio.correoAdministrador || negocio.activadoEn === null) return;
+    await this.bandeja.encolarEventoLicencia(manager, { negocioId: negocio.id,
+      licenciaId: licencia.id, correoDestinatario: negocio.correoAdministrador,
+      tipo, ahora, ...referencia });
+  }
+
+  private async descartarSuspensionPendiente(manager: Repository<Licencia>['manager'],
+    licencia: Licencia): Promise<void> {
+    // La revocación no puede deshacer correo entregado; retira solo trabajo recuperable.
+    await manager.getRepository(EnvioCorreo).createQueryBuilder().update()
+      .set({ estado: EstadoEnvioCorreo.DESCARTADO, arrendamientoId: null,
+        arrendadoHasta: null, ultimoError: 'Suspensión sustituida.' })
+      .where('licencia_id = :id AND tipo IN (:...tipos) AND estado IN (:...estados)', {
+        id: licencia.id, tipos: [TipoEnvioCorreo.SUSPENSION_PROGRAMADA,
+          TipoEnvioCorreo.SUSPENSION_EFECTIVA, TipoEnvioCorreo.SUSPENSION_INMEDIATA],
+        estados: [EstadoEnvioCorreo.PENDIENTE, EstadoEnvioCorreo.FALLIDO,
+          EstadoEnvioCorreo.TOMADO],
+      }).execute();
   }
 
   private async invalidarAvisos(manager: Repository<Licencia>['manager'],
@@ -279,8 +339,10 @@ export class LicenciasService {
     const consulta = manager.getRepository(EnvioCorreo).createQueryBuilder().update()
       .set({ estado: EstadoEnvioCorreo.DESCARTADO, arrendamientoId: null,
         arrendadoHasta: null, ultimoError: 'Vencimiento sustituido o suspendido.' })
-      .where('licencia_id = :id AND tipo = :tipo AND estado IN (:...estados)', {
-        id: licencia.id, tipo: TipoEnvioCorreo.AVISO_VENCIMIENTO,
+      .where('licencia_id = :id AND tipo IN (:...tipos) AND estado IN (:...estados)', {
+        id: licencia.id, tipos: [TipoEnvioCorreo.AVISO_VENCIMIENTO,
+          TipoEnvioCorreo.AVISO_PREVENTIVO,
+          ...(todos ? [] : [TipoEnvioCorreo.LICENCIA_VENCIDA])],
         estados: [EstadoEnvioCorreo.PENDIENTE, EstadoEnvioCorreo.FALLIDO,
           EstadoEnvioCorreo.TOMADO],
       });

@@ -14,7 +14,7 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { RelojSistema } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
 import type { MensajeCorreo, TransporteCorreo } from './transporte-correo';
-import { EnvioCorreo, EstadoEnvioCorreo } from './entities/envio-correo.entity';
+import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from './entities/envio-correo.entity';
 
 const ARRENDAMIENTO_MS = 300000;
 /** Vista cerrada: nunca serializa entidad de código, contenido, hash o token de trabajo. */
@@ -41,6 +41,9 @@ export class ProcesadorCorreoService {
       const envio = await repo.createQueryBuilder('envio').setLock('pessimistic_write')
         .where(`((envio.estado IN ('pendiente','fallido') AND envio.proximoIntentoEn <= :ahora)
           OR (envio.estado = 'tomado' AND envio.arrendadoHasta <= :ahora))`, { ahora })
+        // ALA-T043 añadirá preparación de los tipos nuevos. Hasta entonces quedan durables.
+        .andWhere('envio.tipo IN (:...tipos)', { tipos: [TipoEnvioCorreo.ACTIVACION_ADMIN,
+          TipoEnvioCorreo.RECUPERACION, TipoEnvioCorreo.AVISO_VENCIMIENTO] })
         .orderBy('envio.id', 'ASC').take(1).getOne();
       if (!envio) return null;
       envio.estado = EstadoEnvioCorreo.TOMADO;
