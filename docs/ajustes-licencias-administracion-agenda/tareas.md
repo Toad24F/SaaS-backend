@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T018 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T022 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -93,17 +93,21 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Una tabla de casos acepta combinaciones válidas por tipo y rechaza referencias incompatibles, conservando deduplicación.
   Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
-- [ ] **ALA-T019 — Definir separación en configuración** · 25 min · Depende de: ALA-T018 · RF-39–RF-42
+- [x] **ALA-T019 — Definir separación en configuración** · 25 min · Depende de: ALA-T018 · RF-39–RF-42
   Hecho cuando: Entidad y esquema incorporan separación inicial cero con rango 0–60 y múltiplos de cinco; no convierten el intervalo anterior en separación.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t019-t022.md).
 
-- [ ] **ALA-T020 — Migrar configuración de separación** · 25 min · Depende de: ALA-T019 · RF-39–RF-42
+- [x] **ALA-T020 — Migrar configuración de separación** · 25 min · Depende de: ALA-T019 · RF-39–RF-42
   Hecho cuando: La actualización conserva modo, anticipación y horizonte, crea separación cero y rechaza valores no admitidos.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t019-t022.md).
 
-- [ ] **ALA-T021 — Definir extremos protegidos de apartados y citas** · 25 min · Depende de: ALA-T020 · RF-43–RF-48, RF-54
+- [x] **ALA-T021 — Definir extremos protegidos de apartados y citas** · 25 min · Depende de: ALA-T020 · RF-43–RF-48, RF-54
   Hecho cuando: Entidades y esquema distinguen fin de atención y fin protegido, guardan separación y contexto de concesión sin incluir redondeo como ocupación.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t019-t022.md).
 
-- [ ] **ALA-T022 — Migrar extremos protegidos** · 25 min · Depende de: ALA-T021 · RF-43–RF-48, RF-54
+- [x] **ALA-T022 — Migrar extremos protegidos** · 25 min · Depende de: ALA-T021 · RF-43–RF-48, RF-54
   Hecho cuando: Citas históricas de prueba conservan extremos y obtienen separación cero; la migración no inventa condiciones de apartados operativos antiguos.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t019-t022.md).
 
 - [ ] **ALA-T023 — Definir origen único de cita y consulta telefónica** · 25 min · Depende de: ALA-T022 · RF-56–RF-59, RF-65–RF-66
   Hecho cuando: Entidad y esquema incluyen origen de apartado único por negocio e índice de contacto por negocio, sucursal e inicio.

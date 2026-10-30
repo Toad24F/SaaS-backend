@@ -1060,3 +1060,42 @@ ALTER TABLE envios_correo
       AND version_vencimiento IS NULL AND umbral_dias IS NULL
       AND version_suspension IS NULL AND operacion_licencia_id IS NOT NULL)
   ), 0));
+
+-- ALA-T019–T020: la separación nueva parte de cero; intervalo_minutos es legado.
+ALTER TABLE configuracion_agenda
+  ADD tiempo_entre_citas_minutos INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD CONSTRAINT chk_agenda_tiempo_entre_citas CHECK (
+    tiempo_entre_citas_minutos BETWEEN 0 AND 60
+    AND tiempo_entre_citas_minutos MOD 5 = 0);
+
+-- ALA-T021–T022: fin_utc sigue siendo el fin de atención, no el protegido.
+-- Las citas anteriores reciben separación cero y fin protegido idéntico.
+ALTER TABLE citas
+  ADD separacion_minutos INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD fin_ocupacion_utc DATETIME(3) NULL,
+  ADD CONSTRAINT chk_citas_separacion CHECK (
+    separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0),
+  ADD CONSTRAINT chk_citas_fin_ocupacion CHECK (
+    fin_ocupacion_utc IS NULL OR
+    fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
+UPDATE citas SET fin_ocupacion_utc = fin_utc WHERE fin_ocupacion_utc IS NULL;
+
+-- Los apartados previos carecen de condiciones de concesión comprobables.
+-- El contexto nuevo se escribirá completo en una sola operación posterior.
+ALTER TABLE bloqueos_temporales
+  ADD separacion_minutos INT UNSIGNED NULL,
+  ADD fin_ocupacion_utc DATETIME(3) NULL,
+  ADD modo_concesion VARCHAR(20) NULL,
+  ADD version_reglas INT UNSIGNED NULL,
+  ADD CONSTRAINT chk_bt_contexto_protegido CHECK (COALESCE((
+    (fin_ocupacion_utc IS NULL AND separacion_minutos IS NULL
+      AND modo_concesion IS NULL AND version_reglas IS NULL)
+    OR (fin_ocupacion_utc IS NOT NULL AND separacion_minutos IS NOT NULL
+      AND modo_concesion IS NOT NULL AND version_reglas IS NOT NULL
+      AND separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0
+      AND modo_concesion IN ('ventana_libre','agenda_compacta')
+      AND version_reglas >= 1)
+  ), 0)),
+  ADD CONSTRAINT chk_bt_fin_ocupacion CHECK (
+    fin_ocupacion_utc IS NULL OR
+    fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
