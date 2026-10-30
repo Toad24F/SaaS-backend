@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T027 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T034 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -131,26 +131,33 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 3. Licencias y correo durable
 
-- [ ] **ALA-T028 — Validar plazo y clave de operaciones de licencia** · 25 min · Depende de: ALA-T027 · RF-03–RF-04, RF-15
+- [x] **ALA-T028 — Validar plazo y clave de operaciones de licencia** · 25 min · Depende de: ALA-T027 · RF-03–RF-04, RF-15
   Hecho cuando: Pruebas unitarias aceptan plazo omitido/0/30 y clave válida, y rechazan fracciones, negativos, 31 y claves inválidas.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T029 — Implementar reconocimiento de operaciones de licencia** · 25 min · Depende de: ALA-T028 · RF-04, RF-12–RF-15
+- [x] **ALA-T029 — Implementar reconocimiento de operaciones de licencia** · 25 min · Depende de: ALA-T028 · RF-04, RF-12–RF-15
   Hecho cuando: Misma clave y contenido devuelve resultado previo; distinto contenido o acción produce conflicto sin mutar la licencia.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T030 — Integrar reconocimiento en renovación** · 25 min · Depende de: ALA-T029 · RF-12–RF-15
+- [x] **ALA-T030 — Integrar reconocimiento en renovación** · 25 min · Depende de: ALA-T029 · RF-12–RF-15
   Hecho cuando: Repetir una renovación suma una sola anualidad; una clave nueva permite otra y conserva el cálculo anual vigente.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T031 — Aplicar plazo configurable a suspensión** · 25 min · Depende de: ALA-T030 · RF-03–RF-07
+- [x] **ALA-T031 — Aplicar plazo configurable a suspensión** · 25 min · Depende de: ALA-T030 · RF-03–RF-07
   Hecho cuando: Casos controlados calculan bloqueo con 0/2/30 días, impiden cambiar un plazo pendiente y preservan restricciones de licencias sin habilitar.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T032 — Resolver prioridad entre vencimiento y suspensión** · 25 min · Depende de: ALA-T031 · RF-07–RF-08, RF-11
+- [x] **ALA-T032 — Resolver prioridad entre vencimiento y suspensión** · 25 min · Depende de: ALA-T031 · RF-07–RF-08, RF-11
   Hecho cuando: Antes, después y coincidencia exacta de ambos límites producen acceso y remanente según la tabla del plan.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T033 — Adaptar revocación de suspensión pendiente** · 25 min · Depende de: ALA-T032 · RF-10, RF-14–RF-15
+- [x] **ALA-T033 — Adaptar revocación de suspensión pendiente** · 25 min · Depende de: ALA-T032 · RF-10, RF-14–RF-15
   Hecho cuando: Revocar cancela bloqueo pendiente sin regalar vigencia y repetir la misma operación no duplica efectos.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T034 — Adaptar reactivación efectiva** · 25 min · Depende de: ALA-T033 · RF-11, RF-13–RF-15
+- [x] **ALA-T034 — Adaptar reactivación efectiva** · 25 min · Depende de: ALA-T033 · RF-11, RF-13–RF-15
   Hecho cuando: Reactivar restituye el remanente exacto desde el instante de reactivación; renovar previamente no levanta la suspensión.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
 - [ ] **ALA-T035 — Exponer operaciones HTTP idempotentes de licencia** · 25 min · Depende de: ALA-T034 · RF-03–RF-15, RF-64
   Hecho cuando: Los tres endpoints exigen superadmin y clave, aceptan sus cuerpos previstos y reproducen la operación sin ejecutar una segunda transición.

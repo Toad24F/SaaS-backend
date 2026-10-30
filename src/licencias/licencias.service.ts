@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from '../correos/entities/envio-correo.entity';
@@ -8,10 +8,22 @@ import { AutorizacionService, Permiso } from '../auth/services/autorizacion.serv
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Licencia } from './entities/licencia.entity';
+import { AccionOperacionLicencia, OperacionLicencia } from './entities/operacion-licencia.entity';
+import { validarClaveOperacionLicencia, validarPlazoSuspension } from './dto/operacion-licencia.dto';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
 
 const MAX_INTENTOS_CONFLICTO_VISTA = 3;
-const GRACIA_SUSPENSION_MS = 48 * 60 * 60 * 1000;
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+export interface ResultadoOperacionLicencia {
+  venceEn: string | null;
+  suspensionSolicitadaEn: string | null;
+  bloqueoProgramadoEn: string | null;
+  suspendidaEn: string | null;
+  remanenteMs: string | null;
+  versionVencimiento: number;
+  versionSuspension: number;
+}
 
 /** Serializa suspensión, reactivación y renovación sobre una misma licencia. */
 @Injectable()
@@ -23,24 +35,30 @@ export class LicenciasService {
     private readonly auditoria: AuditoriaService,
   ) {}
 
-  async suspender(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
-    await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
+  async suspender(actorId: number, licenciaId: number, ahora: Date,
+    clave?: string, plazoDias?: number): Promise<ResultadoOperacionLicencia> {
+    const plazo = validarPlazoSuspension(plazoDias);
+    return this.aplicarOperacion(actorId, licenciaId, AccionOperacionLicencia.SUSPENDER,
+      clave, { plazoDias: plazo }, async (manager, actor, licencia) => {
       if (licencia.suspensionSolicitadaEn != null || licencia.congeladaEn != null
-        || licencia.suspendidaEn !== null) return;
+        || licencia.suspendidaEn !== null) return false;
       if (licencia.venceEn !== null && ahora >= licencia.venceEn) {
         // Una entrada válida incompatible con el estado actual es un conflicto (409).
         throw new ConflictException('Una licencia vencida debe renovarse antes de suspenderse.');
       }
       licencia.suspensionSolicitadaEn = new Date(ahora);
-      // Las licencias iniciales se bloquean de inmediato; una habilitada recibe 48 horas.
+      licencia.plazoSuspensionDias = plazo;
+      licencia.versionSuspension = (licencia.versionSuspension ?? 0) + 1;
+      // Las licencias sin habilitar nunca reciben acceso durante el plazo.
       licencia.bloqueoProgramadoEn = licencia.venceEn === null
-        ? new Date(ahora) : new Date(ahora.getTime() + GRACIA_SUSPENSION_MS);
+        ? new Date(ahora) : new Date(ahora.getTime() + plazo * DIA_MS);
       await manager.getRepository(Licencia).save(licencia);
       await this.registrar(manager, actor.id, licencia, 'licencia_suspendida',
         { suspendidaEn: null, venceEn: licencia.venceEn?.toISOString() ?? null },
         { suspensionSolicitadaEn: ahora.toISOString(),
           bloqueoProgramadoEn: licencia.bloqueoProgramadoEn.toISOString(),
           venceEn: licencia.venceEn?.toISOString() ?? null });
+      return true;
     });
   }
 
@@ -51,10 +69,12 @@ export class LicenciasService {
     });
   }
 
-  async reactivar(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
-    await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
+  async reactivar(actorId: number, licenciaId: number, ahora: Date,
+    clave?: string): Promise<ResultadoOperacionLicencia> {
+    return this.aplicarOperacion(actorId, licenciaId, AccionOperacionLicencia.REACTIVAR,
+      clave, {}, async (manager, actor, licencia) => {
       if (licencia.suspensionSolicitadaEn == null && licencia.congeladaEn == null
-        && licencia.suspendidaEn === null) return;
+        && licencia.suspendidaEn === null) return false;
       // Si el proceso programado se retrasó, aplica primero la congelación original en esta transacción.
       await this.congelarSiCorresponde(manager, actor, licencia, ahora);
       const antes = { suspensionSolicitadaEn: licencia.suspensionSolicitadaEn?.toISOString() ?? null,
@@ -84,11 +104,14 @@ export class LicenciasService {
         antes,
         { suspensionSolicitadaEn: null, congeladaEn: null,
           suspendidaEn: null, venceEn: licencia.venceEn?.toISOString() ?? null });
+      return true;
     });
   }
 
-  async renovar(actorId: number, licenciaId: number, ahora: Date): Promise<void> {
-    await this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
+  async renovar(actorId: number, licenciaId: number, ahora: Date,
+    clave?: string): Promise<ResultadoOperacionLicencia> {
+    return this.aplicarOperacion(actorId, licenciaId, AccionOperacionLicencia.RENOVAR,
+      clave, {}, async (manager, actor, licencia) => {
       // Una renovación posterior al límite debe actualizar el remanente ya congelado.
       await this.congelarSiCorresponde(manager, actor, licencia, ahora);
       if (licencia.habilitadaEn === null || licencia.venceEn === null) {
@@ -114,20 +137,65 @@ export class LicenciasService {
           remanenteMs: remanenteAntes },
         { venceEn: licencia.venceEn.toISOString(), suspendidaEn: licencia.suspendidaEn?.toISOString() ?? null,
           remanenteMs: licencia.remanenteMs });
+      return true;
     });
   }
 
-  private async operar(
+  /** Reconoce la clave bajo los bloqueos de negocio y licencia antes de mutar. */
+  private async aplicarOperacion(actorId: number, licenciaId: number,
+    accion: AccionOperacionLicencia, clave: string | undefined,
+    parametros: Record<string, unknown>, transicion: (manager: Repository<Licencia>['manager'],
+      actor: Usuario, licencia: Licencia) => Promise<boolean>): Promise<ResultadoOperacionLicencia> {
+    const claveValida = clave === undefined ? null : validarClaveOperacionLicencia(clave);
+    const huella = createHash('sha256').update(JSON.stringify(parametros)).digest('hex');
+    return this.operar(actorId, licenciaId, async (manager, actor, licencia) => {
+      const operaciones = manager.getRepository(OperacionLicencia);
+      if (claveValida !== null) {
+        const previa = await operaciones.findOneBy({ negocioId: licencia.negocioId,
+          licenciaId: licencia.id, clave: claveValida });
+        if (previa) {
+          if (previa.accion !== accion || previa.parametrosHash !== huella) {
+            throw new ConflictException('La clave ya corresponde a otra operación.');
+          }
+          return JSON.parse(previa.resultadoReducido) as ResultadoOperacionLicencia;
+        }
+      }
+      const cambio = await transicion(manager, actor, licencia);
+      if (!cambio && claveValida !== null) {
+        throw new ConflictException('La licencia ya tiene una transición incompatible.');
+      }
+      const resultado = this.resumirOperacion(licencia);
+      if (cambio && claveValida !== null) {
+        // Resultado, auditoría y licencia se confirman en el mismo commit.
+        await operaciones.save(operaciones.create({ negocioId: licencia.negocioId,
+          licenciaId: licencia.id, actorId: actor.id, clave: claveValida,
+          accion, parametrosHash: huella, resultadoReducido: JSON.stringify(resultado) }));
+      }
+      return resultado;
+    });
+  }
+
+  private resumirOperacion(licencia: Licencia): ResultadoOperacionLicencia {
+    // Solo fechas y versiones: no se persisten datos del actor ni secretos de correo.
+    return { venceEn: licencia.venceEn?.toISOString() ?? null,
+      suspensionSolicitadaEn: licencia.suspensionSolicitadaEn?.toISOString() ?? null,
+      bloqueoProgramadoEn: licencia.bloqueoProgramadoEn?.toISOString() ?? null,
+      suspendidaEn: licencia.suspendidaEn?.toISOString() ?? null,
+      remanenteMs: licencia.remanenteMs, versionVencimiento: licencia.versionVencimiento,
+      versionSuspension: licencia.versionSuspension };
+  }
+
+  private async operar<T>(
     actorId: number,
     licenciaId: number,
-    operacion: (manager: Repository<Licencia>['manager'], actor: Usuario, licencia: Licencia) => Promise<void>,
-  ): Promise<void> {
+    operacion: (manager: Repository<Licencia>['manager'], actor: Usuario, licencia: Licencia) => Promise<T>,
+  ): Promise<T> {
     for (let intento = 1; intento <= MAX_INTENTOS_CONFLICTO_VISTA; intento++) {
       try {
         // Cada intento abre una transacción nueva: nunca reutiliza una vista ni
         // una entidad de licencia obtenida antes del rollback de MariaDB.
         // READ COMMITTED evita reutilizar una vista anterior al bloqueo de otra transición.
-        await this.licencias.manager.transaction('READ COMMITTED', async (manager) => {
+        return await this.licencias.manager.transaction('READ COMMITTED', async (manager) => {
           const actor = await manager.getRepository(Usuario).createQueryBuilder('actor')
             .setLock('pessimistic_read').where('actor.id = :id', { id: actorId }).getOne();
           if (!actor) throw new ForbiddenException('Acceso denegado.');
@@ -147,9 +215,8 @@ export class LicenciasService {
           if (!licencia || licencia.negocioId !== negocio.id) {
             throw new NotFoundException('Licencia no disponible.');
           }
-          await operacion(manager, actor, licencia);
+          return operacion(manager, actor, licencia);
         });
-        return;
       } catch (error) {
         // ER_CHECKREAD revierte el intento completo; se reevalúa el estado actual.
         // Cualquier otro error y el último conflicto se entregan al llamador.
@@ -158,6 +225,7 @@ export class LicenciasService {
         }
       }
     }
+    throw new Error('No se pudo completar la operación de licencia.');
   }
 
   private esConflictoDeVista(error: unknown): boolean {
