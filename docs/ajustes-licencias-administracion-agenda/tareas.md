@@ -225,23 +225,29 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 4. Cupos de cuentas
 
-- [ ] **ALA-T051 — Implementar política de conteo por rol** · 25 min · Depende de: ALA-T027 · RF-16–RF-18
+- [x] **ALA-T051 — Implementar política de conteo por rol** · 25 min · Depende de: ALA-T027 · RF-16–RF-18
   Hecho cuando: Pruebas cuentan solo activos no inhabilitados del negocio; un profesional multisucursal cuenta una vez y el administrador no consume esos cupos.
+  Evidencia: [resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
-- [ ] **ALA-T052 — Implementar modificación atómica de límites** · 25 min · Depende de: ALA-T051 · RF-17, RF-21, RF-69
+- [x] **ALA-T052 — Implementar modificación atómica de límites** · 25 min · Depende de: ALA-T051 · RF-17, RF-21, RF-69
   Hecho cuando: Ambos límites se guardan juntos bajo la barrera; un límite inferior al consumo revierte todo y no desactiva cuentas.
+  Evidencia: [resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
-- [ ] **ALA-T053 — Aplicar cupo al alta de profesionales** · 25 min · Depende de: ALA-T052 · RF-19, RF-64–RF-65
+- [x] **ALA-T053 — Aplicar cupo al alta de profesionales** · 25 min · Depende de: ALA-T052 · RF-19, RF-64–RF-65
   Hecho cuando: Alta con cupo completo se rechaza sin perfil, usuario, reserva de correo ni auditoría parcial.
+  Evidencia: [resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
-- [ ] **ALA-T054 — Aplicar cupo al alta de recepcionistas** · 25 min · Depende de: ALA-T053 · RF-19, RF-64–RF-65
+- [x] **ALA-T054 — Aplicar cupo al alta de recepcionistas** · 25 min · Depende de: ALA-T053 · RF-19, RF-64–RF-65
   Hecho cuando: Alta excedente no crea cuenta parcial; otro negocio puede usar su cupo independiente.
+  Evidencia: [resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
-- [ ] **ALA-T055 — Aplicar cupo a altas por invitación** · 25 min · Depende de: ALA-T054 · RF-19–RF-20, RF-65
+- [x] **ALA-T055 — Aplicar cupo a altas por invitación** · 25 min · Depende de: ALA-T054 · RF-19–RF-20, RF-65
   Hecho cuando: Toda ruta real que active cuentas por invitación comprueba cupo antes de consumirla; si no existe una ruta aplicable, se acredita el inventario sin inventar un escritor.
+  Evidencia: [inventario y resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
-- [ ] **ALA-T056 — Aplicar cupo a reactivaciones** · 25 min · Depende de: ALA-T055 · RF-19–RF-20
+- [x] **ALA-T056 — Aplicar cupo a reactivaciones** · 25 min · Depende de: ALA-T055 · RF-19–RF-20
   Hecho cuando: Profesional y recepcionista solo vuelven a activo con lugar disponible; desactivación libera exactamente un lugar.
+  Evidencia: [resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
 - [ ] **ALA-T057 — Exponer consultas y modificación de cupos** · 25 min · Depende de: ALA-T056 · RF-16–RF-21, RF-64
   Hecho cuando: Superadmin modifica; administrador propio consulta límite/activos/disponibles; roles y negocios ajenos reciben denegación.

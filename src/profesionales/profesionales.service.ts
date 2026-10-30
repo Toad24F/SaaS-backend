@@ -23,6 +23,7 @@ import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { derivarEstadoOferta } from '../disponibilidad/estado-oferta';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { exigirCupoDisponible } from '../usuarios/cupos-usuarios.service';
 import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
   SeleccionarServiciosDto } from './dto/profesionales.dto';
 import { Personal } from './entities/personal.entity';
@@ -64,6 +65,8 @@ export class ProfesionalesService {
         // Un perfil nuevo entra en el alcance de bloqueos colectivos solo tras
         // cruzar la barrera que usan esos escritores para descubrir el equipo.
         await bloquearNegocioAgenda(manager, actor.negocioId!);
+        // El conteo se hace bajo la misma barrera que límites y otras altas.
+        await exigirCupoDisponible(manager, actor.negocioId!, Rol.PROFESIONAL);
         const repoUsuario = manager.getRepository(Usuario);
         const usuario = await repoUsuario.save(repoUsuario.create({ negocioId: actor.negocioId!,
           nombre, email: correo, passwordHash, rol: Rol.PROFESIONAL, activo: true,
@@ -157,9 +160,12 @@ export class ProfesionalesService {
   async cambiarEstado(actorId: number, id: number, activo: boolean, ahora: Date): Promise<void> {
     await transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      // La reactivación compite con altas y límites antes de bloquear el perfil.
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
       const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
       if (usuario.activo === activo) return;
+      if (activo) await exigirCupoDisponible(manager, actor.negocioId!, Rol.PROFESIONAL);
       await manager.getRepository(Usuario).update(usuario.id, { activo });
       // Revocar en la misma transacción impide reusar sesiones al reactivar.
       if (!activo) await this.revocarSesiones(manager, usuario.id, ahora);

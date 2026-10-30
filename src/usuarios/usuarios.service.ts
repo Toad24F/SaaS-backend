@@ -15,6 +15,8 @@ import { Sesion } from '../auth/entities/sesion.entity';
 import { Rol } from '../auth/enums/rol.enum';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
 import { Usuario } from './entities/usuario.entity';
+import { exigirCupoDisponible } from './cupos-usuarios.service';
+import { Negocio } from '../negocios/entities/negocio.entity';
 import { esConflictoNombreUsuario, normalizarNombreUsuario } from './normalizar-nombre';
 
 export interface CrearRecepcionista {
@@ -89,8 +91,11 @@ export class UsuariosService {
     const creadaEn = new Date(datos.ahora);
 
     try {
-      return await this.usuarioRepository.manager.transaction(async (manager) => {
+      return await this.usuarioRepository.manager.transaction('READ COMMITTED', async (manager) => {
         const actor = await this.buscarActorAdministrador(manager, datos.actorUsuarioId);
+        await this.bloquearNegocioCupo(manager, actor.negocioId!);
+        // Se rechaza antes de crear usuario, reservar correo o escribir auditoría.
+        await exigirCupoDisponible(manager, actor.negocioId!, Rol.RECEPCIONISTA);
         const repositorio = manager.getRepository(Usuario);
         const recepcionista = await repositorio.save(repositorio.create({
           negocioId: actor.negocioId,
@@ -212,8 +217,9 @@ export class UsuariosService {
     activo: boolean,
     ahora: Date,
   ): Promise<void> {
-    await this.usuarioRepository.manager.transaction(async (manager) => {
+    await this.usuarioRepository.manager.transaction('READ COMMITTED', async (manager) => {
       const actor = await this.buscarActorAdministrador(manager, actorId);
+      await this.bloquearNegocioCupo(manager, actor.negocioId!);
       const destino = await manager.getRepository(Usuario).createQueryBuilder('usuario')
         .setLock('pessimistic_write')
         .where(
@@ -224,6 +230,7 @@ export class UsuariosService {
       if (!destino) throw new NotFoundException('Usuario no disponible.');
       this.exigirRecepcionistaCompleto(destino);
       if (destino.activo === activo) return;
+      if (activo) await exigirCupoDisponible(manager, actor.negocioId!, Rol.RECEPCIONISTA);
 
       await manager.getRepository(Usuario).update(destino.id, { activo });
       if (!activo) {
@@ -255,6 +262,13 @@ export class UsuariosService {
       throw new ForbiddenException('Acceso denegado.');
     }
     return actor;
+  }
+
+  /** La fila del tenant coordina cupos antes de tomar la cuenta de destino. */
+  private async bloquearNegocioCupo(manager: EntityManager, negocioId: number): Promise<void> {
+    const negocio = await manager.getRepository(Negocio).createQueryBuilder('negocio')
+      .setLock('pessimistic_write').where('negocio.id = :id', { id: negocioId }).getOne();
+    if (!negocio) throw new NotFoundException('Negocio no disponible.');
   }
 
   /** Impide que datos históricos pendientes entren al flujo de acceso vigente. */
