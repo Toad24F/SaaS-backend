@@ -9,6 +9,9 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Licencia } from '../licencias/entities/licencia.entity';
 import { avisoElegible } from '../licencias/services/aviso-elegible';
+import { umbralPreventivo } from '../licencias/services/aviso-elegible';
+import { OperacionLicencia, AccionOperacionLicencia } from '../licencias/entities/operacion-licencia.entity';
+import type { ResultadoOperacionLicencia } from '../licencias/licencias.service';
 import { Rol } from '../auth/enums/rol.enum';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { RelojSistema } from '../comun/reloj';
@@ -41,9 +44,7 @@ export class ProcesadorCorreoService {
       const envio = await repo.createQueryBuilder('envio').setLock('pessimistic_write')
         .where(`((envio.estado IN ('pendiente','fallido') AND envio.proximoIntentoEn <= :ahora)
           OR (envio.estado = 'tomado' AND envio.arrendadoHasta <= :ahora))`, { ahora })
-        // ALA-T043 añadirá preparación de los tipos nuevos. Hasta entonces quedan durables.
-        .andWhere('envio.tipo IN (:...tipos)', { tipos: [TipoEnvioCorreo.ACTIVACION_ADMIN,
-          TipoEnvioCorreo.RECUPERACION, TipoEnvioCorreo.AVISO_VENCIMIENTO] })
+        // La reclamación confirma primero su transacción; luego se bloquea el dominio.
         .orderBy('envio.id', 'ASC').take(1).getOne();
       if (!envio) return null;
       envio.estado = EstadoEnvioCorreo.TOMADO;
@@ -121,12 +122,21 @@ export class ProcesadorCorreoService {
       if (!referencia) throw new NotFoundException('Envío no encontrado.');
       if (referencia.licenciaId !== null) {
         // La misma validación impide reintentar versiones o destinatarios sustituidos.
+        const negocio = await manager.getRepository(Negocio).createQueryBuilder('negocio')
+          .setLock('pessimistic_write').where('negocio.id = :id', { id: negocioId }).getOne();
         const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
           .setLock('pessimistic_write').where('licencia.id = :id AND licencia.negocioId = :negocioId',
             { id: referencia.licenciaId, negocioId }).getOne();
+        const admin = negocio?.correoAdministrador ? await manager.getRepository(Usuario).findOneBy({
+          negocioId, email: negocio.correoAdministrador,
+          rol: Rol.ADMIN_NEGOCIO, activo: true }) : null;
+        const operacion = referencia.operacionLicenciaId ? await manager.getRepository(OperacionLicencia)
+          .findOneBy({ id: referencia.operacionLicenciaId, negocioId,
+            licenciaId: referencia.licenciaId }) : null;
         const envioAviso = await manager.getRepository(EnvioCorreo).createQueryBuilder('envio')
           .setLock('pessimistic_write').where('envio.id = :id', { id: envioId }).getOneOrFail();
-        if (!licencia || !await this.avisoVigente(manager, envioAviso, licencia) ||
+        if (!this.mensajeLicenciaVigente(envioAviso, licencia, negocio, admin, operacion,
+          this.reloj.ahora()) ||
           [EstadoEnvioCorreo.ENVIADO, EstadoEnvioCorreo.DESCARTADO].includes(envioAviso.estado) ||
           (envioAviso.estado === EstadoEnvioCorreo.TOMADO &&
             envioAviso.arrendadoHasta! > this.reloj.ahora())) {
@@ -204,39 +214,124 @@ export class ProcesadorCorreoService {
   }
 
   private async prepararAviso(toma: EnvioCorreo): Promise<MensajeCorreo | null> {
-    return this.db.transaction(async (manager) => {
-      // Licencia -> envío comparte orden con renovación e invalidación del pendiente.
+    return this.db.transaction('READ COMMITTED', async (manager) => {
+      // Negocio y licencia anteceden al envío; nunca espera negocio reteniendo trabajo.
+      const negocio = await manager.getRepository(Negocio).createQueryBuilder('negocio')
+        .setLock('pessimistic_write').where('negocio.id = :id',
+          { id: toma.negocioId }).getOne();
       const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
         .setLock('pessimistic_write')
         .where('licencia.id = :id AND licencia.negocioId = :negocioId',
           { id: toma.licenciaId, negocioId: toma.negocioId }).getOne();
+      const admin = negocio?.correoAdministrador ? await manager.getRepository(Usuario).findOneBy({
+        negocioId: negocio.id, email: negocio.correoAdministrador,
+        rol: Rol.ADMIN_NEGOCIO, activo: true }) : null;
+      const operacion = toma.operacionLicenciaId ? await manager.getRepository(OperacionLicencia)
+        .findOneBy({ id: toma.operacionLicenciaId, negocioId: toma.negocioId,
+          licenciaId: toma.licenciaId! }) : null;
       const envio = await manager.getRepository(EnvioCorreo).createQueryBuilder('envio')
         .setLock('pessimistic_write').where('envio.id = :id', { id: toma.id }).getOneOrFail();
       if (!this.leaseVigente(envio, toma)) return null;
-      if (!licencia || !await this.avisoVigente(manager, envio, licencia)) {
+      const mensaje = this.mensajeLicenciaVigente(envio, licencia, negocio, admin,
+        operacion, this.reloj.ahora());
+      if (!mensaje) {
         envio.estado = EstadoEnvioCorreo.DESCARTADO;
         envio.arrendamientoId = null;
         envio.arrendadoHasta = null;
-        envio.ultimoError = 'Vencimiento o destinatario no vigente.';
+        envio.ultimoError = 'Aviso de licencia obsoleto o destinatario no vigente.';
         await manager.getRepository(EnvioCorreo).save(envio);
         return null;
       }
-      return { destinatario: envio.correoDestinatario,
-        asunto: 'Aviso de vencimiento de licencia',
-        texto: `La licencia de tu negocio vence el ${licencia.venceEn!.toISOString()}.` };
+      return mensaje;
     });
   }
 
-  private async avisoVigente(manager: EntityManager, envio: EnvioCorreo,
-    licencia: Licencia): Promise<boolean> {
-    if (!avisoElegible(licencia, this.reloj.ahora()) ||
-      licencia.versionVencimiento !== envio.versionVencimiento) return false;
-    const negocio = await manager.getRepository(Negocio).findOneBy({ id: licencia.negocioId });
-    if (!negocio?.correoAdministrador || negocio.activadoEn === null ||
-      negocio.correoAdministrador !== envio.correoDestinatario) return false;
-    const admin = await manager.getRepository(Usuario).findOneBy({ negocioId: negocio.id,
-      email: envio.correoDestinatario, rol: Rol.ADMIN_NEGOCIO, activo: true });
-    return admin?.activadoEn !== null && admin?.activadoEn !== undefined;
+  /** Valida referencias vigentes y construye el texto solo en memoria, antes de SMTP. */
+  private mensajeLicenciaVigente(envio: EnvioCorreo, licencia: Licencia | null,
+    negocio: Negocio | null, admin: Usuario | null, operacion: OperacionLicencia | null,
+    ahora: Date): MensajeCorreo | null {
+    if (!licencia || !negocio?.correoAdministrador || negocio.activadoEn === null ||
+      negocio.correoAdministrador !== envio.correoDestinatario ||
+      admin?.activadoEn == null || licencia.negocioId !== envio.negocioId) return null;
+    const correo = (asunto: string, texto: string): MensajeCorreo =>
+      ({ destinatario: envio.correoDestinatario, asunto, texto });
+    const vigente = licencia.versionVencimiento === envio.versionVencimiento;
+    const vence = licencia.venceEn;
+    const bloqueo = licencia.bloqueoProgramadoEn;
+    switch (envio.tipo) {
+      case TipoEnvioCorreo.AVISO_VENCIMIENTO:
+        return vigente && avisoElegible(licencia, ahora) && vence ?
+          correo('Aviso de vencimiento de licencia',
+            `La licencia de tu negocio vence el ${vence.toISOString()}.`) : null;
+      case TipoEnvioCorreo.AVISO_PREVENTIVO: {
+        const umbral = umbralPreventivo(licencia, ahora);
+        if (!vigente || umbral !== envio.umbralDias || !vence) return null;
+        const restante = vence.getTime() - ahora.getTime();
+        const dias = Math.floor(restante / 86_400_000);
+        const horas = Math.floor((restante % 86_400_000) / 3_600_000);
+        return correo('Aviso preventivo de licencia',
+          `Restan ${dias} días y ${horas} horas. La licencia vence el ${vence.toISOString()}.`);
+      }
+      case TipoEnvioCorreo.LICENCIA_VENCIDA:
+        return vigente && vence && ahora >= vence &&
+          (!bloqueo || vence <= bloqueo) &&
+          (!licencia.congeladaEn || vence <= licencia.congeladaEn)
+          ? correo('Licencia vencida', `La licencia venció el ${vence.toISOString()}.`) : null;
+      case TipoEnvioCorreo.SUSPENSION_PROGRAMADA:
+        return licencia.versionSuspension === envio.versionSuspension &&
+          licencia.suspensionSolicitadaEn !== null && bloqueo && ahora < bloqueo &&
+          (!vence || ahora < vence) && licencia.plazoSuspensionDias != null &&
+          licencia.plazoSuspensionDias > 0
+          ? correo('Suspensión programada',
+            `Se programó la suspensión por ${licencia.plazoSuspensionDias} días. `
+            + `Bloqueo previsto: ${bloqueo.toISOString()}.`) : null;
+      case TipoEnvioCorreo.SUSPENSION_INMEDIATA:
+        return licencia.versionSuspension === envio.versionSuspension &&
+          licencia.suspensionSolicitadaEn !== null && licencia.plazoSuspensionDias === 0 &&
+          bloqueo && ahora >= bloqueo
+          ? correo('Suspensión inmediata', `La licencia está suspendida desde ${bloqueo.toISOString()}.`) : null;
+      case TipoEnvioCorreo.SUSPENSION_EFECTIVA:
+        return licencia.versionSuspension === envio.versionSuspension &&
+          licencia.suspensionSolicitadaEn !== null && licencia.congeladaEn !== null &&
+          (!vence || licencia.congeladaEn < vence)
+          ? correo('Licencia suspendida',
+            `La licencia está suspendida desde ${licencia.congeladaEn.toISOString()}.`) : null;
+      case TipoEnvioCorreo.SUSPENSION_REVOCADA:
+      case TipoEnvioCorreo.LICENCIA_REACTIVADA:
+      case TipoEnvioCorreo.LICENCIA_RENOVADA: {
+        if (!operacion || operacion.id !== envio.operacionLicenciaId) return null;
+        const resultado = JSON.parse(operacion.resultadoReducido) as ResultadoOperacionLicencia;
+        if (envio.tipo === TipoEnvioCorreo.SUSPENSION_REVOCADA) {
+          return operacion.accion === AccionOperacionLicencia.REACTIVAR &&
+            licencia.versionSuspension === resultado.versionSuspension &&
+            licencia.suspensionSolicitadaEn === null
+            ? correo('Suspensión revocada',
+              `Se revocó la suspensión programada. Vencimiento: ${resultado.venceEn ?? 'pendiente de activación'}.`)
+            : null;
+        }
+        if (licencia.versionVencimiento !== resultado.versionVencimiento ||
+          licencia.venceEn?.toISOString() !== resultado.venceEn) return null;
+        if (envio.tipo === TipoEnvioCorreo.LICENCIA_REACTIVADA) {
+          return operacion.accion === AccionOperacionLicencia.REACTIVAR &&
+            licencia.suspensionSolicitadaEn === null
+            ? correo('Licencia reactivada',
+              `La licencia se reactivó. Nuevo vencimiento: ${resultado.venceEn ?? 'pendiente de activación'}.`)
+            : null;
+        }
+        if (operacion.accion !== AccionOperacionLicencia.RENOVAR) return null;
+        // Una suspensión posterior sustituye el estado descrito por la renovación.
+        if (licencia.versionSuspension !== resultado.versionSuspension) return null;
+        const suspendida = resultado.vista.estado === 'suspendida' ||
+          resultado.vista.estado === 'suspension_pendiente';
+        if (suspendida && licencia.suspensionSolicitadaEn === null) return null;
+        return correo('Renovación de licencia',
+          `La vigencia se renovó hasta ${resultado.venceEn}. ` +
+          (suspendida ? 'La licencia sigue suspendida; el acceso no se ha restablecido.' :
+            'La licencia está vigente.'));
+      }
+      default:
+        return null;
+    }
   }
 
   private mensajeVigente({ envio, codigo, destino }: Awaited<ReturnType<ProcesadorCorreoService['bloquearCodigo']>>): MensajeCorreo | null {

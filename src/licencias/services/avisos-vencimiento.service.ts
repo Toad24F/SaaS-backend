@@ -7,7 +7,7 @@ import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from '../../correos/e
 import { Negocio } from '../../negocios/entities/negocio.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Licencia } from '../entities/licencia.entity';
-import { avisoElegible } from './aviso-elegible';
+import { umbralPreventivo } from './aviso-elegible';
 import { claveAvisoLicencia } from './clave-aviso-licencia';
 
 /** Detecta vencimientos; el ejecutor periódico que lo invoca llegará en T121. */
@@ -61,33 +61,51 @@ export class AvisosVencimientoService {
   }
 
   async detectar(ahora: Date): Promise<number> {
-    const fin = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+    const fin = new Date(ahora.getTime() + 15 * 24 * 60 * 60 * 1000);
     const candidatos = await this.db.getRepository(Licencia).createQueryBuilder('licencia')
-      .select('licencia.id', 'id')
+      .select(['licencia.id AS id', 'licencia.negocioId AS negocioId'])
       .where('licencia.venceEn > :ahora AND licencia.venceEn <= :fin', { ahora, fin })
       .andWhere('licencia.habilitadaEn IS NOT NULL AND licencia.suspendidaEn IS NULL')
-      .orderBy('licencia.id', 'ASC').getRawMany<{ id: number }>();
+      .orderBy('licencia.id', 'ASC').getRawMany<{ id: number; negocioId: number }>();
     let creados = 0;
     for (const candidato of candidatos) {
       const creado = await transaccionIdentidad(this.db, async (manager) => {
-        // El bloqueo vuelve a leer la licencia tras una renovación o suspensión concurrente.
+        // Negocio es la barrera común; ambos se releen tras esperar el bloqueo.
+        const negocio = await manager.getRepository(Negocio).createQueryBuilder('negocio')
+          .setLock('pessimistic_write').where('negocio.id = :id',
+            { id: candidato.negocioId }).getOne();
         const licencia = await manager.getRepository(Licencia).createQueryBuilder('licencia')
           .setLock('pessimistic_write').where('licencia.id = :id', { id: candidato.id }).getOne();
-        if (!licencia || !avisoElegible(licencia, ahora)) return false;
-        const negocio = await manager.getRepository(Negocio).findOneBy({ id: licencia.negocioId });
-        if (!negocio?.correoAdministrador || negocio.activadoEn === null) return false;
+        if (!licencia || !negocio?.correoAdministrador || negocio.activadoEn === null) return false;
+        const umbral = umbralPreventivo(licencia, ahora);
+        if (umbral === null) return false;
         const admin = await manager.getRepository(Usuario).findOneBy({ negocioId: negocio.id,
           email: negocio.correoAdministrador, rol: Rol.ADMIN_NEGOCIO, activo: true });
         if (!admin?.activadoEn) return false;
-        const clave = `negocio:${negocio.id}:licencia:${licencia.id}:version:${licencia.versionVencimiento}`;
-        const existente = await manager.getRepository(EnvioCorreo).createQueryBuilder('envio')
-          .setLock('pessimistic_write').where('envio.claveDedupe = :clave', { clave }).getOne();
+        if (umbral === 7) {
+          // El aviso de quince sin entregar ya describiría una ventana equivocada.
+          await manager.getRepository(EnvioCorreo).createQueryBuilder().update()
+            .set({ estado: EstadoEnvioCorreo.DESCARTADO, arrendamientoId: null,
+              arrendadoHasta: null, ultimoError: 'Umbral preventivo sustituido.' })
+            .where('licencia_id = :id AND version_vencimiento = :version AND tipo = :tipo '
+              + 'AND umbral_dias = 15 AND estado IN (:...estados)', {
+              id: licencia.id, version: licencia.versionVencimiento,
+              tipo: TipoEnvioCorreo.AVISO_PREVENTIVO,
+              estados: [EstadoEnvioCorreo.PENDIENTE, EstadoEnvioCorreo.FALLIDO,
+                EstadoEnvioCorreo.TOMADO],
+            }).execute();
+        }
+        const clave = claveAvisoLicencia({ negocioId: negocio.id, licenciaId: licencia.id,
+          tipo: TipoEnvioCorreo.AVISO_PREVENTIVO,
+          versionVencimiento: licencia.versionVencimiento, umbralDias: umbral });
+        const existente = await manager.getRepository(EnvioCorreo).findOneBy({ claveDedupe: clave });
         if (existente) return false;
-        await this.bandeja.encolarAviso(manager, { negocioId: negocio.id,
-          licenciaId: licencia.id, usuarioId: admin.id,
-          versionVencimiento: licencia.versionVencimiento, ahora });
+        await this.bandeja.encolarEventoLicencia(manager, { negocioId: negocio.id,
+          licenciaId: licencia.id, correoDestinatario: admin.email,
+          tipo: TipoEnvioCorreo.AVISO_PREVENTIVO,
+          versionVencimiento: licencia.versionVencimiento, umbralDias: umbral, ahora });
         return true;
-      });
+      }, 'READ COMMITTED');
       if (creado) creados++;
     }
     return creados;

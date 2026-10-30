@@ -4,7 +4,8 @@ describe('M1-T121–T122 ejecutor al arrancar y en cada ciclo', () => {
   it('concilia, detecta y drena pendientes; el reinicio vuelve a ejecutar', async () => {
     const orden: string[] = [];
     const conciliador = { conciliar: jest.fn(async () => { orden.push('conciliar'); return 1; }) };
-    const avisos = { detectar: jest.fn(async () => { orden.push('avisos'); return 1; }) };
+    const avisos = { detectarLimites: jest.fn(async () => { orden.push('limites'); return 1; }),
+      detectar: jest.fn(async () => { orden.push('avisos'); return 1; }) };
     let pendientes = 2;
     const correo = { procesarUno: jest.fn(async () => {
       orden.push('correo'); return pendientes-- > 0 ? { estado: 'enviado' } : null;
@@ -15,12 +16,12 @@ describe('M1-T121–T122 ejecutor al arrancar y en cada ciclo', () => {
       correo as never, reloj, true);
     await primero.onApplicationBootstrap();
     await primero.onModuleDestroy();
-    expect(orden).toEqual(['conciliar', 'avisos', 'correo', 'correo', 'correo']);
+    expect(orden).toEqual(['conciliar', 'limites', 'avisos', 'correo', 'correo', 'correo']);
     pendientes = 1;
     const reiniciado = new EjecucionPeriodicaService(conciliador as never, avisos as never,
       correo as never, reloj, true);
     await reiniciado.onApplicationBootstrap();
     await reiniciado.onModuleDestroy();
-    expect(orden.slice(5)).toEqual(['conciliar', 'avisos', 'correo', 'correo']);
+    expect(orden.slice(6)).toEqual(['conciliar', 'limites', 'avisos', 'correo', 'correo']);
   });
 });

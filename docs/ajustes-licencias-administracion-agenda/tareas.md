@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T040 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T045 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -183,20 +183,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Vigente, vencida y suspendida producen confirmación; la última no afirma acceso restablecido.
   Evidencia: [resultado y pruebas](resultados-tareas/resultado-t036-t040.md).
 
-- [ ] **ALA-T041 — Seleccionar umbrales preventivos de 15 y 7 días** · 25 min · Depende de: ALA-T040 · RF-01–RF-02
+- [x] **ALA-T041 — Seleccionar umbrales preventivos de 15 y 7 días** · 25 min · Depende de: ALA-T040 · RF-01–RF-02
   Hecho cuando: Casos antes/en/después de cada umbral eligen el aviso correcto y no existe una nueva ventana de dos días.
+  Evidencia: [resultado T041–T045](resultados-tareas/resultado-t041-t045.md).
 
-- [ ] **ALA-T042 — Resolver avisos preventivos atrasados** · 25 min · Depende de: ALA-T041 · RF-02, RF-09, RF-14
+- [x] **ALA-T042 — Resolver avisos preventivos atrasados** · 25 min · Depende de: ALA-T041 · RF-02, RF-09, RF-14
   Hecho cuando: Recuperar el procesador a seis días descarta el pendiente de quince y emite solo el de siete con tiempo restante real.
+  Evidencia: [resultado T041–T045](resultados-tareas/resultado-t041-t045.md).
 
-- [ ] **ALA-T043 — Preparar mensajes de licencia sin datos obsoletos** · 25 min · Depende de: ALA-T042 · RF-05–RF-14
+- [x] **ALA-T043 — Preparar mensajes de licencia sin datos obsoletos** · 25 min · Depende de: ALA-T042 · RF-05–RF-14
   Hecho cuando: El transporte controlado recibe destinatario, estado y fechas correctos; versiones o ciclos sustituidos no llegan a envío.
+  Evidencia: [resultado T041–T045](resultados-tareas/resultado-t041-t045.md).
 
-- [ ] **ALA-T044 — Revisar orden de bloqueos del procesador** · 25 min · Depende de: ALA-T043 · RF-09, RF-15, RF-65
+- [x] **ALA-T044 — Revisar orden de bloqueos del procesador** · 25 min · Depende de: ALA-T043 · RF-09, RF-15, RF-65
   Hecho cuando: La reclamación de trabajo termina antes de tomar recursos de dominio y una prueba no mantiene envío bloqueado esperando negocio en orden inverso.
+  Evidencia: [resultado T041–T045](resultados-tareas/resultado-t041-t045.md).
 
-- [ ] **ALA-T045 — Integrar nuevos avisos al ejecutor periódico** · 25 min · Depende de: ALA-T044 · RF-01–RF-02, RF-05–RF-09
+- [x] **ALA-T045 — Integrar nuevos avisos al ejecutor periódico** · 25 min · Depende de: ALA-T044 · RF-01–RF-02, RF-05–RF-09
   Hecho cuando: Un ciclo controlado procesa umbrales y límites vencidos una sola vez y una ejecución tardía congela al instante originalmente previsto.
+  Evidencia: [resultado T041–T045](resultados-tareas/resultado-t041-t045.md).
 
 - [ ] **ALA-T046 — Verificar atomicidad de transición y bandeja** · 25 min · Depende de: ALA-T045 · RF-09, RF-15, RF-69
   Hecho cuando: Un fallo al registrar el aviso revierte la transición y auditoría; ningún estado queda cambiado sin su trabajo durable correspondiente.

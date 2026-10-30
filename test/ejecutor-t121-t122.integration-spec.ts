@@ -51,14 +51,14 @@ describe('M1-T121–T122 ciclos y recuperación', () => {
       const primero = f.crearEjecutor();
       await primero.onApplicationBootstrap();
       await primero.onModuleDestroy();
-      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_vencimiento'"))[0].estado)
+      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_preventivo'"))[0].estado)
         .toBe('fallido');
       f.reloj.avanzar(60_000);
       const reiniciado = f.crearEjecutor();
       await reiniciado.onApplicationBootstrap();
       await reiniciado.onModuleDestroy();
       expect(f.transporte.intentos).toHaveLength(2);
-      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_vencimiento'"))[0].estado)
+      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_preventivo'"))[0].estado)
         .toBe('enviado');
     });
   });
@@ -75,7 +75,7 @@ describe('M1-T121–T122 ciclos y recuperación', () => {
       const reiniciado = f.crearEjecutor();
       await reiniciado.onApplicationBootstrap();
       await reiniciado.onModuleDestroy();
-      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_vencimiento'"))[0].estado)
+      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_preventivo'"))[0].estado)
         .toBe('fallido');
       expect(f.transporte.intentos).toHaveLength(1);
     });

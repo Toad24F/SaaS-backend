@@ -94,16 +94,17 @@ describe('ALA-T037–T040: bandeja durable de licencias', () => {
     });
   });
 
-  it('conserva pendiente un tipo nuevo hasta que exista su preparación de mensaje', async () => {
+  it('prepara el tipo nuevo después del commit sin SMTP durante el encolado', async () => {
     await conBaseMigrada(async (db) => {
       const { actor, licencia, servicio } = await escenario(db);
       await servicio.suspender(actor.id, licencia.id, ahora, clave('esperar-plantilla'), 2);
       const transporte = new TransporteCorreoControlado();
       const procesador = new ProcesadorCorreoService(db, transporte,
         new DerivadorCodigo(), new RelojPrueba(ahora));
-      expect(await procesador.procesarUno()).toBeNull();
-      expect((await filas(db, licencia.id))[0].estado).toBe(EstadoEnvioCorreo.PENDIENTE);
       expect(transporte.intentos).toHaveLength(0);
+      expect(await procesador.procesarUno()).toMatchObject({ estado: EstadoEnvioCorreo.ENVIADO });
+      expect((await filas(db, licencia.id))[0].estado).toBe(EstadoEnvioCorreo.ENVIADO);
+      expect(transporte.intentos).toHaveLength(1);
     });
   });
 
