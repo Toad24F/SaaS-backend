@@ -28,6 +28,7 @@ import { ProcesadorCorreoService } from './correos/procesador-correo.service';
 import { CorreosModule } from './correos/correos.module';
 import { AvisosVencimientoService } from './licencias/services/avisos-vencimiento.service';
 import { ConciliadorSuspensionesService } from './licencias/services/conciliador-suspensiones.service';
+import { CuposUsuariosService } from './usuarios/cupos-usuarios.service';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
   CodigosModule, AltasModule, AuditoriaModule, CorreosModule];
@@ -63,6 +64,8 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       .overrideProvider(AvisosVencimientoService).useValue({})
       // El coordinador de suspensiones se prueba con base migrada, no en esta composición aislada.
       .overrideProvider(ConciliadorSuspensionesService).useValue({})
+      // Los cupos se ejercitan con MariaDB en integración; aquí solo se compone el módulo.
+      .overrideProvider(CuposUsuariosService).useValue({})
       .compile();
     try {
       await modulo.init();

@@ -10,6 +10,7 @@ import { RELOJ, type Reloj } from '../comun/reloj';
 import { CrearRecepcionistaDto, RecepcionistaIdDto, RestablecerContrasenaRecepcionistaDto } from './dto/recepcionistas.dto';
 import { Usuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
+import { CuposUsuariosService } from './cupos-usuarios.service';
 
 // Cada petición revalida sesión, licencia y rol antes de usar la pertenencia.
 // La antigua invitación POST se sustituyó por el alta directa completa.
@@ -19,6 +20,7 @@ import { UsuariosService } from './usuarios.service';
 export class RecepcionistasController {
   constructor(
     private readonly usuarios: UsuariosService,
+    private readonly cuposUsuarios: CuposUsuariosService,
     @Inject(RELOJ) private readonly reloj: Reloj,
   ) {}
 
@@ -40,6 +42,12 @@ export class RecepcionistasController {
   async listar(@CurrentUser() actor: JwtPayload) {
     const usuarios = await this.usuarios.listarRecepcionistas(this.negocioActor(actor));
     return usuarios.map((usuario) => this.presentar(usuario));
+  }
+
+  @Get('cupo')
+  async consultarCupo(@CurrentUser() actor: JwtPayload) {
+    // La pertenencia se toma de la sesión validada, no de un negocio enviado por URL.
+    return (await this.cuposUsuarios.consultar(this.negocioActor(actor))).recepcionistas;
   }
 
   @Get(':id')

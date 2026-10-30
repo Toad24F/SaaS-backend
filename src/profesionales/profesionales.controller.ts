@@ -12,6 +12,7 @@ import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
   CambiarAtencionSucursalDto, ProfesionalIdDto, ProfesionalSucursalIdDto,
   SeleccionarServiciosDto } from './dto/profesionales.dto';
 import { ProfesionalesService } from './profesionales.service';
+import { CuposUsuariosService } from '../usuarios/cupos-usuarios.service';
 
 /** Gestión administrativa del perfil; la respuesta del servicio excluye secretos. */
 @Controller('profesionales')
@@ -19,6 +20,7 @@ import { ProfesionalesService } from './profesionales.service';
 @Roles(Rol.ADMIN_NEGOCIO)
 export class ProfesionalesController {
   constructor(private readonly profesionales: ProfesionalesService,
+    private readonly cuposUsuarios: CuposUsuariosService,
     @Inject(RELOJ) private readonly reloj: Reloj) {}
 
   @Post()
@@ -29,6 +31,12 @@ export class ProfesionalesController {
   @Get()
   listar(@CurrentUser() actor: JwtPayload) {
     return this.profesionales.listar(actor.sub);
+  }
+
+  @Get('cupo')
+  async consultarCupo(@CurrentUser() actor: JwtPayload) {
+    // Solo el administrador del negocio autenticado consulta su cupo de Profesionales.
+    return (await this.cuposUsuarios.consultar(actor.negocioId!)).profesionales;
   }
 
   @Get(':id')

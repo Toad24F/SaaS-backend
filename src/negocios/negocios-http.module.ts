@@ -7,11 +7,12 @@ import { NegociosModule } from './negocios.module';
 import { NegociosController } from './negocios.controller';
 import { PublicacionCatalogoController } from './publicacion-catalogo.controller';
 import { SucursalesModule } from '../sucursales/sucursales.module';
+import { UsuariosModule } from '../usuarios/usuarios.module';
 
 // La composición HTTP depende de Auth y Altas; el dominio Negocios no depende
 // de ellos, evitando un ciclo al reutilizar el alta y las protecciones existentes.
 @Module({
-  imports: [AuthModule, AltasModule, NegociosModule, SucursalesModule],
+  imports: [AuthModule, AltasModule, NegociosModule, SucursalesModule, UsuariosModule],
   controllers: [NegociosController, PublicacionCatalogoController],
   providers: [RolesGuard, { provide: RELOJ, useClass: RelojSistema }],
 })

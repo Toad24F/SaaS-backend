@@ -1,8 +1,8 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable,
   NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import type { DataSource, EntityManager } from 'typeorm';
-import { IsNull } from 'typeorm';
+import type { EntityManager } from 'typeorm';
+import { DataSource, IsNull } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { Rol } from '../auth/enums/rol.enum';
 import { Negocio } from '../negocios/entities/negocio.entity';
@@ -34,8 +34,8 @@ export async function exigirCupoDisponible(manager: EntityManager, negocioId: nu
 /** Modificación administrativa y lectura coherente de ambos cupos. */
 @Injectable()
 export class CuposUsuariosService {
-  constructor(private readonly db: DataSource,
-    private readonly auditoria = new AuditoriaService()) {}
+  private readonly auditoria = new AuditoriaService();
+  constructor(private readonly db: DataSource) {}
 
   async consultar(negocioId: number) {
     return this.db.transaction('READ COMMITTED', async (manager) => {

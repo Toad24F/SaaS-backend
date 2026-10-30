@@ -249,17 +249,21 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Profesional y recepcionista solo vuelven a activo con lugar disponible; desactivación libera exactamente un lugar.
   Evidencia: [resultado T051–T056](resultados-tareas/resultado-t051-t056.md).
 
-- [ ] **ALA-T057 — Exponer consultas y modificación de cupos** · 25 min · Depende de: ALA-T056 · RF-16–RF-21, RF-64
+- [x] **ALA-T057 — Exponer consultas y modificación de cupos** · 25 min · Depende de: ALA-T056 · RF-16–RF-21, RF-64
   Hecho cuando: Superadmin modifica; administrador propio consulta límite/activos/disponibles; roles y negocios ajenos reciben denegación.
+  Evidencia: [resultado T057–T060](resultados-tareas/resultado-t057-t060.md).
 
-- [ ] **ALA-T058 — Probar carrera por último cupo profesional** · 25 min · Depende de: ALA-T057 · RF-19–RF-20, RF-65
+- [x] **ALA-T058 — Probar carrera por último cupo profesional** · 25 min · Depende de: ALA-T057 · RF-19–RF-20, RF-65
   Hecho cuando: Dos conexiones con alta y reactivación aceptan como máximo una y dejan filas finales dentro del límite.
+  Evidencia: [resultado T057–T060](resultados-tareas/resultado-t057-t060.md).
 
-- [ ] **ALA-T059 — Probar carrera por último cupo de recepción** · 25 min · Depende de: ALA-T058 · RF-19–RF-20, RF-65
+- [x] **ALA-T059 — Probar carrera por último cupo de recepción** · 25 min · Depende de: ALA-T058 · RF-19–RF-20, RF-65
   Hecho cuando: Dos altas concurrentes por el último lugar no crean cuentas excedentes ni reservas de correo huérfanas.
+  Evidencia: [resultado T057–T060](resultados-tareas/resultado-t057-t060.md).
 
-- [ ] **ALA-T060 — Probar reducción de cupo contra alta** · 25 min · Depende de: ALA-T059 · RF-19–RF-21, RF-65
+- [x] **ALA-T060 — Probar reducción de cupo contra alta** · 25 min · Depende de: ALA-T059 · RF-19–RF-21, RF-65
   Hecho cuando: Ambos órdenes conservan consumo no mayor al límite y ningún usuario se desactiva automáticamente.
+  Evidencia: [resultado T057–T060](resultados-tareas/resultado-t057-t060.md).
 
 ## 5. Inhabilitación y restauración
 
