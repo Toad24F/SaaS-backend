@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T012 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T018 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -69,23 +69,29 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Una base desechable admite las nuevas marcas, rechaza inhabilitado activo y conserva nombres, correos y relaciones previas.
   Evidencia: [resultado y pruebas](resultados-tareas/resultado-t008-t012.md).
 
-- [ ] **ALA-T013 — Definir plazo y ciclo de suspensión** · 25 min · Depende de: ALA-T012 · RF-03–RF-15
+- [x] **ALA-T013 — Definir plazo y ciclo de suspensión** · 25 min · Depende de: ALA-T012 · RF-03–RF-15
   Hecho cuando: Entidad y esquema incorporan plazo 0–30 y versión de suspensión sin sustituir el remanente ni la versión de vencimiento.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
-- [ ] **ALA-T014 — Migrar plazo y ciclo de suspensión** · 25 min · Depende de: ALA-T013 · RF-03–RF-15
+- [x] **ALA-T014 — Migrar plazo y ciclo de suspensión** · 25 min · Depende de: ALA-T013 · RF-03–RF-15
   Hecho cuando: La migración conserva fechas y remanente existentes y rechaza plazos negativos o mayores que treinta.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
-- [ ] **ALA-T015 — Definir operaciones idempotentes de licencia** · 25 min · Depende de: ALA-T014 · RF-04, RF-12–RF-15
+- [x] **ALA-T015 — Definir operaciones idempotentes de licencia** · 25 min · Depende de: ALA-T014 · RF-04, RF-12–RF-15
   Hecho cuando: Entidad y esquema representan clave, actor, acción, huella y resultado reducido con pertenencia a licencia y negocio.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
-- [ ] **ALA-T016 — Migrar operaciones de licencia** · 25 min · Depende de: ALA-T015 · RF-04, RF-12–RF-15
+- [x] **ALA-T016 — Migrar operaciones de licencia** · 25 min · Depende de: ALA-T015 · RF-04, RF-12–RF-15
   Hecho cuando: La migración impide duplicar una clave en la misma licencia y rechaza una referencia cruzada entre negocios.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
-- [ ] **ALA-T017 — Ampliar modelo de avisos de licencia** · 25 min · Depende de: ALA-T016 · RF-01–RF-15
+- [x] **ALA-T017 — Ampliar modelo de avisos de licencia** · 25 min · Depende de: ALA-T016 · RF-01–RF-15
   Hecho cuando: Tipos, umbral, ciclo y referencia a operación permiten los avisos del plan sin almacenar cuerpos ni secretos.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
-- [ ] **ALA-T018 — Migrar referencias y checks de correo** · 15 min · Depende de: ALA-T017 · RF-01–RF-15
+- [x] **ALA-T018 — Migrar referencias y checks de correo** · 15 min · Depende de: ALA-T017 · RF-01–RF-15
   Hecho cuando: Una tabla de casos acepta combinaciones válidas por tipo y rechaza referencias incompatibles, conservando deduplicación.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t013-t018.md).
 
 - [ ] **ALA-T019 — Definir separación en configuración** · 25 min · Depende de: ALA-T018 · RF-39–RF-42
   Hecho cuando: Entidad y esquema incorporan separación inicial cero con rango 0–60 y múltiplos de cinco; no convierten el intervalo anterior en separación.

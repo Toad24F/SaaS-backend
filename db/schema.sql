@@ -991,3 +991,72 @@ ALTER TABLE sucursales
   ADD inhabilitado_en DATETIME(6) NULL,
   ADD CONSTRAINT chk_sucursales_inhabilitado_inactivo
     CHECK (inhabilitado_en IS NULL OR activo = 0);
+
+-- ALA-T013–T014: plazo anulable en licencias anteriores y ciclo independiente.
+ALTER TABLE licencias
+  ADD plazo_suspension_dias INT UNSIGNED NULL,
+  ADD version_suspension INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD CONSTRAINT chk_licencias_plazo_suspension
+    CHECK (plazo_suspension_dias IS NULL OR plazo_suspension_dias BETWEEN 0 AND 30);
+
+-- ALA-T015–T016: cada clave identifica un resultado reducido de una licencia.
+-- Actor y pertenencia se fijan con FK; el servicio validará el rol superadmin.
+CREATE TABLE operaciones_licencia (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  licencia_id INT UNSIGNED NOT NULL,
+  actor_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  accion ENUM('suspender','reactivar','renovar') NOT NULL,
+  parametros_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  resultado_reducido TEXT NOT NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_operaciones_licencia_clave (negocio_id,licencia_id,clave),
+  UNIQUE KEY uq_operaciones_licencia_referencia (negocio_id,licencia_id,id),
+  INDEX idx_operaciones_licencia_actor (actor_id),
+  CONSTRAINT fk_operaciones_licencia_licencia FOREIGN KEY (negocio_id,licencia_id)
+    REFERENCES licencias(negocio_id,id),
+  CONSTRAINT fk_operaciones_licencia_actor FOREIGN KEY (actor_id)
+    REFERENCES usuarios(id),
+  CONSTRAINT chk_operaciones_licencia_clave CHECK (
+    CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)),
+  CONSTRAINT chk_operaciones_licencia_hash CHECK (CHAR_LENGTH(parametros_hash) = 64),
+  CONSTRAINT chk_operaciones_licencia_resultado CHECK (JSON_VALID(resultado_reducido))
+) ENGINE=InnoDB;
+
+-- ALA-T017–T018: conservar el aviso viejo; los nuevos usan versión, ciclo u operación.
+ALTER TABLE envios_correo DROP CONSTRAINT chk_envios_referencia;
+ALTER TABLE envios_correo
+  MODIFY tipo ENUM('activacion_admin','recuperacion','aviso_vencimiento',
+    'aviso_preventivo','licencia_vencida','suspension_programada',
+    'suspension_efectiva','suspension_inmediata','suspension_revocada',
+    'licencia_reactivada','licencia_renovada') NOT NULL,
+  ADD umbral_dias INT UNSIGNED NULL,
+  ADD version_suspension INT UNSIGNED NULL,
+  ADD operacion_licencia_id BIGINT UNSIGNED NULL,
+  ADD INDEX idx_envios_operacion_licencia
+    (negocio_id,licencia_id,operacion_licencia_id),
+  ADD CONSTRAINT fk_envios_operacion_licencia
+    FOREIGN KEY (negocio_id,licencia_id,operacion_licencia_id)
+    REFERENCES operaciones_licencia(negocio_id,licencia_id,id);
+ALTER TABLE envios_correo
+  ADD CONSTRAINT chk_envios_referencia CHECK (COALESCE((
+    (tipo IN ('activacion_admin','recuperacion') AND codigo_acceso_id IS NOT NULL
+      AND licencia_id IS NULL AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('aviso_vencimiento','licencia_vencida') AND codigo_acceso_id IS NULL
+      AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo = 'aviso_preventivo' AND codigo_acceso_id IS NULL
+      AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IN (7,15)
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('suspension_programada','suspension_efectiva','suspension_inmediata')
+      AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+      AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension >= 1 AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('suspension_revocada','licencia_reactivada','licencia_renovada')
+      AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+      AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NOT NULL)
+  ), 0));

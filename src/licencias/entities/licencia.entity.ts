@@ -18,6 +18,7 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 @Check('chk_licencias_vigencia', '(habilitada_en IS NULL AND vence_en IS NULL) OR (habilitada_en IS NOT NULL AND vence_en IS NOT NULL AND vence_en > habilitada_en)')
 @Check('chk_licencias_habilitacion', 'habilitada_en IS NULL OR habilitada_en >= creado_en')
 @Check('chk_licencias_suspension', 'suspendida_en IS NULL OR (suspendida_en >= creado_en AND (habilitada_en IS NULL OR suspendida_en >= habilitada_en))')
+@Check('chk_licencias_plazo_suspension', 'plazo_suspension_dias IS NULL OR plazo_suspension_dias BETWEEN 0 AND 30')
 export class Licencia {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -39,12 +40,20 @@ export class Licencia {
   @Column({ name: 'suspendida_en', type: 'datetime', precision: 6, nullable: true })
   suspendidaEn: Date | null;
 
-  // La solicitud y el bloqueo previsto preservan las 48 horas de gracia.
+  // La solicitud y el bloqueo previsto conservan sus instantes históricos.
   @Column({ name: 'suspension_solicitada_en', type: 'datetime', precision: 6, nullable: true })
   suspensionSolicitadaEn: Date | null;
 
   @Column({ name: 'bloqueo_programado_en', type: 'datetime', precision: 6, nullable: true })
   bloqueoProgramadoEn: Date | null;
+
+  // Nulo en licencias anteriores; el servicio elegirá el plazo efectivo al suspender.
+  @Column({ name: 'plazo_suspension_dias', type: 'int', unsigned: true, nullable: true })
+  plazoSuspensionDias: number | null;
+
+  // Identifica cada ciclo de suspensión sin alterar la versión de vencimiento.
+  @Column({ name: 'version_suspension', type: 'int', unsigned: true, default: 0 })
+  versionSuspension: number;
 
   // congeladaEn marca el instante efectivo original; remanenteMs congela tiempo restante.
   @Column({ name: 'congelada_en', type: 'datetime', precision: 6, nullable: true })
