@@ -4,11 +4,10 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { randomUUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
-import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { bloquearNegocioAgenda } from '../comun/bloqueos-coordinados';
 import { Personal } from '../profesionales/entities/personal.entity';
@@ -77,13 +76,32 @@ export class ServiciosService {
   async listar(actorId: number): Promise<Servicio[]> {
     const actor = await this.actor(this.servicios.manager, actorId,
       Permiso.CREAR_EDITAR_SERVICIOS);
-    return this.servicios.find({ where: { negocioId: actor.negocioId! }, order: { id: 'ASC' } });
+    return this.servicios.find({ where: { negocioId: actor.negocioId!,
+      inhabilitadoEn: IsNull() }, order: { id: 'ASC' } });
   }
 
   async consultar(actorId: number, id: number): Promise<Servicio> {
     const actor = await this.actor(this.servicios.manager, actorId,
       Permiso.CREAR_EDITAR_SERVICIOS);
-    const servicio = await this.servicios.findOneBy({ id, negocioId: actor.negocioId! });
+    const servicio = await this.servicios.findOneBy({ id, negocioId: actor.negocioId!,
+      inhabilitadoEn: IsNull() });
+    if (!servicio) throw new NotFoundException('Servicio no disponible.');
+    return servicio;
+  }
+
+  /** Lectura administrativa específica sin filtrar por el estado activo. */
+  async listarInhabilitados(actorId: number): Promise<Servicio[]> {
+    const actor = await this.actor(this.servicios.manager, actorId);
+    return this.servicios.createQueryBuilder('servicio')
+      .where('servicio.negocioId = :negocioId AND servicio.inhabilitadoEn IS NOT NULL',
+        { negocioId: actor.negocioId }).orderBy('servicio.id', 'ASC').getMany();
+  }
+
+  async consultarInhabilitado(actorId: number, id: number): Promise<Servicio> {
+    const actor = await this.actor(this.servicios.manager, actorId);
+    const servicio = await this.servicios.createQueryBuilder('servicio')
+      .where('servicio.id = :id AND servicio.negocioId = :negocioId AND servicio.inhabilitadoEn IS NOT NULL',
+        { id, negocioId: actor.negocioId }).getOne();
     if (!servicio) throw new NotFoundException('Servicio no disponible.');
     return servicio;
   }
@@ -98,6 +116,7 @@ export class ServiciosService {
       const actor = await this.actor(manager, actorId, Permiso.CREAR_EDITAR_SERVICIOS);
       await bloquearNegocioAgenda(manager, actor.negocioId!);
       const servicio = await this.bloquear(manager, actor.negocioId!, id);
+      if (servicio.inhabilitadoEn !== null) throw new ConflictException('Restaura primero el servicio.');
       // El autor puede cambiar datos globales, pero no recibe permisos de estado o baja.
       if (actor.rol === Rol.PROFESIONAL && servicio.creadorPersonalId !== actor.id) {
         throw new ForbiddenException('Solo el autor puede editar este servicio.');
@@ -128,6 +147,7 @@ export class ServiciosService {
       const actor = await this.actor(manager, actorId);
       await bloquearNegocioAgenda(manager, actor.negocioId!);
       const servicio = await this.bloquear(manager, actor.negocioId!, id);
+      if (servicio.inhabilitadoEn !== null) throw new ConflictException('Restaura primero el servicio.');
       if (servicio.activo === activo) return;
       // Conserva la fila y sus futuras selecciones; solo cambia la oferta global.
       const antes = this.campos(servicio);
@@ -138,19 +158,21 @@ export class ServiciosService {
     }, 'READ COMMITTED');
   }
 
-  async eliminar(actorId: number, id: number): Promise<void> {
-    try {
-      await transaccionIdentidad(this.servicios.manager, async (manager) => {
-        const actor = await this.actor(manager, actorId);
-        await bloquearNegocioAgenda(manager, actor.negocioId!);
-        const servicio = await this.bloquear(manager, actor.negocioId!, id);
-        // La selección y cualquier evento posterior al alta convierten la baja en conflicto.
-        await exigirEliminacionElegible(manager, 'servicio', actor.negocioId!, id);
-        await manager.getRepository(Servicio).delete({ id, negocioId: actor.negocioId! });
-        await this.registrar(manager, actor, servicio, 'servicio_eliminado',
-          this.campos(servicio), null);
-      }, 'READ COMMITTED');
-    } catch (error) { conflictoEliminacion(error); }
+  /** La oferta se retira sin tocar selecciones o datos históricos. */
+  async inhabilitar(actorId: number, id: number, ahora = new Date()): Promise<Servicio> {
+    return transaccionIdentidad(this.servicios.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      const servicio = await this.bloquear(manager, actor.negocioId!, id);
+      if (servicio.inhabilitadoEn !== null) return servicio;
+      const antes = this.campos(servicio);
+      servicio.activo = false;
+      servicio.inhabilitadoEn = new Date(ahora);
+      await manager.getRepository(Servicio).save(servicio);
+      await this.registrar(manager, actor, servicio, 'servicio_inhabilitado', antes,
+        this.campos(servicio));
+      return servicio;
+    }, 'READ COMMITTED');
   }
 
   private validar<T extends object>(tipo: new () => T, valor: T): T {
@@ -192,6 +214,7 @@ export class ServiciosService {
   private campos(servicio: Servicio) {
     return { nombre: servicio.nombre, costo: servicio.costo,
       duracionMinutos: servicio.duracionMinutos, activo: servicio.activo,
+      inhabilitadoEn: servicio.inhabilitadoEn,
       descripcion: servicio.descripcion ?? null,
       creadorPersonalId: servicio.creadorPersonalId ?? null };
   }

@@ -193,7 +193,7 @@ describe('FIX-T010–T018: especialidad y catálogo compartido', () => {
       await request(http).post(`/servicios/${profesional.id}/desactivar`)
         .auth(tokenAutor, { type: 'bearer' }).send({}).expect(403);
       await request(http).delete(`/servicios/${profesional.id}`)
-        .auth(tokenAutor, { type: 'bearer' }).expect(403);
+        .auth(tokenAutor, { type: 'bearer' }).expect(404);
       const editado = (await request(http).patch(`/servicios/${profesional.id}`)
         .auth(tokenAutor, { type: 'bearer' })
         .send({ nombre: 'Nuevo', costo: '22.50', duracionMinutos: 45,

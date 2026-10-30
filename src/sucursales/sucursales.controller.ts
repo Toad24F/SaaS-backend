@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -36,6 +36,18 @@ export class SucursalesController {
     return this.sucursales.consultarCupo(actor.sub);
   }
 
+  @Get('inhabilitados')
+  async listarInhabilitadas(@CurrentUser() actor: JwtPayload) {
+    return (await this.sucursales.listarInhabilitadas(actor.sub))
+      .map((fila) => this.presentar(fila));
+  }
+
+  @Get('inhabilitados/:id')
+  async consultarInhabilitada(@Param() parametros: SucursalIdDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.sucursales.consultarInhabilitada(actor.sub, parametros.id));
+  }
+
   @Get(':id')
   async consultar(@Param() parametros: SucursalIdDto, @CurrentUser() actor: JwtPayload) {
     return this.presentar(await this.sucursales.consultar(actor.sub, parametros.id));
@@ -55,11 +67,12 @@ export class SucursalesController {
     return this.sucursales.desactivar(actor.sub, parametros.id);
   }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  eliminar(@Param() parametros: SucursalIdDto, @CurrentUser() actor: JwtPayload) {
-    // El servicio verifica pertenencia, vínculos e historial antes de borrar.
-    return this.sucursales.eliminar(actor.sub, parametros.id);
+  @Post(':id/inhabilitar')
+  @HttpCode(HttpStatus.OK)
+  async inhabilitar(@Param() parametros: SucursalIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.sucursales.inhabilitar(actor.sub, parametros.id,
+      this.reloj.ahora()));
   }
 
   @Post(':id/reactivar')
@@ -77,6 +90,7 @@ export class SucursalesController {
       direccion: sucursal.direccion, telefono: sucursal.telefono,
       zonaHoraria: sucursal.zonaHoraria, urlGoogleMaps: sucursal.urlGoogleMaps,
       notasLlegada: sucursal.notasLlegada, activo: sucursal.activo,
+      inhabilitadoEn: sucursal.inhabilitadoEn,
       creadoEn: sucursal.creadoEn };
   }
 }

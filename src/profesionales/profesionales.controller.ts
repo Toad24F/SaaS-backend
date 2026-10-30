@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch,
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch,
   Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -39,6 +39,17 @@ export class ProfesionalesController {
     return (await this.cuposUsuarios.consultar(actor.negocioId!)).profesionales;
   }
 
+  // Rutas estáticas antes de :id para no tratarlas como identificadores.
+  @Get('inhabilitados')
+  listarInhabilitados(@CurrentUser() actor: JwtPayload) {
+    return this.profesionales.listarInhabilitados(actor.sub);
+  }
+
+  @Get('inhabilitados/:id')
+  consultarInhabilitado(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
+    return this.profesionales.consultarInhabilitado(actor.sub, parametros.id);
+  }
+
   @Get(':id')
   consultar(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
     return this.profesionales.consultar(actor.sub, parametros.id);
@@ -57,11 +68,11 @@ export class ProfesionalesController {
     return this.profesionales.cambiarEstado(actor.sub, parametros.id, false, this.reloj.ahora());
   }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  eliminar(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
-    // Perfil y cuenta solo salen juntos cuando no conservaron uso operativo.
-    return this.profesionales.eliminar(actor.sub, parametros.id);
+  @Post(':id/inhabilitar')
+  @HttpCode(HttpStatus.OK)
+  inhabilitar(@Param() parametros: ProfesionalIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.profesionales.inhabilitar(actor.sub, parametros.id, this.reloj.ahora());
   }
 
   @Post(':id/reactivar')

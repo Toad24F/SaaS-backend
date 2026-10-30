@@ -50,6 +50,18 @@ export class RecepcionistasController {
     return (await this.cuposUsuarios.consultar(this.negocioActor(actor))).recepcionistas;
   }
 
+  @Get('inhabilitados')
+  async listarInhabilitados(@CurrentUser() actor: JwtPayload) {
+    return (await this.usuarios.listarRecepcionistasInhabilitados(actor.sub))
+      .map((usuario) => this.presentar(usuario));
+  }
+
+  @Get('inhabilitados/:id')
+  async consultarInhabilitado(@Param() parametros: RecepcionistaIdDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.usuarios.buscarRecepcionistaInhabilitado(actor.sub, parametros.id));
+  }
+
   @Get(':id')
   async consultar(@Param() parametros: RecepcionistaIdDto, @CurrentUser() actor: JwtPayload) {
     return this.presentar(await this.usuarios.buscarRecepcionista(this.negocioActor(actor), parametros.id));
@@ -60,6 +72,14 @@ export class RecepcionistasController {
   desactivar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
     // Cuenta, sesiones y auditoría usan el mismo instante que la autenticación.
     return this.usuarios.desactivarRecepcionista(actor.sub, parametros.id, this.reloj.ahora());
+  }
+
+  @Post(':id/inhabilitar')
+  @HttpCode(HttpStatus.OK)
+  async inhabilitar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.usuarios.inhabilitarRecepcionista(
+      actor.sub, parametros.id, this.reloj.ahora()));
   }
 
   @Post(':id/reactivar')
@@ -91,6 +111,7 @@ export class RecepcionistasController {
   private presentar(usuario: Usuario) {
     // Lista explícita de campos: nunca serializar directamente la entidad con su hash.
     return { id: usuario.id, negocioId: usuario.negocioId, nombre: usuario.nombre,
-      email: usuario.email, rol: usuario.rol, activo: usuario.activo, activadoEn: usuario.activadoEn };
+      email: usuario.email, rol: usuario.rol, activo: usuario.activo,
+      inhabilitadoEn: usuario.inhabilitadoEn, activadoEn: usuario.activadoEn };
   }
 }

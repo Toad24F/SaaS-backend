@@ -81,7 +81,7 @@ describe('M2-T017–T019: integridad y conservación de ocupaciones', () => {
     });
   });
 
-  it('rechaza bajas con ocupaciones y conserva citas/apartados tras desactivar', async () => {
+  it('conserva citas y apartados al inhabilitar recursos con ocupaciones', async () => {
     await conBaseMigrada(async (db) => {
       const [a, b] = (await crearDatosOcupaciones(db, reloj())).negocios;
       const alta = await db.query(`INSERT INTO usuarios
@@ -98,14 +98,10 @@ describe('M2-T017–T019: integridad y conservación de ocupaciones', () => {
         inicio_utc,fin_utc FROM bloqueos_temporales WHERE negocio_id=? ORDER BY id`, [a.id]);
       const ofertasAntes = await db.query(`SELECT personal_id,sucursal_id,servicio_id,activo
         FROM personal_servicios_sucursales WHERE negocio_id=? ORDER BY sucursal_id,servicio_id`, [a.id]);
-      for (const baja of [() => sucursales(db).eliminar(adminId, sede),
-        () => servicios(db).eliminar(adminId, servicio),
-        () => profesionales(db).eliminar(adminId, a.personalId)]) {
-        await expect(baja()).rejects.toThrow(/citas|apartados/);
-      }
-      await sucursales(db).desactivar(adminId, sede);
-      await servicios(db).cambiarEstado(adminId, servicio, false);
-      await profesionales(db).cambiarEstado(adminId, a.personalId, false, reloj().ahora());
+      // Las ocupaciones ya no bloquean la retirada recuperable de sus recursos.
+      await sucursales(db).inhabilitar(adminId, sede, reloj().ahora());
+      await servicios(db).inhabilitar(adminId, servicio, reloj().ahora());
+      await profesionales(db).inhabilitar(adminId, a.personalId, reloj().ahora());
       expect(await db.getRepository(Sucursal).findOneByOrFail({ id: sede }))
         .toMatchObject({ activo: false });
       expect(await db.getRepository(Servicio).findOneByOrFail({ id: servicio }))
@@ -130,12 +126,12 @@ describe('M2-T017–T019: integridad y conservación de ocupaciones', () => {
       expect(await db.query('SELECT COUNT(*) total FROM bloqueos_temporales WHERE negocio_id=?',
         [b.id])).toEqual([{ total: '2' }]);
       expect(await db.query(`SELECT COUNT(*) total FROM eventos_auditoria
-        WHERE negocio_id=? AND accion IN ('sucursal_eliminada','servicio_eliminado',
-          'profesional_eliminado')`, [a.id])).toEqual([{ total: '0' }]);
+        WHERE negocio_id=? AND accion IN ('sucursal_inhabilitada','servicio_inhabilitado',
+          'profesional_inhabilitado')`, [a.id])).toEqual([{ total: '3' }]);
     });
   });
 
-  it('identifica apartados como causa de baja aunque ya no haya citas', async () => {
+  it('conserva apartados al inhabilitar aunque ya no haya citas', async () => {
     await conBaseMigrada(async (db) => {
       const [a] = (await crearDatosOcupaciones(db, reloj())).negocios;
       const alta = await db.query(`INSERT INTO usuarios
@@ -144,11 +140,10 @@ describe('M2-T017–T019: integridad y conservación de ocupaciones', () => {
           CURRENT_TIMESTAMP(6))`, [a.id]);
       await db.query('DELETE FROM citas WHERE negocio_id=?', [a.id]);
       const adminId = Number(alta.insertId);
-      for (const baja of [() => sucursales(db).eliminar(adminId, a.sucursales[0]),
-        () => servicios(db).eliminar(adminId, a.servicios[0]),
-        () => profesionales(db).eliminar(adminId, a.personalId)]) {
-        await expect(baja()).rejects.toThrow(/apartados/);
-      }
+      // Los apartados conservan sus referencias aunque los tres recursos se retiren.
+      await sucursales(db).inhabilitar(adminId, a.sucursales[0], reloj().ahora());
+      await servicios(db).inhabilitar(adminId, a.servicios[0], reloj().ahora());
+      await profesionales(db).inhabilitar(adminId, a.personalId, reloj().ahora());
       expect(await db.query(`SELECT COUNT(*) total FROM bloqueos_temporales
         WHERE negocio_id=?`, [a.id])).toEqual([{ total: '2' }]);
     });

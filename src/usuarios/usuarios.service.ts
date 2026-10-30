@@ -62,7 +62,7 @@ export class UsuariosService {
   /** Lista exclusivamente cuentas de recepción pertenecientes al tenant recibido. */
   listarRecepcionistas(negocioId: number): Promise<Usuario[]> {
     return this.usuarioRepository.find({
-      where: { negocioId, rol: Rol.RECEPCIONISTA },
+      where: { negocioId, rol: Rol.RECEPCIONISTA, inhabilitadoEn: IsNull() },
       order: { id: 'ASC' },
     });
   }
@@ -72,6 +72,7 @@ export class UsuariosService {
       id: usuarioId,
       negocioId,
       rol: Rol.RECEPCIONISTA,
+      inhabilitadoEn: IsNull(),
     });
     if (!usuario) throw new NotFoundException('Usuario no disponible.');
     return usuario;
@@ -164,6 +165,49 @@ export class UsuariosService {
     await this.cambiarAccesoRecepcionista(actorId, usuarioId, true, ahora);
   }
 
+  /** La marca mantiene identidad y correo; la sesión se revoca con el mismo commit. */
+  async inhabilitarRecepcionista(actorId: number, usuarioId: number, ahora: Date): Promise<Usuario> {
+    return this.usuarioRepository.manager.transaction('READ COMMITTED', async (manager) => {
+      const actor = await this.buscarActorAdministrador(manager, actorId);
+      await this.bloquearNegocioCupo(manager, actor.negocioId!);
+      const destino = await manager.getRepository(Usuario).createQueryBuilder('usuario')
+        .setLock('pessimistic_write')
+        .where('usuario.id = :usuarioId AND usuario.negocioId = :negocioId AND usuario.rol = :rol',
+          { usuarioId, negocioId: actor.negocioId, rol: Rol.RECEPCIONISTA }).getOne();
+      if (!destino) throw new NotFoundException('Usuario no disponible.');
+      if (destino.inhabilitadoEn !== null) return destino;
+      const antes = { activo: destino.activo, inhabilitadoEn: null };
+      destino.activo = false;
+      destino.inhabilitadoEn = new Date(ahora);
+      await manager.getRepository(Usuario).save(destino);
+      await manager.getRepository(Sesion).update({ usuarioId: destino.id, revocadaEn: IsNull() },
+        { revocadaEn: new Date(ahora) });
+      await this.auditoria.registrar(manager, { operacionId: randomUUID(),
+        actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: destino.id,
+        licenciaId: null, accion: 'recepcionista_inhabilitado',
+        valoresAntes: antes,
+        valoresDespues: { activo: false, inhabilitadoEn: destino.inhabilitadoEn.toISOString() } });
+      return destino;
+    });
+  }
+
+  async listarRecepcionistasInhabilitados(actorId: number): Promise<Usuario[]> {
+    const actor = await this.buscarActorAdministrador(this.usuarioRepository.manager, actorId);
+    return this.usuarioRepository.createQueryBuilder('usuario')
+      .where('usuario.negocioId = :negocioId AND usuario.rol = :rol AND usuario.inhabilitadoEn IS NOT NULL',
+        { negocioId: actor.negocioId, rol: Rol.RECEPCIONISTA })
+      .orderBy('usuario.id', 'ASC').getMany();
+  }
+
+  async buscarRecepcionistaInhabilitado(actorId: number, usuarioId: number): Promise<Usuario> {
+    const actor = await this.buscarActorAdministrador(this.usuarioRepository.manager, actorId);
+    const usuario = await this.usuarioRepository.createQueryBuilder('usuario')
+      .where('usuario.id = :usuarioId AND usuario.negocioId = :negocioId AND usuario.rol = :rol AND usuario.inhabilitadoEn IS NOT NULL',
+        { usuarioId, negocioId: actor.negocioId, rol: Rol.RECEPCIONISTA }).getOne();
+    if (!usuario) throw new NotFoundException('Usuario no disponible.');
+    return usuario;
+  }
+
   /**
    * Bloquea la cuenta propia y confirma hash, revocación y auditoría juntos.
    * El estado activo y los datos de identidad quedan fuera de esta operación.
@@ -185,6 +229,7 @@ export class UsuariosService {
         )
         .getOne();
       if (!destino) throw new NotFoundException('Usuario no disponible.');
+      if (destino.inhabilitadoEn !== null) throw new ConflictException('Restaura primero a Recepción.');
       this.exigirRecepcionistaCompleto(destino);
 
       await manager.getRepository(Usuario).update(destino.id, { passwordHash });
@@ -229,6 +274,7 @@ export class UsuariosService {
         .getOne();
       if (!destino) throw new NotFoundException('Usuario no disponible.');
       this.exigirRecepcionistaCompleto(destino);
+      if (destino.inhabilitadoEn !== null) throw new ConflictException('Restaura primero a Recepción.');
       if (destino.activo === activo) return;
       if (activo) await exigirCupoDisponible(manager, actor.negocioId!, Rol.RECEPCIONISTA);
 
@@ -254,11 +300,12 @@ export class UsuariosService {
 
   /** Revalida rol y pertenencia desde la base antes de autorizar una mutación. */
   private async buscarActorAdministrador(manager: EntityManager, actorId: number): Promise<Usuario> {
-    const actor = await manager.getRepository(Usuario).createQueryBuilder('actor')
-      .setLock('pessimistic_read')
-      .where('actor.id = :actorId', { actorId })
-      .getOne();
-    if (!actor || actor.rol !== Rol.ADMIN_NEGOCIO || actor.negocioId === null) {
+    const consulta = manager.getRepository(Usuario).createQueryBuilder('actor')
+      .where('actor.id = :actorId', { actorId });
+    if (manager.queryRunner?.isTransactionActive) consulta.setLock('pessimistic_read');
+    const actor = await consulta.getOne();
+    if (!actor || !actor.activo || actor.inhabilitadoEn !== null ||
+      actor.rol !== Rol.ADMIN_NEGOCIO || actor.negocioId === null) {
       throw new ForbiddenException('Acceso denegado.');
     }
     return actor;

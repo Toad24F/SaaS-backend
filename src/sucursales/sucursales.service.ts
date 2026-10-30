@@ -10,16 +10,12 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { randomUUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import {
   AutorizacionService,
   Permiso,
 } from '../auth/services/autorizacion.service';
-import {
-  conflictoEliminacion,
-  exigirEliminacionElegible,
-} from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { CoordinacionHorarios } from '../horarios/coordinacion-horarios';
 import { Negocio } from '../negocios/entities/negocio.entity';
@@ -104,7 +100,7 @@ export class SucursalesService {
       Permiso.VER_SUCURSALES_PROPIAS,
     ]);
     return this.sucursales.find({
-      where: { negocioId: actor.negocioId! },
+      where: { negocioId: actor.negocioId!, inhabilitadoEn: IsNull() },
       order: { id: 'ASC' },
     });
   }
@@ -118,7 +114,27 @@ export class SucursalesService {
     const sucursal = await this.sucursales.findOneBy({
       id: sucursalId,
       negocioId: actor.negocioId!,
+      inhabilitadoEn: IsNull(),
     });
+    if (!sucursal) throw new NotFoundException('Sucursal no disponible.');
+    return sucursal;
+  }
+
+  /** Lecturas separadas: la sede retirada conserva horarios y asignaciones. */
+  async listarInhabilitadas(actorId: number): Promise<Sucursal[]> {
+    const actor = await this.actor(this.sucursales.manager, actorId,
+      Permiso.GESTIONAR_CATALOGO);
+    return this.sucursales.createQueryBuilder('sucursal')
+      .where('sucursal.negocioId = :negocioId AND sucursal.inhabilitadoEn IS NOT NULL',
+        { negocioId: actor.negocioId }).orderBy('sucursal.id', 'ASC').getMany();
+  }
+
+  async consultarInhabilitada(actorId: number, sucursalId: number): Promise<Sucursal> {
+    const actor = await this.actor(this.sucursales.manager, actorId,
+      Permiso.GESTIONAR_CATALOGO);
+    const sucursal = await this.sucursales.createQueryBuilder('sucursal')
+      .where('sucursal.id = :sucursalId AND sucursal.negocioId = :negocioId AND sucursal.inhabilitadoEn IS NOT NULL',
+        { sucursalId, negocioId: actor.negocioId }).getOne();
     if (!sucursal) throw new NotFoundException('Sucursal no disponible.');
     return sucursal;
   }
@@ -145,6 +161,7 @@ export class SucursalesService {
         actor.negocioId!,
         sucursalId,
       );
+      if (sucursal.inhabilitadoEn !== null) throw new ConflictException('Restaura primero la sucursal.');
       const antes = this.campos(sucursal);
       for (const campo of [
         'nombre',
@@ -213,6 +230,7 @@ export class SucursalesService {
         actor.negocioId!,
         sucursalId,
       );
+      if (sucursal.inhabilitadoEn !== null) throw new ConflictException('Restaura primero la sucursal.');
       if (!sucursal.activo) return;
       // Conservar la fila mantiene sus datos y futuras relaciones; el cupo la excluye.
       sucursal.activo = false;
@@ -229,43 +247,22 @@ export class SucursalesService {
     }, 'READ COMMITTED');
   }
 
-  async eliminar(actorId: number, sucursalId: number): Promise<void> {
-    try {
-      await transaccionIdentidad(this.sucursales.manager, async (manager) => {
-        const actor = await this.actor(
-          manager,
-          actorId,
-          Permiso.GESTIONAR_CATALOGO,
-        );
-        // Negocio y sucursal se bloquean en el mismo orden que las demás escrituras.
-        await this.bloquearNegocio(manager, actor.negocioId!);
-        const sucursal = await this.bloquearSucursal(
-          manager,
-          actor.negocioId!,
-          sucursalId,
-        );
-        await exigirEliminacionElegible(
-          manager,
-          'sucursal',
-          actor.negocioId!,
-          sucursalId,
-        );
-        await manager
-          .getRepository(Sucursal)
-          .delete({ id: sucursalId, negocioId: actor.negocioId! });
-        await this.registrar(
-          manager,
-          actor.id,
-          actor.negocioId!,
-          sucursalId,
-          'sucursal_eliminada',
-          this.campos(sucursal),
-          null,
-        );
-      }, 'READ COMMITTED');
-    } catch (error) {
-      conflictoEliminacion(error);
-    }
+  /** Retira solo la sede; ningún estado individual de cuentas o servicios cambia. */
+  async inhabilitar(actorId: number, sucursalId: number, ahora: Date): Promise<Sucursal> {
+    return transaccionIdentidad(this.sucursales.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId, Permiso.GESTIONAR_CATALOGO);
+      await this.bloquearNegocio(manager, actor.negocioId!);
+      const sucursal = await this.bloquearSucursal(manager, actor.negocioId!, sucursalId);
+      if (sucursal.inhabilitadoEn !== null) return sucursal;
+      const antes = { activo: sucursal.activo, inhabilitadoEn: null };
+      sucursal.activo = false;
+      sucursal.inhabilitadoEn = new Date(ahora);
+      await manager.getRepository(Sucursal).save(sucursal);
+      await this.registrar(manager, actor.id, actor.negocioId!, sucursalId,
+        'sucursal_inhabilitada', antes,
+        { activo: false, inhabilitadoEn: sucursal.inhabilitadoEn.toISOString() });
+      return sucursal;
+    }, 'READ COMMITTED');
   }
 
   async reactivar(
@@ -285,6 +282,7 @@ export class SucursalesService {
         negocio.id,
         sucursalId,
       );
+      if (sucursal.inhabilitadoEn !== null) throw new ConflictException('Restaura primero la sucursal.');
       if (sucursal.activo) return;
       if (
         (await this.contarActivas(manager, negocio.id)) >=

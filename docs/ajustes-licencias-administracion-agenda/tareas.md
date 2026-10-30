@@ -267,20 +267,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 5. Inhabilitación y restauración
 
-- [ ] **ALA-T061 — Implementar inhabilitación de profesional** · 25 min · Depende de: ALA-T060 · RF-22, RF-25–RF-26, RF-31
+- [x] **ALA-T061 — Implementar inhabilitación de profesional** · 25 min · Depende de: ALA-T060 · RF-22, RF-25–RF-26, RF-31
   Hecho cuando: Marca su cuenta inactiva/inhabilitada sin borrar perfil, credenciales, reservas de correo o relaciones; repetir no duplica auditoría.
+  Evidencia: [resultado T061–T065](resultados-tareas/resultado-t061-t065.md).
 
-- [ ] **ALA-T062 — Implementar inhabilitación de recepcionista** · 25 min · Depende de: ALA-T061 · RF-22, RF-25–RF-26, RF-31
+- [x] **ALA-T062 — Implementar inhabilitación de recepcionista** · 25 min · Depende de: ALA-T061 · RF-22, RF-25–RF-26, RF-31
   Hecho cuando: La cuenta conserva identidad e historial y deja de consumir cupo sin eliminarse.
+  Evidencia: [resultado T061–T065](resultados-tareas/resultado-t061-t065.md).
 
-- [ ] **ALA-T063 — Implementar inhabilitación de servicio** · 25 min · Depende de: ALA-T062 · RF-22–RF-24, RF-26, RF-31
+- [x] **ALA-T063 — Implementar inhabilitación de servicio** · 25 min · Depende de: ALA-T062 · RF-22–RF-24, RF-26, RF-31
   Hecho cuando: El servicio deja de operar y conserva costo, nombre y selecciones de profesionales y sucursales.
+  Evidencia: [resultado T061–T065](resultados-tareas/resultado-t061-t065.md).
 
-- [ ] **ALA-T064 — Implementar inhabilitación de sucursal** · 25 min · Depende de: ALA-T063 · RF-22–RF-24, RF-26, RF-30–RF-31
+- [x] **ALA-T064 — Implementar inhabilitación de sucursal** · 25 min · Depende de: ALA-T063 · RF-22–RF-24, RF-26, RF-30–RF-31
   Hecho cuando: La sucursal conserva asignaciones y horarios sin cambiar estados individuales de cuentas o servicios.
+  Evidencia: [resultado T061–T065](resultados-tareas/resultado-t061-t065.md).
 
-- [ ] **ALA-T065 — Bloquear sesiones de cuentas inhabilitadas** · 25 min · Depende de: ALA-T064 · RF-25, RF-64
+- [x] **ALA-T065 — Bloquear sesiones de cuentas inhabilitadas** · 25 min · Depende de: ALA-T064 · RF-25, RF-64
   Hecho cuando: Un test HTTP con sesión emitida antes de la baja y otro de inicio de sesión rechazan acceso inmediatamente.
+  Evidencia: [resultado T061–T065](resultados-tareas/resultado-t061-t065.md).
 
 - [ ] **ALA-T066 — Restaurar cuentas como inactivas** · 25 min · Depende de: ALA-T065 · RF-27, RF-31
   Hecho cuando: Profesional y recepcionista vuelven a consulta habitual inactivos; restaurarlos de nuevo no desactiva una activación posterior.

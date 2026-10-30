@@ -37,6 +37,7 @@ export class AuthService {
         if (
             !usuario ||//verifica si el usuario existe
             !usuario.activo ||//verifica si el usuario está activo
+            usuario.inhabilitadoEn != null ||//una baja recuperable impide nuevas sesiones
             usuario.activadoEn === null ||//verifica si el usuario ha sido activado
             !usuario.nombre ||//verifica si el usuario tiene un nombre
             !usuario.passwordHash//verifica si el usuario tiene un hash de contraseña
@@ -77,7 +78,8 @@ export class AuthService {
                 .setLock('pessimistic_write')//bloquea la fila del usuario para evitar cambios concurrentes
                 .where('usuario.id = :id', { id: usuario.id })
                 .getOne();
-            if (!vigente || !vigente.activo || vigente.activadoEn === null ||
+            if (!vigente || !vigente.activo || vigente.inhabilitadoEn != null ||
+                vigente.activadoEn === null ||
                 !vigente.nombre || vigente.passwordHash !== usuario.passwordHash) {
                 throw new UnauthorizedException(MENSAJE_RECHAZO);//si el usuario no es válido, lanza una excepción de no autorizado
             }
