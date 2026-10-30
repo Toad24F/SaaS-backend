@@ -12,6 +12,7 @@ export type EstadoIntentoReserva = 'preparado' | 'registrado' | 'no_registrado';
 @Index('uq_irp_sesion_clave', ['negocioId', 'sesionId', 'clave'], { unique: true })
 @Index('uq_irp_cita', ['negocioId', 'citaId'], { unique: true })
 @Index('idx_irp_apartado', ['negocioId', 'apartadoId'])
+@Index('uq_irp_intento_anterior', ['negocioId', 'intentoAnteriorId'], { unique: true })
 @Check('chk_irp_formulario_hash',
   'formulario_hash IS NULL OR CHAR_LENGTH(formulario_hash) = 64')
 export class IntentoReservaPublica {
@@ -41,6 +42,16 @@ export class IntentoReservaPublica {
     foreignKeyConstraintName: 'fk_irp_apartado' },
   { name: 'apartado_id', referencedColumnName: 'id' }])
   apartado: BloqueoTemporal;
+
+  // Solo un intento puede suceder a cada rechazo terminal; NULL indica raíz.
+  @Column({ name: 'intento_anterior_id', type: 'bigint', unsigned: true, nullable: true })
+  intentoAnteriorId: string | null;
+
+  @ManyToOne(() => IntentoReservaPublica, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([{ name: 'negocio_id', referencedColumnName: 'negocioId',
+    foreignKeyConstraintName: 'fk_irp_intento_anterior' },
+  { name: 'intento_anterior_id', referencedColumnName: 'id' }])
+  intentoAnterior: IntentoReservaPublica | null;
 
   // Preparar un intento no recibe todavía contacto; la huella se fija al enviar.
   @Column({ name: 'formulario_hash', type: 'char', length: 64, nullable: true })

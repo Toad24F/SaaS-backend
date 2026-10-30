@@ -1099,3 +1099,29 @@ ALTER TABLE bloqueos_temporales
   ADD CONSTRAINT chk_bt_fin_ocupacion CHECK (
     fin_ocupacion_utc IS NULL OR
     fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
+
+-- ALA-T023–T024: NULL mantiene citas anteriores y manuales sin origen inventado.
+-- Un origen no nulo queda reservado por negocio y la búsqueda telefónica usa índice.
+ALTER TABLE citas
+  ADD apartado_origen_id INT UNSIGNED NULL,
+  ADD UNIQUE KEY uq_citas_apartado_origen (negocio_id,apartado_origen_id),
+  ADD INDEX idx_citas_contacto_sucursal_inicio
+    (negocio_id,sucursal_id,telefono_contacto,inicio_utc),
+  ADD CONSTRAINT fk_citas_apartado_origen
+    FOREIGN KEY (negocio_id,apartado_origen_id)
+    REFERENCES bloqueos_temporales(negocio_id,id) ON DELETE RESTRICT;
+
+-- ALA-T025–T026: primero se identifica el intento anterior; después el apartado
+-- apunta al intento actual. Las FKs compuestas impiden referencias de otro negocio.
+ALTER TABLE intentos_reserva_publica
+  ADD intento_anterior_id BIGINT UNSIGNED NULL,
+  ADD UNIQUE KEY uq_irp_intento_anterior (negocio_id,intento_anterior_id),
+  ADD CONSTRAINT fk_irp_intento_anterior
+    FOREIGN KEY (negocio_id,intento_anterior_id)
+    REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
+ALTER TABLE bloqueos_temporales
+  ADD intento_actual_id BIGINT UNSIGNED NULL,
+  ADD INDEX idx_bt_intento_actual (negocio_id,intento_actual_id),
+  ADD CONSTRAINT fk_bt_intento_actual
+    FOREIGN KEY (negocio_id,intento_actual_id)
+    REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;

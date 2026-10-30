@@ -6,6 +6,7 @@ import { Sucursal } from '../../sucursales/entities/sucursal.entity';
 import { Servicio } from '../../servicios/entities/servicio.entity';
 import { SesionReservaPublica } from '../../reservas-publicas/entities/sesion-reserva-publica.entity';
 import { OperacionApartado } from '../../reservas-publicas/entities/operacion-apartado.entity';
+import { IntentoReservaPublica } from '../../reservas-publicas/entities/intento-reserva-publica.entity';
 
 /** Apartado temporal con intervalo UTC y titular almacenado solo como hash. */
 @Entity({ name: 'bloqueos_temporales' })
@@ -16,6 +17,7 @@ import { OperacionApartado } from '../../reservas-publicas/entities/operacion-ap
 @Index('idx_bt_servicio', ['negocioId', 'servicioId'])
 @Index('idx_bt_sesion', ['negocioId', 'sesionId'])
 @Index('idx_bt_operacion', ['negocioId', 'operacionId'])
+@Index('idx_bt_intento_actual', ['negocioId', 'intentoActualId'])
 @Check('chk_bt_intervalo', 'fin_utc > inicio_utc')
 @Check('chk_bt_hash', 'CHAR_LENGTH(titular_hash) = 64')
 @Check('chk_bt_costo_aceptado', 'costo_aceptado IS NULL OR costo_aceptado >= 0')
@@ -124,6 +126,16 @@ export class BloqueoTemporal {
     foreignKeyConstraintName: 'fk_bt_operacion' },
   { name: 'operacion_id', referencedColumnName: 'id' }])
   operacion: OperacionApartado | null;
+
+  // El puntero cambia solo bajo la exclusión del apartado; la FK impide otro negocio.
+  @Column({ name: 'intento_actual_id', type: 'bigint', unsigned: true, nullable: true })
+  intentoActualId: string | null;
+
+  @ManyToOne(() => IntentoReservaPublica, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([{ name: 'negocio_id', referencedColumnName: 'negocioId',
+    foreignKeyConstraintName: 'fk_bt_intento_actual' },
+  { name: 'intento_actual_id', referencedColumnName: 'id' }])
+  intentoActual: IntentoReservaPublica | null;
 
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
   creadoEn: Date;

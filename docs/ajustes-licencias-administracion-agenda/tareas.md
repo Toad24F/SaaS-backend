@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T022 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T027 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -109,20 +109,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Citas históricas de prueba conservan extremos y obtienen separación cero; la migración no inventa condiciones de apartados operativos antiguos.
   Evidencia: [resultado y pruebas](resultados-tareas/resultado-t019-t022.md).
 
-- [ ] **ALA-T023 — Definir origen único de cita y consulta telefónica** · 25 min · Depende de: ALA-T022 · RF-56–RF-59, RF-65–RF-66
+- [x] **ALA-T023 — Definir origen único de cita y consulta telefónica** · 25 min · Depende de: ALA-T022 · RF-56–RF-59, RF-65–RF-66
   Hecho cuando: Entidad y esquema incluyen origen de apartado único por negocio e índice de contacto por negocio, sucursal e inicio.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t023-t027.md).
 
-- [ ] **ALA-T024 — Migrar origen e índice telefónico** · 25 min · Depende de: ALA-T023 · RF-56–RF-59, RF-65–RF-66
+- [x] **ALA-T024 — Migrar origen e índice telefónico** · 25 min · Depende de: ALA-T023 · RF-56–RF-59, RF-65–RF-66
   Hecho cuando: Se rechazan dos citas con el mismo apartado de origen y se conserva la posibilidad de clientes distintos con el mismo teléfono.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t023-t027.md).
 
-- [ ] **ALA-T025 — Definir sucesión de intentos y puntero actual** · 25 min · Depende de: ALA-T024 · RF-60, RF-65–RF-68
+- [x] **ALA-T025 — Definir sucesión de intentos y puntero actual** · 25 min · Depende de: ALA-T024 · RF-60, RF-65–RF-68
   Hecho cuando: El modelo representa predecesor y puntero de apartado con pertenencia compuesta y sin añadir un estado dependiente de procesos vivos.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t023-t027.md).
 
-- [ ] **ALA-T026 — Migrar relaciones de sucesión** · 25 min · Depende de: ALA-T025 · RF-60, RF-65–RF-68
+- [x] **ALA-T026 — Migrar relaciones de sucesión** · 25 min · Depende de: ALA-T025 · RF-60, RF-65–RF-68
   Hecho cuando: Las referencias nuevas se crean en orden válido, rechazan cruces de negocio y evitan dos sucesores del mismo intento.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t023-t027.md).
 
-- [ ] **ALA-T027 — Verificar equivalencia del esquema ampliado** · 25 min · Depende de: ALA-T026 · RF-01–RF-69
+- [x] **ALA-T027 — Verificar equivalencia del esquema ampliado** · 25 min · Depende de: ALA-T026 · RF-01–RF-69
   Hecho cuando: Una comparación de instalación por migraciones y esquema canónico no muestra diferencias en campos, índices o checks nuevos.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t023-t027.md).
 
 ## 3. Licencias y correo durable
 
