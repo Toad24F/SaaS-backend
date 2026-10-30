@@ -287,20 +287,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Un test HTTP con sesión emitida antes de la baja y otro de inicio de sesión rechazan acceso inmediatamente.
   Evidencia: [resultado T061–T065](resultados-tareas/resultado-t061-t065.md).
 
-- [ ] **ALA-T066 — Restaurar cuentas como inactivas** · 25 min · Depende de: ALA-T065 · RF-27, RF-31
+- [x] **ALA-T066 — Restaurar cuentas como inactivas** · 25 min · Depende de: ALA-T065 · RF-27, RF-31
   Hecho cuando: Profesional y recepcionista vuelven a consulta habitual inactivos; restaurarlos de nuevo no desactiva una activación posterior.
+  Evidencia: [resultado T066–T070](resultados-tareas/resultado-t066-t070.md).
 
-- [ ] **ALA-T067 — Restaurar servicios y sucursales como inactivos** · 25 min · Depende de: ALA-T066 · RF-27, RF-30–RF-31
+- [x] **ALA-T067 — Restaurar servicios y sucursales como inactivos** · 25 min · Depende de: ALA-T066 · RF-27, RF-30–RF-31
   Hecho cuando: Restauración no habilita oferta ni modifica estados de relacionados y reactivar requiere las condiciones vigentes.
+  Evidencia: [resultado T066–T070](resultados-tareas/resultado-t066-t070.md).
 
-- [ ] **ALA-T068 — Separar consultas habituales e inhabilitados** · 25 min · Depende de: ALA-T067 · RF-23–RF-24, RF-31, RF-64
+- [x] **ALA-T068 — Separar consultas habituales e inhabilitados** · 25 min · Depende de: ALA-T067 · RF-23–RF-24, RF-31, RF-64
   Hecho cuando: Listados/detalles habituales omiten bajas y consultas específicas solo entregan registros del administrador propietario.
+  Evidencia: [resultado T066–T070](resultados-tareas/resultado-t066-t070.md).
 
-- [ ] **ALA-T069 — Exponer operaciones de inhabilitación de cuentas** · 25 min · Depende de: ALA-T068 · RF-22–RF-27, RF-31, RF-64
+- [x] **ALA-T069 — Exponer operaciones de inhabilitación de cuentas** · 25 min · Depende de: ALA-T068 · RF-22–RF-27, RF-31, RF-64
   Hecho cuando: Endpoints de profesionales y recepción devuelven estado verificable; otros roles y negocios no pueden ejecutar ni consultar la baja.
+  Evidencia: [resultado T066–T070](resultados-tareas/resultado-t066-t070.md).
 
-- [ ] **ALA-T070 — Exponer operaciones de inhabilitación de catálogo** · 25 min · Depende de: ALA-T069 · RF-22–RF-27, RF-31, RF-64
+- [x] **ALA-T070 — Exponer operaciones de inhabilitación de catálogo** · 25 min · Depende de: ALA-T069 · RF-22–RF-27, RF-31, RF-64
   Hecho cuando: Endpoints de servicios y sucursales distinguen restaurar de reactivar y rechazan activar directamente inhabilitados.
+  Evidencia: [resultado T066–T070](resultados-tareas/resultado-t066-t070.md).
 
 - [ ] **ALA-T071 — Retirar borrado físico de los recursos incluidos** · 25 min · Depende de: ALA-T070 · RF-22–RF-24
   Hecho cuando: DELETE anteriores devuelven 404 sin escritura y una búsqueda de llamadas confirma que las nuevas bajas no invocan eliminación física.

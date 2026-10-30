@@ -72,6 +72,14 @@ export class ServiciosController {
       this.reloj.ahora()));
   }
 
+  @Post(':id/restaurar')
+  @HttpCode(HttpStatus.OK)
+  async restaurar(@Param() parametros: ServicioIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    // La activación sigue siendo un comando distinto con sus validaciones vigentes.
+    return this.presentar(await this.servicios.restaurar(actor.sub, parametros.id));
+  }
+
   @Post(':id/reactivar')
   @HttpCode(HttpStatus.NO_CONTENT)
   reactivar(@Param() parametros: ServicioIdDto, @Body() _datos: SinCamposDto,

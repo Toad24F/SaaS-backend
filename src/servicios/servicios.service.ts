@@ -175,6 +175,23 @@ export class ServiciosService {
     }, 'READ COMMITTED');
   }
 
+  /** La restauración recupera visibilidad; no vuelve a ofrecer el servicio. */
+  async restaurar(actorId: number, id: number): Promise<Servicio> {
+    return transaccionIdentidad(this.servicios.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      const servicio = await this.bloquear(manager, actor.negocioId!, id);
+      if (servicio.inhabilitadoEn === null) return servicio;
+      const antes = this.campos(servicio);
+      servicio.activo = false;
+      servicio.inhabilitadoEn = null;
+      await manager.getRepository(Servicio).save(servicio);
+      await this.registrar(manager, actor, servicio, 'servicio_restaurado', antes,
+        this.campos(servicio));
+      return servicio;
+    }, 'READ COMMITTED');
+  }
+
   private validar<T extends object>(tipo: new () => T, valor: T): T {
     const datos = plainToInstance(tipo, valor);
     const errores = validateSync(datos, { whitelist: true, forbidNonWhitelisted: true });

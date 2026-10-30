@@ -265,6 +265,25 @@ export class SucursalesService {
     }, 'READ COMMITTED');
   }
 
+  /** Conserva horarios y asignaciones; la reactivación comprueba cupo y solapes. */
+  async restaurar(actorId: number, sucursalId: number): Promise<Sucursal> {
+    return transaccionIdentidad(this.sucursales.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId, Permiso.GESTIONAR_CATALOGO);
+      await this.bloquearNegocio(manager, actor.negocioId!);
+      const sucursal = await this.bloquearSucursal(manager, actor.negocioId!, sucursalId);
+      // Repetir después de una activación no revierte el estado activo.
+      if (sucursal.inhabilitadoEn === null) return sucursal;
+      const antes = { activo: sucursal.activo,
+        inhabilitadoEn: sucursal.inhabilitadoEn.toISOString() };
+      sucursal.activo = false;
+      sucursal.inhabilitadoEn = null;
+      await manager.getRepository(Sucursal).save(sucursal);
+      await this.registrar(manager, actor.id, actor.negocioId!, sucursal.id,
+        'sucursal_restaurada', antes, { activo: false, inhabilitadoEn: null });
+      return sucursal;
+    }, 'READ COMMITTED');
+  }
+
   async reactivar(
     actorId: number,
     sucursalId: number,

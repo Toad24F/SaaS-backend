@@ -16,6 +16,7 @@ import { CodigosModule } from './codigos/codigos.module';
 import { AltasModule } from './altas/altas.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { Licencia } from './licencias/entities/licencia.entity';
+import { OperacionLicencia } from './licencias/entities/operacion-licencia.entity';
 import { CodigoAcceso } from './codigos/entities/codigo-acceso.entity';
 import { Sesion } from './auth/entities/sesion.entity';
 import { LimiteIntentos } from './auth/entities/limite-intentos.entity';
@@ -50,6 +51,7 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       .overrideProvider(getRepositoryToken(Usuario)).useValue({})
       .overrideProvider(getRepositoryToken(Negocio)).useValue({})
       .overrideProvider(getRepositoryToken(Licencia)).useValue({})
+      .overrideProvider(getRepositoryToken(OperacionLicencia)).useValue({})
       .overrideProvider(getRepositoryToken(CodigoAcceso)).useValue({})
       .overrideProvider(getRepositoryToken(Sesion)).useValue({})
       .overrideProvider(getRepositoryToken(LimiteIntentos)).useValue({})

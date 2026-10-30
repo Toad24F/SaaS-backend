@@ -75,6 +75,13 @@ export class SucursalesController {
       this.reloj.ahora()));
   }
 
+  @Post(':id/restaurar')
+  @HttpCode(HttpStatus.OK)
+  async restaurar(@Param() parametros: SucursalIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.sucursales.restaurar(actor.sub, parametros.id));
+  }
+
   @Post(':id/reactivar')
   @HttpCode(HttpStatus.NO_CONTENT)
   reactivar(@Param() parametros: SucursalIdDto, @Body() _datos: SinCamposDto,

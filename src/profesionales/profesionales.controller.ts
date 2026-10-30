@@ -75,6 +75,14 @@ export class ProfesionalesController {
     return this.profesionales.inhabilitar(actor.sub, parametros.id, this.reloj.ahora());
   }
 
+  @Post(':id/restaurar')
+  @HttpCode(HttpStatus.OK)
+  restaurar(@Param() parametros: ProfesionalIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    // Estado verificable; no se concede acceso hasta la reactivación separada.
+    return this.profesionales.restaurar(actor.sub, parametros.id);
+  }
+
   @Post(':id/reactivar')
   @HttpCode(HttpStatus.NO_CONTENT)
   reactivar(@Param() parametros: ProfesionalIdDto, @Body() _datos: SinCamposDto,

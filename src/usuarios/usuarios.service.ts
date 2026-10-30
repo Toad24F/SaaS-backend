@@ -191,6 +191,31 @@ export class UsuariosService {
     });
   }
 
+  /** Limpia la marca sin devolver acceso ni consumir cupo hasta reactivar. */
+  async restaurarRecepcionista(actorId: number, usuarioId: number): Promise<Usuario> {
+    return this.usuarioRepository.manager.transaction('READ COMMITTED', async (manager) => {
+      const actor = await this.buscarActorAdministrador(manager, actorId);
+      await this.bloquearNegocioCupo(manager, actor.negocioId!);
+      const destino = await manager.getRepository(Usuario).createQueryBuilder('usuario')
+        .setLock('pessimistic_write')
+        .where('usuario.id = :usuarioId AND usuario.negocioId = :negocioId AND usuario.rol = :rol',
+          { usuarioId, negocioId: actor.negocioId, rol: Rol.RECEPCIONISTA }).getOne();
+      if (!destino) throw new NotFoundException('Usuario no disponible.');
+      // El retorno temprano conserva una reactivación realizada entre dos intentos.
+      if (destino.inhabilitadoEn === null) return destino;
+      const antes = { activo: destino.activo,
+        inhabilitadoEn: destino.inhabilitadoEn.toISOString() };
+      destino.activo = false;
+      destino.inhabilitadoEn = null;
+      await manager.getRepository(Usuario).save(destino);
+      await this.auditoria.registrar(manager, { operacionId: randomUUID(),
+        actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: destino.id,
+        licenciaId: null, accion: 'recepcionista_restaurado', valoresAntes: antes,
+        valoresDespues: { activo: false, inhabilitadoEn: null } });
+      return destino;
+    });
+  }
+
   async listarRecepcionistasInhabilitados(actorId: number): Promise<Usuario[]> {
     const actor = await this.buscarActorAdministrador(this.usuarioRepository.manager, actorId);
     return this.usuarioRepository.createQueryBuilder('usuario')

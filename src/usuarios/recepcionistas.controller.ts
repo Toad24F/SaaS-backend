@@ -82,6 +82,14 @@ export class RecepcionistasController {
       actor.sub, parametros.id, this.reloj.ahora()));
   }
 
+  @Post(':id/restaurar')
+  @HttpCode(HttpStatus.OK)
+  async restaurar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    // La proyección de respuesta mantiene la contraseña fuera del contrato HTTP.
+    return this.presentar(await this.usuarios.restaurarRecepcionista(actor.sub, parametros.id));
+  }
+
   @Post(':id/reactivar')
   @HttpCode(HttpStatus.NO_CONTENT)
   reactivar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {

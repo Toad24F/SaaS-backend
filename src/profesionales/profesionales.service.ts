@@ -218,6 +218,26 @@ export class ProfesionalesService {
     }, 'READ COMMITTED');
   }
 
+  /** Restaurar solo recupera la consulta; la activación posterior valida el cupo. */
+  async restaurar(actorId: number, id: number): Promise<PerfilProfesional> {
+    return transaccionIdentidad(this.perfiles.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
+      const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+      // Un reintento tras reactivar conserva activo=true y no escribe auditoría.
+      if (usuario.inhabilitadoEn === null) return this.vista(perfil, usuario);
+      const antes = { activo: usuario.activo,
+        inhabilitadoEn: usuario.inhabilitadoEn.toISOString() };
+      usuario.activo = false;
+      usuario.inhabilitadoEn = null;
+      await manager.getRepository(Usuario).save(usuario);
+      await this.registrar(manager, actor, perfil, 'profesional_restaurado', antes,
+        { activo: false, inhabilitadoEn: null });
+      return this.vista(perfil, usuario);
+    }, 'READ COMMITTED');
+  }
+
   async listarSucursales(actorId: number, id: number): Promise<number[]> {
     const actor = await this.actor(this.perfiles.manager, actorId);
     await this.perfilPropio(this.perfiles.manager, actor.negocioId!, id);
