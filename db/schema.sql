@@ -966,3 +966,28 @@ CREATE TABLE envios_correo (
     (estado = 'enviado' AND confirmado_en IS NOT NULL)
     OR (estado <> 'enviado' AND confirmado_en IS NULL))
 ) ENGINE=InnoDB;
+
+-- ALA-T008–T009: límites iniciales por negocio y proyección pública de precios.
+-- El consumo de cupos se deriva de usuarios; estos campos solo guardan máximos.
+ALTER TABLE negocios
+  ADD limite_profesionales_activos INT UNSIGNED NOT NULL DEFAULT 5,
+  ADD limite_recepcionistas_activos INT UNSIGNED NOT NULL DEFAULT 3,
+  ADD mostrar_precios_publicos TINYINT(1) NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_negocios_limite_profesionales CHECK (limite_profesionales_activos >= 1),
+  ADD CONSTRAINT chk_negocios_limite_recepcionistas CHECK (limite_recepcionistas_activos >= 1),
+  ADD CONSTRAINT chk_negocios_mostrar_precios CHECK (mostrar_precios_publicos IN (0, 1));
+
+-- ALA-T010–T012: inhabilitar exige desactivar, pero conserva identidad y unicidad.
+-- Personal hereda el estado de usuarios y no recibe una columna duplicada.
+ALTER TABLE usuarios
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_usuarios_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+ALTER TABLE servicios
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_servicios_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+ALTER TABLE sucursales
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_sucursales_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);

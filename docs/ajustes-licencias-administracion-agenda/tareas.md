@@ -1,8 +1,8 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta de trabajo futuro pendiente de aprobación; ALA-T001–ALA-T007 acreditan solo la preparación documental y los controles de prueba del bloque 1. Las tareas posteriores permanecen pendientes.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T012 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
-Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en esta entrega documental.
+Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
 ## Reglas de ejecución y evidencia
 
@@ -49,20 +49,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 2. Entidades, esquema y migraciones
 
-- [ ] **ALA-T008 — Definir persistencia de cupos y visibilidad del negocio** · 25 min · Depende de: ALA-T007 · RF-16–RF-18, RF-32
+- [x] **ALA-T008 — Definir persistencia de cupos y visibilidad del negocio** · 25 min · Depende de: ALA-T007 · RF-16–RF-18, RF-32
   Hecho cuando: Entidad y esquema declaran cupos 5/3 positivos y visibilidad verdadera; una comprobación de metadatos confirma nombres y valores.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t008-t012.md).
 
-- [ ] **ALA-T009 — Añadir migración de cupos y visibilidad** · 25 min · Depende de: ALA-T008 · RF-16–RF-18, RF-32
+- [x] **ALA-T009 — Añadir migración de cupos y visibilidad** · 25 min · Depende de: ALA-T008 · RF-16–RF-18, RF-32
   Hecho cuando: La migración nueva aplica en base desechable y sus checks rechazan cero sin modificar migraciones históricas.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t008-t012.md).
 
-- [ ] **ALA-T010 — Definir inhabilitación en cuentas** · 25 min · Depende de: ALA-T009 · RF-22–RF-27
+- [x] **ALA-T010 — Definir inhabilitación en cuentas** · 25 min · Depende de: ALA-T009 · RF-22–RF-27
   Hecho cuando: Usuario incorpora marca anulable y coherencia con activo; Personal sigue obteniendo estado de Usuario y no duplica la identidad.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t008-t012.md).
 
-- [ ] **ALA-T011 — Definir inhabilitación en servicios y sucursales** · 25 min · Depende de: ALA-T010 · RF-22–RF-27
+- [x] **ALA-T011 — Definir inhabilitación en servicios y sucursales** · 25 min · Depende de: ALA-T010 · RF-22–RF-27
   Hecho cuando: Entidades y esquema conservan claves únicas y distinguen inactivo de inhabilitado mediante restricciones verificadas.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t008-t012.md).
 
-- [ ] **ALA-T012 — Migrar marcas de inhabilitación** · 25 min · Depende de: ALA-T011 · RF-22–RF-27, RF-31
+- [x] **ALA-T012 — Migrar marcas de inhabilitación** · 25 min · Depende de: ALA-T011 · RF-22–RF-27, RF-31
   Hecho cuando: Una base desechable admite las nuevas marcas, rechaza inhabilitado activo y conserva nombres, correos y relaciones previas.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t008-t012.md).
 
 - [ ] **ALA-T013 — Definir plazo y ciclo de suspensión** · 25 min · Depende de: ALA-T012 · RF-03–RF-15
   Hecho cuando: Entidad y esquema incorporan plazo 0–30 y versión de suspensión sin sustituir el remanente ni la versión de vencimiento.

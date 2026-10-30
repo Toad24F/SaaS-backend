@@ -12,6 +12,7 @@ import { Personal } from '../../profesionales/entities/personal.entity';
 @Check('chk_servicios_costo', 'costo >= 0')
 @Check('chk_servicios_duracion', 'duracion_minutos > 0')
 @Check('chk_servicios_activo', 'activo IN (0, 1)')
+@Check('chk_servicios_inhabilitado_inactivo', 'inhabilitado_en IS NULL OR activo = 0')
 export class Servicio {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -50,6 +51,10 @@ export class Servicio {
   // Estado global: las futuras selecciones individuales se guardarán aparte.
   @Column({ type: 'boolean', default: true })
   activo: boolean;
+
+  // Inactivo conserva visibilidad administrativa; inhabilitado se consulta aparte.
+  @Column({ name: 'inhabilitado_en', type: 'datetime', precision: 6, nullable: true })
+  inhabilitadoEn: Date | null;
 
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
   creadoEn: Date;

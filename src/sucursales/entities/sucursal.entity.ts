@@ -10,6 +10,7 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 @Check('chk_sucursales_direccion', 'CHAR_LENGTH(TRIM(direccion)) > 0')
 @Check('chk_sucursales_telefono', 'CHAR_LENGTH(TRIM(telefono)) > 0')
 @Check('chk_sucursales_zona', 'CHAR_LENGTH(TRIM(zona_horaria)) > 0')
+@Check('chk_sucursales_inhabilitado_inactivo', 'inhabilitado_en IS NULL OR activo = 0')
 export class Sucursal {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -55,6 +56,10 @@ export class Sucursal {
   // La desactivación conserva datos y permite contar solo sucursales activas.
   @Column({ type: 'boolean', default: true })
   activo: boolean;
+
+  // La marca no borra relaciones ni nombres únicos; restaurar deberá dejar activo=false.
+  @Column({ name: 'inhabilitado_en', type: 'datetime', precision: 6, nullable: true })
+  inhabilitadoEn: Date | null;
 
   @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 6 })
   creadoEn: Date;
