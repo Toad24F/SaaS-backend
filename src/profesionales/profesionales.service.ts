@@ -311,7 +311,9 @@ export class ProfesionalesService {
     const actor = await this.actorServicios(manager, actorId);
     await this.perfilParaServicios(manager, actor, id);
     const [catalogo, relaciones] = await Promise.all([
-      manager.getRepository(Servicio).find({ where: { negocioId: actor.negocioId! },
+      // La lista habitual conserva inactivos históricos, pero no retirados.
+      manager.getRepository(Servicio).find({ where: { negocioId: actor.negocioId!,
+        inhabilitadoEn: IsNull() },
         order: { id: 'ASC' } }),
       manager.getRepository(PersonalServicio).findBy({ negocioId: actor.negocioId!,
         personalId: id }),
@@ -390,7 +392,8 @@ export class ProfesionalesService {
     const sucursal = await manager.getRepository(Sucursal).findOneBy({
       id: sucursalId, negocioId: actor.negocioId! });
     if (!sucursal) throw new NotFoundException('Sucursal no disponible.');
-    if (!sucursal.activo) return [];
+    // La oferta de sede nunca reintroduce un recurso retirado por sus relaciones.
+    if (!sucursal.activo || sucursal.inhabilitadoEn !== null) return [];
     // La oferta exige selección, asignación y preferencia individual activas.
     return manager.getRepository(Servicio).createQueryBuilder('servicio')
       .distinct(true)
@@ -406,7 +409,8 @@ export class ProfesionalesService {
         'oferta.negocioId = seleccion.negocioId AND oferta.personalId = seleccion.personalId'
         + ' AND oferta.servicioId = seleccion.servicioId'
         + ' AND oferta.sucursalId = asignacion.sucursalId')
-      .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo',
+      .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo'
+        + ' AND servicio.inhabilitadoEn IS NULL AND cuenta.inhabilitadoEn IS NULL',
         { negocioId: actor.negocioId, activo: true })
       .andWhere('seleccion.activo = :activo AND asignacion.activo = :activo'
         + ' AND oferta.activo = :activo AND asignacion.sucursalId = :sucursalId', { sucursalId })
@@ -452,7 +456,10 @@ export class ProfesionalesService {
               const estado = derivarEstadoOferta({ asignado: true,
                 cuentaActiva: cuenta.activo, sucursalActiva: sucursal.activo,
                 servicioActivo: servicio.activo, seleccionGeneralActiva,
-                atencionActiva: asignacion.activo, seleccionSucursalActiva });
+                atencionActiva: asignacion.activo, seleccionSucursalActiva,
+                cuentaInhabilitada: cuenta.inhabilitadoEn !== null,
+                sucursalInhabilitada: sucursal.inhabilitadoEn !== null,
+                servicioInhabilitado: servicio.inhabilitadoEn !== null });
               return { id: servicio.id, nombre: servicio.nombre,
                 servicioActivo: servicio.activo, seleccionGeneralActiva,
                 seleccionSucursalActiva, ...estado };

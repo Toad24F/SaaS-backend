@@ -98,12 +98,13 @@ export class CitasAfectadasService {
         if (cita.inicioUtc >= ahora) {
           const estado = await this.oferta.consultar(contexto, cita.sucursalId,
             cita.servicioId, 'publica');
-          // Solo desactivaciones futuras: reglas comerciales y duración de catálogo
-          // no recalculan el intervalo ya comprometido de la cita.
+          // El lector histórico distingue inhabilitación de inactividad sin
+          // recalcular el intervalo comprometido de la cita.
           for (const codigo of estado.motivosExclusion) {
-            const referenciaTipo = codigo === 'cuenta_inactiva' ? 'personal' :
-              codigo === 'sucursal_inactiva' ? 'sucursal' :
-              codigo === 'servicio_inactivo' ? 'servicio' : null;
+            const referenciaTipo = codigo === 'cuenta_inactiva' ||
+              codigo === 'cuenta_inhabilitada' ? 'personal' :
+              codigo === 'sucursal_inactiva' || codigo === 'sucursal_inhabilitada' ? 'sucursal' :
+              codigo === 'servicio_inactivo' || codigo === 'servicio_inhabilitado' ? 'servicio' : null;
             const referenciaId = referenciaTipo === 'personal' ? cita.personalId :
               referenciaTipo === 'sucursal' ? cita.sucursalId :
               referenciaTipo === 'servicio' ? cita.servicioId : null;

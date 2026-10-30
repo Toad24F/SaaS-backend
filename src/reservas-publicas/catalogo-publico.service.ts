@@ -26,6 +26,7 @@ export class CatalogoPublicoService {
       const negocio = await this.negocios.resolverEnContexto(manager, slug, ahora);
       // Cada JOIN usa negocio_id y cada estado activo: una selección parcial
       // nunca convierte un servicio o una sucursal en oferta pública.
+      // La marca se comprueba además del estado para excluir retiradas recuperables.
       const filas = await manager.query(`SELECT
         s.id AS servicioId, s.nombre AS servicioNombre, s.costo AS costo,
         s.duracion_minutos AS duracionMinutos, s.descripcion AS descripcion,
@@ -44,6 +45,8 @@ export class CatalogoPublicoService {
         JOIN servicios s ON s.negocio_id=pss.negocio_id AND s.id=pss.servicio_id
         WHERE pss.negocio_id=? AND pss.activo=1 AND ps.activo=1
           AND pv.activo=1 AND u.activo=1 AND u.activado_en IS NOT NULL
+          AND u.inhabilitado_en IS NULL AND su.inhabilitado_en IS NULL
+          AND s.inhabilitado_en IS NULL
           AND u.rol='profesional' AND su.activo=1 AND s.activo=1
         ORDER BY s.nombre,s.id,su.nombre,su.id,u.nombre,u.id`,
       [negocio.id]) as FilaOferta[];

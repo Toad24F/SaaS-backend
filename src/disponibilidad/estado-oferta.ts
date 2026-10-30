@@ -4,6 +4,10 @@ export interface FuentesOferta {
   sucursalActiva: boolean;
   cuentaActiva: boolean;
   servicioActivo: boolean;
+  // Las marcas separan una retirada recuperable de una simple desactivación.
+  sucursalInhabilitada?: boolean;
+  cuentaInhabilitada?: boolean;
+  servicioInhabilitado?: boolean;
   seleccionGeneralActiva: boolean;
   atencionActiva: boolean;
   seleccionSucursalActiva: boolean;
@@ -18,9 +22,12 @@ export interface EstadoOferta {
 export function derivarEstadoOferta(fuentes: FuentesOferta): EstadoOferta {
   const motivosExclusion: string[] = [];
   if (!fuentes.asignado) motivosExclusion.push('sucursal_no_asignada');
-  if (!fuentes.cuentaActiva) motivosExclusion.push('cuenta_inactiva');
-  if (!fuentes.sucursalActiva) motivosExclusion.push('sucursal_inactiva');
-  if (!fuentes.servicioActivo) motivosExclusion.push('servicio_inactivo');
+  if (fuentes.cuentaInhabilitada) motivosExclusion.push('cuenta_inhabilitada');
+  else if (!fuentes.cuentaActiva) motivosExclusion.push('cuenta_inactiva');
+  if (fuentes.sucursalInhabilitada) motivosExclusion.push('sucursal_inhabilitada');
+  else if (!fuentes.sucursalActiva) motivosExclusion.push('sucursal_inactiva');
+  if (fuentes.servicioInhabilitado) motivosExclusion.push('servicio_inhabilitado');
+  else if (!fuentes.servicioActivo) motivosExclusion.push('servicio_inactivo');
   if (!fuentes.seleccionGeneralActiva) motivosExclusion.push('servicio_no_seleccionado');
   if (!fuentes.atencionActiva && fuentes.asignado) motivosExclusion.push('atencion_inactiva');
   if (!fuentes.seleccionSucursalActiva) {

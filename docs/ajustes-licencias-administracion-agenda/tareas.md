@@ -307,17 +307,21 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Endpoints de servicios y sucursales distinguen restaurar de reactivar y rechazan activar directamente inhabilitados.
   Evidencia: [resultado T066–T070](resultados-tareas/resultado-t066-t070.md).
 
-- [ ] **ALA-T071 — Retirar borrado físico de los recursos incluidos** · 25 min · Depende de: ALA-T070 · RF-22–RF-24
+- [x] **ALA-T071 — Retirar borrado físico de los recursos incluidos** · 25 min · Depende de: ALA-T070 · RF-22–RF-24
   Hecho cuando: DELETE anteriores devuelven 404 sin escritura y una búsqueda de llamadas confirma que las nuevas bajas no invocan eliminación física.
+  Evidencia: [resultado T071–T074](resultados-tareas/resultado-t071-t074.md).
 
-- [ ] **ALA-T072 — Excluir inhabilitados de la oferta efectiva** · 25 min · Depende de: ALA-T071 · RF-23, RF-29–RF-30
+- [x] **ALA-T072 — Excluir inhabilitados de la oferta efectiva** · 25 min · Depende de: ALA-T071 · RF-23, RF-29–RF-30
   Hecho cuando: Catálogo y validación de oferta excluyen cualquier recurso inhabilitado sin borrar relaciones ni ocupaciones existentes.
+  Evidencia: [resultado T071–T074](resultados-tareas/resultado-t071-t074.md).
 
-- [ ] **ALA-T073 — Ampliar causas de citas afectadas** · 25 min · Depende de: ALA-T072 · RF-28–RF-30
+- [x] **ALA-T073 — Ampliar causas de citas afectadas** · 25 min · Depende de: ALA-T072 · RF-28–RF-30
   Hecho cuando: Cita futura conserva estado e intervalo y reporta inhabilitación junto a otras causas; restaurar no oculta causas todavía vigentes.
+  Evidencia: [resultado T071–T074](resultados-tareas/resultado-t071-t074.md).
 
-- [ ] **ALA-T074 — Verificar restauración y unicidad retenida** · 25 min · Depende de: ALA-T073 · RF-26–RF-27, RF-30
+- [x] **ALA-T074 — Verificar restauración y unicidad retenida** · 25 min · Depende de: ALA-T073 · RF-26–RF-27, RF-30
   Hecho cuando: No se reutilizan nombres/correos reservados; activar sucursal restaurada recupera solo oferta individual habilitada y rechaza conflictos reales.
+  Evidencia: [resultado T071–T074](resultados-tareas/resultado-t071-t074.md).
 
 ## 6. Publicación de precios
 
