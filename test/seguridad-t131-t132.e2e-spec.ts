@@ -210,7 +210,8 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
       const http = ctx.app.getHttpServer();
       const superInicial = await token(ctx, ctx.usuarios.super);
       const suspension = await request(http).post(`/licencias/${ctx.licenciaA.id}/suspender`)
-        .auth(superInicial, { type: 'bearer' }).send({}).expect(200);
+        .auth(superInicial, { type: 'bearer' })
+        .set('Idempotency-Key', 't132-suspender-1234567890123456').send({}).expect(200);
       expect(suspension.body.bloqueoProgramadoEn)
         .toBe(new Date(INICIO.getTime() + HORA_48).toISOString());
       // Las sesiones se abren dentro de la gracia y siguen vivas al llegar al límite.
@@ -318,10 +319,12 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
       await request(http).get(`/licencias/${ctx.licenciaA.id}/vigencia`)
         .auth(superadmin, { type: 'bearer' }).expect(200);
       await request(http).post(`/licencias/${ctx.licenciaA.id}/renovar`)
-        .auth(superadmin, { type: 'bearer' }).send({}).expect(200);
+        .auth(superadmin, { type: 'bearer' })
+        .set('Idempotency-Key', 't132-renovar-1234567890123456').send({}).expect(200);
       await request(http).get('/sucursales').auth(admin, { type: 'bearer' }).expect(401);
       await request(http).post(`/licencias/${ctx.licenciaA.id}/reactivar`)
-        .auth(superadmin, { type: 'bearer' }).send({}).expect(200);
+        .auth(superadmin, { type: 'bearer' })
+        .set('Idempotency-Key', 't132-reactivar-1234567890123456').send({}).expect(200);
       await request(http).get('/sucursales').auth(admin, { type: 'bearer' }).expect(200);
     });
   });

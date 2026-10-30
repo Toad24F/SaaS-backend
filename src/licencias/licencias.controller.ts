@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -9,6 +9,7 @@ import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
 import { LicenciaIdDto } from './dto/licencia-id.dto';
+import { SolicitarSuspensionDto, validarClaveOperacionLicencia } from './dto/operacion-licencia.dto';
 import { LicenciasService } from './licencias.service';
 import { ConsultaVigenciaLicenciasService } from './services/consulta-vigencia-licencias.service';
 
@@ -25,26 +26,32 @@ export class LicenciasController {
 
   @Post(':id/suspender')
   @HttpCode(HttpStatus.OK)
-  async suspender(@Param() parametros: LicenciaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
-    // Informa el plazo programado después de persistir la solicitud de suspensión.
-    await this.licencias.suspender(actor.sub, parametros.id, this.reloj.ahora());
-    return this.consultaVigencia.porId(parametros.id, this.reloj.ahora());
+  async suspender(@Param() parametros: LicenciaIdDto, @Body() datos: SolicitarSuspensionDto,
+    @Headers('idempotency-key') clave: string | undefined, @CurrentUser() actor: JwtPayload) {
+    // La clave se exige en HTTP; el servicio la comprueba otra vez antes de la transacción.
+    const resultado = await this.licencias.suspender(actor.sub, parametros.id,
+      this.reloj.ahora(), validarClaveOperacionLicencia(clave), datos.plazoDias);
+    return resultado.vista;
   }
 
   @Post(':id/reactivar')
   @HttpCode(HttpStatus.OK)
-  async reactivar(@Param() parametros: LicenciaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
-    // Devuelve la vigencia efectiva tras reanudar, sin activar cuentas ni negocios.
-    await this.licencias.reactivar(actor.sub, parametros.id, this.reloj.ahora());
-    return this.consultaVigencia.porId(parametros.id, this.reloj.ahora());
+  async reactivar(@Param() parametros: LicenciaIdDto, @Body() _datos: SinCamposDto,
+    @Headers('idempotency-key') clave: string | undefined, @CurrentUser() actor: JwtPayload) {
+    // Repetir la clave devuelve la vista guardada, sin consultar un estado posterior.
+    const resultado = await this.licencias.reactivar(actor.sub, parametros.id,
+      this.reloj.ahora(), validarClaveOperacionLicencia(clave));
+    return resultado.vista;
   }
 
   @Post(':id/renovar')
   @HttpCode(HttpStatus.OK)
-  async renovar(@Param() parametros: LicenciaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
-    // Cada solicitud suma un año calendario; la respuesta incluye el vencimiento resultante.
-    await this.licencias.renovar(actor.sub, parametros.id, this.reloj.ahora());
-    return this.consultaVigencia.porId(parametros.id, this.reloj.ahora());
+  async renovar(@Param() parametros: LicenciaIdDto, @Body() _datos: SinCamposDto,
+    @Headers('idempotency-key') clave: string | undefined, @CurrentUser() actor: JwtPayload) {
+    // Solo una clave nueva inicia otra anualidad; la repetida conserva el cuerpo original.
+    const resultado = await this.licencias.renovar(actor.sub, parametros.id,
+      this.reloj.ahora(), validarClaveOperacionLicencia(clave));
+    return resultado.vista;
   }
 
   @Get('mi-vigencia')

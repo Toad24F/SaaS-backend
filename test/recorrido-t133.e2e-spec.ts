@@ -123,7 +123,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         const licencia = await db.getRepository(Licencia).findOneByOrFail({ negocioId: alta.negocioId });
         const suspendidaEn = reloj.ahora();
         await request(http).post(`/licencias/${licencia.id}/suspender`)
-          .auth(superToken, { type: 'bearer' }).send({}).expect(200);
+          .auth(superToken, { type: 'bearer' })
+          .set('Idempotency-Key', 't133-suspender-1234567890123456').send({}).expect(200);
         await request(http).get(`${ruta}/horario`)
           .auth(profToken, { type: 'bearer' }).expect(200);
         // Sesiones emitidas al final de la gracia evitan atribuir el 401 a su caducidad.
@@ -140,7 +141,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         await request(http).get(`${ruta}/horario`)
           .auth(profVigente, { type: 'bearer' }).expect(401);
         await request(http).post(`/licencias/${licencia.id}/reactivar`)
-          .auth(superVigente, { type: 'bearer' }).send({}).expect(200);
+          .auth(superVigente, { type: 'bearer' })
+          .set('Idempotency-Key', 't133-reactivar-1234567890123456').send({}).expect(200);
         expect((await request(http).get(`${ruta}/horario`)
           .auth(profVigente, { type: 'bearer' }).expect(200)).body).toEqual(semana);
         expect((await oferta()).map((item) => item.id)).toEqual([servicio.id]);

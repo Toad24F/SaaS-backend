@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T034 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T035 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -159,8 +159,9 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Reactivar restituye el remanente exacto desde el instante de reactivación; renovar previamente no levanta la suspensión.
   Evidencia: [resultado y pruebas](resultados-tareas/resultado-t028-t034.md).
 
-- [ ] **ALA-T035 — Exponer operaciones HTTP idempotentes de licencia** · 25 min · Depende de: ALA-T034 · RF-03–RF-15, RF-64
+- [x] **ALA-T035 — Exponer operaciones HTTP idempotentes de licencia** · 25 min · Depende de: ALA-T034 · RF-03–RF-15, RF-64
   Hecho cuando: Los tres endpoints exigen superadmin y clave, aceptan sus cuerpos previstos y reproducen la operación sin ejecutar una segunda transición.
+  Evidencia: [resultado y pruebas](resultados-tareas/resultado-t035.md).
 
 - [ ] **ALA-T036 — Definir deduplicación de los nuevos avisos** · 25 min · Depende de: ALA-T035 · RF-01–RF-15
   Hecho cuando: Pruebas confirman claves diferentes por umbral/ciclo/operación y estabilidad de la clave al reintentar el mismo aviso.

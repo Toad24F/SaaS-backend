@@ -40,8 +40,14 @@ async function login(app: INestApplication, email: string, password = PASSWORD_T
   return respuesta.body.accessToken as string;
 }
 
+let operacionesLicencia = 0;
 function post(app: INestApplication, ruta: string, token: string, body: object = {}) {
-  return request(app.getHttpServer()).post(ruta).auth(token, { type: 'bearer' }).send(body);
+  const peticion = request(app.getHttpServer()).post(ruta).auth(token, { type: 'bearer' });
+  // Cada transición intencional del recorrido usa una clave independiente.
+  if (/^\/licencias\/\d+\/(suspender|reactivar|renovar)$/.test(ruta)) {
+    peticion.set('Idempotency-Key', `t51-operacion-${++operacionesLicencia}-1234567890123456`);
+  }
+  return peticion.send(body);
 }
 
 describe('T51 y T58–T60 — recorridos HTTP completos', () => {

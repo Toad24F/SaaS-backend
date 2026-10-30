@@ -70,9 +70,14 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
 // Cada petición se construye al ejecutarla; actor y hora nunca se envían en el cuerpo.
 const acciones = ['suspender', 'reactivar', 'renovar'] as const;
 type Accion = typeof acciones[number];
+let renovacionSecuencia = 0;
+// Suspender y reactivar repiten su clave; cada renovación intencional recibe otra.
 const operar = (ctx: Contexto, accion: Accion, id: number | string = ctx.licencias[0].id,
   token = ctx.tokens[0], body: object = {}) => request(ctx.app.getHttpServer())
-  .post(`/licencias/${id}/${accion}`).auth(token, { type: 'bearer' }).send(body);
+  .post(`/licencias/${id}/${accion}`).auth(token, { type: 'bearer' })
+  .set('Idempotency-Key', accion === 'renovar'
+    ? `t50-renovar-${++renovacionSecuencia}-1234567890123456`
+    : `t50-${accion}-1234567890123456`).send(body);
 const perfil = (ctx: Contexto, indice: number) => request(ctx.app.getHttpServer())
   .get('/auth/profile').auth(ctx.tokens[indice], { type: 'bearer' });
 const licencia = (ctx: Contexto, id = ctx.licencias[0].id) => ctx.db.getRepository(Licencia).findOneByOrFail({ id });
@@ -157,7 +162,8 @@ describe('T50 — administración HTTP de licencias', () => {
       await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { venceEn: ctx.reloj.ahora() });
       const antes = await estado(ctx.db);
       await operar(ctx, 'suspender').expect(409);
-      await operar(ctx, 'reactivar').expect(200);
+      // Sin suspensión previa, una clave nueva no representa una transición real.
+      await operar(ctx, 'reactivar').expect(409);
       expect(await estado(ctx.db)).toEqual(antes);
       await perfil(ctx, 1).expect(401);
       ctx.reloj.avanzar(1000);

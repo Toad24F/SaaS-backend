@@ -11,11 +11,13 @@ import { Licencia } from './entities/licencia.entity';
 import { AccionOperacionLicencia, OperacionLicencia } from './entities/operacion-licencia.entity';
 import { validarClaveOperacionLicencia, validarPlazoSuspension } from './dto/operacion-licencia.dto';
 import { CalendarioLicenciasService } from './services/calendario-licencias.service';
+import { VistaVigenciaLicencia, VistaVigenciaLicenciaService } from './services/vista-vigencia-licencia.service';
 
 const MAX_INTENTOS_CONFLICTO_VISTA = 3;
 const DIA_MS = 24 * 60 * 60 * 1000;
 
 export interface ResultadoOperacionLicencia {
+  vista: VistaVigenciaLicencia;
   venceEn: string | null;
   suspensionSolicitadaEn: string | null;
   bloqueoProgramadoEn: string | null;
@@ -28,6 +30,7 @@ export interface ResultadoOperacionLicencia {
 /** Serializa suspensión, reactivación y renovación sobre una misma licencia. */
 @Injectable()
 export class LicenciasService {
+  private readonly vistaVigencia = new VistaVigenciaLicenciaService();
   constructor(
     @InjectRepository(Licencia) private readonly licencias: Repository<Licencia>,
     private readonly autorizacion: AutorizacionService,
@@ -38,7 +41,7 @@ export class LicenciasService {
   async suspender(actorId: number, licenciaId: number, ahora: Date,
     clave?: string, plazoDias?: number): Promise<ResultadoOperacionLicencia> {
     const plazo = validarPlazoSuspension(plazoDias);
-    return this.aplicarOperacion(actorId, licenciaId, AccionOperacionLicencia.SUSPENDER,
+    return this.aplicarOperacion(actorId, licenciaId, ahora, AccionOperacionLicencia.SUSPENDER,
       clave, { plazoDias: plazo }, async (manager, actor, licencia) => {
       if (licencia.suspensionSolicitadaEn != null || licencia.congeladaEn != null
         || licencia.suspendidaEn !== null) return false;
@@ -71,7 +74,7 @@ export class LicenciasService {
 
   async reactivar(actorId: number, licenciaId: number, ahora: Date,
     clave?: string): Promise<ResultadoOperacionLicencia> {
-    return this.aplicarOperacion(actorId, licenciaId, AccionOperacionLicencia.REACTIVAR,
+    return this.aplicarOperacion(actorId, licenciaId, ahora, AccionOperacionLicencia.REACTIVAR,
       clave, {}, async (manager, actor, licencia) => {
       if (licencia.suspensionSolicitadaEn == null && licencia.congeladaEn == null
         && licencia.suspendidaEn === null) return false;
@@ -110,7 +113,7 @@ export class LicenciasService {
 
   async renovar(actorId: number, licenciaId: number, ahora: Date,
     clave?: string): Promise<ResultadoOperacionLicencia> {
-    return this.aplicarOperacion(actorId, licenciaId, AccionOperacionLicencia.RENOVAR,
+    return this.aplicarOperacion(actorId, licenciaId, ahora, AccionOperacionLicencia.RENOVAR,
       clave, {}, async (manager, actor, licencia) => {
       // Una renovación posterior al límite debe actualizar el remanente ya congelado.
       await this.congelarSiCorresponde(manager, actor, licencia, ahora);
@@ -142,7 +145,7 @@ export class LicenciasService {
   }
 
   /** Reconoce la clave bajo los bloqueos de negocio y licencia antes de mutar. */
-  private async aplicarOperacion(actorId: number, licenciaId: number,
+  private async aplicarOperacion(actorId: number, licenciaId: number, ahora: Date,
     accion: AccionOperacionLicencia, clave: string | undefined,
     parametros: Record<string, unknown>, transicion: (manager: Repository<Licencia>['manager'],
       actor: Usuario, licencia: Licencia) => Promise<boolean>): Promise<ResultadoOperacionLicencia> {
@@ -164,7 +167,7 @@ export class LicenciasService {
       if (!cambio && claveValida !== null) {
         throw new ConflictException('La licencia ya tiene una transición incompatible.');
       }
-      const resultado = this.resumirOperacion(licencia);
+      const resultado = this.resumirOperacion(licencia, ahora);
       if (cambio && claveValida !== null) {
         // Resultado, auditoría y licencia se confirman en el mismo commit.
         await operaciones.save(operaciones.create({ negocioId: licencia.negocioId,
@@ -175,9 +178,11 @@ export class LicenciasService {
     });
   }
 
-  private resumirOperacion(licencia: Licencia): ResultadoOperacionLicencia {
+  private resumirOperacion(licencia: Licencia, ahora: Date): ResultadoOperacionLicencia {
+    // La vista se conserva para que la misma clave reproduzca el mismo HTTP, aun con otro reloj.
     // Solo fechas y versiones: no se persisten datos del actor ni secretos de correo.
-    return { venceEn: licencia.venceEn?.toISOString() ?? null,
+    return { vista: this.vistaVigencia.crear(licencia, ahora),
+      venceEn: licencia.venceEn?.toISOString() ?? null,
       suspensionSolicitadaEn: licencia.suspensionSolicitadaEn?.toISOString() ?? null,
       bloqueoProgramadoEn: licencia.bloqueoProgramadoEn?.toISOString() ?? null,
       suspendidaEn: licencia.suspendidaEn?.toISOString() ?? null,
