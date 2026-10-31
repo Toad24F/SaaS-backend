@@ -181,7 +181,7 @@ describe('M3-T065–T068: plazo, reemplazo, interrupción y propiedad', () => {
       const otroNegocio = await iniciar('/publico/negocios/portal-prueba-2');
       const primero = await crear(titular, 'apartado_precio_1234', '08:00').expect(201);
       const id = primero.body.apartadoId as number;
-      expect(primero.body.costoAceptado).toBe('100.00');
+      expect(primero.body.costo).toBe('100.00');
       await consultar(ajeno, id).expect(404);
       await liberar(ajeno, id, '1').expect(404);
       await consultar(otroNegocio, id, '/publico/negocios/portal-prueba-2').expect(404);
@@ -189,9 +189,9 @@ describe('M3-T065–T068: plazo, reemplazo, interrupción y propiedad', () => {
       await db.query('UPDATE servicios SET costo=150 WHERE id=? AND negocio_id=?',
         [servicioId, a.id]);
       expect((await crear(titular, 'apartado_precio_1234', '08:00').expect(200))
-        .body.costoAceptado).toBe('100.00');
+        .body.costo).toBe('100.00');
       const segundo = await crear(titular, 'apartado_precio_2345', '09:00').expect(201);
-      expect(segundo.body.costoAceptado).toBe('150.00');
+      expect(segundo.body.costo).toBe('150.00');
       expect((await db.query('SELECT costo_aceptado FROM bloqueos_temporales WHERE id=?',
         [id]))[0].costo_aceptado).toBe('100.00');
       // La fila anterior al portal no tiene sesión ni operación, pero el motor

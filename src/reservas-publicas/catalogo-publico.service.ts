@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { ResolverNegocioPublicoService } from './resolver-negocio-publico.service';
 import type { FiltrosCatalogoPublico } from './entradas-publicas';
+import { proyectarPreciosPublicos } from './proyeccion-precios-publicos';
 
 interface FilaOferta {
   servicioId: number; servicioNombre: string; costo: string; duracionMinutos: number;
@@ -68,11 +69,13 @@ export class CatalogoPublicoService {
       const profesionales = [...new Map(deSucursal.map((fila) => [fila.personalId,
         { id: fila.personalId, nombre: fila.personalNombre,
           ...(fila.especialidad ? { especialidad: fila.especialidad } : {}) }])).values()];
-      return { negocio: { slug: negocio.slug, nombre: negocio.nombre,
+      const resultado = { negocio: { slug: negocio.slug, nombre: negocio.nombre,
         ...(negocio.categoria ? { categoria: negocio.categoria } : {}),
         ...(negocio.mostrarContactoPublico && negocio.telefono ?
           { telefono: negocio.telefono } : {}) },
         servicios, sucursales, profesionales };
+      // Oferta y visibilidad proceden de la misma instantánea del negocio.
+      return proyectarPreciosPublicos(resultado, negocio.mostrarPreciosPublicos ?? true);
     });
   }
 }

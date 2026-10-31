@@ -76,7 +76,7 @@ describe('M3-T063–T064: estado y rutas públicas de apartado', () => {
           .expect(403);
         const primera = await crear(seleccionar('apartado_1234567890', '08:00')).expect(201);
         expect(primera.body).toMatchObject({ estado: 'concedida', generacion: '1',
-          costoAceptado: '100.00', servidorAhora: AHORA.toISOString() });
+          costo: '100.00', servidorAhora: AHORA.toISOString() });
         expect(primera.body.expiraEn).toBe('2026-10-20T12:05:00.000Z');
         expect(primera.headers['cache-control']).toBe('no-store');
         const id = primera.body.apartadoId as number;

@@ -337,17 +337,21 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Prueba de objetos anidados confirma omisión de todos los campos monetarios, sin sustituirlos por cero/null ni alterar el objeto histórico.
   Evidencia: [resultado T075–T077](resultados-tareas/resultado-t075-t077.md).
 
-- [ ] **ALA-T078 — Aplicar proyección a catálogo y apartados** · 25 min · Depende de: ALA-T077 · RF-33–RF-35
+- [x] **ALA-T078 — Aplicar proyección a catálogo y apartados** · 25 min · Depende de: ALA-T077 · RF-33–RF-35
   Hecho cuando: Ambas respuestas respetan la configuración vigente y el apartado conserva internamente el costo fijado.
+  Evidencia: [resultado T078–T081](resultados-tareas/resultado-t078-t081.md).
 
-- [ ] **ALA-T079 — Aplicar proyección a registro y recuperación** · 25 min · Depende de: ALA-T078 · RF-33–RF-35, RF-66, RF-68
+- [x] **ALA-T079 — Aplicar proyección a registro y recuperación** · 25 min · Depende de: ALA-T078 · RF-33–RF-35, RF-66, RF-68
   Hecho cuando: Registro, repetición y resolución omiten precio al ocultarlo y conservan folio, historia y acceso propio tras bloqueo de licencia.
+  Evidencia: [resultado T078–T081](resultados-tareas/resultado-t078-t081.md).
 
-- [ ] **ALA-T080 — Probar cambios de visibilidad durante el flujo** · 25 min · Depende de: ALA-T079 · RF-32–RF-35, RF-68
+- [x] **ALA-T080 — Probar cambios de visibilidad durante el flujo** · 25 min · Depende de: ALA-T079 · RF-32–RF-35, RF-68
   Hecho cuando: Una reserva iniciada visible se recupera sin precio tras ocultarlo; volver a mostrar devuelve costo histórico y nunca afirma aceptación de precio oculto.
+  Evidencia: [resultado T078–T081](resultados-tareas/resultado-t078-t081.md).
 
-- [ ] **ALA-T081 — Verificar caché y permisos de precios** · 25 min · Depende de: ALA-T080 · RF-33, RF-64, RF-68
+- [x] **ALA-T081 — Verificar caché y permisos de precios** · 25 min · Depende de: ALA-T080 · RF-33, RF-64, RF-68
   Hecho cuando: Respuestas públicas configurables usan no-store, administración autorizada conserva importes y una credencial ajena no recupera el resultado.
+  Evidencia: [resultado T078–T081](resultados-tareas/resultado-t078-t081.md).
 
 ## 7. Horarios y configuración
 

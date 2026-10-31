@@ -30,6 +30,7 @@ export interface EstadoApartadoPropio {
   estado: 'vigente' | 'liberado' | 'sustituido' | 'vencido';
   expiraEn: Date;
   servidorAhora: Date;
+  costoAceptado: string | null;
 }
 
 /** Concede apartados en dos commits y conserva una lectura histórica del estado. */
@@ -81,8 +82,10 @@ export class ApartadosService {
       const estado = sesion.generacion !== apartado.generacion ? 'sustituido' :
         apartado.liberadoEn !== null ? 'liberado' :
           servidorAhora >= apartado.expiraEn ? 'vencido' : 'vigente';
+      // La lectura interna mantiene el costo fijado; solo HTTP decide mostrarlo.
       return { apartadoId, generacion: apartado.generacion, estado,
-        expiraEn: apartado.expiraEn, servidorAhora };
+        expiraEn: apartado.expiraEn, servidorAhora,
+        costoAceptado: apartado.costoAceptado };
     });
   }
 
