@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { Personal } from '../profesionales/entities/personal.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { EntradaExcepcion, EntradaSemana, HorariosService } from './horarios.service';
+import { EntradaSemana, HorariosService } from './horarios.service';
 import { AtencionService } from './atencion.service';
 
 /** Deriva el negocio y la propiedad de registros actuales, nunca del cuerpo HTTP. */
@@ -42,25 +42,7 @@ export class HorariosAccesoService {
   async guardarSemana(actorId: number, personalId: number,
     franjas: EntradaSemana[], desde: string) {
     const negocioId = await this.negocioAutorizado(actorId, personalId);
-    return this.horarios.guardarSemana(negocioId, personalId, franjas, desde);
+    return this.horarios.guardarSemana(negocioId, personalId, franjas, desde, actorId);
   }
 
-  async consultarExcepciones(actorId: number, personalId: number) {
-    const negocioId = await this.negocioAutorizado(actorId, personalId);
-    return this.horarios.consultarExcepciones(negocioId, personalId);
-  }
-
-  async guardarExcepcion(actorId: number, personalId: number, fecha: string,
-    sucursalId: number, franjas: EntradaExcepcion[], desde: string) {
-    const negocioId = await this.negocioAutorizado(actorId, personalId);
-    return this.horarios.guardarExcepcion(negocioId, personalId, fecha,
-      sucursalId, franjas, desde);
-  }
-
-  async retirarExcepcion(actorId: number, personalId: number, fecha: string,
-    sucursalId: number, desde: string) {
-    const negocioId = await this.negocioAutorizado(actorId, personalId);
-    return this.horarios.retirarExcepcion(negocioId, personalId, fecha,
-      sucursalId, desde);
-  }
 }

@@ -16,6 +16,7 @@ import { PoliticaContrasenasService } from '../auth/services/politica-contrasena
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { bloquearNegocioAgenda, bloquearRecursosAgenda } from '../comun/bloqueos-coordinados';
 import { ExcepcionHorario } from '../horarios/entities/excepcion-horario.entity';
+import { exigirHorarioTransicionado } from '../horarios/transicion-horarios';
 import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { validarRecurrencias } from '../horarios/calendario';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -568,10 +569,9 @@ export class ProfesionalesService {
 
   private async validarReactivacion(manager: EntityManager, negocioId: number,
     personalId: number, sucursalId: number, desde: string): Promise<void> {
-    const [semana, excepciones, asignaciones] = await Promise.all([
+    await exigirHorarioTransicionado(manager, negocioId, personalId);
+    const [semana, asignaciones] = await Promise.all([
       manager.getRepository(HorarioPersonal).findBy({ negocioId, personalId }),
-      manager.getRepository(ExcepcionHorario).find({ where: { negocioId, personalId },
-        relations: { franjas: true } }),
       manager.getRepository(PersonalSucursal).findBy({ negocioId, personalId }),
     ]);
     const ids = asignaciones.map((fila) => fila.sucursalId);
@@ -580,22 +580,10 @@ export class ProfesionalesService {
     const sucursales = ids.length ? await manager.getRepository(Sucursal).findBy({
       negocioId, id: In(ids) }) : [];
     const zonas = new Map(sucursales.map((fila) => [fila.id, fila.zonaHoraria]));
-    // DATE_FORMAT conserva el día civil SQL; el driver puede desplazar DATE al
-    // convertirlo a Date en el huso local y falsear el día de una excepción.
-    const fechas: { id: number; fecha_local: string }[] = excepciones.length
-      ? await manager.query(`SELECT id, DATE_FORMAT(fecha_local, '%Y-%m-%d') fecha_local
-        FROM excepciones_horario WHERE negocio_id = ? AND personal_id = ?`,
-      [negocioId, personalId]) : [];
-    const fechaPorId = new Map(fechas.map((fila) => [Number(fila.id), fila.fecha_local]));
     // Se comparan las sucursales atendidas y la candidata; otras pausadas no
     // bloquean una reactivación por conflictos que aún no forman parte de la oferta.
     const conflicto = validarRecurrencias(semana.filter((fila) => fila.sucursalId === null ||
-      atendidas.has(fila.sucursalId)), excepciones.filter((fila) =>
-      atendidas.has(fila.sucursalId)).map((fila) => ({
-      sucursalId: fila.sucursalId, fechaLocal: fechaPorId.get(fila.id)!,
-      franjas: fila.franjas.map((franja) => ({ inicioMinutos: franja.inicioMinutos,
-        finMinutos: franja.finMinutos })),
-    })), zonas, desde);
+      atendidas.has(fila.sucursalId)), [], zonas, desde);
     if (conflicto) throw new ConflictException(
       `filas ${conflicto.filas.join(' y ')}, inicioMinutos: empalme de horarios.`);
   }

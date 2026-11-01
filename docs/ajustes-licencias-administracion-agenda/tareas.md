@@ -355,17 +355,19 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 7. Horarios y configuración
 
-- [ ] **ALA-T082 — Retirar descansos del contrato de horarios** · 25 min · Depende de: ALA-T027 · RF-36, RF-42
+- [x] **ALA-T082 — Retirar descansos del contrato de horarios** · 25 min · Depende de: ALA-T027 · RF-36, RF-42
   Hecho cuando: Campos de descanso provocan 400 por desconocidos y respuestas semanales dejan de incluirlos, conservando huecos entre franjas.
 
-- [ ] **ALA-T083 — Retirar rutas y lecturas operativas de excepciones** · 25 min · Depende de: ALA-T082 · RF-37
+- [x] **ALA-T083 — Retirar rutas y lecturas operativas de excepciones** · 25 min · Depende de: ALA-T082 · RF-37
   Hecho cuando: Rutas antiguas dan 404 y el inventario de lectores operativos ya no aplica excepciones; tablas históricas no se borran.
 
-- [ ] **ALA-T084 — Implementar fusión de franjas contiguas** · 25 min · Depende de: ALA-T083 · RF-38
+- [x] **ALA-T084 — Implementar fusión de franjas contiguas** · 25 min · Depende de: ALA-T083 · RF-38
   Hecho cuando: Tests unitarios fusionan transitivamente mismo día/sucursal/estado y conservan separados huecos, otros estados y borradores incompletos.
 
-- [ ] **ALA-T085 — Integrar fusión al reemplazo semanal** · 25 min · Depende de: ALA-T084 · RF-38, RF-42, RF-69
+- [x] **ALA-T085 — Integrar fusión al reemplazo semanal** · 25 min · Depende de: ALA-T084 · RF-38, RF-42, RF-69
   Hecho cuando: Se devuelve una semana canónica con ID estable según plan y auditoría antes/después; un conflicto revierte el conjunto.
+
+  Evidencia T082–T085: [flujo, archivos y pruebas](resultados-tareas/resultado-t082-t085.md).
 
 - [ ] **ALA-T086 — Verificar horarios entre sucursales y bloqueos** · 25 min · Depende de: ALA-T085 · RF-36–RF-38, RF-64–RF-65
   Hecho cuando: Franjas fusionadas no eluden asignaciones, zonas o empalmes entre sucursales y los bloqueos siguen restringiendo atención.
