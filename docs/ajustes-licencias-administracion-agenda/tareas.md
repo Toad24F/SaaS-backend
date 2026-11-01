@@ -369,17 +369,19 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
   Evidencia T082–T085: [flujo, archivos y pruebas](resultados-tareas/resultado-t082-t085.md).
 
-- [ ] **ALA-T086 — Verificar horarios entre sucursales y bloqueos** · 25 min · Depende de: ALA-T085 · RF-36–RF-38, RF-64–RF-65
+- [x] **ALA-T086 — Verificar horarios entre sucursales y bloqueos** · 25 min · Depende de: ALA-T085 · RF-36–RF-38, RF-64–RF-65
   Hecho cuando: Franjas fusionadas no eluden asignaciones, zonas o empalmes entre sucursales y los bloqueos siguen restringiendo atención.
 
-- [ ] **ALA-T087 — Validar configuración con tiempo entre citas** · 25 min · Depende de: ALA-T086 · RF-39–RF-42
+- [x] **ALA-T087 — Validar configuración con tiempo entre citas** · 25 min · Depende de: ALA-T086 · RF-39–RF-42
   Hecho cuando: Validador admite 0/5/60, rechaza otros valores y el antiguo intervaloMinutos; conserva default Libre, anticipación 15 y horizonte vigente.
 
-- [ ] **ALA-T088 — Integrar reemplazo atómico de configuración** · 25 min · Depende de: ALA-T087 · RF-39–RF-42, RF-69
+- [x] **ALA-T088 — Integrar reemplazo atómico de configuración** · 25 min · Depende de: ALA-T087 · RF-39–RF-42, RF-69
   Hecho cuando: Servicio y GET/PUT usan tiempoEntreCitasMinutos; entrada inválida no cambia ningún campo y solo administrador puede escribir.
 
-- [ ] **ALA-T089 — Verificar permisos y modalidad manual del motor** · 25 min · Depende de: ALA-T088 · RF-40–RF-42, RF-64
+- [x] **ALA-T089 — Verificar permisos y modalidad manual del motor** · 25 min · Depende de: ALA-T088 · RF-40–RF-42, RF-64
   Hecho cuando: Las cinco rutas privadas conservan permisos y la validación manual sigue omitiendo solo restricciones públicas previstas, sin crear escritor manual.
+
+  Evidencia T086–T089: [flujo, archivos y resultados](resultados-tareas/resultado-t086-t089.md).
 
 ## 8. Motor y ocupaciones
 

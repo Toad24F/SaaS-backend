@@ -4,9 +4,10 @@ import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { AutorizacionService } from '../src/auth/services/autorizacion.service';
 import type { DataSource } from 'typeorm';
 
-const inicial = { modo: 'ventana_libre', intervaloMinutos: 15,
+// ALA sustituye el intervalo configurable; estas carreras conservan su contrato atómico.
+const inicial = { modo: 'ventana_libre', tiempoEntreCitasMinutos: 0,
   anticipacionMinutos: 15, diasFuturos: 60 } as const;
-const nueva = { modo: 'agenda_compacta', intervaloMinutos: 5,
+const nueva = { modo: 'agenda_compacta', tiempoEntreCitasMinutos: 5,
   anticipacionMinutos: 0, diasFuturos: 0 } as const;
 
 function servicio(db: DataSource, auditoria = new AuditoriaService()) {
@@ -92,7 +93,7 @@ describe('M2-T021–T025: configuración íntegra por negocio', () => {
         .toEqual([{ total: '1' }]);
       expect(await primera.query('SELECT COUNT(*) total FROM eventos_auditoria WHERE negocio_id=?',
         [a.negocio])).toEqual([{ total: '1' }]);
-      const otro = { ...inicial, intervaloMinutos: 30 };
+      const otro = { ...inicial, tiempoEntreCitasMinutos: 30 };
       await Promise.all([
         servicio(primera).guardar(a.admin, otro),
         servicio(segunda).guardar(a.admin, otro),

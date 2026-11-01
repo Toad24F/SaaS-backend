@@ -163,7 +163,7 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
       const cuerpos = [
         (await auth(request(http).get('/disponibilidad/configuracion')).expect(200)).body,
         (await auth(request(http).put('/disponibilidad/configuracion'))
-          .send({ modo: 'ventana_libre', intervaloMinutos: 10,
+          .send({ modo: 'ventana_libre', tiempoEntreCitasMinutos: 10,
             anticipacionMinutos: 15, diasFuturos: 60 }).expect(200)).body,
         (await auth(request(http).get('/disponibilidad')).query({ ...base,
           desde: '2026-07-06', hasta: '2026-07-06' }).expect(200)).body,

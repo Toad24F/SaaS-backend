@@ -9,11 +9,12 @@ const puntual = { personalId: 1, sucursalId: 2, servicioId: 3,
 // Protege el límite HTTP antes de que el motor lea datos del negocio.
 describe('M2-T057–T059: entradas HTTP sin coerciones', () => {
   it('exige configuración completa, camelCase y sin propiedades ajenas', () => {
-    const completa = { modo: 'ventana_libre', intervaloMinutos: 15,
+    const completa = { modo: 'ventana_libre', tiempoEntreCitasMinutos: 0,
       anticipacionMinutos: 15, diasFuturos: 60 };
     expect(validarConfiguracionAgenda(completa)).toEqual(completa);
     for (const mala of [{ ...completa, diasFuturos: undefined },
-      { ...completa, dias_futuros: 60 }, { ...completa, intervaloMinutos: '15' },
+      { ...completa, dias_futuros: 60 }, { ...completa, intervaloMinutos: 15 },
+      { ...completa, tiempoEntreCitasMinutos: '5' },
       { ...completa, anticipacionMinutos: 2.5 }]) {
       expect(() => validarConfiguracionAgenda(mala)).toThrow();
     }

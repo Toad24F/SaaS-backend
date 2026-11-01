@@ -21,6 +21,8 @@ import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
 type Modalidad = 'publica' | 'manual';
 type Ranura = { inicioUtc: Date; finUtc: Date };
 type OfertaLeida = Awaited<ReturnType<OfertaEfectivaService['consultar']>>;
+// Paso técnico hasta sustituir la generación de inicios en ALA-T090 y siguientes.
+const PASO_PUBLICO_MINUTOS = 5;
 
 /** Identidad ya derivada del solicitante por el futuro escritor; nunca un token utilizable. */
 export interface ApartadoPropioComprobable {
@@ -82,17 +84,20 @@ function candidatosValidos(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[
   sucursalId: number, duracionMinutos: number, reglas: ValoresConfiguracionAgenda,
   ahora: Date, hoyLocal: string, zonaHoraria: string, modalidad: Modalidad): Ranura[] {
   const duracion = duracionMinutos * 60000;
+  const proteccion = (duracionMinutos + reglas.tiempoEntreCitasMinutos) * 60000;
   return iniciosAnclados(atencion.bloques, atencion.tramos,
-    modalidad === 'manual' ? 1 : reglas.intervaloMinutos, duracionMinutos)
+    modalidad === 'manual' ? 1 : PASO_PUBLICO_MINUTOS,
+    duracionMinutos + reglas.tiempoEntreCitasMinutos)
     .flatMap((inicioUtc) => {
     const finUtc = new Date(inicioUtc.getTime() + duracion);
+    const finProtegidoUtc = new Date(inicioUtc.getTime() + proteccion);
     // La fecha civil del inicio se evalúa en la zona de la sucursal solicitada.
     const fechaLocal = fechaEnZona(inicioUtc, zonaHoraria);
     if ((modalidad === 'publica' &&
       !dentroDeLimites(inicioUtc, fechaLocal, hoyLocal, ahora, reglas)) ||
       (modalidad === 'manual' && inicioUtc < ahora) ||
-      !cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finUtc) ||
-      ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finUtc).length) return [];
+      !cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finProtegidoUtc) ||
+      ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finProtegidoUtc).length) return [];
     return [{ inicioUtc, finUtc }];
   });
 }
@@ -265,6 +270,9 @@ export class MotorDisponibilidadService {
     const inicioUtc = resolverInstanteLocal(fechaLocal,
       horas * 60 + minutos, oferta.zonaHoraria);
     const finUtc = new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
+    // El resultado conserva el fin de atención; la comprobación suma la separación.
+    const finProtegidoUtc = new Date(finUtc.getTime() +
+      resultado.reglas.tiempoEntreCitasMinutos * 60000);
     const motivos: string[] = [...oferta.motivosExclusion];
     if (apartadoIncompatible) motivos.push('apartado_no_vigente_o_incompatible');
     // La negativa funcional informa causas sin crear ni modificar ocupaciones.
@@ -282,10 +290,10 @@ export class MotorDisponibilidadService {
       }
     }
     if (oferta.ofrecido) {
-      if (!cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finUtc)) {
+      if (!cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finProtegidoUtc)) {
         motivos.push('fuera_de_atencion');
       }
-      if (ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finUtc).length) {
+      if (ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finProtegidoUtc).length) {
         motivos.push('ocupado');
       }
       if (modalidad === 'publica' && atencion.bloques.some((bloque) =>
@@ -293,7 +301,7 @@ export class MotorDisponibilidadService {
         !atencion.bloques.some((bloque) => inicioUtc >= bloque.inicioUtc &&
           inicioUtc < bloque.finUtc &&
           (inicioUtc.getTime() - bloque.inicioUtc.getTime()) %
-            (resultado.reglas.intervaloMinutos * 60000) === 0)) {
+            (PASO_PUBLICO_MINUTOS * 60000) === 0)) {
         motivos.push('fuera_de_secuencia');
       }
     }
@@ -344,7 +352,7 @@ export class MotorDisponibilidadService {
       oferta.duracionMinutos, reglas, ahora, hoyLocal, oferta.zonaHoraria, modalidad);
     resultado.ranuras = modalidad === 'manual' || reglas.modo === 'ventana_libre'
       ? candidatos : seleccionarCompactas(proyeccion.tramos, ocupaciones,
-        candidatos, reglas.intervaloMinutos, oferta.duracionMinutos);
+        candidatos, PASO_PUBLICO_MINUTOS, oferta.duracionMinutos);
     return { resultado, oferta, atencion: proyeccion, ocupaciones };
   }
 }

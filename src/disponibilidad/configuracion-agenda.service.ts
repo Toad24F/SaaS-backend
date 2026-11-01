@@ -79,12 +79,13 @@ export class ConfiguracionAgendaService {
   }
 
   private valores(fila: ConfiguracionAgenda): ValoresConfiguracionAgenda {
-    return { modo: fila.modo, intervaloMinutos: fila.intervaloMinutos as ValoresConfiguracionAgenda['intervaloMinutos'],
+    // La columna intervalo_minutos queda en el esquema como legado, fuera del contrato.
+    return { modo: fila.modo, tiempoEntreCitasMinutos: fila.tiempoEntreCitasMinutos,
       anticipacionMinutos: fila.anticipacionMinutos, diasFuturos: fila.diasFuturos };
   }
 
   private iguales(a: ValoresConfiguracionAgenda, b: ValoresConfiguracionAgenda): boolean {
-    return a.modo === b.modo && a.intervaloMinutos === b.intervaloMinutos &&
+    return a.modo === b.modo && a.tiempoEntreCitasMinutos === b.tiempoEntreCitasMinutos &&
       a.anticipacionMinutos === b.anticipacionMinutos && a.diasFuturos === b.diasFuturos;
   }
 }
