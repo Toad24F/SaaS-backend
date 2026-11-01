@@ -385,17 +385,19 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 8. Motor y ocupaciones
 
-- [ ] **ALA-T090 — Extender contrato interno de ocupación protegida** · 25 min · Depende de: ALA-T089, ALA-T074 · RF-43–RF-45
+- [x] **ALA-T090 — Extender contrato interno de ocupación protegida** · 25 min · Depende de: ALA-T089, ALA-T074 · RF-43–RF-45
   Hecho cuando: El contrato distingue atención y ocupación y una prueba demuestra que el redondeo no amplía el fin protegido.
 
-- [ ] **ALA-T091 — Leer separación de citas entre sucursales** · 25 min · Depende de: ALA-T090 · RF-44–RF-45
+- [x] **ALA-T091 — Leer separación de citas entre sucursales** · 25 min · Depende de: ALA-T090 · RF-44–RF-45
   Hecho cuando: El lector incluye cita cuya atención acabó antes del rango pero su separación lo invade, sin filtrar por sucursal o servicio.
 
-- [ ] **ALA-T092 — Leer separación de apartados vigentes** · 25 min · Depende de: ALA-T091 · RF-43–RF-45, RF-52
+- [x] **ALA-T092 — Leer separación de apartados vigentes** · 25 min · Depende de: ALA-T091 · RF-43–RF-45, RF-52
   Hecho cuando: Se incluye protección hasta fin_ocupacion_utc solo antes de expiración y sin liberación; límite exacto deja de ocupar.
 
-- [ ] **ALA-T093 — Construir espacios libres con separación** · 25 min · Depende de: ALA-T092 · RF-44–RF-45
+- [x] **ALA-T093 — Construir espacios libres con separación** · 25 min · Depende de: ALA-T092 · RF-44–RF-45
   Hecho cuando: Casos de bloqueos y ocupaciones dejan huecos correctos y permiten extremos contiguos sin invadir cierres.
+
+  Evidencia T090–T093: [flujo, archivos y resultados](resultados-tareas/resultado-t090-t093.md).
 
 - [ ] **ALA-T094 — Implementar redondeo local a cinco minutos** · 25 min · Depende de: ALA-T093 · RF-46–RF-48
   Hecho cuando: Casos de segundos, múltiplo exacto, 09:22→09:25 y 09:42→09:45 redondean hacia arriba sin cambiar ocupación.

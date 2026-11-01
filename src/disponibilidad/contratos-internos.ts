@@ -25,7 +25,10 @@ export interface Ocupacion {
   sucursalId: number;
   servicioId: number;
   inicioUtc: Date;
+  /** Fin de atención del servicio, sin separación. */
   finUtc: Date;
+  /** Fin protegido persistido; el redondeo de futuros inicios nunca lo amplía. */
+  finOcupacionUtc: Date;
   estado?: string;
   expiraEn?: Date;
   liberadoEn?: Date | null;

@@ -16,6 +16,7 @@ import { cabeEnAtencion, iniciosAnclados,
 import type { ResultadoDisponibilidad, Ocupacion } from './contratos-internos';
 import type { ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
 import { seleccionarCompactas } from './seleccion-compacta';
+import { cabeEnEspacioLibre, construirEspaciosLibres } from './espacios-libres';
 import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
 
 type Modalidad = 'publica' | 'manual';
@@ -85,6 +86,8 @@ function candidatosValidos(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[
   ahora: Date, hoyLocal: string, zonaHoraria: string, modalidad: Modalidad): Ranura[] {
   const duracion = duracionMinutos * 60000;
   const proteccion = (duracionMinutos + reglas.tiempoEntreCitasMinutos) * 60000;
+  // Los huecos combinan bloqueos ya proyectados con ocupaciones de todas las sedes.
+  const espacios = construirEspaciosLibres(atencion.tramos, sucursalId, ocupaciones);
   return iniciosAnclados(atencion.bloques, atencion.tramos,
     modalidad === 'manual' ? 1 : PASO_PUBLICO_MINUTOS,
     duracionMinutos + reglas.tiempoEntreCitasMinutos)
@@ -96,8 +99,7 @@ function candidatosValidos(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[
     if ((modalidad === 'publica' &&
       !dentroDeLimites(inicioUtc, fechaLocal, hoyLocal, ahora, reglas)) ||
       (modalidad === 'manual' && inicioUtc < ahora) ||
-      !cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finProtegidoUtc) ||
-      ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finProtegidoUtc).length) return [];
+      !cabeEnEspacioLibre(espacios, inicioUtc, finProtegidoUtc)) return [];
     return [{ inicioUtc, finUtc }];
   });
 }
