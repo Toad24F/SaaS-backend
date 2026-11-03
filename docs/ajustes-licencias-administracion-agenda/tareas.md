@@ -477,23 +477,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
   Evidencia T110–T115: [flujo, archivos y pruebas](resultados-tareas/resultado-t110-t115.md).
 
-- [ ] **ALA-T116 — Resolver rechazo conocido sin liberar apartado** · 25 min · Depende de: ALA-T115 · RF-60, RF-66–RF-68
+- [x] **ALA-T116 — Resolver rechazo conocido sin liberar apartado** · 25 min · Depende de: ALA-T115 · RF-60, RF-66–RF-68
   Hecho cuando: Resolución devuelve causa y posibilidad real de corrección tras respuesta perdida al rechazo, sin liberación genérica.
 
-- [ ] **ALA-T117 — Conservar resolución de incertidumbre general** · 25 min · Depende de: ALA-T116 · RF-65–RF-68
+- [x] **ALA-T117 — Conservar resolución de incertidumbre general** · 25 min · Depende de: ALA-T116 · RF-65–RF-68
   Hecho cuando: Ausencia simple no autoriza corrección; resolución terminal genérica conserva liberación y un timeout responde 503.
 
-- [ ] **ALA-T118 — Exponer contratos HTTP de corrección** · 25 min · Depende de: ALA-T117 · RF-60–RF-61, RF-64, RF-66
+- [x] **ALA-T118 — Exponer contratos HTTP de corrección** · 25 min · Depende de: ALA-T117 · RF-60–RF-61, RF-64, RF-66
   Hecho cuando: Preparación acepta intentoAnteriorId solo cuando procede y el conflicto entrega el mensaje exacto de RF-61 sin datos de citas ajenas.
 
-- [ ] **ALA-T119 — Probar límites temporales del cupo** · 25 min · Depende de: ALA-T118 · RF-56–RF-58
+- [x] **ALA-T119 — Probar límites temporales del cupo** · 25 min · Depende de: ALA-T118 · RF-56–RF-58
   Hecho cuando: Justo antes/en/después del inicio el conteo cambia como se especificó; citas canceladas quedan excluidas sin crear endpoints de cancelación.
 
-- [ ] **ALA-T120 — Probar teléfonos compartidos e idempotencia** · 25 min · Depende de: ALA-T119 · RF-62, RF-66
+- [x] **ALA-T120 — Probar teléfonos compartidos e idempotencia** · 25 min · Depende de: ALA-T119 · RF-62, RF-66
   Hecho cuando: Dos nombres conservan contactos independientes; repetir reserva registrada no vuelve a consumir cupo aunque ahora esté lleno.
 
-- [ ] **ALA-T121 — Probar corrección con vencimiento y propiedad** · 25 min · Depende de: ALA-T120 · RF-60, RF-64–RF-68
+- [x] **ALA-T121 — Probar corrección con vencimiento y propiedad** · 25 min · Depende de: ALA-T120 · RF-60, RF-64–RF-68
   Hecho cuando: Apartado vencido o ajeno impide sucesor y una clave incompatible no modifica formulario registrado o envío incierto.
+
+  Evidencia T116–T121: [flujo, archivos y pruebas](resultados-tareas/resultado-t116-t121.md).
 
 ## 11. Carreras del escritor real
 

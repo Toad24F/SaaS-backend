@@ -20,7 +20,8 @@ import { OperacionApartado } from './entities/operacion-apartado.entity';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 import { exigirEscriturasPublicas } from './control-escrituras-publicas';
-import { CupoTelefonicoService } from './cupo-telefonico.service';
+import { CAUSA_CUPO_TELEFONICO, CupoTelefonicoExcedidoException,
+  CupoTelefonicoService } from './cupo-telefonico.service';
 
 interface CopiaHistorica {
   negocio: string; servicio: string; sucursal: string; profesional: string;
@@ -133,7 +134,7 @@ export class RegistroReservaPublicaService {
         // El 409 se emite fuera de la transacción para no revertir este cierre.
         await manager.getRepository(IntentoReservaPublica).update({
           id: intento.id, negocioId }, { estado: 'no_registrado',
-          formularioHash: huella, causaPublica: 'cupo_telefonico', citaId: null });
+          formularioHash: huella, causaPublica: CAUSA_CUPO_TELEFONICO, citaId: null });
         return { tipo: 'cupo' as const };
       }
       const resultado = await this.guardarTodo(manager, sesion, intento, apartado, contacto,
@@ -141,7 +142,7 @@ export class RegistroReservaPublicaService {
       return { tipo: 'registrada' as const, resultado, repetida: false };
     });
     if (decision.tipo === 'cupo') {
-      throw new ConflictException('Cupo de citas por teléfono agotado en esta sucursal.');
+      throw new CupoTelefonicoExcedidoException();
     }
     return { resultado: decision.resultado, repetida: decision.repetida };
   }

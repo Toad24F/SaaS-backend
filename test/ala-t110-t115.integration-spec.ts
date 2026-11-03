@@ -116,7 +116,7 @@ describe('ALA-T110–T115: cupo telefónico y sucesión de intentos', () => {
       const [rechazo] = await f.db.query(`SELECT estado,formulario_hash,causa_publica,cita_id
         FROM intentos_reserva_publica WHERE id=?`, [primero.id]);
       expect(rechazo).toMatchObject({ estado: 'no_registrado',
-        causa_publica: 'cupo_telefonico', cita_id: null });
+        causa_publica: 'cupo_telefono_excedido', cita_id: null });
       expect(rechazo.formulario_hash).toMatch(/^[a-f0-9]{64}$/);
       const [vigente] = await f.db.query(`SELECT intento_actual_id,liberado_en,expira_en
         FROM bloqueos_temporales WHERE id=?`, [apartado.apartadoId]);
@@ -213,7 +213,7 @@ describe('ALA-T110–T115: cupo telefónico y sucesión de intentos', () => {
           AND inicio_utc>? AND estado<>'cancelada'`,
       [f.negocioId, f.sucursalId, '6141234567', AHORA]))[0].n).toBe('2');
       expect((await f.db.query(`SELECT COUNT(*) AS n FROM intentos_reserva_publica
-        WHERE negocio_id=? AND estado='no_registrado' AND causa_publica='cupo_telefonico'`,
+        WHERE negocio_id=? AND estado='no_registrado' AND causa_publica='cupo_telefono_excedido'`,
       [f.negocioId]))[0].n).toBe('1');
     });
   }, 120000);

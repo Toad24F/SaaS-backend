@@ -11,6 +11,7 @@ import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity
 import { huellaContactoReservaPublica, validarContactoReservaPublica } from './contacto-reserva-publica';
 import type { ResultadoReservaPublica } from './contratos';
 import { exigirEscriturasPublicas } from './control-escrituras-publicas';
+import { CupoTelefonicoExcedidoException, esCausaCupoTelefonico } from './cupo-telefonico.service';
 
 interface PreparacionIntento {
   clave: string; apartadoId: number; intentoAnteriorId: string | null;
@@ -96,7 +97,7 @@ export class IntentosReservaPublicaService {
         const anterior = await repo.findOneBy({ id: intentoAnteriorId!,
           negocioId, sesionId: sesion.id, apartadoId });
         if (!anterior || anterior.estado !== 'no_registrado' ||
-          anterior.causaPublica !== 'cupo_telefonico') {
+          !esCausaCupoTelefonico(anterior.causaPublica)) {
           throw new ConflictException('Intento anterior no corregible.');
         }
       }
@@ -132,6 +133,11 @@ export class IntentosReservaPublicaService {
   async reconocerEnTransaccion(manager: EntityManager, intento: IntentoReservaPublica,
     huella: string): Promise<ResultadoReservaPublica | null> {
     if (intento.estado === 'no_registrado') {
+      // El rechazo específico es terminal incluso con otro formulario; se
+      // reproduce sin volver a contar ni reabrir el apartado.
+      if (esCausaCupoTelefonico(intento.causaPublica)) {
+        throw new CupoTelefonicoExcedidoException();
+      }
       throw new ConflictException('Intento cerrado sin registro.');
     }
     if (intento.formularioHash !== null) {
