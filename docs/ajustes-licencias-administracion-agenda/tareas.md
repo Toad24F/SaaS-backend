@@ -499,38 +499,40 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 11. Carreras del escritor real
 
-- [ ] **ALA-T122 — Probar carrera por último lugar telefónico** · 25 min · Depende de: ALA-T121, ALA-T050 · RF-56–RF-59, RF-65
+- [x] **ALA-T122 — Probar carrera por último lugar telefónico** · 25 min · Depende de: ALA-T121, ALA-T050 · RF-56–RF-59, RF-65
   Hecho cuando: Dos conexiones con profesionales distintos aceptan una reserva y rechazan la otra, comprobando clientes, citas, intentos y apartados finales.
 
-- [ ] **ALA-T123 — Probar carrera de dos sucesores** · 25 min · Depende de: ALA-T122 · RF-60, RF-65–RF-66
+- [x] **ALA-T123 — Probar carrera de dos sucesores** · 25 min · Depende de: ALA-T122 · RF-60, RF-65–RF-66
   Hecho cuando: Solo un sucesor queda actual; repetición del ganador funciona y perdedor/envío anterior no escriben.
 
-- [ ] **ALA-T124 — Probar escritor antes que resolutor** · 25 min · Depende de: ALA-T123 · RF-65–RF-68
+- [x] **ALA-T124 — Probar escritor antes que resolutor** · 25 min · Depende de: ALA-T123 · RF-65–RF-68
   Hecho cuando: Barrera fuerza escritor primero y el resolutor recupera el resultado confirmado sin cerrar falsamente no_registrado.
 
-- [ ] **ALA-T125 — Probar resolutor antes que escritor** · 25 min · Depende de: ALA-T124 · RF-65–RF-68
+- [x] **ALA-T125 — Probar resolutor antes que escritor** · 25 min · Depende de: ALA-T124 · RF-65–RF-68
   Hecho cuando: Barrera fuerza cierre terminal primero y el escritor atrasado no crea cita ni revive el apartado.
 
-- [ ] **ALA-T126 — Probar dos reservas contra separación protegida** · 25 min · Depende de: ALA-T125 · RF-43–RF-45, RF-65
+- [x] **ALA-T126 — Probar dos reservas contra separación protegida** · 25 min · Depende de: ALA-T125 · RF-43–RF-45, RF-65
   Hecho cuando: Intervalos de atención no empalmados pero con separación incompatible en distintas sucursales aceptan como máximo una ocupación.
 
-- [ ] **ALA-T127 — Probar reserva contra cambio de modo/separación** · 25 min · Depende de: ALA-T126 · RF-53–RF-55, RF-65
+- [x] **ALA-T127 — Probar reserva contra cambio de modo/separación** · 25 min · Depende de: ALA-T126 · RF-53–RF-55, RF-65
   Hecho cuando: Ambos órdenes preservan apartado existente y aplican valores nuevos solo a nuevas concesiones, con filas finales verificadas.
 
-- [ ] **ALA-T128 — Probar reserva contra inhabilitación de profesional** · 25 min · Depende de: ALA-T127 · RF-25, RF-28–RF-29, RF-55, RF-65
+- [x] **ALA-T128 — Probar reserva contra inhabilitación de profesional** · 25 min · Depende de: ALA-T127 · RF-25, RF-28–RF-29, RF-55, RF-65
   Hecho cuando: Ambos órdenes dejan cita previa afectada o reserva rechazada; nunca registran después de la baja efectiva bajo la misma exclusión.
 
-- [ ] **ALA-T129 — Probar reserva contra inhabilitación de sucursal o servicio** · 25 min · Depende de: ALA-T128 · RF-28–RF-30, RF-55, RF-65
+- [x] **ALA-T129 — Probar reserva contra inhabilitación de sucursal o servicio** · 25 min · Depende de: ALA-T128 · RF-28–RF-30, RF-55, RF-65
   Hecho cuando: Casos parametrizados en ambos órdenes conservan ocupaciones previas y rechazan concesión/registro sobre oferta retirada.
 
-- [ ] **ALA-T130 — Probar reserva contra vencimiento de licencia** · 25 min · Depende de: ALA-T129 · RF-07–RF-08, RF-55, RF-65
+- [x] **ALA-T130 — Probar reserva contra vencimiento de licencia** · 25 min · Depende de: ALA-T129 · RF-07–RF-08, RF-55, RF-65
   Hecho cuando: Tras esperar bloqueo se reevalúa el instante y no se registra con licencia ya vencida; la recuperación propia sigue disponible.
 
-- [ ] **ALA-T131 — Probar reserva contra cambio de horario o bloqueo** · 25 min · Depende de: ALA-T130 · RF-38, RF-45, RF-55, RF-65
+- [x] **ALA-T131 — Probar reserva contra cambio de horario o bloqueo** · 25 min · Depende de: ALA-T130 · RF-38, RF-45, RF-55, RF-65
   Hecho cuando: Ambos órdenes conservan cita previa afectada o rechazan reserva incompatible, sin modificarla automáticamente.
 
-- [ ] **ALA-T132 — Probar reserva contra costo o duración** · 25 min · Depende de: ALA-T131 · RF-35, RF-55, RF-65
+- [x] **ALA-T132 — Probar reserva contra costo o duración** · 25 min · Depende de: ALA-T131 · RF-35, RF-55, RF-65
   Hecho cuando: Cambio de costo conserva el fijado; duración incompatible con extremos del apartado rechaza sin resultados parciales.
+
+  Evidencia T122–T132: [flujo, archivos y pruebas](resultados-tareas/resultado-t122-t132.md).
 
 ## 12. Contratos, seguridad y regresiones focalizadas
 
