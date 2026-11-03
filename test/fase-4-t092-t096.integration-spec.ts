@@ -301,8 +301,12 @@ describe('M3-T092–T096: cierre de concurrencia del escritor público', () => {
       const [moduloA, moduloB] = await Promise.all([crearModulo(db, reloj), crearModulo(segunda, reloj)]);
       const envio = await prepararEnvio(moduloA, db, base, '1');
       const otraClave = 'intento_otro_mismo_apartado';
-      await moduloB.get(IntentosReservaPublicaService).preparar(base.negocioId, envio.titular,
-        { clave: otraClave, apartadoId: envio.apartado.apartadoId });
+      // T113 cierra el apartado a un único intento actual desde la preparación;
+      // una segunda clave ya no alcanza el escritor mientras el primero siga vivo.
+      await expect(moduloB.get(IntentosReservaPublicaService).preparar(
+        base.negocioId, envio.titular,
+        { clave: otraClave, apartadoId: envio.apartado.apartadoId }))
+        .rejects.toMatchObject({ status: 409 });
       await db.query(`CREATE TRIGGER fallo_t094 BEFORE UPDATE ON intentos_reserva_publica
         FOR EACH ROW BEGIN IF NEW.estado='registrado' THEN SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT='fallo controlado T094'; END IF; END`);
@@ -315,17 +319,10 @@ describe('M3-T092–T096: cierre de concurrencia del escritor público', () => {
       expect(await contarPublicas(db, 'citas', base.negocioId)).toBe(0);
       expect((await db.query('SELECT liberado_en FROM bloqueos_temporales WHERE id=?',
         [envio.apartado.apartadoId]))[0].liberado_en).toBeNull();
-      const barrera = new BarreraDosParticipantes();
-      const resultados = await Promise.allSettled([
-        [moduloA, envio.clave], [moduloB, otraClave],
-      ].map(async ([modulo, clave]) => {
-        await barrera.esperar();
-        return (modulo as TestingModule).get(RegistroReservaPublicaService).registrar(
-          base.negocioId, envio.titular, clave as string, CONTACTO);
-      }));
-      expect(resultados.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
-      const rechazo = resultados.find((r) => r.status === 'rejected') as PromiseRejectedResult;
-      expect(rechazo.reason).toMatchObject({ status: 409 });
+      const resultado = await moduloA.get(RegistroReservaPublicaService).registrar(
+        base.negocioId, envio.titular, envio.clave, CONTACTO);
+      expect(await moduloB.get(RegistroReservaPublicaService).registrar(
+        base.negocioId, envio.titular, envio.clave, CONTACTO)).toEqual(resultado);
       expect(await contarPublicas(db, 'citas', base.negocioId)).toBe(1);
       await Promise.all([moduloA.close(), moduloB.close()]);
     });

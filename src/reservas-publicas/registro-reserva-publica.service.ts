@@ -20,6 +20,7 @@ import { OperacionApartado } from './entities/operacion-apartado.entity';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 import { exigirEscriturasPublicas } from './control-escrituras-publicas';
+import { CupoTelefonicoService } from './cupo-telefonico.service';
 
 interface CopiaHistorica {
   negocio: string; servicio: string; sucursal: string; profesional: string;
@@ -32,6 +33,7 @@ export class RegistroReservaPublicaService {
   constructor(@InjectDataSource() private readonly db: DataSource,
     private readonly coordinacion: CoordinacionReservaPublicaService,
     private readonly intentos: IntentosReservaPublicaService,
+    private readonly cupo: CupoTelefonicoService,
     private readonly motor: MotorDisponibilidadService,
     @Inject(RELOJ) private readonly reloj: Reloj) {}
 
@@ -45,7 +47,7 @@ export class RegistroReservaPublicaService {
     entrada: unknown): Promise<{ resultado: ResultadoReservaPublica; repetida: boolean }> {
     const contacto = validarContactoReservaPublica(entrada);
     const huella = huellaContactoReservaPublica(contacto);
-    return this.coordinacion.transaccion(clave, async (manager) => {
+    const decision = await this.coordinacion.transaccion(clave, async (manager) => {
       const sesion = await this.coordinacion.bloquearSesion(manager, negocioId, titularHash);
       const intento = await manager.getRepository(IntentoReservaPublica)
         .createQueryBuilder('i').setLock('pessimistic_write')
@@ -55,7 +57,8 @@ export class RegistroReservaPublicaService {
       // Una respuesta perdida se reproduce antes de comprobar vigencia comercial
       // o del apartado; el resultado durable jamás crea una segunda cita.
       const anterior = await this.intentos.reconocerEnTransaccion(manager, intento, huella);
-      if (anterior) return { resultado: anterior, repetida: true };
+      if (anterior) return { tipo: 'registrada' as const,
+        resultado: anterior, repetida: true };
       // Una respuesta perdida conserva su resultado; el interruptor solo
       // detiene el primer commit de una cita todavía no registrada.
       exigirEscriturasPublicas();
@@ -73,6 +76,7 @@ export class RegistroReservaPublicaService {
         id: sesion.id, negocioId });
       const ahora = this.reloj.ahora();
       if (!apartado || !actual || actual.apartadoActualId !== apartado.id ||
+        apartado.intentoActualId !== intento.id ||
         actual.generacion !== apartado.generacion || apartado.liberadoEn !== null ||
         ahora >= apartado.expiraEn || apartado.costoAceptado === null ||
         apartado.zonaHorariaApartado === null || apartado.operacionId === null ||
@@ -120,10 +124,26 @@ export class RegistroReservaPublicaService {
       // Una orden de cierre recibida durante la revalidación se observa antes
       // del primer INSERT; la transacción revierte sin consumir el apartado.
       exigirEscriturasPublicas();
+      // La barrera de negocio sigue bloqueada desde bloquearRecursos: ningún
+      // profesional de esta sucursal puede contar e insertar simultáneamente.
+      const ocupadas = await this.cupo.contar(manager, negocioId,
+        apartado.sucursalId, contacto.telefono, instanteFinal);
+      if (ocupadas >= 2) {
+        // El rechazo se confirma sin tocar cliente, cita, apartado ni sesión.
+        // El 409 se emite fuera de la transacción para no revertir este cierre.
+        await manager.getRepository(IntentoReservaPublica).update({
+          id: intento.id, negocioId }, { estado: 'no_registrado',
+          formularioHash: huella, causaPublica: 'cupo_telefonico', citaId: null });
+        return { tipo: 'cupo' as const };
+      }
       const resultado = await this.guardarTodo(manager, sesion, intento, apartado, contacto,
         huella, validacion.inicioUtc, validacion.finUtc, copia, instanteFinal);
-      return { resultado, repetida: false };
+      return { tipo: 'registrada' as const, resultado, repetida: false };
     });
+    if (decision.tipo === 'cupo') {
+      throw new ConflictException('Cupo de citas por teléfono agotado en esta sucursal.');
+    }
+    return { resultado: decision.resultado, repetida: decision.repetida };
   }
 
   /** T075: la copia toma el precio del apartado y los nombres vigentes bajo

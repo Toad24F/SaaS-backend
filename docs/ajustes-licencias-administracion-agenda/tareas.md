@@ -457,23 +457,25 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 10. Cupo telefónico y corrección
 
-- [ ] **ALA-T110 — Implementar conteo futuro por teléfono y sucursal** · 25 min · Depende de: ALA-T109 · RF-56–RF-58, RF-62
+- [x] **ALA-T110 — Implementar conteo futuro por teléfono y sucursal** · 25 min · Depende de: ALA-T109 · RF-56–RF-58, RF-62
   Hecho cuando: Teléfonos normalizados cuentan citas no canceladas con inicio posterior a ahora; otra sucursal/negocio y apartados no consumen cupo.
 
-- [ ] **ALA-T111 — Integrar conteo bajo barrera de negocio** · 25 min · Depende de: ALA-T110 · RF-56, RF-59, RF-65
+- [x] **ALA-T111 — Integrar conteo bajo barrera de negocio** · 25 min · Depende de: ALA-T110 · RF-56, RF-59, RF-65
   Hecho cuando: Conteo y nueva cita comparten exclusión existente incluso entre profesionales distintos; no se añaden contadores redundantes.
 
-- [ ] **ALA-T112 — Persistir rechazo terminal por cupo** · 25 min · Depende de: ALA-T111 · RF-59–RF-61
+- [x] **ALA-T112 — Persistir rechazo terminal por cupo** · 25 min · Depende de: ALA-T111 · RF-59–RF-61
   Hecho cuando: Rechazo confirma estado/huella/causa sin cliente o cita y conserva apartado vigente; el 409 se emite después del commit.
 
-- [ ] **ALA-T113 — Asignar intento actual al preparar envío** · 25 min · Depende de: ALA-T112 · RF-60, RF-65–RF-66
+- [x] **ALA-T113 — Asignar intento actual al preparar envío** · 25 min · Depende de: ALA-T112 · RF-60, RF-65–RF-66
   Hecho cuando: Preparación inicial fija puntero y repetición devuelve el mismo intento; otro envío no autorizado sobre el apartado produce conflicto.
 
-- [ ] **ALA-T114 — Preparar sucesor explícito por corrección** · 25 min · Depende de: ALA-T113 · RF-60, RF-65–RF-66
+- [x] **ALA-T114 — Preparar sucesor explícito por corrección** · 25 min · Depende de: ALA-T113 · RF-60, RF-65–RF-66
   Hecho cuando: Solo predecesor propio terminal por cupo permite nueva clave y actualiza puntero sin ampliar expiración.
 
-- [ ] **ALA-T115 — Impedir escritura de intentos anteriores** · 25 min · Depende de: ALA-T114 · RF-60, RF-65–RF-66
+- [x] **ALA-T115 — Impedir escritura de intentos anteriores** · 25 min · Depende de: ALA-T114 · RF-60, RF-65–RF-66
   Hecho cuando: Envío atrasado del predecesor conserva rechazo y no inserta cita, aun si el contacto nuevo tiene cupo.
+
+  Evidencia T110–T115: [flujo, archivos y pruebas](resultados-tareas/resultado-t110-t115.md).
 
 - [ ] **ALA-T116 — Resolver rechazo conocido sin liberar apartado** · 25 min · Depende de: ALA-T115 · RF-60, RF-66–RF-68
   Hecho cuando: Resolución devuelve causa y posibilidad real de corrección tras respuesta perdida al rechazo, sin liberación genérica.
