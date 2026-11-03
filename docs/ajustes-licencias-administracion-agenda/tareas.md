@@ -399,17 +399,19 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
   Evidencia T090–T093: [flujo, archivos y resultados](resultados-tareas/resultado-t090-t093.md).
 
-- [ ] **ALA-T094 — Implementar redondeo local a cinco minutos** · 25 min · Depende de: ALA-T093 · RF-46–RF-48
+- [x] **ALA-T094 — Implementar redondeo local a cinco minutos** · 25 min · Depende de: ALA-T093 · RF-46–RF-48
   Hecho cuando: Casos de segundos, múltiplo exacto, 09:22→09:25 y 09:42→09:45 redondean hacia arriba sin cambiar ocupación.
 
-- [ ] **ALA-T095 — Verificar redondeo ante cambios de hora** · 25 min · Depende de: ALA-T094 · RF-46–RF-48
+- [x] **ALA-T095 — Verificar redondeo ante cambios de hora** · 25 min · Depende de: ALA-T094 · RF-46–RF-48
   Hecho cuando: Fechas de prueba con horas ambiguas/inexistentes no generan candidatos inválidos y conservan comparación UTC entre sucursales.
 
-- [ ] **ALA-T096 — Generar candidatos de Agenda Libre** · 25 min · Depende de: ALA-T095 · RF-45, RF-49
+- [x] **ALA-T096 — Generar candidatos de Agenda Libre** · 25 min · Depende de: ALA-T095 · RF-45, RF-49
   Hecho cuando: Espacios desde 09:40 con duración 30 generan 09:40/10:10 y duración 32 avanza con redondeo; servicio más separación cabe completo.
 
-- [ ] **ALA-T097 — Aplicar anticipación y horizonte a candidatos** · 25 min · Depende de: ALA-T096 · RF-41, RF-46–RF-49
+- [x] **ALA-T097 — Aplicar anticipación y horizonte a candidatos** · 25 min · Depende de: ALA-T096 · RF-41, RF-46–RF-49
   Hecho cuando: 09:07 con anticipación 15 ofrece desde 09:25; se conservan límites inclusivos de fechas y máximo de consulta vigente.
+
+  Evidencia T094–T097: [flujo, pruebas y resultados](resultados-tareas/resultado-t094-t097.md).
 
 - [ ] **ALA-T098 — Seleccionar único inicio de Agenda Compacta** · 25 min · Depende de: ALA-T097 · RF-50–RF-51
   Hecho cuando: Mañana y tarde de una combinación devuelven solo el primer inicio válido por fecha, sin bloquear elección de otros días.
