@@ -31,8 +31,12 @@ describe('M2-T067–T073: causas vigentes de citas afectadas', () => {
       await db.query("UPDATE citas SET estado='cancelada' WHERE id=?", [a.citas[1]]);
       const horario = await db.query(`INSERT INTO horarios_personal
         (negocio_id,personal_id,sucursal_id,dia_semana,orden,
-        inicio_minutos,fin_minutos,descanso_inicio_minutos,
-        descanso_fin_minutos,activo) VALUES (?,?,?,1,0,540,840,735,765,1)`,
+        inicio_minutos,fin_minutos,activo) VALUES (?,?,?,1,0,540,735,1)`,
+      [a.id, a.personalId, a.sucursales[0]]);
+      // ALA RF-36: el descanso 12:15–12:45 se representa como hueco.
+      const horarioTarde = await db.query(`INSERT INTO horarios_personal
+        (negocio_id,personal_id,sucursal_id,dia_semana,orden,
+        inicio_minutos,fin_minutos,activo) VALUES (?,?,?,1,1,765,840,1)`,
       [a.id, a.personalId, a.sucursales[0]]);
       const modulo = await Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(DataSource).useValue(db)
@@ -118,8 +122,9 @@ describe('M2-T067–T073: causas vigentes de citas afectadas', () => {
           inicioUtc: '2026-07-06T18:00:00.000Z',
           finUtc: '2026-07-06T18:30:00.000Z' });
         expect(primera.body.citas[0].causas).toEqual(expect.arrayContaining([
-          { codigo: 'descanso', referenciaTipo: 'horario',
-            referenciaId: Number(horario.insertId) },
+          // ALA RF-36 y RF-38: un hueco deja horario insuficiente.
+          { codigo: 'horario_insuficiente', referenciaTipo: 'sucursal',
+            referenciaId: a.sucursales[0] },
           { codigo: 'bloqueo', referenciaTipo: 'bloqueo', referenciaId: uno },
           { codigo: 'bloqueo', referenciaTipo: 'bloqueo', referenciaId: dos },
         ]));
@@ -130,15 +135,16 @@ describe('M2-T067–T073: causas vigentes de citas afectadas', () => {
         expect(await causas()).not.toEqual(expect.arrayContaining([
           { codigo: 'bloqueo', referenciaTipo: 'bloqueo', referenciaId: uno }]));
         await db.query('DELETE FROM bloqueos_horario WHERE id=?', [dos]);
-        await db.query(`UPDATE horarios_personal SET descanso_inicio_minutos=NULL,
-          descanso_fin_minutos=NULL WHERE id=?`, [horario.insertId]);
+        await db.query('UPDATE horarios_personal SET fin_minutos=840 WHERE id=?',
+          [horario.insertId]);
+        await db.query('DELETE FROM horarios_personal WHERE id=?',
+          [horarioTarde.insertId]);
         expect((await leer(admin).expect(200)).body.citas).toEqual([]);
         const horarioRuta = `/profesionales/${a.personalId}/horario`;
         const guardarHorario = (finMinutos: number) => request(http).put(horarioRuta)
           .auth(admin, { type: 'bearer' }).send({ franjas: [{ diaSemana: 1,
             orden: 0, sucursalId: a.sucursales[0], inicioMinutos: 540,
-            finMinutos, descansoInicioMinutos: null,
-            descansoFinMinutos: null, activo: true }] }).expect(200);
+            finMinutos, activo: true }] }).expect(200);
         await guardarHorario(660);
         expect((await causas()).map((c: { codigo: string }) => c.codigo))
           .toContain('horario_insuficiente');
@@ -221,7 +227,8 @@ describe('M2-T067–T073: causas vigentes de citas afectadas', () => {
         // Reglas comerciales y duración actual no cambian el intervalo histórico.
         await request(http).put('/disponibilidad/configuracion')
           .auth(admin, { type: 'bearer' }).send({ modo: 'agenda_compacta',
-            intervaloMinutos: 10, anticipacionMinutos: 120, diasFuturos: 0 })
+            // ALA RF-39–RF-40: separación sustituye intervalo entre inicios.
+            tiempoEntreCitasMinutos: 10, anticipacionMinutos: 120, diasFuturos: 0 })
           .expect(200);
         await db.query('UPDATE servicios SET duracion_minutos=90 WHERE id=?',
           [a.servicios[0]]);

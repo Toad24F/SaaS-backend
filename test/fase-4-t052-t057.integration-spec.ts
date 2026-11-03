@@ -80,12 +80,8 @@ describe('M3-T052–T057: mutaciones bajo protocolo común', () => {
             sucursalId, { servicioIds: [servicioId] }));
         await comprobarBarrera(db, negocio.id, 'personal', perfilId,
           () => app.get(HorariosService).guardarSemana(negocio.id, perfilId, [], '2026-10-20'));
-        await comprobarBarrera(db, negocio.id, 'personal', perfilId,
-          () => app.get(HorariosService).guardarExcepcion(negocio.id, perfilId,
-            '2026-10-22', sucursalId, [], '2026-10-20'));
-        await comprobarBarrera(db, negocio.id, 'personal', perfilId,
-          () => app.get(HorariosService).retirarExcepcion(negocio.id, perfilId,
-            '2026-10-22', sucursalId, '2026-10-20'));
+        // ALA RF-37 retira escrituras de excepciones. La barrera de horario
+        // sigue cubierta por guardarSemana y la de bloqueo por crear/editar.
         const bloqueo = await app.get(BloqueosService).crear(actorId, {
           personalId: perfilId, sucursalId, tipo: 'emergencia', motivo: 'Prueba',
           fechaInicio: '2026-10-21', fechaFin: '2026-10-21',

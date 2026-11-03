@@ -536,32 +536,34 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 12. Contratos, seguridad y regresiones focalizadas
 
-- [ ] **ALA-T133 — Verificar permisos de operaciones administrativas nuevas** · 25 min · Depende de: ALA-T132 · RF-17, RF-23, RF-31–RF-32, RF-40, RF-64
+- [x] **ALA-T133 — Verificar permisos de operaciones administrativas nuevas** · 25 min · Depende de: ALA-T132 · RF-17, RF-23, RF-31–RF-32, RF-40, RF-64
   Hecho cuando: Matriz HTTP prueba roles y dos negocios para cupos, inhabilitación, restauración, precios y configuración, sin cruces de pertenencia.
 
-- [ ] **ALA-T134 — Verificar entradas públicas sin autoridad adicional** · 25 min · Depende de: ALA-T133 · RF-64–RF-65
+- [x] **ALA-T134 — Verificar entradas públicas sin autoridad adicional** · 25 min · Depende de: ALA-T133 · RF-64–RF-65
   Hecho cuando: Mutaciones públicas rechazan negocio, precio, separación, estado, modalidad y exclusiones no permitidos en el cuerpo.
 
-- [ ] **ALA-T135 — Verificar protección pública existente** · 25 min · Depende de: ALA-T134 · RF-64, RF-67–RF-68
+- [x] **ALA-T135 — Verificar protección pública existente** · 25 min · Depende de: ALA-T134 · RF-64, RF-67–RF-68
   Hecho cuando: Casos de cookie, origen, CSRF y límite de 32 KiB conservan respuestas seguras y no permiten mutaciones ajenas.
 
-- [ ] **ALA-T136 — Verificar fallos transitorios y agotamiento** · 25 min · Depende de: ALA-T135 · RF-65–RF-67
+- [x] **ALA-T136 — Verificar fallos transitorios y agotamiento** · 25 min · Depende de: ALA-T135 · RF-65–RF-67
   Hecho cuando: Deadlock/timeout controlado reintenta con clave estable y acaba en 503 si se agota, sin cita parcial ni cierre ficticio.
 
-- [ ] **ALA-T137 — Verificar redacción de errores y respuestas personales** · 25 min · Depende de: ALA-T136 · RF-33, RF-61, RF-67–RF-68
+- [x] **ALA-T137 — Verificar redacción de errores y respuestas personales** · 25 min · Depende de: ALA-T136 · RF-33, RF-61, RF-67–RF-68
   Hecho cuando: HTTP no contiene SQL, trazas, importes ocultos ni datos de otras reservas; respuestas personales mantienen no-store.
 
-- [ ] **ALA-T138 — Verificar auditoría de cambios reales** · 25 min · Depende de: ALA-T137 · RF-15, RF-31, RF-69
+- [x] **ALA-T138 — Verificar auditoría de cambios reales** · 25 min · Depende de: ALA-T137 · RF-15, RF-31, RF-69
   Hecho cuando: Repeticiones de operaciones no duplican eventos y cambios de cupo, estado, configuración y licencia registran antes/después sin secretos.
 
-- [ ] **ALA-T139 — Verificar nueve rutas públicas** · 25 min · Depende de: ALA-T138 · RF-32–RF-35, RF-43–RF-68
+- [x] **ALA-T139 — Verificar nueve rutas públicas** · 25 min · Depende de: ALA-T138 · RF-32–RF-35, RF-43–RF-68
   Hecho cuando: Inventario y casos HTTP recorren catálogo, sesión, disponibilidad, tres acciones de apartado y tres de intento con estados previstos.
 
-- [ ] **ALA-T140 — Verificar cinco rutas privadas de disponibilidad** · 25 min · Depende de: ALA-T139 · RF-39–RF-55, RF-64, RF-67
+- [x] **ALA-T140 — Verificar cinco rutas privadas de disponibilidad** · 25 min · Depende de: ALA-T139 · RF-39–RF-55, RF-64, RF-67
   Hecho cuando: Configuración GET/PUT, consulta, validación y afectaciones conservan permisos y distinguen negativo funcional de error técnico.
 
-- [ ] **ALA-T141 — Revisar expectativas históricas incompatibles** · 25 min · Depende de: ALA-T140 · RF-01–RF-69
+- [x] **ALA-T141 — Revisar expectativas históricas incompatibles** · 25 min · Depende de: ALA-T140 · RF-01–RF-69
   Hecho cuando: Cada cambio de expectativa sobre 48 h, intervalos, bajas, descansos, excepciones o teléfonos cita su RF nuevo; evidencia histórica permanece intacta.
+
+  Evidencia T133–T141: [flujo, archivos y pruebas](resultados-tareas/resultado-t133-t141.md).
 
 ## 13. Migración segura, comprobaciones finales y evidencia
 
