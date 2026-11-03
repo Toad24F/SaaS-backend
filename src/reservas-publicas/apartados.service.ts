@@ -188,10 +188,16 @@ export class ApartadosService {
     const ahora = this.reloj.ahora();
     const servicio = await manager.getRepository(Servicio).findOneByOrFail({
       id: seleccion.servicioId, negocioId });
+    // Configuración, oferta y horario proceden de la misma revalidación bajo
+    // bloqueos; el navegador no aporta separación, modo ni fin protegido.
+    const separacionMinutos = evaluacion.reglasAplicadas.tiempoEntreCitasMinutos;
     const apartado = await manager.getRepository(BloqueoTemporal).save({
       negocioId, personalId: seleccion.personalId, sucursalId: seleccion.sucursalId,
       servicioId: seleccion.servicioId, inicioUtc: evaluacion.inicioUtc,
-      finUtc: evaluacion.finUtc, expiraEn: new Date(ahora.getTime() + 300_000),
+      finUtc: evaluacion.finUtc,
+      finOcupacionUtc: new Date(evaluacion.finUtc.getTime() + separacionMinutos * 60000),
+      separacionMinutos, modoConcesion: evaluacion.reglasAplicadas.modo,
+      versionReglas: 1, expiraEn: new Date(ahora.getTime() + 300_000),
       liberadoEn: null, titularHash, costoAceptado: servicio.costo,
       zonaHorariaApartado: evaluacion.zonaHoraria, sesionId: sesion.id,
       generacion: sesion.generacion, operacionId: operacion.id,

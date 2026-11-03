@@ -429,29 +429,31 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 9. Apartados preservados y escritor público
 
-- [ ] **ALA-T102 — Capturar condiciones al conceder apartado** · 25 min · Depende de: ALA-T101, ALA-T081 · RF-35, RF-43, RF-54
+- [x] **ALA-T102 — Capturar condiciones al conceder apartado** · 25 min · Depende de: ALA-T101, ALA-T081 · RF-35, RF-43, RF-54
   Hecho cuando: Fila nueva guarda modo, versión, separación, costo, zona y extremos del servidor sin modificar los cinco minutos.
 
-- [ ] **ALA-T103 — Separar validación de consumo propio** · 25 min · Depende de: ALA-T102 · RF-53–RF-55
+- [x] **ALA-T103 — Separar validación de consumo propio** · 25 min · Depende de: ALA-T102 · RF-53–RF-55
   Hecho cuando: Consumir apartado propio omite solo nueva selección/anclaje/primer horario y sigue comprobando licencia, oferta y conflictos.
 
-- [ ] **ALA-T104 — Transferir separación al registrar cita** · 25 min · Depende de: ALA-T103 · RF-43–RF-44, RF-54, RF-65
+- [x] **ALA-T104 — Transferir separación al registrar cita** · 25 min · Depende de: ALA-T103 · RF-43–RF-44, RF-54, RF-65
   Hecho cuando: Cita copia condiciones del apartado y consume su origen una sola vez, en el mismo commit que cliente y resultado.
 
-- [ ] **ALA-T105 — Verificar apartado tras cambio de modo y separación** · 25 min · Depende de: ALA-T104 · RF-53–RF-54
+- [x] **ALA-T105 — Verificar apartado tras cambio de modo y separación** · 25 min · Depende de: ALA-T104 · RF-53–RF-54
   Hecho cuando: Casos cambian Libre/Compacta o separación y liberan un horario anterior; el apartado original válido registra con su separación inicial.
 
-- [ ] **ALA-T106 — Verificar condiciones que sí invalidan consumo** · 25 min · Depende de: ALA-T105 · RF-29, RF-55, RF-65
+- [x] **ALA-T106 — Verificar condiciones que sí invalidan consumo** · 25 min · Depende de: ALA-T105 · RF-29, RF-55, RF-65
   Hecho cuando: Inhabilitar recurso o invalidar licencia/horario impide registro con apartado vigente, sin filas parciales ni plazo ampliado.
 
-- [ ] **ALA-T107 — Adaptar afectaciones a separación histórica** · 25 min · Depende de: ALA-T106 · RF-28, RF-44–RF-45, RF-54
+- [x] **ALA-T107 — Adaptar afectaciones a separación histórica** · 25 min · Depende de: ALA-T106 · RF-28, RF-44–RF-45, RF-54
   Hecho cuando: El lector evalúa fin protegido histórico, detecta conflicto operativo y no reescribe citas al cambiar configuración.
 
-- [ ] **ALA-T108 — Verificar reemplazo y límites de apartados** · 25 min · Depende de: ALA-T107 · RF-52, RF-54, RF-65
+- [x] **ALA-T108 — Verificar reemplazo y límites de apartados** · 25 min · Depende de: ALA-T107 · RF-52, RF-54, RF-65
   Hecho cuando: Reemplazo fallido deja anterior liberado; expiración exacta y fallos de consumo no renuevan ni resucitan apartados.
 
-- [ ] **ALA-T109 — Probar rollback del registro protegido** · 25 min · Depende de: ALA-T108 · RF-43, RF-65–RF-66
+- [x] **ALA-T109 — Probar rollback del registro protegido** · 25 min · Depende de: ALA-T108 · RF-43, RF-65–RF-66
   Hecho cuando: Fallos después de cliente, cita y consumo revierten el conjunto; una repetición válida conserva misma cita y folio.
+
+  Evidencia T102–T109: [flujo, archivos y pruebas](resultados-tareas/resultado-t102-t109.md).
 
 ## 10. Cupo telefónico y corrección
 

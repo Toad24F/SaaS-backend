@@ -75,7 +75,9 @@ export class RegistroReservaPublicaService {
       if (!apartado || !actual || actual.apartadoActualId !== apartado.id ||
         actual.generacion !== apartado.generacion || apartado.liberadoEn !== null ||
         ahora >= apartado.expiraEn || apartado.costoAceptado === null ||
-        apartado.zonaHorariaApartado === null || apartado.operacionId === null) {
+        apartado.zonaHorariaApartado === null || apartado.operacionId === null ||
+        apartado.modoConcesion === null || apartado.versionReglas === null ||
+        apartado.separacionMinutos === null || apartado.finOcupacionUtc === null) {
         throw new ConflictException('Apartado vencido o incompatible.');
       }
       const operacion = await manager.getRepository(OperacionApartado).findOneBy({
@@ -158,6 +160,10 @@ export class RegistroReservaPublicaService {
     const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId,
       sucursalId: apartado.sucursalId, personalId: apartado.personalId,
       servicioId: apartado.servicioId, clienteId: cliente.id, inicioUtc, finUtc,
+      // Origen y protección son los del apartado; cambiarlos con la
+      // configuración actual alteraría una condición ya concedida.
+      apartadoOrigenId: apartado.id, separacionMinutos: apartado.separacionMinutos!,
+      finOcupacionUtc: apartado.finOcupacionUtc!,
       zonaHorariaReserva: copia.zona, estado: 'pendiente', origen: 'portal_publico',
       motivoConsulta: contacto.notas, costoAceptado: copia.costo,
       nombreContacto: contacto.nombre, telefonoContacto: contacto.telefono,

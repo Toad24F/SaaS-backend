@@ -14,6 +14,7 @@ import { OcupacionesService, ocupacionesQueSeEmpalman } from './ocupaciones.serv
 import { cabeEnAtencion, iniciosAnclados,
   type ProyeccionAtencion } from './proyeccion-atencion';
 import type { ResultadoDisponibilidad, Ocupacion } from './contratos-internos';
+import type { ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
 import { generarCandidatosLibres } from './candidatos-libres';
 import { seleccionarPrimerosCompactos } from './primeros-compactos';
 import { cabeEnEspacioLibre, construirEspaciosLibres } from './espacios-libres';
@@ -49,6 +50,11 @@ export interface ResultadoValidacionInicio {
   zonaHoraria: string;
   modalidad: Modalidad;
   motivos: string[];
+}
+
+/** Datos internos de la misma instantánea; no forman parte de la respuesta HTTP. */
+export interface ResultadoRevalidacionEscritura extends ResultadoValidacionInicio {
+  reglasAplicadas: ValoresConfiguracionAgenda;
 }
 
 function mismoHash(a: string, b: string): boolean {
@@ -193,7 +199,7 @@ export class MotorDisponibilidadService {
   /** El escritor público aporta su manager tras esperar los bloqueos; no se
    * permite elegir modalidad ni abrir otra transacción desde esta entrada. */
   async revalidarPublicoEnTransaccion(manager: EntityManager, negocioId: number,
-    entrada: RevalidacionPublica): Promise<ResultadoValidacionInicio> {
+    entrada: RevalidacionPublica): Promise<ResultadoRevalidacionEscritura> {
     if (!manager.queryRunner?.isTransactionActive) {
       throw new Error('La revalidación requiere una transacción activa del escritor.');
     }
@@ -206,7 +212,7 @@ export class MotorDisponibilidadService {
   /** Compartir esta comprobación mantiene iguales las reglas de ocupación para
    * escritores privados y públicos; la exclusión se decide solo aquí. */
   private async revalidarConContexto(contexto: ContextoCalculoDisponibilidad,
-    entrada: RevalidacionEscritura): Promise<ResultadoValidacionInicio> {
+    entrada: RevalidacionEscritura): Promise<ResultadoRevalidacionEscritura> {
     validarModalidad(entrada.modalidad);
     validarFechaLocal(entrada.fechaLocal);
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(entrada.horaInicio)) {
@@ -224,6 +230,7 @@ export class MotorDisponibilidadService {
     const finUtc = new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
     let apartadoValido = true;
     let excluirApartadoId: number | undefined;
+    let separacionPreservada: number | undefined;
     if (entrada.apartadoPropio) {
       const propio = entrada.apartadoPropio;
       // Un ID arbitrario o hash erróneo jamás excluye una ocupación.
@@ -237,28 +244,41 @@ export class MotorDisponibilidadService {
         apartado.servicioId === entrada.servicioId &&
         apartado.inicioUtc.getTime() === inicioUtc.getTime() &&
         apartado.finUtc.getTime() === finUtc.getTime() &&
+        apartado.zonaHorariaApartado === oferta.zonaHoraria &&
+        apartado.modoConcesion !== null && apartado.versionReglas !== null &&
+        apartado.separacionMinutos !== null &&
+        apartado.finOcupacionUtc?.getTime() === finUtc.getTime() +
+          apartado.separacionMinutos * 60000 &&
         apartado.liberadoEn === null && ahora < apartado.expiraEn);
-      if (apartadoValido) excluirApartadoId = propio.id;
+      if (apartadoValido) {
+        excluirApartadoId = propio.id;
+        separacionPreservada = apartado!.separacionMinutos!;
+      }
     }
     const lectura = await this.calcular(contexto, entrada.sucursalId,
       entrada.servicioId, entrada.fechaLocal,
       entrada.fechaLocal, entrada.modalidad, excluirApartadoId);
-    return this.evaluarInicio(lectura, entrada.sucursalId, entrada.fechaLocal,
-      entrada.horaInicio, entrada.modalidad, ahora, !apartadoValido);
+    const evaluacion = this.evaluarInicio(lectura, entrada.sucursalId,
+      entrada.fechaLocal, entrada.horaInicio, entrada.modalidad, ahora,
+      !apartadoValido, separacionPreservada);
+    return { ...evaluacion, reglasAplicadas: lectura.resultado.reglas };
   }
 
   /** Comparte la decisión puntual entre HTTP y el contrato del futuro escritor. */
   private evaluarInicio(lectura: LecturaMotor, sucursalId: number,
     fechaLocal: string, horaInicio: string, modalidad: Modalidad, ahora: Date,
-    apartadoIncompatible = false): ResultadoValidacionInicio {
+    apartadoIncompatible = false,
+    separacionPreservada?: number): ResultadoValidacionInicio {
     const { resultado, oferta, atencion, ocupaciones } = lectura;
     const [horas, minutos] = horaInicio.split(':').map(Number);
     const inicioUtc = resolverInstanteLocal(fechaLocal,
       horas * 60 + minutos, oferta.zonaHoraria);
     const finUtc = new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
     // El resultado conserva el fin de atención; la comprobación suma la separación.
-    const finProtegidoUtc = new Date(finUtc.getTime() +
-      resultado.reglas.tiempoEntreCitasMinutos * 60000);
+    // El consumo del apartado propio mantiene solo su separación capturada;
+    // oferta, licencia, horario y ocupaciones siguen viniendo de la lectura actual.
+    const separacion = separacionPreservada ?? resultado.reglas.tiempoEntreCitasMinutos;
+    const finProtegidoUtc = new Date(finUtc.getTime() + separacion * 60000);
     const motivos: string[] = [...oferta.motivosExclusion];
     if (apartadoIncompatible) motivos.push('apartado_no_vigente_o_incompatible');
     // La negativa funcional informa causas sin crear ni modificar ocupaciones.
@@ -285,7 +305,11 @@ export class MotorDisponibilidadService {
     }
     const ofrecido = resultado.ranuras.some((ranura) =>
       ranura.inicioUtc.getTime() === inicioUtc.getTime());
-    if (!motivos.length && !ofrecido) motivos.push('no_ofrecido_por_estrategia');
+    // Un apartado ya concedido no pierde validez si otro inicio vuelve a ser
+    // el primero; esta excepción no se aplica a una concesión nueva.
+    if (!motivos.length && !ofrecido && separacionPreservada === undefined) {
+      motivos.push('no_ofrecido_por_estrategia');
+    }
     return { valido: motivos.length === 0, inicioUtc, finUtc,
       zonaHoraria: oferta.zonaHoraria, modalidad, motivos };
   }
