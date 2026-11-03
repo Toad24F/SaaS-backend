@@ -413,17 +413,19 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
   Evidencia T094–T097: [flujo, pruebas y resultados](resultados-tareas/resultado-t094-t097.md).
 
-- [ ] **ALA-T098 — Seleccionar único inicio de Agenda Compacta** · 25 min · Depende de: ALA-T097 · RF-50–RF-51
+- [x] **ALA-T098 — Seleccionar único inicio de Agenda Compacta** · 25 min · Depende de: ALA-T097 · RF-50–RF-51
   Hecho cuando: Mañana y tarde de una combinación devuelven solo el primer inicio válido por fecha, sin bloquear elección de otros días.
 
-- [ ] **ALA-T099 — Verificar avance y retorno de Compacta** · 25 min · Depende de: ALA-T098 · RF-52
+- [x] **ALA-T099 — Verificar avance y retorno de Compacta** · 25 min · Depende de: ALA-T098 · RF-52
   Hecho cuando: Un apartado mueve la oferta al siguiente inicio y su liberación o vencimiento vuelve a considerar el anterior.
 
-- [ ] **ALA-T100 — Conectar generación y validación de nuevas concesiones** · 25 min · Depende de: ALA-T099 · RF-43–RF-52, RF-65
+- [x] **ALA-T100 — Conectar generación y validación de nuevas concesiones** · 25 min · Depende de: ALA-T099 · RF-43–RF-52, RF-65
   Hecho cuando: Consultar y conceder usan el mismo resultado de estrategia; el cliente no puede imponer separación, precio ni una modalidad manual.
 
-- [ ] **ALA-T101 — Verificar errores y vacíos del motor** · 25 min · Depende de: ALA-T100 · RF-67
+- [x] **ALA-T101 — Verificar errores y vacíos del motor** · 25 min · Depende de: ALA-T100 · RF-67
   Hecho cuando: Cálculo correcto sin candidatos da vacío legítimo y fallos inyectados dan 500/503 sin resultados parciales.
+
+  Evidencia T098–T101: [flujo, pruebas y resultados](resultados-tareas/resultado-t098-t101.md).
 
 ## 9. Apartados preservados y escritor público
 

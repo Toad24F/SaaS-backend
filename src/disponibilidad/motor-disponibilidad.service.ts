@@ -14,16 +14,14 @@ import { OcupacionesService, ocupacionesQueSeEmpalman } from './ocupaciones.serv
 import { cabeEnAtencion, iniciosAnclados,
   type ProyeccionAtencion } from './proyeccion-atencion';
 import type { ResultadoDisponibilidad, Ocupacion } from './contratos-internos';
-import type { ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
-import { seleccionarCompactas } from './seleccion-compacta';
+import { generarCandidatosLibres } from './candidatos-libres';
+import { seleccionarPrimerosCompactos } from './primeros-compactos';
 import { cabeEnEspacioLibre, construirEspaciosLibres } from './espacios-libres';
 import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
 
 type Modalidad = 'publica' | 'manual';
 type Ranura = { inicioUtc: Date; finUtc: Date };
 type OfertaLeida = Awaited<ReturnType<OfertaEfectivaService['consultar']>>;
-// Paso técnico hasta sustituir la generación de inicios en ALA-T090 y siguientes.
-const PASO_PUBLICO_MINUTOS = 5;
 
 /** Identidad ya derivada del solicitante por el futuro escritor; nunca un token utilizable. */
 export interface ApartadoPropioComprobable {
@@ -71,34 +69,20 @@ function fechaEnZona(instante: Date, zonaHoraria: string): string {
   return `${valor('year')}-${valor('month')}-${valor('day')}`;
 }
 
-/** Aplica límites comerciales a la fecha de la sucursal, no a la fecha UTC. */
-function dentroDeLimites(inicioUtc: Date, fechaLocal: string, hoyLocal: string,
-  ahora: Date, reglas: ValoresConfiguracionAgenda): boolean {
-  const distancia = (Date.parse(`${fechaLocal}T00:00:00Z`) -
-    Date.parse(`${hoyLocal}T00:00:00Z`)) / 86400000;
-  return distancia >= 0 && distancia <= reglas.diasFuturos &&
-    inicioUtc.getTime() >= ahora.getTime() + reglas.anticipacionMinutos * 60000;
-}
-
-/** Filtra intervalos completos; un extremo igual al de otra ocupación es válido. */
-function candidatosValidos(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[],
-  sucursalId: number, duracionMinutos: number, reglas: ValoresConfiguracionAgenda,
-  ahora: Date, hoyLocal: string, zonaHoraria: string, modalidad: Modalidad): Ranura[] {
+/** La modalidad manual conserva inicios por minuto y omite estrategia pública. */
+function candidatosManuales(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[],
+  sucursalId: number, duracionMinutos: number, separacionMinutos: number,
+  ahora: Date): Ranura[] {
   const duracion = duracionMinutos * 60000;
-  const proteccion = (duracionMinutos + reglas.tiempoEntreCitasMinutos) * 60000;
+  const proteccion = (duracionMinutos + separacionMinutos) * 60000;
   // Los huecos combinan bloqueos ya proyectados con ocupaciones de todas las sedes.
   const espacios = construirEspaciosLibres(atencion.tramos, sucursalId, ocupaciones);
   return iniciosAnclados(atencion.bloques, atencion.tramos,
-    modalidad === 'manual' ? 1 : PASO_PUBLICO_MINUTOS,
-    duracionMinutos + reglas.tiempoEntreCitasMinutos)
+    1, duracionMinutos + separacionMinutos)
     .flatMap((inicioUtc) => {
     const finUtc = new Date(inicioUtc.getTime() + duracion);
     const finProtegidoUtc = new Date(inicioUtc.getTime() + proteccion);
-    // La fecha civil del inicio se evalúa en la zona de la sucursal solicitada.
-    const fechaLocal = fechaEnZona(inicioUtc, zonaHoraria);
-    if ((modalidad === 'publica' &&
-      !dentroDeLimites(inicioUtc, fechaLocal, hoyLocal, ahora, reglas)) ||
-      (modalidad === 'manual' && inicioUtc < ahora) ||
+    if (inicioUtc < ahora ||
       !cabeEnEspacioLibre(espacios, inicioUtc, finProtegidoUtc)) return [];
     return [{ inicioUtc, finUtc }];
   });
@@ -298,14 +282,6 @@ export class MotorDisponibilidadService {
       if (ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finProtegidoUtc).length) {
         motivos.push('ocupado');
       }
-      if (modalidad === 'publica' && atencion.bloques.some((bloque) =>
-        inicioUtc >= bloque.inicioUtc && inicioUtc < bloque.finUtc) &&
-        !atencion.bloques.some((bloque) => inicioUtc >= bloque.inicioUtc &&
-          inicioUtc < bloque.finUtc &&
-          (inicioUtc.getTime() - bloque.inicioUtc.getTime()) %
-            (PASO_PUBLICO_MINUTOS * 60000) === 0)) {
-        motivos.push('fuera_de_secuencia');
-      }
     }
     const ofrecido = resultado.ranuras.some((ranura) =>
       ranura.inicioUtc.getTime() === inicioUtc.getTime());
@@ -349,12 +325,21 @@ export class MotorDisponibilidadService {
     // hash, pertenencia, combinación, intervalo exacto y vigencia.
     ocupaciones.push(...leidas.filter((ocupacion) =>
       !(ocupacion.tipo === 'apartado' && ocupacion.id === excluirApartadoId)));
-    const hoyLocal = fechaEnZona(ahora, oferta.zonaHoraria);
-    const candidatos = candidatosValidos(proyeccion, ocupaciones, sucursalId,
-      oferta.duracionMinutos, reglas, ahora, hoyLocal, oferta.zonaHoraria, modalidad);
-    resultado.ranuras = modalidad === 'manual' || reglas.modo === 'ventana_libre'
-      ? candidatos : seleccionarCompactas(proyeccion.tramos, ocupaciones,
-        candidatos, PASO_PUBLICO_MINUTOS, oferta.duracionMinutos);
+    if (modalidad === 'manual') {
+      resultado.ranuras = candidatosManuales(proyeccion, ocupaciones, sucursalId,
+        oferta.duracionMinutos, reglas.tiempoEntreCitasMinutos, ahora);
+    } else {
+      // Consulta y nueva concesión llegan a calcular() bajo sus respectivas
+      // transacciones; ambas usan exactamente estos candidatos y selección.
+      const espacios = construirEspaciosLibres(proyeccion.tramos, sucursalId,
+        ocupaciones);
+      const candidatos = generarCandidatosLibres(espacios, oferta.duracionMinutos,
+        reglas.tiempoEntreCitasMinutos, { zonaHoraria: oferta.zonaHoraria,
+          ahora, anticipacionMinutos: reglas.anticipacionMinutos,
+          diasFuturos: reglas.diasFuturos, desde, hasta });
+      resultado.ranuras = reglas.modo === 'ventana_libre' ? candidatos :
+        seleccionarPrimerosCompactos(candidatos, oferta.zonaHoraria);
+    }
     return { resultado, oferta, atencion: proyeccion, ocupaciones };
   }
 }
