@@ -75,7 +75,8 @@ const reemitir = (ctx: Contexto, token = ctx.tokens[0], body: object = {}) => re
   .post(`/negocios/${ctx.pendiente.negocioId}/reemitir-codigo`).auth(token, { type: 'bearer' }).send(body);
 function publicos(usuario: Usuario) {
   return { id: usuario.id, negocioId: usuario.negocioId, nombre: usuario.nombre, email: usuario.email,
-    rol: usuario.rol, activo: usuario.activo, activadoEn: usuario.activadoEn?.toISOString() ?? null };
+    rol: usuario.rol, activo: usuario.activo, activadoEn: usuario.activadoEn?.toISOString() ?? null,
+    inhabilitadoEn: usuario.inhabilitadoEn?.toISOString() ?? null };
 }
 async function estado(db: DataSource) {
   return { usuarios: await db.getRepository(Usuario).find({ order: { id: 'ASC' } }),
@@ -416,9 +417,11 @@ describe('T48, T77 y T83 — recepcionistas y reemisión HTTP', () => {
   it('revierte reemplazo y auditoría juntos si falla registrar la emisión', async () => {
     await conHttp(async (ctx) => {
       const antes = await estado(ctx.db);
-      // Inyección de fallo controlada: los Guards y la persistencia siguen siendo reales.
-      const fallo = jest.spyOn(ctx.app.get(AuditoriaService), 'registrar').mockRejectedValueOnce(new Error('Fallo de prueba T48'));
-      try { await reemitir(ctx).expect(500); } finally { fallo.mockRestore(); }
+      // El disparador falla en el INSERT de auditoría dentro de la transacción.
+      await ctx.db.query(`CREATE TRIGGER auditoria_fallo_t48 BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de prueba T48'`);
+      try { await reemitir(ctx).expect(500); }
+      finally { await ctx.db.query('DROP TRIGGER auditoria_fallo_t48'); }
       expect(await estado(ctx.db)).toEqual(antes);
     });
   });

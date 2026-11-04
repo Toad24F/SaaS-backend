@@ -88,8 +88,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         const profToken = (await request(http).post('/auth/login').send({
           email: 'prof-t133@example.test', password: PASSWORD }).expect(200)).body.accessToken;
         const horario = { franjas: [{ diaSemana: 1, orden: 0, sucursalId: sede.id,
-          inicioMinutos: 540, finMinutos: 720, descansoInicioMinutos: null,
-          descansoFinMinutos: null, activo: true }] };
+          // ALA RF-36 retiró los campos de descanso de la escritura semanal.
+          inicioMinutos: 540, finMinutos: 720, activo: true }] };
         const semana = (await request(http).put(`${ruta}/horario`)
           .auth(profToken, { type: 'bearer' }).send(horario).expect(200)).body;
         expect(semana).toHaveLength(1);

@@ -42,11 +42,15 @@ async function escenario(ejecutar: (datos: {
       (negocio_id,personal_id,sucursal_id,dia_semana,orden,
       inicio_minutos,fin_minutos,activo) VALUES (?,?,?,1,0,540,780,1)`,
     [a.id, a.personalId, a.sucursales[0]]);
+    // El apartado propio debe portar el contexto de concesión vigente: ALA
+    // RF-54 rechaza excluir apartados históricos sin esa versión de reglas.
     const alta = await db.query(`INSERT INTO bloqueos_temporales
       (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,
-      expira_en,titular_hash) VALUES (?,?,?,?,?,?,?,?)`,
+      expira_en,titular_hash,zona_horaria_apartado,separacion_minutos,
+      fin_ocupacion_utc,modo_concesion,version_reglas)
+      VALUES (?,?,?,?,?,?,?,?,?,0,?,'ventana_libre',1)`,
     [a.id, a.personalId, a.sucursales[0], a.servicios[0], inicioUtc, finUtc,
-      new Date('2026-07-06T16:40:00.000Z'), hash]);
+      new Date('2026-07-06T16:40:00.000Z'), hash, 'America/Chihuahua', finUtc]);
     const apartadoId = Number(alta.insertId);
     const permisos = new AutorizacionService();
     const motor = new MotorDisponibilidadService(db, reloj,
@@ -143,12 +147,14 @@ describe('M2-T074–T077: contrato de colaboración, sin reserva real', () => {
         .toBe(false);
       await db.query('UPDATE bloqueos_temporales SET personal_id=? WHERE id=?',
         [a.personalId, apartadoId]);
-      await db.query('UPDATE bloqueos_temporales SET fin_utc=? WHERE id=?',
-        [new Date('2026-07-06T17:01:00Z'), apartadoId]);
+      // El check ALA exige que el fin protegido siga al fin del servicio.
+      await db.query(`UPDATE bloqueos_temporales
+        SET fin_utc=?,fin_ocupacion_utc=? WHERE id=?`,
+      [new Date('2026-07-06T17:01:00Z'), new Date('2026-07-06T17:01:00Z'), apartadoId]);
       expect((await validar({ id: apartadoId, titularHash: hash })).valido)
         .toBe(false);
-      await db.query('UPDATE bloqueos_temporales SET fin_utc=? WHERE id=?',
-        [finUtc, apartadoId]);
+      await db.query(`UPDATE bloqueos_temporales
+        SET fin_utc=?,fin_ocupacion_utc=? WHERE id=?`, [finUtc, finUtc, apartadoId]);
       reloj.fijar(new Date('2026-07-06T16:40:00Z'));
       expect((await validar({ id: apartadoId, titularHash: hash })).valido)
         .toBe(false);

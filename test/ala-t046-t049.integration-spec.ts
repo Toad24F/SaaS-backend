@@ -25,18 +25,20 @@ const servicio = (db: DataSource) => new LicenciasService(db.getRepository(Licen
   new AutorizacionService(), new CalendarioLicenciasService(), new AuditoriaService());
 
 async function escenario(db: DataSource) {
+  // Se fija también la creación para que la prueba no dependa del reloj real
+  // del host al validar activación y habilitación de la licencia.
   const correo = `${randomUUID()}@example.test`;
   const actor = await db.getRepository(Usuario).save({ negocioId: null, nombre: 'Superadmin',
     email: `${randomUUID()}@example.test`, passwordHash: 'hash', rol: Rol.SUPERADMIN,
-    activo: true, activadoEn: ahora });
+    activo: true, creadoEn: ahora, activadoEn: ahora });
   const negocio = await db.getRepository(Negocio).save({ nombre: 'Carreras ALA',
     slug: `ala-${randomUUID()}`, emailContacto: correo, correoAdministrador: correo,
-    telefonoContacto: null, activadoEn: ahora });
+    telefonoContacto: null, creadoEn: ahora, activadoEn: ahora });
   await db.getRepository(Usuario).save({ negocioId: negocio.id, nombre: 'Administradora',
     email: correo, passwordHash: 'hash', rol: Rol.ADMIN_NEGOCIO,
-    activo: true, activadoEn: ahora });
+    activo: true, creadoEn: ahora, activadoEn: ahora });
   const licencia = await db.getRepository(Licencia).save({ negocioId: negocio.id,
-    habilitadaEn: ahora, venceEn: new Date(ahora.getTime() + 90 * DIA),
+    creadoEn: ahora, habilitadaEn: ahora, venceEn: new Date(ahora.getTime() + 90 * DIA),
     versionVencimiento: 1, suspendidaEn: null });
   return { actor, negocio, licencia };
 }

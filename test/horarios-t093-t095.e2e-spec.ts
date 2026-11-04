@@ -15,8 +15,7 @@ import { SesionesService } from '../src/auth/services/sesiones.service';
 
 const franja = (sucursalId: number, inicioMinutos: number, finMinutos: number,
   extra = {}) => ({ diaSemana: 1, orden: 0, sucursalId, inicioMinutos,
-    finMinutos, descansoInicioMinutos: null, descansoFinMinutos: null,
-    activo: true, ...extra });
+    finMinutos, activo: true, ...extra });
 
 // Cuentas y sesiones reales ejercitan guard, matriz de roles y pertenencia actual.
 async function conHttp(ejecutar: (app: INestApplication, datos: {
@@ -117,33 +116,26 @@ describe('T093–T095 rutas de horario', () => {
     });
   });
 
-  it('expone excepción vacía, conflicto entre zonas y retiro con propietario', async () => {
+  it('ALA RF-37 retira excepciones y conserva huecos semanales por HTTP', async () => {
     await conHttp(async (app, { perfilId, sucursales, tokens }) => {
       const http = app.getHttpServer();
       const ruta = `/profesionales/${perfilId}`;
       await request(http).put(`${ruta}/horario`).auth(tokens.admin, { type: 'bearer' })
         .send({ franjas: [franja(sucursales[0], 540, 600)] }).expect(200);
-      const fecha = '2026-01-12';
-      const especial = `${ruta}/excepciones/${fecha}`;
-      await request(http).put(especial).auth(tokens.recepcion, { type: 'bearer' })
-        .send({ sucursalId: sucursales[0], franjas: [] }).expect(403);
-      await request(http).put(especial).auth(tokens.otroProfesional, { type: 'bearer' })
-        .send({ sucursalId: sucursales[0], franjas: [] }).expect(403);
-      const cierre = await request(http).put(especial)
-        .auth(tokens.profesional, { type: 'bearer' })
-        .send({ sucursalId: sucursales[0], franjas: [] }).expect(200);
-      expect(cierre.body).toMatchObject({ fechaLocal: fecha, franjas: [] });
-      const consulta = await request(http).get(`${ruta}/excepciones`)
-        .auth(tokens.admin, { type: 'bearer' }).expect(200);
-      expect(consulta.body).toEqual([cierre.body]);
-      await request(http).put(especial).auth(tokens.admin, { type: 'bearer' })
-        .send({ sucursalId: sucursales[1], franjas: [{ orden: 0,
-          inicioMinutos: 420, finMinutos: 480,
-          descansoInicioMinutos: null, descansoFinMinutos: null }] }).expect(200);
+      const especial = `${ruta}/excepciones/2026-01-12`;
+      await request(http).put(especial).auth(tokens.profesional, { type: 'bearer' })
+        .send({ sucursalId: sucursales[0], franjas: [] }).expect(404);
+      await request(http).get(`${ruta}/excepciones`)
+        .auth(tokens.admin, { type: 'bearer' }).expect(404);
       await request(http).delete(`${especial}?sucursalId=${sucursales[0]}`)
-        .auth(tokens.profesional, { type: 'bearer' }).expect(409);
-      expect((await request(http).get(`${ruta}/excepciones`)
-        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body).toHaveLength(2);
+        .auth(tokens.profesional, { type: 'bearer' }).expect(404);
+      const dividida = await request(http).put(`${ruta}/horario`)
+        .auth(tokens.profesional, { type: 'bearer' }).send({ franjas: [
+          franja(sucursales[0], 540, 600),
+          franja(sucursales[0], 630, 660, { orden: 1 }),
+        ] }).expect(200);
+      expect(dividida.body.map((f: { inicioMinutos: number }) => f.inicioMinutos))
+        .toEqual([540, 630]);
     });
   });
 });

@@ -567,44 +567,57 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 ## 13. Migración segura, comprobaciones finales y evidencia
 
-- [ ] **ALA-T142 — Implementar comprobación previa de datos incompatibles** · 25 min · Depende de: ALA-T141 · RF-36–RF-42, RF-54–RF-55
+- [x] **ALA-T142 — Implementar comprobación previa de datos incompatibles** · 25 min · Depende de: ALA-T141 · RF-36–RF-42, RF-54–RF-55
   Hecho cuando: Se detectan apartados antiguos vigentes y descansos/excepciones operativos; su presencia impide activar reglas sin limpiar datos.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T143 — Probar preservación de datos históricos de actualización** · 25 min · Depende de: ALA-T142 · RF-22, RF-35–RF-38, RF-43, RF-54
+- [x] **ALA-T143 — Probar preservación de datos históricos de actualización** · 25 min · Depende de: ALA-T142 · RF-22, RF-35–RF-38, RF-43, RF-54
   Hecho cuando: Fixtures históricos conservan cuentas, relaciones, costos y citas; nuevos campos no atribuyen visibilidad pasada ni separación inexistente.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T144 — Verificar instalación limpia final** · 25 min · Depende de: ALA-T143 · RF-01–RF-69
+- [x] **ALA-T144 — Verificar instalación limpia final** · 25 min · Depende de: ALA-T143 · RF-01–RF-69
   Hecho cuando: Base desechable vacía aplica todas las migraciones y coincide con el esquema canónico en restricciones del ajuste.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T145 — Verificar actualización final y rechazo de destino inseguro** · 25 min · Depende de: ALA-T144 · RF-01–RF-69
+- [x] **ALA-T145 — Verificar actualización final y rechazo de destino inseguro** · 25 min · Depende de: ALA-T144 · RF-01–RF-69
   Hecho cuando: Base de prueba con esquema previo se actualiza sin pérdida y el ejecutor rechaza un nombre de base cotidiana.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T146 — Preparar inventario completo de suites y lotes acotados** · 15 min · Depende de: ALA-T145 · RF-01–RF-69
+- [x] **ALA-T146 — Preparar inventario completo de suites y lotes acotados** · 15 min · Depende de: ALA-T145 · RF-01–RF-69
   Hecho cuando: Un manifiesto enumera todos los tests requeridos, sin exclusiones silenciosas, y asigna lotes con duración prevista menor de treinta minutos.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T147 — Ejecutar compilación final** · 25 min · Depende de: ALA-T146 · RF-01–RF-69
+- [x] **ALA-T147 — Ejecutar compilación final** · 25 min · Depende de: ALA-T146 · RF-01–RF-69
   Hecho cuando: npm run build termina con código cero y se conserva revisión y salida; si falla, la tarea permanece pendiente.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T148 — Ejecutar lint final** · 25 min · Depende de: ALA-T147 · RF-01–RF-69
+- [x] **ALA-T148 — Ejecutar lint final** · 25 min · Depende de: ALA-T147 · RF-01–RF-69
   Hecho cuando: npm run lint termina con código cero sin usar format como comprobación y se conserva su salida.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T149 — Verificar cobertura de ejecución unitaria final** · 25 min · Depende de: ALA-T148 · RF-01–RF-62, RF-64–RF-69
+- [x] **ALA-T149 — Verificar cobertura de ejecución unitaria final** · 25 min · Depende de: ALA-T148 · RF-01–RF-62, RF-64–RF-69
   Hecho cuando: El manifiesto acredita cada test unitario requerido con ejecución exitosa en revisión vigente, sin saltados; los lotes adicionales tienen sus propias tareas.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md).
 
-- [ ] **ALA-T150 — Verificar cobertura de integración final** · 25 min · Depende de: ALA-T149 · RF-01–RF-62, RF-64–RF-69
+- [x] **ALA-T150 — Verificar cobertura de integración final** · 25 min · Depende de: ALA-T149 · RF-01–RF-62, RF-64–RF-69
   Hecho cuando: El manifiesto acredita cada test de integración requerido ejecutado en base segura, con filas finales y sin casos omitidos.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md); [matriz final](resultados-tareas/matriz-final-t152.md).
 
-- [ ] **ALA-T151 — Verificar cobertura HTTP final** · 25 min · Depende de: ALA-T150 · RF-01–RF-62, RF-64–RF-69
+- [x] **ALA-T151 — Verificar cobertura HTTP final** · 25 min · Depende de: ALA-T150 · RF-01–RF-62, RF-64–RF-69
   Hecho cuando: Todos los casos e2e requeridos constan exitosos en revisión vigente; no se usa evidencia de frontend como sustituto.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md); [matriz final](resultados-tareas/matriz-final-t152.md).
 
-- [ ] **ALA-T152 — Consolidar matriz RF a prueba y resultado** · 15 min · Depende de: ALA-T151 · RF-01–RF-69
+- [x] **ALA-T152 — Consolidar matriz RF a prueba y resultado** · 15 min · Depende de: ALA-T151 · RF-01–RF-69
   Hecho cuando: Cada RF enlaza casos y evidencia; RF-63 manual está diferido y ninguna preparación o demo aparece como integración real.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md); [matriz final](resultados-tareas/matriz-final-t152.md).
 
-- [ ] **ALA-T153 — Documentar compatibilidad y recuperación de despliegue** · 25 min · Depende de: ALA-T152 · RF-22, RF-33, RF-36–RF-42, RF-54, RF-60, RF-65
+- [x] **ALA-T153 — Documentar compatibilidad y recuperación de despliegue** · 25 min · Depende de: ALA-T152 · RF-22, RF-33, RF-36–RF-42, RF-54, RF-60, RF-65
   Hecho cuando: El documento enumera cambios incompatibles, condición para abrir escrituras y límites de rollback sin ejecutar despliegue ni habilitar producción.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md); [matriz final](resultados-tareas/matriz-final-t152.md).
 
-- [ ] **ALA-T154 — Contrastar los ocho criterios de finalización** · 15 min · Depende de: ALA-T153 · RF-01–RF-69
+- [x] **ALA-T154 — Contrastar los ocho criterios de finalización** · 15 min · Depende de: ALA-T153 · RF-01–RF-69
   Hecho cuando: Cada criterio enlaza evidencia vigente o una limitación explícita; quedan pendientes manuales identificados y no se declara cerrada fase 4.
+  Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md); [matriz final](resultados-tareas/matriz-final-t152.md).
 
 ## 14. Integración manual diferida — fuera de la ejecución actual
 

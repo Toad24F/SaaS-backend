@@ -69,6 +69,13 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
 
   it('conserva datos anteriores al actualizar y admite teléfono compartido', async () => {
     await conBaseMigrada(async (db) => {
+      // Primero retrocede las nueve migraciones ALA y el catálogo público
+      // posteriores a las relaciones del portal.
+      // Así la prueba reconstruye fase 3 sin depender de que el portal siga
+      // siendo la última migración del repositorio.
+      for (let indice = 0; indice < 10; indice += 1) {
+        await db.undoLastMigration({ transaction: 'each' });
+      }
       // Retrocede también las relaciones de T014 para reconstruir fase 3.
       for (const nombre of [...migracionesPortal].reverse()) {
         const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');

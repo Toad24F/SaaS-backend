@@ -34,7 +34,9 @@ async function conHorario(ejecutar: (app: INestApplication, db: DataSource,
         slug: 'ala-horarios', emailContacto: 'agenda@example.test',
         creadoEn: reloj.ahora(), activadoEn: reloj.ahora(), limiteSucursalesActivas: 2 });
       await db.getRepository(Licencia).save({ negocioId: negocio.id,
-        habilitadaEn: reloj.ahora(), venceEn: new Date('2027-11-01T12:00:00.000Z'),
+        // El reloj fijo gobierna también la creación exigida por el CHECK SQL.
+        creadoEn: reloj.ahora(), habilitadaEn: reloj.ahora(),
+        venceEn: new Date('2027-11-01T12:00:00.000Z'),
         suspendidaEn: null });
       const usuario = await db.getRepository(Usuario).save({ negocioId: negocio.id,
         nombre: 'Profesional', email: 'profesional@ala.test', passwordHash: 'hash',

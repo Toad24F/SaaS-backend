@@ -7,9 +7,11 @@ describe('ALA-T019–T022: migrar separación y extremos protegidos', () => {
     await conBaseMigrada(async (db) => {
       const nuevas = ['SeparacionAgenda1760000039000', 'ExtremosProtegidos1760000040000'];
       expect(nuevas.every((nombre) => db.migrations.some((m) => m.name === nombre))).toBe(true);
-      // Prepara datos con el esquema anterior y luego ejecuta solo las migraciones nuevas.
-      await db.undoLastMigration();
-      await db.undoLastMigration();
+      // Retrocede también las dos migraciones posteriores a este bloque para
+      // que la fixture se escriba realmente antes de SeparacionAgenda.
+      for (let indice = 0; indice < 4; indice += 1) {
+        await db.undoLastMigration();
+      }
       const escenario = await crearEscenarioPortal(db,
         new RelojPrueba(new Date('2026-10-20T12:00:00Z')));
       const negocio = escenario.negocios[0].id;

@@ -9,9 +9,6 @@ import { HorariosService } from '../src/horarios/horarios.service';
 const lunes = (sucursalId: number, inicioMinutos: number, finMinutos: number,
   extra = {}) => ({ diaSemana: 1, orden: 0, sucursalId, inicioMinutos, finMinutos,
     descansoInicioMinutos: null, descansoFinMinutos: null, activo: true, ...extra });
-const especial = (inicioMinutos: number, finMinutos: number, extra = {}) => ({
-  orden: 0, inicioMinutos, finMinutos, descansoInicioMinutos: null,
-  descansoFinMinutos: null, ...extra });
 
 // El fixture usa zonas con cambios distintos para comprobar conflictos reales.
 async function preparar(db: Parameters<Parameters<typeof conBaseMigrada>[0]>[0]) {
@@ -37,48 +34,31 @@ async function preparar(db: Parameters<Parameters<typeof conBaseMigrada>[0]>[0])
   return { negocioId: negocio.id, personalId: usuario.id, sucursales };
 }
 
-describe('T092–T096 excepciones y último guardado válido', () => {
-  it('crea, sustituye por cierre vacío y retira la excepción sin perder la semana', async () => {
+describe('T092–T096 semana vigente y último guardado válido', () => {
+  it('ALA RF-37–RF-38 representa el descanso con dos franjas y conserva el hueco', async () => {
     await conBaseMigrada(async (db) => {
       const { negocioId, personalId, sucursales } = await preparar(db);
       const servicio = new HorariosService(db.getRepository(HorarioPersonal));
-      await servicio.guardarSemana(negocioId, personalId,
-        [lunes(sucursales[0], 540, 600)], '2026-01-01');
-      const normal = await servicio.guardarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[0], [especial(600, 660)], '2026-01-01');
-      expect(normal.franjas).toHaveLength(1);
-      const cierre = await servicio.guardarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[0], [], '2026-01-01');
-      expect(cierre.id).toBe(normal.id);
-      expect(cierre.franjas).toEqual([]);
-      expect(await servicio.consultarExcepciones(negocioId, personalId)).toMatchObject([
-        { id: normal.id, fechaLocal: '2026-01-12', franjas: [] },
-      ]);
-      await servicio.retirarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[0], '2026-01-01');
-      expect(await servicio.consultarExcepciones(negocioId, personalId)).toEqual([]);
-      expect(await servicio.consultarSemana(negocioId, personalId)).toHaveLength(1);
+      const partida = await servicio.guardarSemana(negocioId, personalId,
+        [lunes(sucursales[0], 540, 600), lunes(sucursales[0], 660, 720)], '2026-01-01');
+      expect(partida.map((f) => [f.inicioMinutos, f.finMinutos]))
+        .toEqual([[540, 600], [660, 720]]);
+      expect(await servicio.consultarSemana(negocioId, personalId)).toEqual(partida);
+      expect(await servicio.guardarSemana(negocioId, personalId,
+        [lunes(sucursales[0], 540, 600)], '2026-01-01')).toHaveLength(1);
     });
   });
 
-  it('rechaza empalme al crear o retirar y conserva cabecera vacía previa', async () => {
+  it('ALA RF-37 rechaza un empalme semanal entre zonas sin perder la versión previa', async () => {
     await conBaseMigrada(async (db) => {
       const { negocioId, personalId, sucursales } = await preparar(db);
       const servicio = new HorariosService(db.getRepository(HorarioPersonal));
-      await servicio.guardarSemana(negocioId, personalId,
+      const anterior = await servicio.guardarSemana(negocioId, personalId,
         [lunes(sucursales[0], 540, 600)], '2026-01-01');
-      await expect(servicio.guardarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[1], [especial(420, 480)], '2026-01-01'))
+      await expect(servicio.guardarSemana(negocioId, personalId,
+        [lunes(sucursales[0], 540, 600), lunes(sucursales[1], 420, 480)], '2026-01-01'))
         .rejects.toBeInstanceOf(ConflictException);
-      const vacia = await servicio.guardarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[0], [], '2026-01-01');
-      await servicio.guardarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[1], [especial(420, 480)], '2026-01-01');
-      await expect(servicio.retirarExcepcion(negocioId, personalId,
-        '2026-01-12', sucursales[0], '2026-01-01'))
-        .rejects.toBeInstanceOf(ConflictException);
-      expect(await servicio.consultarExcepciones(negocioId, personalId)).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: vacia.id, franjas: [] })]));
+      expect(await servicio.consultarSemana(negocioId, personalId)).toEqual(anterior);
     });
   });
 
@@ -86,8 +66,7 @@ describe('T092–T096 excepciones y último guardado válido', () => {
     await conBaseMigrada(async (db) => {
       const { negocioId, personalId, sucursales } = await preparar(db);
       const servicio = new HorariosService(db.getRepository(HorarioPersonal));
-      const activa = lunes(sucursales[0], 540, 600,
-        { descansoInicioMinutos: 555, descansoFinMinutos: 570 });
+      const activa = lunes(sucursales[0], 540, 600);
       const borrador = lunes(sucursales[1], 720, null,
         { activo: false, descansoInicioMinutos: null, descansoFinMinutos: null });
       const guardadas = await servicio.guardarSemana(negocioId, personalId,
@@ -115,11 +94,11 @@ describe('T092–T096 excepciones y último guardado válido', () => {
           .rejects.toBeInstanceOf(BadRequestException);
       }
       expect(await servicio.consultarSemana(negocioId, personalId)).toEqual(reactivada);
-      const extremos = await servicio.guardarSemana(negocioId, personalId,
+      // ALA RF-36 retira incluso el descanso que ocupa toda la fila.
+      await expect(servicio.guardarSemana(negocioId, personalId,
         [{ ...reactivada[0], descansoInicioMinutos: 540,
-          descansoFinMinutos: 600 }, reactivada[1]], '2026-01-01');
-      expect(extremos[0]).toMatchObject({ descansoInicioMinutos: 540,
-        descansoFinMinutos: 600 });
+          descansoFinMinutos: 600 }, reactivada[1]], '2026-01-01'))
+        .rejects.toBeInstanceOf(BadRequestException);
       expect(await servicio.guardarSemana(negocioId, personalId, [], '2026-01-01'))
         .toEqual([]);
     });

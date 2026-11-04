@@ -19,18 +19,20 @@ const instante = new Date('2026-11-01T18:00:00.000Z');
 const clave = (nombre: string) => `ala-${nombre}-1234567890123456`;
 
 async function escenario(db: DataSource, diasVigentes = 90) {
+  // Las tres altas usan el reloj del caso; así los checks de activación no
+  // comparan fechas de noviembre con el reloj real de la máquina.
   const actor = await db.getRepository(Usuario).save({
     negocioId: null, nombre: 'Superadmin', email: `${randomUUID()}@example.test`,
     passwordHash: 'hash-de-prueba', rol: Rol.SUPERADMIN, activo: true,
-    activadoEn: instante,
+    creadoEn: instante, activadoEn: instante,
   });
   const negocio = await db.getRepository(Negocio).save({
     nombre: `Negocio ${randomUUID()}`, slug: `ala-${randomUUID()}`,
     emailContacto: `${randomUUID()}@example.test`, telefonoContacto: null,
-    activadoEn: instante,
+    creadoEn: instante, activadoEn: instante,
   });
   const licencia = await db.getRepository(Licencia).save({ negocioId: negocio.id,
-    habilitadaEn: null, venceEn: null, suspendidaEn: null });
+    creadoEn: instante, habilitadaEn: null, venceEn: null, suspendidaEn: null });
   // La licencia creada debe satisfacer el CHECK de habilitación anterior al vencimiento.
   await db.getRepository(Licencia).update(licencia.id, { habilitadaEn: instante,
     venceEn: new Date(instante.getTime() + diasVigentes * dia) });

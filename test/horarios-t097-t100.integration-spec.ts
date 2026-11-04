@@ -21,9 +21,6 @@ const lunes = (sucursalId: number, inicioMinutos: number, finMinutos: number) =>
   diaSemana: 1, orden: 0, sucursalId, inicioMinutos, finMinutos,
   descansoInicioMinutos: null, descansoFinMinutos: null, activo: true,
 });
-const especial = (inicioMinutos: number, finMinutos: number) => ({ orden: 0,
-  inicioMinutos, finMinutos, descansoInicioMinutos: null,
-  descansoFinMinutos: null });
 
 function sucursales(db: DataSource) {
   return new SucursalesService(db.getRepository(Sucursal), new AutorizacionService(),
@@ -99,10 +96,14 @@ describe('T097–T100 coordinación de sucursales y horarios', () => {
       await expect(profesionales(db).asignarSucursales(adminId, perfilId,
         { sucursalIds: [ids[0]] })).rejects.toBeInstanceOf(ConflictException);
       expect(await horarios(db).consultarSemana(negocioId, perfilId)).toEqual(semana);
-      await horarios(db).guardarExcepcion(negocioId, perfilId,
-        '2026-01-13', ids[1], [especial(480, 540)], '2026-01-01');
-      await horarios(db).guardarSemana(negocioId, perfilId,
-        [lunes(ids[0], 540, 600)], '2026-01-01');
+      // ALA RF-37 retira el escritor de excepciones. Una cabecera histórica
+      // aún debe conservar la relación y bloquear su retiro accidental.
+      await db.query(`INSERT INTO excepciones_horario
+        (negocio_id,personal_id,sucursal_id,fecha_local) VALUES (?,?,?,'2026-01-13')`,
+      [negocioId, perfilId, ids[1]]);
+      await expect(horarios(db).guardarSemana(negocioId, perfilId,
+        [lunes(ids[0], 540, 600)], '2026-01-01'))
+        .rejects.toBeInstanceOf(ConflictException);
       await expect(profesionales(db).asignarSucursales(adminId, perfilId,
         { sucursalIds: [ids[0]] })).rejects.toBeInstanceOf(ConflictException);
       expect((await db.query('SELECT COUNT(*) total FROM personal_sucursales WHERE personal_id=?',
@@ -110,28 +111,21 @@ describe('T097–T100 coordinación de sucursales y horarios', () => {
     });
   });
 
-  it('carreras semana/excepción y semana/asignación dejan un conjunto íntegro', async () => {
+  it('ALA RF-37–RF-38 serializa dos reemplazos semanales completos', async () => {
     await conBaseMigrada(async (db, otra) => {
-      const { negocioId, adminId, perfilId, ids } = await preparar(db);
+      const { negocioId, perfilId, ids } = await preparar(db);
+      const versionA = [lunes(ids[0], 540, 600)];
+      const versionB = [lunes(ids[0], 660, 720)];
       const resultados = await Promise.allSettled([
-        horarios(db).guardarSemana(negocioId, perfilId,
-          [lunes(ids[0], 540, 600)], '2026-01-01'),
-        horarios(otra).guardarExcepcion(negocioId, perfilId,
-          '2026-01-12', ids[1], [especial(420, 480)], '2026-01-01'),
+        horarios(db).guardarSemana(negocioId, perfilId, versionA, '2026-01-01'),
+        horarios(otra).guardarSemana(negocioId, perfilId, versionB, '2026-01-01'),
       ]);
-      expect(resultados.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(resultados.filter((r) => r.status === 'fulfilled')).toHaveLength(2);
       const actual = await horarios(db).consultarSemana(negocioId, perfilId);
-      expect(actual.length + (await horarios(db).consultarExcepciones(negocioId, perfilId)).length)
-        .toBe(1);
-      const asignacion = await Promise.allSettled([
-        horarios(db).guardarSemana(negocioId, perfilId,
-          [lunes(ids[1], 480, 540)], '2026-01-01'),
-        profesionales(otra).asignarSucursales(adminId, perfilId,
-          { sucursalIds: [ids[0]] }),
-      ]);
-      expect(asignacion.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(actual).toHaveLength(1);
+      expect([540, 660]).toContain(actual[0].inicioMinutos);
       expect(Number((await db.query('SELECT COUNT(*) total FROM horarios_personal WHERE personal_id=?',
-        [perfilId]))[0].total)).toBeLessThanOrEqual(1);
+        [perfilId]))[0].total)).toBe(1);
     });
   });
 

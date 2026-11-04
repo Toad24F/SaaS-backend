@@ -11,7 +11,6 @@ import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { CodigoAcceso } from '../src/codigos/entities/codigo-acceso.entity';
 import { EventoAuditoria } from '../src/auditoria/entities/evento-auditoria.entity';
-import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { AltaNegocioHistorica as AltaNegocioCreada } from './support/altas-historicas';
 import { servicios } from './support/escenarios-t51-t60';
 import { SesionesService } from '../src/auth/services/sesiones.service';
@@ -242,9 +241,12 @@ describe('T50 — administración HTTP de licencias', () => {
     await conHttp(async (ctx) => {
       if (accion === 'reactivar') await operar(ctx, 'suspender').expect(200);
       const antes = await estado(ctx.db);
-      // Único doble: fuerza el error del registrador; Guards, bloqueos y transacción son reales.
-      const fallo = jest.spyOn(ctx.app.get(AuditoriaService), 'registrar').mockRejectedValueOnce(new Error(`Fallo de prueba T50 ${accion}`));
-      try { await operar(ctx, accion).expect(500); } finally { fallo.mockRestore(); }
+      // El error SQL del INSERT de auditoría prueba el mismo commit que la
+      // transición, independientemente de instancias Nest duplicadas.
+      await ctx.db.query(`CREATE TRIGGER auditoria_fallo_t50 BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de prueba T50'`);
+      try { await operar(ctx, accion).expect(500); }
+      finally { await ctx.db.query('DROP TRIGGER auditoria_fallo_t50'); }
       expect(await estado(ctx.db)).toEqual(antes);
     });
   });

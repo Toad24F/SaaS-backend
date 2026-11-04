@@ -23,18 +23,20 @@ const ahora = new Date('2026-11-01T18:00:00.000Z');
 const clave = (nombre: string) => `ala-correo-${nombre}-1234567890123456`;
 
 async function escenario(db: DataSource, diasVigentes = 90) {
+  // Las fechas de creación siguen el reloj fijo: los checks SQL exigen que
+  // activación y habilitación no precedan al alta histórica del fixture.
   const actor = await db.getRepository(Usuario).save({ negocioId: null,
     nombre: 'Superadmin', email: `${randomUUID()}@example.test`, passwordHash: 'hash',
-    rol: Rol.SUPERADMIN, activo: true, activadoEn: ahora });
+    rol: Rol.SUPERADMIN, activo: true, creadoEn: ahora, activadoEn: ahora });
   const correo = `${randomUUID()}@example.test`;
   const negocio = await db.getRepository(Negocio).save({ nombre: 'Avisos',
     slug: `avisos-${randomUUID()}`, emailContacto: correo,
-    correoAdministrador: correo, telefonoContacto: null, activadoEn: ahora });
+    correoAdministrador: correo, telefonoContacto: null, creadoEn: ahora, activadoEn: ahora });
   await db.getRepository(Usuario).save({ negocioId: negocio.id, nombre: 'Administradora',
     email: correo, passwordHash: 'hash', rol: Rol.ADMIN_NEGOCIO, activo: true,
-    activadoEn: ahora });
+    creadoEn: ahora, activadoEn: ahora });
   const licencia = await db.getRepository(Licencia).save({ negocioId: negocio.id,
-    habilitadaEn: ahora, venceEn: new Date(ahora.getTime() + diasVigentes * dia),
+    creadoEn: ahora, habilitadaEn: ahora, venceEn: new Date(ahora.getTime() + diasVigentes * dia),
     versionVencimiento: 1, suspendidaEn: null });
   return { actor, negocio, licencia, servicio: new LicenciasService(
     db.getRepository(Licencia), new AutorizacionService(),
