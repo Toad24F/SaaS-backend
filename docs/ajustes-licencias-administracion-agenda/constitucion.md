@@ -1,6 +1,6 @@
 # Constitución — Ajustes de licencias, administración y agenda
 
-Estado: propuesta pendiente de aprobación; no autoriza implementación ni sustituye todavía las normas vigentes. Su alcance exclusivamente backend deja el panel administrativo y el portal visual para un trabajo posterior.
+Estado: aprobada por el responsable del proyecto el 8 de noviembre de 2026. Sus reglas prevalecen sobre antecedentes incompatibles dentro de este alcance. La aprobación no acredita por sí sola implementación ni integración manual. Su alcance exclusivamente backend deja el panel administrativo y el portal visual para un trabajo posterior.
 
 1. Conservar NestJS, TypeScript, TypeORM y MariaDB/MySQL; lógica de negocio en servicios.
 2. Validar permisos y pertenencia por negocio en servidor; proteger secretos y no revelar datos personales ni errores internos.
@@ -14,4 +14,4 @@ Estado: propuesta pendiente de aprobación; no autoriza implementación ni susti
 10. Mantener un único motor para consulta y escritura, con reloj inyectable, zonas IANA, duración completa, anticipación, horizonte, apartados e idempotencia; revalidar con transacciones y bloqueos comunes.
 11. Mantener esquema, entidades y migraciones coherentes; exigir build, lint y pruebas relevantes de backend con evidencia trazable.
 12. Probar límites exactos, aislamiento, concurrencia real, recuperación, inhabilitación/restauración y migraciones en bases desechables; no acreditar requisitos con pruebas omitidas ni alterar citas existentes automáticamente.
-13. Antes de implementar, aprobar cupos computables, transición de datos, avisos sustituidos, alcance del precio y significado de «2 citas por teléfono»; no añadir pagos, WhatsApp, cuentas de clientes ni gestión manual de citas.
+13. Aplicar las definiciones aprobadas de cupos computables, transición de datos, avisos sustituidos, alcance del precio y «2 citas por teléfono» conforme a la especificación; no añadir pagos, WhatsApp, cuentas de clientes ni gestión manual de citas en este ajuste.

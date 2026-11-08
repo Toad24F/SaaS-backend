@@ -1,6 +1,6 @@
 # Especificación — Ajustes de licencias, administración y agenda
 
-Estado: propuesta para revisión y aprobación. Este documento no acredita implementación ni modifica por sí mismo las normas vigentes.
+Estado: aprobada por el responsable del proyecto el 8 de noviembre de 2026. Este documento establece las reglas del ajuste dentro de su alcance; la aprobación no acredita por sí sola implementación ni integración manual.
 
 ## Objetivo y alcance
 
@@ -10,14 +10,14 @@ El panel administrativo y el portal público consumirán estas capacidades en un
 
 Según lo informado por el responsable del proyecto, todavía no existen negocios ni usuarios operativos. No se requiere una transición de negocios existentes con cupos excedidos ni de horarios operativos anteriores; esto no autoriza borrar información del entorno.
 
-## Referencias y precedencia propuesta
+## Referencias y precedencia
 
-- [Constitución de estos ajustes](constitucion.md): continúa pendiente de aprobación. Su terminología «archivado» corresponde aquí a «inhabilitación»; el alcance de esta especificación es exclusivamente backend.
+- [Constitución de estos ajustes](constitucion.md): aprobada junto con esta especificación. El alcance de ambas es exclusivamente backend.
 - [Módulo 1](../fase-2-modulo-1/spec-modulo-1.md) y [ajustes del módulo 1](../Fix-modulo-1/spec-fix.md): conservar las reglas compatibles de cuentas, licencias, permisos y oferta.
 - [Motor de disponibilidad](../fase-3-modulo-2/spec-modulo-2.md): conservar las restricciones compatibles de atención, zonas horarias, ocupaciones y disponibilidad.
 - [Portal público](../fase-4-modulo-3/spec.md): conservar propiedad de apartados, seguridad, idempotencia, recuperación e historial, salvo las modificaciones expresas de este documento.
 
-Después de su aprobación, estos RF sustituirán únicamente las reglas incompatibles sobre aviso a dos días, plazo fijo de suspensión, usuarios sin cupo, borrado físico de los recursos incluidos, descansos, excepciones por fecha, exposición obligatoria de precios, intervalo entre inicios, compactación por tramos y reservas sin límite por teléfono. La aprobación no equivaldrá a acreditar su implementación. Los RF de este documento tienen numeración local y no renumeran otras especificaciones.
+Estos RF sustituyen únicamente las reglas incompatibles sobre aviso a dos días, plazo fijo de suspensión, usuarios sin cupo, borrado físico de los recursos incluidos, descansos, excepciones por fecha, exposición obligatoria de precios, intervalo entre inicios, compactación por tramos y reservas sin límite por teléfono. La aprobación no equivale a acreditar su implementación. Los RF de este documento tienen numeración local y no renumeran otras especificaciones.
 
 ## Definiciones de negocio
 

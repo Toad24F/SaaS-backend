@@ -4,7 +4,7 @@
 
 Permitir que el personal autorizado gestione la agenda diaria de cada negocio, registre citas manuales, cambie el estado o el horario de citas existentes y consulte su directorio de clientes sin perder el aislamiento ni la integridad de las reservas.
 
-Se aplica la [constitución del módulo 4](constitucion-modulo-4.md) y se conservan las reglas compatibles del [motor de disponibilidad](../fase-3/spec-modulo-2.md), el [contrato de coordinación de escritores](../fase-3/resultados-tareas/contrato-escritores-t078-t079.md) y la [especificación del portal público](../fase-4-modulo-3/spec.md). Una cita pública nace pendiente; una cita manual nace confirmada. Los RF siguientes son locales a este módulo.
+Se aplica la [constitución del módulo 4](constitucion-modulo-4.md), junto con los [ajustes aprobados de licencias, administración y agenda](../ajustes-licencias-administracion-agenda/spec.md). Se conservan los contratos compatibles del [motor de disponibilidad](../fase-3-modulo-2/spec-modulo-2.md), el [contrato de coordinación de escritores](../fase-3-modulo-2/resultados-tareas/contrato-escritores-t078-t079.md) y la [especificación del portal público](../fase-4-modulo-3/spec.md). Los ajustes prevalecen sobre reglas anteriores incompatibles; sus RF-43–RF-45, RF-54 y RF-56–RF-63 aplican al escritor manual y a su integración, sin renumerar los RF locales. Una cita pública nace pendiente; una cita manual nace confirmada.
 
 ## Requisitos funcionales en EARS
 
@@ -47,14 +47,14 @@ Se aplica la [constitución del módulo 4](constitucion-modulo-4.md) y se conser
 **Por qué:** registrar atenciones acordadas por teléfono o en persona bajo las mismas condiciones reales de ocupación que el portal público.
 
 - **RF-20.** Cuando un Administrador o Recepcionista prepare una cita manual, el sistema deberá permitir seleccionar cliente, servicio, sucursal, Profesional, fecha y hora, y capturar notas opcionales.
-- **RF-21.** Cuando se consulte un horario para una cita manual, el sistema deberá aplicar la modalidad manual del módulo 2: omitir compactación, intervalo público, anticipación y horizonte, pero mantener permisos, licencia, oferta activa, duración completa, horario, bloqueos, ocupaciones y rechazo de inicios pasados.
+- **RF-21.** Cuando se consulte un horario para una cita manual, el sistema deberá aplicar la modalidad manual del motor: omitir la estrategia pública de Agenda Libre o Compacta, anticipación y horizonte, pero mantener permisos, licencia, oferta activa, duración completa, tiempo entre citas, horario, bloqueos, ocupaciones y rechazo de inicios pasados. El intervalo público entre inicios ya no forma parte de la configuración.
 - **RF-22.** Cuando se solicite guardar una cita manual, el sistema deberá comprobar nuevamente las condiciones vigentes; un horario mostrado previamente no deberá garantizar su registro.
-- **RF-23.** Si la cita manual coincide total o parcialmente con otra cita no cancelada o un apartado público vigente del mismo Profesional, el sistema deberá rechazar el registro e informar del conflicto, incluso entre sucursales.
-- **RF-24.** Cuando se registre una cita manual, el sistema deberá crearla una sola vez en estado **Confirmada**, con folio único, duración y costo vigentes del servicio y un resumen histórico de contacto, negocio, servicio, sucursal, Profesional, inicio, fin y zona horaria.
+- **RF-23.** Si el intervalo protegido de atención más separación de la cita manual coincide total o parcialmente con el de otra cita no cancelada o un apartado público vigente del mismo Profesional, el sistema deberá rechazar el registro e informar del conflicto, incluso entre sucursales. Los extremos protegidos exactamente contiguos siguen siendo válidos.
+- **RF-24.** Cuando se registre una cita manual, el sistema deberá crearla una sola vez en estado **Confirmada**, con folio único, duración y costo vigentes del servicio y un resumen histórico de contacto, negocio, servicio, sucursal, Profesional, inicio, fin, zona horaria, separación capturada y fin de ocupación protegida. Deberá aplicar el cupo compartido de dos citas futuras no canceladas por teléfono normalizado y sucursal, conforme a RF-56–RF-63 de los ajustes, sin fusionar personas por teléfono.
 - **RF-25.** Si el catálogo cambia después del registro, el sistema deberá conservar el costo y el resumen aceptados en la cita manual; el cambio solo deberá afectar nuevas reservas.
 - **RF-26.** Si falla el registro de una cita manual, el sistema deberá conservar el estado previo sin cliente o cita parcial ni ocupación nueva, y permitir corregir o reintentar según el resultado conocido.
 - **RF-27.** Si se pierde la respuesta al guardar una cita manual, el sistema deberá comprobar el resultado de ese mismo envío antes de permitir otro; si quedó registrada, deberá mostrar la misma cita y folio sin duplicarla, y si aún no puede conocerse, deberá informar la incertidumbre.
-- **RF-28.** Si dos solicitudes intentan registrar ocupaciones incompatibles al mismo tiempo, el sistema deberá confirmar como máximo una e informar del conflicto a la otra, también cuando una provenga del portal público.
+- **RF-28.** Si dos solicitudes intentan registrar ocupaciones protegidas incompatibles o compiten por el último lugar del cupo telefónico al mismo tiempo, el sistema deberá confirmar como máximo una e informar del conflicto a la otra, también cuando una provenga del portal público.
 
 ### Ciclo de vida de la cita
 
@@ -65,7 +65,7 @@ Se aplica la [constitución del módulo 4](constitucion-modulo-4.md) y se conser
 - **RF-31.** Si se intenta marcar una cita como Completada o No asistió antes de que termine su horario, el sistema deberá rechazar el cambio sin alterar la cita.
 - **RF-32.** Cuando se cancele una cita o se marque como No asistió, el sistema deberá admitir un motivo opcional y conservarlo para la consulta operativa.
 - **RF-33.** Mientras una cita tenga un estado distinto de Cancelada, el sistema deberá mantener ocupado su intervalo, incluido el estado No asistió; cuando pase a Cancelada, deberá liberar únicamente la ocupación causada por esa cita.
-- **RF-34.** Cuando el personal intente reactivar una cita cancelada cuyo inicio aún no pasó, el sistema deberá comprobar de nuevo permisos, licencia, oferta, horario, bloqueos y ocupaciones, y permitir la reactivación solo si el intervalo sigue disponible.
+- **RF-34.** Cuando el personal intente reactivar una cita cancelada cuyo inicio aún no pasó, el sistema deberá comprobar de nuevo permisos, licencia, oferta, horario, bloqueos y ocupaciones protegidas, y permitir la reactivación solo si el intervalo sigue disponible. Por decisión del responsable del proyecto, el cupo de dos por teléfono se aplica únicamente al registro de citas nuevas y no bloquea la reactivación; por ello, una reactivación puede dejar más de dos citas futuras con el mismo teléfono en la sucursal.
 - **RF-35.** Si el inicio de una cita cancelada ya pasó o su intervalo ya no está disponible, el sistema deberá rechazar su reactivación sin sobrescribir otras ocupaciones.
 - **RF-36.** Cuando se corrija el estado de una cita Completada o No asistió, el sistema deberá conservar el estado anterior, el nuevo, el actor y el momento del cambio; una corrección no deberá borrar la cita ni su historial.
 - **RF-37.** Mientras una cita pública permanezca Pendiente, el sistema deberá conservar su ocupación sin cancelarla automáticamente por falta de confirmación en este módulo.
@@ -75,8 +75,8 @@ Se aplica la [constitución del módulo 4](constitucion-modulo-4.md) y se conser
 **Por qué:** atender una solicitud de cambio sin perder el folio ni desplazar una cita sobre compromisos existentes.
 
 - **RF-38.** Cuando un Administrador o Recepcionista cambie una cita futura no cancelada, el sistema deberá permitir modificar únicamente su fecha y hora, conservando folio, cliente, servicio, sucursal, Profesional y costo histórico.
-- **RF-39.** Cuando se proponga un nuevo horario, el sistema deberá interpretarlo en la zona horaria de la sucursal, rechazar una hora local ambigua o inexistente y comprobar la duración completa y las condiciones manuales vigentes.
-- **RF-40.** Si el nuevo intervalo coincide con una cita no cancelada o un apartado vigente del mismo Profesional, incluso en otra sucursal, el sistema deberá rechazar el cambio y conservar íntegramente el horario anterior.
+- **RF-39.** Cuando se proponga un nuevo horario, el sistema deberá interpretarlo en la zona horaria de la sucursal, rechazar una hora local ambigua o inexistente y comprobar la duración y separación históricas completas y las condiciones manuales vigentes. El nuevo fin de ocupación se calculará a partir del fin de atención y la separación conservada de esa cita.
+- **RF-40.** Si el nuevo intervalo protegido coincide con una cita no cancelada o un apartado vigente del mismo Profesional, incluso en otra sucursal, el sistema deberá rechazar el cambio y conservar íntegramente el horario anterior.
 - **RF-41.** Cuando el cambio de horario se confirme, el sistema deberá conservar en el historial el horario y zona anteriores y los nuevos, y mostrar el nuevo horario bajo el mismo folio.
 - **RF-42.** Si el cambio de horario falla o se intenta sobre una cita pasada, el sistema deberá conservar íntegramente la cita anterior e informar por qué no pudo modificarse.
 
@@ -85,7 +85,7 @@ Se aplica la [constitución del módulo 4](constitucion-modulo-4.md) y se conser
 **Por qué:** impedir duplicados o sobrescrituras silenciosas y permitir explicar los cambios operativos sin revelar información sensible.
 
 - **RF-43.** Si dos personas intentan modificar la misma cita a partir de versiones distintas, el sistema deberá impedir que la edición anterior sobrescriba la más reciente e informar que es necesario revisar los datos vigentes.
-- **RF-44.** Si una acción válida entra en conflicto con una modificación concurrente de licencia, oferta, horario, bloqueo, apartado o cita, el sistema deberá respetar el orden efectivo de los cambios confirmados y conservar un resultado íntegro.
+- **RF-44.** Si una acción válida entra en conflicto con una modificación concurrente de licencia, oferta, tiempo entre citas, horario, bloqueo, apartado, cupo telefónico o cita, el sistema deberá respetar el orden efectivo de los cambios confirmados y conservar un resultado íntegro.
 - **RF-45.** Cuando se registre, mueva, cancele, reactive o cambie el estado de una cita, o se corrija una ficha de cliente, el sistema deberá conservar quién realizó el cambio, cuándo ocurrió y los valores relevantes anteriores y nuevos, sin registrar secretos.
 - **RF-46.** Si una consulta válida no encuentra citas, clientes u horarios, el sistema deberá informar un resultado vacío legítimo; si falla la comprobación, deberá informar el fallo y permitir reintentar sin mostrar resultados parciales como completos.
 - **RF-47.** Si una entrada es inválida, un recurso no está autorizado o existe un conflicto, el sistema deberá distinguir esos resultados de un fallo técnico, conservar los datos que el usuario pueda corregir y no exponer SQL, trazas ni datos privados.
@@ -109,5 +109,5 @@ Se aplica la [constitución del módulo 4](constitucion-modulo-4.md) y se conser
 6. Se verifican los cinco estados, el límite temporal para Completada y No asistió, motivos opcionales, liberación solo por Cancelada, correcciones auditadas y reactivación únicamente de citas futuras con horario libre.
 7. Mover una cita futura cambia solo fecha y hora bajo el mismo folio; conflictos, horas locales inválidas, cambios concurrentes y fallos conservan el estado anterior y su historial.
 8. Una respuesta perdida del registro manual recupera el mismo resultado sin duplicar; dos ediciones de una cita no se sobrescriben silenciosamente y los errores técnicos se distinguen de resultados vacíos o conflictos.
-9. M2-I004 y M3-I001 se acreditan con el escritor manual real frente a un apartado público mediante dos conexiones y barreras, incluidos intervalos entre sucursales; solo una ocupación incompatible queda confirmada.
+9. M2-I004 y M3-I001 se acreditan con el escritor manual real frente a un apartado público mediante dos conexiones y barreras, incluidos intervalos protegidos entre sucursales; ALA-I001–ALA-I003 acreditan además el cupo telefónico compartido y la separación entre ambos escritores. Solo una ocupación incompatible o un último lugar telefónico quedan confirmados en cada carrera.
 10. La entrega supera compilación, lint y pruebas unitarias, de integración, HTTP y de navegador relevantes para los cambios de backend y frontend; no se declara implementada ninguna función del módulo 5.

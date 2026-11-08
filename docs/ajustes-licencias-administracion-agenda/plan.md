@@ -1,17 +1,17 @@
 # Plan — Ajustes de licencias, administración y agenda
 
-Estado: propuesta pendiente de aprobación. No acredita implementación ni aprobación de la constitución o la especificación. Alcance exclusivo de backend; no modifica el frontend ni inicia tareas de programación.
+Estado: aprobado junto con la constitución y especificación por el responsable del proyecto el 8 de noviembre de 2026. Este plan no acredita por sí solo implementación ni integración manual. Alcance exclusivo de backend; no modifica el frontend.
 
 ## 1. Fuentes, alcance y punto de partida
 
 Fuentes normativas: [constitución](constitucion.md) y [especificación](spec.md). Los RF de este plan pertenecen exclusivamente a esta especificación. Se mantienen los contratos compatibles del [módulo 1](../fase-2-modulo-1/spec-modulo-1.md), su [fix](../Fix-modulo-1/spec-fix.md), el [motor](../fase-3-modulo-2/plan.md) y el [portal público](../fase-4-modulo-3/plan.md).
 
-La constitución usa ahora «inhabilitación recuperable» y alcance exclusivamente backend, en consonancia con la especificación. La propuesta mantiene sin aprobar tanto estos ajustes como sus precedencias futuras; no modifica todavía las normas vigentes. La afirmación de ausencia de negocios operativos procede del responsable del proyecto y nunca autoriza limpiar una base.
+La constitución usa «inhabilitación recuperable» y alcance exclusivamente backend, en consonancia con la especificación aprobada. Las reglas del ajuste prevalecen sobre antecedentes incompatibles dentro de su alcance. La afirmación de ausencia de negocios operativos procede del responsable del proyecto y nunca autoriza limpiar una base.
 
 Base observada en el repositorio:
 
 - NestJS, TypeScript, TypeORM y MariaDB/MySQL; módulos de licencias, correos, cuentas, catálogos, horarios, disponibilidad y reservas públicas ya separados. Conservar este stack, sin incorporar infraestructura externa.
-- La licencia ya conserva solicitud de suspensión, bloqueo programado, remanente congelado y versión de vencimiento. El plazo y el aviso preventivo actuales están fijados en 48 horas.
+- Al levantar el inventario inicial, la licencia conservaba solicitud de suspensión, bloqueo programado, remanente congelado y versión de vencimiento; el plazo y el aviso preventivo anteriores estaban fijados en 48 horas. Los RF aprobados de este ajuste sustituyen ese comportamiento.
 - La bandeja de correo ya tiene deduplicación, arrendamiento de trabajos, reintentos y descarte; el procesador envía por SMTP fuera de la transacción de dominio.
 - El cupo actual de sucursales pertenece al negocio. Profesionales comparten identidad y estado con `usuarios`; `personal` es el perfil, no una segunda cuenta.
 - Las bajas actuales pueden borrar físicamente profesionales, servicios y sucursales sin historial. Las relaciones y el lector de citas afectadas ya existen.
@@ -160,7 +160,7 @@ Esta es una excepción acotada a la regla anterior de un único intento por apar
 
 ## 6. Contratos HTTP y compatibilidad
 
-Los siguientes cambios son parte de la propuesta de API, no rutas ya implementadas. Mantener las nueve rutas públicas y cinco privadas de disponibilidad, con los ajustes de cuerpo y respuesta indicados. Registrar explícitamente cambios incompatibles para el trabajo frontend posterior.
+Los siguientes cambios describen el contrato de API aprobado; su vigencia documental no sustituye la comprobación del código desplegado. Mantener las nueve rutas públicas y cinco privadas de disponibilidad, con los ajustes de cuerpo y respuesta indicados. Registrar explícitamente cambios incompatibles para el trabajo frontend posterior.
 
 | Frontera | Contrato propuesto | RF |
 |---|---|---|

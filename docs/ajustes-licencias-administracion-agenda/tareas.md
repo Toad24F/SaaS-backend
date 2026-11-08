@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: propuesta normativa pendiente de aprobación; ALA-T001–ALA-T045 tienen evidencia de sus criterios específicos. Las tareas posteriores permanecen pendientes y estos cambios no acreditan los RF completos.
+Estado: constitución, especificación y plan aprobados por el responsable del proyecto el 8 de noviembre de 2026. ALA-T001–ALA-T154 tienen evidencia de sus criterios específicos; ALA-I001–ALA-I003 permanecen diferidas hasta contar con el escritor manual real. La aprobación documental no sustituye las evidencias de ejecución.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -15,7 +15,7 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 - Las comprobaciones finales reutilizan resultados válidos de la misma revisión cuando no cambió su alcance. Si falta ejecutar una suite o supera el tiempo disponible, crear tareas hijas por lote de menos de treinta minutos antes de su comprobación de cobertura. No concentrar una ejecución larga ni todas sus correcciones en una casilla.
 - Para esos lotes usar los scripts del plan: `npm test -- --runInBand`, `npm run test:integration -- --runInBand` y `npm run test:e2e -- --runInBand`, con selección explícita de archivos o particiones. El manifiesto debe demostrar que la unión cubre la suite completa requerida; no reducir cobertura para cumplir el tiempo.
 - No editar migraciones históricas ni ejecutar escrituras de prueba sobre la base cotidiana. No interpretar «no existen negocios operativos» como permiso de borrar información.
-- La constitución y spec conservan su estado de propuesta hasta aprobación real. Esta lista no los aprueba ni marca tareas de otras fases. RF-63 manual y M3-I001/M2-I004 no pueden cerrarse antes de contar con el escritor manual real.
+- La aprobación de la constitución y especificación está registrada en sus encabezados. Esta lista no marca tareas de otras fases. RF-63 manual y M3-I001/M2-I004 no pueden cerrarse antes de contar con el escritor manual real.
 
 ## 1. Preparación y controles de prueba
 
@@ -24,7 +24,7 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Evidencia: [matriz](resultados-tareas/matriz-aceptacion-t001.md) y [resultado de pruebas](resultados-tareas/resultado-t001.md).
 
 - [x] **ALA-T002 — Alinear las referencias documentales del ajuste** · 15 min · Depende de: ALA-T001 · RF-22–RF-24, RF-36–RF-42, RF-64
-  Hecho cuando: La propuesta documental usa inhabilitación y alcance solo backend, identifica precedencias y no atribuye una aprobación inexistente.
+  Hecho cuando: La revisión documental usa inhabilitación y alcance solo backend, identifica precedencias y conserva el estado de aprobación que existía al ejecutar esta tarea. La aprobación posterior queda registrada en los encabezados normativos, sin reescribir su evidencia histórica.
   Evidencia: [resultado del bloque](resultados-tareas/resultado-t002-t007.md).
 
 - [x] **ALA-T003 — Registrar cambios de contratos y reglas conservadas** · 25 min · Depende de: ALA-T002 · RF-03, RF-15, RF-32–RF-42, RF-60, RF-64–RF-68

@@ -1,13 +1,13 @@
 # Tareas — Fase 5, Módulo 4: Panel de Control y Gestión Operativa
 
-Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec.md) y el [plan](plan.md) en ese orden de precedencia, conservando los contratos compatibles de los módulos 2 y 3. Los RF citados son locales a `spec.md`. Todas las estimaciones son menores de 30 minutos y todas las casillas comienzan sin marcar. Cada tarea se marca solo al cumplir su propia línea «Hecho cuando:» y registrar revisión, comando y resultado en `resultados-tareas/`. M3-T136 continúa independiente; M2-I004/M3-I001 solo se acreditan con el escritor manual real.
+Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec.md) y el [plan](plan.md) en ese orden de precedencia, incorporando los [ajustes aprobados](../ajustes-licencias-administracion-agenda/spec.md) y conservando los contratos compatibles de los módulos 2 y 3. Los RF sin prefijo son locales a `spec.md`; los RF de ajustes se identifican expresamente. Todas las estimaciones son menores de 30 minutos y todas las casillas comienzan sin marcar. Cada tarea se marca solo al cumplir su propia línea «Hecho cuando:» y registrar revisión, comando y resultado en `resultados-tareas/`. M3-T136 continúa independiente; M2-I004/M3-I001 y ALA-I001–ALA-I003 solo se acreditan con el escritor manual real.
 
 ## 1. Base y pruebas reproducibles
 
 - [ ] **M4-T001 — Crear matriz RF y criterios** · 20 min · Depende de: ninguna · RF-01–RF-47
-      Hecho cuando: la matriz enumera los 47 RF y diez criterios, los vincula a tareas y pruebas previstas y separa evidencia nueva de antecedentes.
+      Hecho cuando: la matriz enumera los 47 RF locales, los RF de ajustes aplicables y diez criterios; los vincula a tareas y pruebas previstas, incluida ALA-I001–ALA-I003, y separa evidencia nueva de antecedentes.
 - [ ] **M4-T002 — Inventariar contratos conservados** · 20 min · Depende de: M4-T001 · RF-01–RF-05, RF-21–RF-23, RF-28, RF-33–RF-35
-      Hecho cuando: quedan identificados roles, licencia, cinco rutas privadas, escritor público, motor manual y orden de bloqueos sin atribuirles cobertura del módulo 4.
+      Hecho cuando: quedan identificados roles, plazo de suspensión configurable, cinco rutas privadas, escritor público, motor manual con separación, cupo telefónico por sucursal y orden de bloqueos sin atribuirles cobertura del módulo 4.
 - [ ] **M4-T003 — Preparar base desechable de integración** · 20 min · Depende de: M4-T002 · RF-03, RF-26, RF-28, RF-44
       Hecho cuando: el ejecutor crea y elimina una base identificada como test y rechaza conectarse a la base cotidiana.
 - [ ] **M4-T004 — Sembrar dos negocios y varios perfiles** · 25 min · Depende de: M4-T003 · RF-02–RF-04, RF-17, RF-23, RF-40
@@ -55,7 +55,7 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T022 — Probar alcance por rol** · 25 min · Depende de: M4-T021, M4-T004 · RF-01–RF-05, RF-13–RF-14, RF-29
       Hecho cuando: dos negocios y los tres roles prueban lectura propia, denegación de escritura Profesional y ausencia de datos cruzados.
 - [ ] **M4-T023 — Probar licencia y sesión abierta** · 25 min · Depende de: M4-T021, M4-T005 · RF-04–RF-05, RF-20, RF-34
-      Hecho cuando: vencimiento y suspensión en su límite exacto niegan operaciones nuevas incluso con sesión anterior.
+      Hecho cuando: vencimiento, suspensión inmediata y suspensión con plazo configurable niegan operaciones nuevas en su límite exacto incluso con sesión anterior; la prueba no supone 48 horas para todos los casos.
 - [ ] **M4-T024 — Normalizar errores operativos seguros** · 20 min · Depende de: M4-T021 · RF-05, RF-19, RF-23, RF-26–RF-27, RF-43, RF-46–RF-47
       Hecho cuando: inválido, ajeno, conflicto, temporal e inesperado producen mensajes distintos sin SQL, trazas ni contacto ajeno.
 
@@ -122,13 +122,13 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T051 — Integrar bloqueo común del escritor** · 25 min · Depende de: M4-T006, M4-T049, M4-T002 · RF-21–RF-23, RF-28, RF-44
       Hecho cuando: intento precede recursos de dominio y la fila del Profesional serializa sucursales y servicios con `READ COMMITTED`.
 - [ ] **M4-T052 — Revalidar selección tras la espera** · 25 min · Depende de: M4-T051, M4-T048 · RF-21–RF-23, RF-28, RF-44
-      Hecho cuando: el mismo manager relee licencia, oferta, duración, horario, bloqueos y ocupaciones antes de escribir.
+      Hecho cuando: el mismo manager relee licencia, oferta, duración, separación vigente, horario, bloqueos, ocupaciones protegidas y cupo telefónico compartido por sucursal antes de escribir.
 - [ ] **M4-T053 — Copiar costo y nombres actuales** · 20 min · Depende de: M4-T052 · RF-24–RF-25, RF-44
       Hecho cuando: la copia toma costo y nombres vigentes al registro y no admite valores autoritativos del navegador.
 - [ ] **M4-T054 — Vincular cliente propio o crear uno nuevo** · 25 min · Depende de: M4-T052, M4-T043 · RF-16–RF-17, RF-24, RF-26
       Hecho cuando: un cliente existente se relee por negocio y uno nuevo se crea dentro de la transacción de la cita.
 - [ ] **M4-T055 — Crear cita manual con folio único** · 25 min · Depende de: M4-T053–M4-T054, M4-T013 · RF-23–RF-25, RF-28
-      Hecho cuando: la cita queda Confirmada con inicio, fin, zona, costo y contacto históricos y un folio no duplicado.
+      Hecho cuando: la cita queda Confirmada con inicio, fin de atención, separación capturada, fin protegido, zona, costo y contacto históricos y un folio no duplicado; el alta respeta el cupo telefónico compartido.
 - [ ] **M4-T056 — Registrar evento inicial manual** · 20 min · Depende de: M4-T055, M4-T010, M4-T014 · RF-24, RF-45
       Hecho cuando: el alta manual tiene un evento con actor real y versión inicial en la misma transacción.
 - [ ] **M4-T057 — Confirmar resultado e intento juntos** · 20 min · Depende de: M4-T055–M4-T056 · RF-24, RF-26–RF-27
@@ -144,11 +144,11 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T062 — Exponer preparación, registro y resolución** · 25 min · Depende de: M4-T058–M4-T060, M4-T024 · RF-20, RF-22–RF-28, RF-43–RF-47
       Hecho cuando: tres rutas privadas aplican rol, origen del actor, `no-store` y respuestas de creación, repetición, conflicto e incertidumbre.
 - [ ] **M4-T063 — Probar reserva manual válida** · 25 min · Depende de: M4-T062, M4-T004 · RF-16–RF-17, RF-20–RF-25
-      Hecho cuando: servicio dentro de horario crea exactamente una cita Confirmada con cliente elegido o nuevo y snapshot correcto.
+      Hecho cuando: servicio y separación dentro de horario crean exactamente una cita Confirmada con cliente elegido o nuevo y snapshot completo; el tercer registro futuro del mismo teléfono en la sucursal se rechaza sin fusionar fichas ni dejar filas parciales.
 - [ ] **M4-T064 — Probar ocupaciones de otras sucursales** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-23, RF-28
-      Hecho cuando: intervalos iguales y parciales del mismo Profesional se rechazan entre sucursales y extremos contiguos se aceptan.
+      Hecho cuando: intervalos protegidos iguales y parciales del mismo Profesional se rechazan entre sucursales, incluso si solo invade la separación; extremos protegidos contiguos se aceptan.
 - [ ] **M4-T065 — Probar cambios durante la espera** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-26, RF-44
-      Hecho cuando: cambios de licencia, oferta, costo, duración y horario confirmados primero se observan antes del registro y no dejan filas parciales.
+      Hecho cuando: cambios de licencia, oferta, costo, duración, separación y horario confirmados primero se observan antes del registro y no dejan filas parciales.
 - [ ] **M4-T066 — Probar recuperación HTTP incierta** · 25 min · Depende de: M4-T062, M4-T005 · RF-26–RF-27, RF-43–RF-47
       Hecho cuando: pérdida antes y después del commit devuelve ausencia terminal o el mismo folio, nunca otra cita.
 
@@ -165,7 +165,7 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T071 — Cancelar bajo el bloqueo del Profesional** · 25 min · Depende de: M4-T068, M4-T051 · RF-30, RF-32–RF-33, RF-43–RF-45
       Hecho cuando: cancelar conserva la cita y libera solo su ocupación tras confirmar versión y evento en la misma transacción.
 - [ ] **M4-T072 — Reactivar cita futura** · 25 min · Depende de: M4-T071, M4-T052 · RF-30, RF-33–RF-35, RF-44
-      Hecho cuando: solo un inicio futuro con licencia, oferta y horario vigentes y sin solapamiento puede volver a ocupar.
+      Hecho cuando: solo un inicio futuro con licencia, oferta y horario vigentes y sin solapamiento protegido puede volver a ocupar, conservando la separación histórica; el cupo telefónico no bloquea esta reactivación.
 - [ ] **M4-T073 — Conservar motivo opcional y correcciones** · 20 min · Depende de: M4-T070–M4-T072 · RF-32, RF-36, RF-45
       Hecho cuando: el historial muestra motivo solo si se proporcionó y conserva estado anterior, nuevo, actor e instante.
 - [ ] **M4-T074 — Exponer cambio de estado** · 20 min · Depende de: M4-T067–M4-T073, M4-T024 · RF-29–RF-37, RF-43–RF-47
@@ -180,21 +180,21 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T077 — Autorizar exclusión de cita propia en el motor** · 25 min · Depende de: M4-T052, M4-T068 · RF-03, RF-38–RF-40, RF-44
       Hecho cuando: solo una cita comprobada del negocio y Profesional puede excluir su intervalo al evaluar el destino.
 - [ ] **M4-T078 — Validar con duración original** · 25 min · Depende de: M4-T077 · RF-38–RF-40
-      Hecho cuando: mover una cita usa su duración guardada aunque el servicio haya cambiado y no modifica su costo histórico.
+      Hecho cuando: mover una cita usa duración y separación guardadas aunque el servicio o la configuración hayan cambiado, y no modifica su costo histórico.
 - [ ] **M4-T079 — Validar entrada de fecha y hora nuevas** · 20 min · Depende de: M4-T078 · RF-38–RF-39, RF-42, RF-47
       Hecho cuando: se rechazan fecha pasada, hora ambigua o inexistente y cambios de servicio, sucursal, Profesional, precio o fin enviados por cliente.
 - [ ] **M4-T080 — Bloquear cita y comprobar versión** · 20 min · Depende de: M4-T079, M4-T051 · RF-38, RF-40, RF-43–RF-44
       Hecho cuando: una versión vieja o cita ajena no modifica el horario y el bloqueo sigue el orden compartido.
 - [ ] **M4-T081 — Revalidar destino completo** · 25 min · Depende de: M4-T080, M4-T078 · RF-39–RF-40, RF-44
-      Hecho cuando: oferta, licencia, horario, bloqueos y ocupaciones de cualquier sucursal se releen antes de aceptar el destino.
+      Hecho cuando: oferta, licencia, horario, bloqueos y ocupaciones protegidas de cualquier sucursal se releen antes de aceptar el destino, con la separación histórica de la cita.
 - [ ] **M4-T082 — Guardar movimiento e historial atómicos** · 25 min · Depende de: M4-T081, M4-T010 · RF-38, RF-41–RF-43, RF-45
-      Hecho cuando: extremos, zona y versión cambian junto con un evento anterior/nuevo bajo el mismo folio, o ninguno cambia.
+      Hecho cuando: inicio, fin de atención, fin protegido, zona y versión cambian juntos con un evento anterior/nuevo bajo el mismo folio; separación, costo y combinación se conservan, o ninguno cambia.
 - [ ] **M4-T083 — Exponer cambio privado de horario** · 20 min · Depende de: M4-T082, M4-T024 · RF-38–RF-43, RF-47
       Hecho cuando: la ruta acepta solo fecha, hora y versión y responde conflicto o resultado autorizado sin datos internos.
 - [ ] **M4-T084 — Probar zona y horario inválido** · 25 min · Depende de: M4-T083, M4-T005 · RF-38–RF-39, RF-42
       Hecho cuando: cambios de hora, inicio pasado y cierre de atención se rechazan sin alterar cita o historial.
 - [ ] **M4-T085 — Probar conflicto y extremos contiguos** · 25 min · Depende de: M4-T083, M4-T004 · RF-39–RF-42, RF-44
-      Hecho cuando: solapamiento parcial en otra sucursal se rechaza y un extremo contiguo válido conserva un solo folio.
+      Hecho cuando: solapamiento parcial de ocupación protegida en otra sucursal se rechaza y un extremo protegido contiguo válido conserva un solo folio.
 - [ ] **M4-T086 — Probar rollback y versión obsoleta** · 25 min · Depende de: M4-T083, M4-T005 · RF-41–RF-43, RF-45
       Hecho cuando: fallo entre actualización y evento revierte horario, versión e historial, y edición vieja recibe 409.
 - [ ] **M4-T087 — Probar movimiento contra apartado público** · 25 min · Depende de: M4-T083, M4-T006 · RF-40, RF-43–RF-44
@@ -252,11 +252,17 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T110 — Enfrentar manual y apartado del mismo intervalo** · 25 min · Depende de: M4-T064, M4-T006 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-44
       Hecho cuando: dos conexiones y el escritor manual real dejan solo la cita o el apartado vigente, con respuesta y filas finales comprobadas.
 - [ ] **M4-T111 — Enfrentar manual y apartado entre sucursales** · 25 min · Depende de: M4-T110 · RF-23, RF-28, RF-33, RF-40, RF-44
-      Hecho cuando: solapamientos UTC parciales entre sucursales producen una sola ocupación y los extremos contiguos siguen válidos.
-- [ ] **M4-T112 — Consolidar M2-I004 y M3-I001** · 20 min · Depende de: M4-T110–M4-T111 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
-      Hecho cuando: se anexan revisión, comandos, barreras y filas finales a ambos identificadores sin usar dobles ni marcar otros casos ajenos.
+      Hecho cuando: solapamientos UTC parciales, incluida la separación histórica, entre sucursales producen una sola ocupación y los extremos protegidos contiguos siguen válidos.
+- [ ] **M4-I001 — Integrar cupo telefónico compartido** · 25 min · Depende de: M4-T063, M4-T006 · Ajustes RF-56–RF-59, RF-63
+      Hecho cuando: dos citas futuras repartidas entre portal y escritor manual real impiden una tercera con el mismo teléfono normalizado en la misma sucursal; otra sucursal conserva su cupo. Registrar evidencia también en ALA-I001.
+- [ ] **M4-I002 — Correr carrera por el último lugar telefónico** · 25 min · Depende de: M4-I001, M4-T006 · Ajustes RF-59, RF-63, RF-65
+      Hecho cuando: dos conexiones enfrentan ambos escritores reales en ambos órdenes y solo una reserva ocupa el último lugar; verificar clientes, citas e intentos finales. Registrar evidencia también en ALA-I002.
+- [ ] **M4-I003 — Correr carrera por separación protegida** · 25 min · Depende de: M4-I002, M4-T111 · Ajustes RF-43–RF-45, RF-63, RF-65
+      Hecho cuando: una carrera pública/manual entre sucursales respeta fin protegido y extremos contiguos sin empalmes; verificar filas finales y vincular ALA-I003, M3-I001 y M2-I004 sin cerrar sus demás criterios por anticipado.
+- [ ] **M4-T112 — Consolidar M2-I004 y M3-I001** · 20 min · Depende de: M4-T110–M4-T111, M4-I001–M4-I003 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
+      Hecho cuando: se anexan revisión, comandos, barreras y filas finales a ambos identificadores sin usar dobles ni marcar otros casos ajenos; M4-I001–M4-I003 y ALA-I001–ALA-I003 tienen evidencia propia.
 - [ ] **M4-T113 — Repetir regresión pública y privada** · 25 min · Depende de: M4-T019, M4-T074, M4-T083, M4-T112 · RF-03–RF-04, RF-21–RF-28, RF-33–RF-44
-      Hecho cuando: el portal conserva reserva pendiente, apartados e idempotencia y las cinco rutas privadas del motor mantienen permisos y respuestas.
+      Hecho cuando: el portal conserva reserva pendiente, apartados, separación, cupo telefónico e idempotencia y las cinco rutas privadas del motor mantienen permisos y respuestas.
 - [ ] **M4-T114 — Probar superficie HTTP segura** · 25 min · Depende de: M4-T034, M4-T044, M4-T062, M4-T074, M4-T083 · RF-03–RF-05, RF-19, RF-26–RF-28, RF-43, RF-46–RF-47
       Hecho cuando: 400/401/403/404/409/500/503, `no-store`, límites y campos desconocidos no filtran SQL, trazas ni contacto ajeno.
 - [ ] **M4-T115 — Probar fallos sin resultados parciales** · 25 min · Depende de: M4-T061, M4-T086, M4-T114 · RF-19, RF-26–RF-28, RF-42–RF-47
@@ -279,10 +285,10 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [ ] **M4-T122 — Documentar operación y recuperación** · 20 min · Depende de: M4-T119–M4-T121 · RF-20–RF-28, RF-33–RF-35, RF-43–RF-47
       Hecho cuando: la guía indica migraciones antes de escrituras, cierre de altas nuevas, recuperación de intentos y conservación de citas e historiales sin secretos.
 - [ ] **M4-T123 — Cerrar matriz RF y diez criterios** · 25 min · Depende de: M4-T112, M4-T116–M4-T122 · RF-01–RF-47
-      Hecho cuando: cada RF y criterio enlaza pruebas aprobadas de la revisión actual o un pendiente explícito; la demo y evidencia histórica no se cuentan como entrega real.
+      Hecho cuando: cada RF y criterio enlaza pruebas aprobadas de la revisión actual o un pendiente explícito; la matriz incluye los ajustes RF-43–RF-45 y RF-56–RF-63 y las evidencias ALA-I001–ALA-I003. La demo y evidencia histórica no se cuentan como entrega real.
 - [ ] **M4-T124 — Revisar entrega y pendientes externos** · 20 min · Depende de: M4-T123 · RF-01–RF-47
       Hecho cuando: constitución, especificación, plan, tareas y evidencias son coherentes; M3-T136 y el alcance de WhatsApp/PDF/pagos conservan su estado real sin declarar producción habilitada sin pruebas.
 
 ## Referencia de ejecución
 
-Respetar dependencias aunque las tareas se hagan en sesiones distintas. Una tarea no se completa por haber terminado otra del mismo bloque: su criterio y evidencia deben verificarse por separado. Los grupos T01–T11 del plan guían las pruebas; los identificadores M4-T001–M4-T124 son tareas de implementación y no sustituyen M2-I004 ni M3-I001.
+Respetar dependencias aunque las tareas se hagan en sesiones distintas. Una tarea no se completa por haber terminado otra del mismo bloque: su criterio y evidencia deben verificarse por separado. Los grupos T01–T11 del plan guían las pruebas; los identificadores M4-T001–M4-T124 y M4-I001–M4-I003 son tareas de implementación y verificación, y no sustituyen M2-I004, M3-I001 ni ALA-I001–ALA-I003.
