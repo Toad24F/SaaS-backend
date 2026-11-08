@@ -106,7 +106,7 @@ const bloqueo = (personalId: number | null, sucursalId: number | null) => ({
 });
 
 describe('M1-T131: permisos HTTP de horarios y bloqueos', () => {
-  it('aísla semana, excepciones y atención por negocio, perfil y sucursal', async () => {
+  it('ALA RF-37 aísla semana y atención; rutas de excepción retiradas', async () => {
     await conHttp(async (ctx) => {
       const http = ctx.app.getHttpServer();
       const admin = await token(ctx, ctx.usuarios.adminA);
@@ -116,7 +116,7 @@ describe('M1-T131: permisos HTTP de horarios y bloqueos', () => {
       const otra = `/profesionales/${ctx.perfiles.profA2}`;
       const cruzada = `/profesionales/${ctx.perfiles.profB}`;
       const atencion = `atencion?desde=${FECHA}&hasta=${FECHA}`;
-      for (const sufijo of ['horario', 'excepciones', atencion]) {
+      for (const sufijo of ['horario', atencion]) {
         await request(http).get(`${ruta}/${sufijo}`).auth(ajeno, { type: 'bearer' }).expect(404);
         await request(http).get(`${cruzada}/${sufijo}`).auth(admin, { type: 'bearer' }).expect(404);
         await request(http).get(`${otra}/${sufijo}`).auth(propio, { type: 'bearer' }).expect(403);
@@ -126,16 +126,10 @@ describe('M1-T131: permisos HTTP de horarios y bloqueos', () => {
         const estado = destino === cruzada ? 404 : 403;
         await request(http).put(`${destino}/horario`).auth(actor, { type: 'bearer' })
           .send({ franjas: [] }).expect(estado);
-        await request(http).put(`${destino}/excepciones/${FECHA}`)
-          .auth(actor, { type: 'bearer' })
-          .send({ sucursalId: ctx.sedes.sedeA, franjas: [] }).expect(estado);
-        await request(http).delete(`${destino}/excepciones/${FECHA}`)
-          .query({ sucursalId: ctx.sedes.sedeA })
-          .auth(actor, { type: 'bearer' }).expect(estado);
       }
       const semanaAjena = { franjas: [{ diaSemana: 1, orden: 0,
         sucursalId: ctx.sedes.sedeB, inicioMinutos: 540, finMinutos: 600,
-        descansoInicioMinutos: null, descansoFinMinutos: null, activo: true }] };
+        activo: true }] };
       await request(http).put(`${ruta}/horario`).auth(admin, { type: 'bearer' })
         .send(semanaAjena).expect(404);
       await request(http).put(`${ruta}/excepciones/${FECHA}`)
@@ -144,7 +138,7 @@ describe('M1-T131: permisos HTTP de horarios y bloqueos', () => {
       expect((await request(http).get(`${ruta}/horario`).auth(admin, { type: 'bearer' })
         .expect(200)).body).toEqual([]);
       expect((await request(http).get(`${ruta}/excepciones`).auth(propio, { type: 'bearer' })
-        .expect(200)).body).toEqual([]);
+        .expect(404)).body).toHaveProperty('statusCode', 404);
     });
   });
 
@@ -210,7 +204,8 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
       const http = ctx.app.getHttpServer();
       const superInicial = await token(ctx, ctx.usuarios.super);
       const suspension = await request(http).post(`/licencias/${ctx.licenciaA.id}/suspender`)
-        .auth(superInicial, { type: 'bearer' }).send({}).expect(200);
+        .auth(superInicial, { type: 'bearer' })
+        .set('Idempotency-Key', 't132-suspender-1234567890123456').send({}).expect(200);
       expect(suspension.body.bloqueoProgramadoEn)
         .toBe(new Date(INICIO.getTime() + HORA_48).toISOString());
       // Las sesiones se abren dentro de la gracia y siguen vivas al llegar al límite.
@@ -230,7 +225,6 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
         { metodo: 'patch', ruta: `/sucursales/${sede}`, cuerpo: { nombre: 'sedeA' } },
         { metodo: 'post', ruta: '/sucursales/999999/desactivar', cuerpo: {}, antes: 404 },
         { metodo: 'post', ruta: '/sucursales/999999/reactivar', cuerpo: {}, antes: 404 },
-        { metodo: 'delete', ruta: '/sucursales/999999', antes: 404 },
         { metodo: 'get', ruta: '/servicios' },
         { metodo: 'get', ruta: `/servicios/${ctx.servicioId}` },
         { metodo: 'post', ruta: '/servicios', antes: 201,
@@ -239,7 +233,6 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
           cuerpo: { nombre: 'Consulta' } },
         { metodo: 'post', ruta: '/servicios/999999/desactivar', cuerpo: {}, antes: 404 },
         { metodo: 'post', ruta: '/servicios/999999/reactivar', cuerpo: {}, antes: 404 },
-        { metodo: 'delete', ruta: '/servicios/999999', antes: 404 },
         { metodo: 'get', ruta: '/profesionales' },
         { metodo: 'get', ruta: perfil },
         { metodo: 'post', ruta: '/profesionales', cuerpo: {}, antes: 400 },
@@ -248,7 +241,6 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
           cuerpo: { nombre: 'profA', especialidad: 'Estilismo' } },
         { metodo: 'post', ruta: '/profesionales/999999/desactivar', cuerpo: {}, antes: 404 },
         { metodo: 'post', ruta: '/profesionales/999999/reactivar', cuerpo: {}, antes: 404 },
-        { metodo: 'delete', ruta: '/profesionales/999999', antes: 404 },
         { metodo: 'get', ruta: `${perfil}/sucursales` },
         { metodo: 'put', ruta: `${perfil}/sucursales`, cuerpo: { sucursalIds: [sede] } },
         { metodo: 'get', ruta: `${perfil}/servicios` },
@@ -264,11 +256,6 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
       const compartidas: CasoRuta[] = [
         { metodo: 'get', ruta: `${perfil}/horario` },
         { metodo: 'put', ruta: `${perfil}/horario`, cuerpo: { franjas: [] } },
-        { metodo: 'get', ruta: `${perfil}/excepciones` },
-        { metodo: 'put', ruta: `${perfil}/excepciones/${FECHA}`,
-          cuerpo: { sucursalId: sede, franjas: [] } },
-        { metodo: 'delete', ruta: `${perfil}/excepciones/${FECHA}?sucursalId=999999`,
-          antes: 404 },
         { metodo: 'get', ruta: `${perfil}/atencion?desde=${FECHA}&hasta=${FECHA}` },
         { metodo: 'get', ruta: '/bloqueos' },
         { metodo: 'post', ruta: '/bloqueos', cuerpo: bloqueo(ctx.perfiles.profA, sede) },
@@ -318,10 +305,12 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
       await request(http).get(`/licencias/${ctx.licenciaA.id}/vigencia`)
         .auth(superadmin, { type: 'bearer' }).expect(200);
       await request(http).post(`/licencias/${ctx.licenciaA.id}/renovar`)
-        .auth(superadmin, { type: 'bearer' }).send({}).expect(200);
+        .auth(superadmin, { type: 'bearer' })
+        .set('Idempotency-Key', 't132-renovar-1234567890123456').send({}).expect(200);
       await request(http).get('/sucursales').auth(admin, { type: 'bearer' }).expect(401);
       await request(http).post(`/licencias/${ctx.licenciaA.id}/reactivar`)
-        .auth(superadmin, { type: 'bearer' }).send({}).expect(200);
+        .auth(superadmin, { type: 'bearer' })
+        .set('Idempotency-Key', 't132-reactivar-1234567890123456').send({}).expect(200);
       await request(http).get('/sucursales').auth(admin, { type: 'bearer' }).expect(200);
     });
   });
@@ -338,9 +327,6 @@ describe('M1-T132: corte de acceso en rutas nuevas', () => {
         { metodo: 'put', ruta: `${perfil}/servicios`, cuerpo: { servicioIds: [] } },
         { metodo: 'get', ruta: `${perfil}/horario` },
         { metodo: 'put', ruta: `${perfil}/horario`, cuerpo: { franjas: [] } },
-        { metodo: 'get', ruta: `${perfil}/excepciones` },
-        { metodo: 'put', ruta: `${perfil}/excepciones/${FECHA}`,
-          cuerpo: { sucursalId: ctx.sedes.sedeA, franjas: [] } },
         { metodo: 'get', ruta: `${perfil}/atencion?desde=${FECHA}&hasta=${FECHA}` },
         { metodo: 'get', ruta: '/bloqueos' },
         { metodo: 'post', ruta: '/bloqueos',

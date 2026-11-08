@@ -1,0 +1,144 @@
+{
+  "revision": "1da14bf",
+  "tipo": "http",
+  "lotes": [
+    {
+      "lote": "http-01",
+      "tipo": "http",
+      "archivos": [
+        "test/ala-t035.e2e-spec.ts",
+        "test/ala-t050.e2e-spec.ts",
+        "test/ala-t057.e2e-spec.ts",
+        "test/ala-t061-t065.e2e-spec.ts",
+        "test/ala-t066-t070.e2e-spec.ts",
+        "test/ala-t071-t074.e2e-spec.ts",
+        "test/ala-t075-t076.e2e-spec.ts",
+        "test/ala-t078-t081.e2e-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 40,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       15 passed, 15 total",
+        "Time:        38.097 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "http-02",
+      "tipo": "http",
+      "archivos": [
+        "test/ala-t082-t085.e2e-spec.ts",
+        "test/ala-t086-t089.e2e-spec.ts",
+        "test/ala-t098-t101.e2e-spec.ts",
+        "test/ala-t116-t121.e2e-spec.ts",
+        "test/ala-t133-t140.e2e-spec.ts",
+        "test/app.e2e-spec.ts",
+        "test/auth-t45.e2e-spec.ts",
+        "test/auth-t46.e2e-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 92,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       46 passed, 46 total",
+        "Time:        90.339 s, estimated 91 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "http-03",
+      "tipo": "http",
+      "archivos": [
+        "test/bajas-t111-t115.e2e-spec.ts",
+        "test/bloqueos-t106-t110.e2e-spec.ts",
+        "test/credenciales-t49.e2e-spec.ts",
+        "test/envios-correo.e2e-spec.ts",
+        "test/fase-3-t057-t061.e2e-spec.ts",
+        "test/fase-3-t062-t066.e2e-spec.ts",
+        "test/fase-3-t067-t073.e2e-spec.ts",
+        "test/fase-4-t080-t085.e2e-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 78,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       41 passed, 41 total",
+        "Time:        76.868 s, estimated 80 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "http-04",
+      "tipo": "http",
+      "archivos": [
+        "test/fix-modulo-1-t010-t018.e2e-spec.ts",
+        "test/fix-modulo-1-t024-t029.e2e-spec.ts",
+        "test/fix-modulo-1-t030-t034.e2e-spec.ts",
+        "test/horarios-t093-t095.e2e-spec.ts",
+        "test/http-identidad-t041-t044.e2e-spec.ts",
+        "test/licencias-t50.e2e-spec.ts",
+        "test/licencias-vigencia-t051-t057.e2e-spec.ts",
+        "test/negocios-t47.e2e-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 110,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       49 passed, 49 total",
+        "Time:        108.043 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "http-05",
+      "tipo": "http",
+      "archivos": [
+        "test/profesionales-t071-t076.e2e-spec.ts",
+        "test/profesionales-t077-t080.e2e-spec.ts",
+        "test/recepcionistas-t48.e2e-spec.ts",
+        "test/recorrido-t133.e2e-spec.ts",
+        "test/recorridos-t51-t58-t60.e2e-spec.ts",
+        "test/regresion-auth-t128.e2e-spec.ts",
+        "test/seguridad-t131-t132.e2e-spec.ts",
+        "test/seguridad-t72-t73-t75.e2e-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 106,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       41 passed, 41 total",
+        "Time:        104.832 s, estimated 108 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "http-06",
+      "tipo": "http",
+      "archivos": [
+        "test/servicios-t067-t070.e2e-spec.ts",
+        "test/sucursales-t065.e2e-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 16,
+      "resumen": [
+        "Test Suites: 2 passed, 2 total",
+        "Tests:       7 passed, 7 total",
+        "Time:        14.058 s, estimated 15 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    }
+  ]
+}

@@ -2,21 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { BloqueosService } from '../bloqueos/bloqueos.service';
-import { intervaloBloqueo, restarRestricciones, type Intervalo } from '../bloqueos/calculo-bloqueos';
+import { intervaloBloqueo, restarRestricciones } from '../bloqueos/calculo-bloqueos';
 import { validarFechaLocal, resolverIntervaloLocal } from './calendario';
 import { HorarioPersonal } from './entities/horario-personal.entity';
 import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
-import { seleccionarFranjas, type ExcepcionFuente,
-  type FranjaSemanalFuente } from '../disponibilidad/proyeccion-atencion';
+import { seleccionarFranjas, type FranjaSemanalFuente } from '../disponibilidad/proyeccion-atencion';
+import { exigirHorarioTransicionado } from './transicion-horarios';
 
-interface FranjaFecha {
-  inicioMinutos: number; finMinutos: number;
-  descansoInicioMinutos: number | null; descansoFinMinutos: number | null;
-}
-interface FilaExcepcion extends FranjaFecha { fecha: string; sucursalId: number; id: number | null }
-
-/** Proyecta atención efectiva sin alterar semana, excepción ni bloques persistidos. */
+/** Proyecta atención semanal y bloqueos sin alterar filas persistidas. */
 @Injectable()
 export class AtencionService {
   constructor(@InjectRepository(HorarioPersonal) private readonly horarios: Repository<HorarioPersonal>,
@@ -31,37 +25,18 @@ export class AtencionService {
       throw new BadRequestException('desde/hasta: rango inválido o demasiado extenso.');
     }
     const manager = this.horarios.manager;
+    await exigirHorarioTransicionado(manager, negocioId, personalId);
     const asignaciones = await manager.getRepository(PersonalSucursal).findBy({ negocioId, personalId });
     const ids = asignaciones.map((fila) => fila.sucursalId);
     const sedes = ids.length ? await manager.getRepository(Sucursal).findBy({
       negocioId, id: In(ids), activo: true }) : [];
     const semana = await this.horarios.findBy({ negocioId, personalId, activo: true });
-    const excepciones: FilaExcepcion[] = await manager.query(`SELECT e.sucursal_id sucursalId,
-      DATE_FORMAT(e.fecha_local, '%Y-%m-%d') fecha, f.id id,
-      f.inicio_minutos inicioMinutos, f.fin_minutos finMinutos,
-      f.descanso_inicio_minutos descansoInicioMinutos,
-      f.descanso_fin_minutos descansoFinMinutos
-      FROM excepciones_horario e LEFT JOIN franjas_excepcion_horario f
-        ON f.negocio_id = e.negocio_id AND f.excepcion_id = e.id
-      WHERE e.negocio_id = ? AND e.personal_id = ? AND e.fecha_local BETWEEN ? AND ?`,
-    [negocioId, personalId, desde, hasta]);
-    const porFecha = new Map<string, ExcepcionFuente>();
-    for (const fila of excepciones) {
-      const clave = `${fila.fecha}:${fila.sucursalId}`;
-      if (!porFecha.has(clave)) porFecha.set(clave, { sucursalId: fila.sucursalId,
-        fechaLocal: fila.fecha, franjas: [] });
-      if (fila.id !== null) porFecha.get(clave)!.franjas.push({ id: fila.id,
-        inicioMinutos: fila.inicioMinutos, finMinutos: fila.finMinutos,
-        descansoInicioMinutos: fila.descansoInicioMinutos,
-        descansoFinMinutos: fila.descansoFinMinutos });
-    }
     const fuentesSemana: FranjaSemanalFuente[] = semana.filter((fila) =>
       fila.sucursalId !== null && fila.inicioMinutos !== null && fila.finMinutos !== null)
       .map((fila) => ({ id: fila.id, sucursalId: fila.sucursalId!,
         diaSemana: fila.diaSemana, inicioMinutos: fila.inicioMinutos!,
         finMinutos: fila.finMinutos!, descansoInicioMinutos: fila.descansoInicioMinutos,
         descansoFinMinutos: fila.descansoFinMinutos }));
-    const fuentesExcepcion = [...porFecha.values()];
     const bloques = (await this.bloqueos.listar(actorId)).filter((fila) =>
       (fila.personalId === null || fila.personalId === personalId) &&
       fila.fechaInicio <= hasta && fila.fechaFin >= desde);
@@ -71,10 +46,8 @@ export class AtencionService {
     for (let dia = inicio; dia <= fin; dia += 86400000) {
       const fecha = new Date(dia).toISOString().slice(0, 10);
       for (const sede of sedes) {
-        // La respuesta anterior conserva su forma; ambos lectores comparten la
-        // sustitución exacta de semana por excepción, incluida la cabecera vacía.
-        const franjas = seleccionarFranjas(fecha, sede.id,
-          fuentesSemana, fuentesExcepcion);
+        // Los huecos entre franjas permanecen porque se proyecta la semana canónica.
+        const franjas = seleccionarFranjas(fecha, sede.id, fuentesSemana, []);
         const restricciones = bloques.filter((fila) => fila.sucursalId === null ||
           fila.sucursalId === sede.id).map((fila) => intervaloBloqueo(fila, sede.zonaHoraria));
         for (const franja of franjas) {
@@ -85,17 +58,7 @@ export class AtencionService {
               motivo: 'Hora local inexistente o repetida.' });
             continue;
           }
-          let tramos: Intervalo[] = [jornada];
-          if (franja.descansoInicioMinutos !== null && franja.descansoFinMinutos !== null) {
-            const descanso = resolverIntervaloLocal(fecha, sede.zonaHoraria,
-              franja.descansoInicioMinutos, franja.descansoFinMinutos, 'recurrencia');
-            if (!descanso) {
-              omisiones.push({ fecha, sucursalId: sede.id, motivo: 'Descanso local inválido.' });
-              continue;
-            }
-            tramos = restarRestricciones(tramos, [descanso]);
-          }
-          for (const tramo of restarRestricciones(tramos, restricciones)) {
+          for (const tramo of restarRestricciones([jornada], restricciones)) {
             intervalos.push({ fecha, sucursalId: sede.id,
               inicioMinutos: this.minutoLocal(tramo.inicio, sede.zonaHoraria, fecha),
               finMinutos: this.minutoLocal(tramo.fin, sede.zonaHoraria, fecha),

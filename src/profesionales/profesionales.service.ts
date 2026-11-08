@@ -13,16 +13,17 @@ import { Sesion } from '../auth/entities/sesion.entity';
 import { Rol } from '../auth/enums/rol.enum';
 import { AutorizacionService, Permiso } from '../auth/services/autorizacion.service';
 import { PoliticaContrasenasService } from '../auth/services/politica-contrasenas.service';
-import { conflictoEliminacion, exigirEliminacionElegible } from '../comun/politica-eliminacion';
 import { transaccionIdentidad } from '../comun/transaccion-identidad';
 import { bloquearNegocioAgenda, bloquearRecursosAgenda } from '../comun/bloqueos-coordinados';
 import { ExcepcionHorario } from '../horarios/entities/excepcion-horario.entity';
+import { exigirHorarioTransicionado } from '../horarios/transicion-horarios';
 import { HorarioPersonal } from '../horarios/entities/horario-personal.entity';
 import { validarRecurrencias } from '../horarios/calendario';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { derivarEstadoOferta } from '../disponibilidad/estado-oferta';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { exigirCupoDisponible } from '../usuarios/cupos-usuarios.service';
 import { AsignarSucursalesDto, CrearProfesionalDto, EditarProfesionalDto,
   SeleccionarServiciosDto } from './dto/profesionales.dto';
 import { Personal } from './entities/personal.entity';
@@ -34,6 +35,7 @@ import { esConflictoNombreUsuario, normalizarNombreUsuario } from '../usuarios/n
 export interface PerfilProfesional {
   id: number; negocioId: number; usuarioId: number;
   nombre: string; correo: string; activo: boolean; especialidad: string | null;
+  inhabilitadoEn: Date | null;
 }
 
 export interface OpcionServicioProfesional {
@@ -64,6 +66,8 @@ export class ProfesionalesService {
         // Un perfil nuevo entra en el alcance de bloqueos colectivos solo tras
         // cruzar la barrera que usan esos escritores para descubrir el equipo.
         await bloquearNegocioAgenda(manager, actor.negocioId!);
+        // El conteo se hace bajo la misma barrera que límites y otras altas.
+        await exigirCupoDisponible(manager, actor.negocioId!, Rol.PROFESIONAL);
         const repoUsuario = manager.getRepository(Usuario);
         const usuario = await repoUsuario.save(repoUsuario.create({ negocioId: actor.negocioId!,
           nombre, email: correo, passwordHash, rol: Rol.PROFESIONAL, activo: true,
@@ -83,15 +87,37 @@ export class ProfesionalesService {
 
   async listar(actorId: number): Promise<PerfilProfesional[]> {
     const actor = await this.actor(this.perfiles.manager, actorId);
-    const perfiles = await this.perfiles.find({ where: { negocioId: actor.negocioId! },
+    const perfiles = await this.perfiles.find({ where: { negocioId: actor.negocioId!,
+      usuario: { inhabilitadoEn: IsNull() } },
       relations: { usuario: true }, order: { id: 'ASC' } });
     return perfiles.map((perfil) => this.vista(perfil, perfil.usuario));
   }
 
   async consultar(actorId: number, id: number): Promise<PerfilProfesional> {
     const actor = await this.actor(this.perfiles.manager, actorId);
-    const perfil = await this.perfiles.findOne({ where: { id, negocioId: actor.negocioId! },
+    const perfil = await this.perfiles.findOne({ where: { id, negocioId: actor.negocioId!,
+      usuario: { inhabilitadoEn: IsNull() } },
       relations: { usuario: true } });
+    if (!perfil) throw new NotFoundException('Profesional no disponible.');
+    return this.vista(perfil, perfil.usuario);
+  }
+
+  /** La consulta especial conserva el perfil y solo admite al administrador propio. */
+  async listarInhabilitados(actorId: number): Promise<PerfilProfesional[]> {
+    const actor = await this.actor(this.perfiles.manager, actorId);
+    const perfiles = await this.perfiles.createQueryBuilder('perfil')
+      .innerJoinAndSelect('perfil.usuario', 'usuario')
+      .where('perfil.negocioId = :negocioId AND usuario.inhabilitadoEn IS NOT NULL',
+        { negocioId: actor.negocioId }).orderBy('perfil.id', 'ASC').getMany();
+    return perfiles.map((perfil) => this.vista(perfil, perfil.usuario));
+  }
+
+  async consultarInhabilitado(actorId: number, id: number): Promise<PerfilProfesional> {
+    const actor = await this.actor(this.perfiles.manager, actorId);
+    const perfil = await this.perfiles.createQueryBuilder('perfil')
+      .innerJoinAndSelect('perfil.usuario', 'usuario')
+      .where('perfil.id = :id AND perfil.negocioId = :negocioId AND usuario.inhabilitadoEn IS NOT NULL',
+        { id, negocioId: actor.negocioId }).getOne();
     if (!perfil) throw new NotFoundException('Profesional no disponible.');
     return this.vista(perfil, perfil.usuario);
   }
@@ -110,6 +136,7 @@ export class ProfesionalesService {
         // La cuenta común precede al perfil en todas las escrituras públicas.
         const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
         const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+        if (usuario.inhabilitadoEn !== null) throw new ConflictException('Restaura primero al Profesional.');
         // Un perfil histórico sigue consultable, pero su siguiente edición completa el dato.
         if (!perfil.especialidad?.trim() && datos.especialidad === undefined) {
           throw new BadRequestException('La especialidad es obligatoria para editar este Profesional.');
@@ -157,9 +184,13 @@ export class ProfesionalesService {
   async cambiarEstado(actorId: number, id: number, activo: boolean, ahora: Date): Promise<void> {
     await transaccionIdentidad(this.perfiles.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
+      // La reactivación compite con altas y límites antes de bloquear el perfil.
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
       const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
       const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+      if (usuario.inhabilitadoEn !== null) throw new ConflictException('Restaura primero al Profesional.');
       if (usuario.activo === activo) return;
+      if (activo) await exigirCupoDisponible(manager, actor.negocioId!, Rol.PROFESIONAL);
       await manager.getRepository(Usuario).update(usuario.id, { activo });
       // Revocar en la misma transacción impide reusar sesiones al reactivar.
       if (!activo) await this.revocarSesiones(manager, usuario.id, ahora);
@@ -169,30 +200,43 @@ export class ProfesionalesService {
     }, 'READ COMMITTED');
   }
 
-  async eliminar(actorId: number, id: number): Promise<void> {
-    try {
-      await transaccionIdentidad(this.perfiles.manager, async (manager) => {
-        const actor = await this.actor(manager, actorId);
-        const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
-        await this.bloquearPerfil(manager, actor.negocioId!, id);
-        await exigirEliminacionElegible(manager, 'profesional', actor.negocioId!, id, usuario.id);
-        // El alta se conserva; se libera únicamente su FK a la cuenta que se retira.
-        await manager.query(`UPDATE eventos_auditoria SET usuario_id = NULL
-          WHERE negocio_id = ? AND recurso_tipo = 'profesional' AND recurso_id = ?
-            AND accion = 'profesional_creado' AND usuario_id = ?`,
-        [actor.negocioId, id, usuario.id]);
-        // La reserva técnica acompaña a la cuenta; no representa trabajo del Profesional.
-        await manager.getRepository(CorreoAcceso).delete({ usuarioId: usuario.id });
-        await manager.getRepository(Personal).delete({ id, negocioId: actor.negocioId! });
-        await manager.getRepository(Usuario).delete({ id: usuario.id, negocioId: actor.negocioId! });
-        await this.auditoria.registrar(manager, { operacionId: randomUUID(),
-          actorUsuarioId: actor.id, negocioId: actor.negocioId, usuarioId: null,
-          licenciaId: null, recursoTipo: 'profesional', recursoId: id,
-          accion: 'profesional_eliminado',
-          valoresAntes: { nombre: usuario.nombre, correo: usuario.email, activo: usuario.activo },
-          valoresDespues: null });
-      }, 'READ COMMITTED');
-    } catch (error) { conflictoEliminacion(error); }
+  /** Cuenta, sesiones y auditoría cambian juntos; repetir la baja no escribe otro evento. */
+  async inhabilitar(actorId: number, id: number, ahora: Date): Promise<PerfilProfesional> {
+    return transaccionIdentidad(this.perfiles.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
+      const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+      if (usuario.inhabilitadoEn !== null) return this.vista(perfil, usuario);
+      const antes = { activo: usuario.activo, inhabilitadoEn: null };
+      usuario.activo = false;
+      usuario.inhabilitadoEn = new Date(ahora);
+      await manager.getRepository(Usuario).save(usuario);
+      await this.revocarSesiones(manager, usuario.id, ahora);
+      await this.registrar(manager, actor, perfil, 'profesional_inhabilitado', antes,
+        { activo: false, inhabilitadoEn: usuario.inhabilitadoEn.toISOString() });
+      return this.vista(perfil, usuario);
+    }, 'READ COMMITTED');
+  }
+
+  /** Restaurar solo recupera la consulta; la activación posterior valida el cupo. */
+  async restaurar(actorId: number, id: number): Promise<PerfilProfesional> {
+    return transaccionIdentidad(this.perfiles.manager, async (manager) => {
+      const actor = await this.actor(manager, actorId);
+      await bloquearNegocioAgenda(manager, actor.negocioId!);
+      const usuario = await this.bloquearUsuario(manager, actor.negocioId!, id);
+      const perfil = await this.bloquearPerfil(manager, actor.negocioId!, id);
+      // Un reintento tras reactivar conserva activo=true y no escribe auditoría.
+      if (usuario.inhabilitadoEn === null) return this.vista(perfil, usuario);
+      const antes = { activo: usuario.activo,
+        inhabilitadoEn: usuario.inhabilitadoEn.toISOString() };
+      usuario.activo = false;
+      usuario.inhabilitadoEn = null;
+      await manager.getRepository(Usuario).save(usuario);
+      await this.registrar(manager, actor, perfil, 'profesional_restaurado', antes,
+        { activo: false, inhabilitadoEn: null });
+      return this.vista(perfil, usuario);
+    }, 'READ COMMITTED');
   }
 
   async listarSucursales(actorId: number, id: number): Promise<number[]> {
@@ -268,7 +312,9 @@ export class ProfesionalesService {
     const actor = await this.actorServicios(manager, actorId);
     await this.perfilParaServicios(manager, actor, id);
     const [catalogo, relaciones] = await Promise.all([
-      manager.getRepository(Servicio).find({ where: { negocioId: actor.negocioId! },
+      // La lista habitual conserva inactivos históricos, pero no retirados.
+      manager.getRepository(Servicio).find({ where: { negocioId: actor.negocioId!,
+        inhabilitadoEn: IsNull() },
         order: { id: 'ASC' } }),
       manager.getRepository(PersonalServicio).findBy({ negocioId: actor.negocioId!,
         personalId: id }),
@@ -347,7 +393,8 @@ export class ProfesionalesService {
     const sucursal = await manager.getRepository(Sucursal).findOneBy({
       id: sucursalId, negocioId: actor.negocioId! });
     if (!sucursal) throw new NotFoundException('Sucursal no disponible.');
-    if (!sucursal.activo) return [];
+    // La oferta de sede nunca reintroduce un recurso retirado por sus relaciones.
+    if (!sucursal.activo || sucursal.inhabilitadoEn !== null) return [];
     // La oferta exige selección, asignación y preferencia individual activas.
     return manager.getRepository(Servicio).createQueryBuilder('servicio')
       .distinct(true)
@@ -363,7 +410,8 @@ export class ProfesionalesService {
         'oferta.negocioId = seleccion.negocioId AND oferta.personalId = seleccion.personalId'
         + ' AND oferta.servicioId = seleccion.servicioId'
         + ' AND oferta.sucursalId = asignacion.sucursalId')
-      .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo',
+      .where('servicio.negocioId = :negocioId AND servicio.activo = :activo AND cuenta.activo = :activo'
+        + ' AND servicio.inhabilitadoEn IS NULL AND cuenta.inhabilitadoEn IS NULL',
         { negocioId: actor.negocioId, activo: true })
       .andWhere('seleccion.activo = :activo AND asignacion.activo = :activo'
         + ' AND oferta.activo = :activo AND asignacion.sucursalId = :sucursalId', { sucursalId })
@@ -409,7 +457,10 @@ export class ProfesionalesService {
               const estado = derivarEstadoOferta({ asignado: true,
                 cuentaActiva: cuenta.activo, sucursalActiva: sucursal.activo,
                 servicioActivo: servicio.activo, seleccionGeneralActiva,
-                atencionActiva: asignacion.activo, seleccionSucursalActiva });
+                atencionActiva: asignacion.activo, seleccionSucursalActiva,
+                cuentaInhabilitada: cuenta.inhabilitadoEn !== null,
+                sucursalInhabilitada: sucursal.inhabilitadoEn !== null,
+                servicioInhabilitado: servicio.inhabilitadoEn !== null });
               return { id: servicio.id, nombre: servicio.nombre,
                 servicioActivo: servicio.activo, seleccionGeneralActiva,
                 seleccionSucursalActiva, ...estado };
@@ -518,10 +569,9 @@ export class ProfesionalesService {
 
   private async validarReactivacion(manager: EntityManager, negocioId: number,
     personalId: number, sucursalId: number, desde: string): Promise<void> {
-    const [semana, excepciones, asignaciones] = await Promise.all([
+    await exigirHorarioTransicionado(manager, negocioId, personalId);
+    const [semana, asignaciones] = await Promise.all([
       manager.getRepository(HorarioPersonal).findBy({ negocioId, personalId }),
-      manager.getRepository(ExcepcionHorario).find({ where: { negocioId, personalId },
-        relations: { franjas: true } }),
       manager.getRepository(PersonalSucursal).findBy({ negocioId, personalId }),
     ]);
     const ids = asignaciones.map((fila) => fila.sucursalId);
@@ -530,22 +580,10 @@ export class ProfesionalesService {
     const sucursales = ids.length ? await manager.getRepository(Sucursal).findBy({
       negocioId, id: In(ids) }) : [];
     const zonas = new Map(sucursales.map((fila) => [fila.id, fila.zonaHoraria]));
-    // DATE_FORMAT conserva el día civil SQL; el driver puede desplazar DATE al
-    // convertirlo a Date en el huso local y falsear el día de una excepción.
-    const fechas: { id: number; fecha_local: string }[] = excepciones.length
-      ? await manager.query(`SELECT id, DATE_FORMAT(fecha_local, '%Y-%m-%d') fecha_local
-        FROM excepciones_horario WHERE negocio_id = ? AND personal_id = ?`,
-      [negocioId, personalId]) : [];
-    const fechaPorId = new Map(fechas.map((fila) => [Number(fila.id), fila.fecha_local]));
     // Se comparan las sucursales atendidas y la candidata; otras pausadas no
     // bloquean una reactivación por conflictos que aún no forman parte de la oferta.
     const conflicto = validarRecurrencias(semana.filter((fila) => fila.sucursalId === null ||
-      atendidas.has(fila.sucursalId)), excepciones.filter((fila) =>
-      atendidas.has(fila.sucursalId)).map((fila) => ({
-      sucursalId: fila.sucursalId, fechaLocal: fechaPorId.get(fila.id)!,
-      franjas: fila.franjas.map((franja) => ({ inicioMinutos: franja.inicioMinutos,
-        finMinutos: franja.finMinutos })),
-    })), zonas, desde);
+      atendidas.has(fila.sucursalId)), [], zonas, desde);
     if (conflicto) throw new ConflictException(
       `filas ${conflicto.filas.join(' y ')}, inicioMinutos: empalme de horarios.`);
   }
@@ -630,6 +668,7 @@ export class ProfesionalesService {
     // La identidad sigue en Usuario; la proyección incorpora solo el dato propio del perfil.
     return { id: perfil.id, negocioId: perfil.negocioId, usuarioId: perfil.id,
       nombre: usuario.nombre!, correo: usuario.email, activo: usuario.activo,
+      inhabilitadoEn: usuario.inhabilitadoEn,
       especialidad: perfil.especialidad };
   }
 

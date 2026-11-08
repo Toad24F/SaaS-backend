@@ -13,6 +13,7 @@ import { CoordinacionReservaPublicaService } from './coordinacion-reserva-public
 import { ApartadosService } from './apartados.service';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 import { RegistroReservaPublicaService } from './registro-reserva-publica.service';
+import { CupoTelefonicoService } from './cupo-telefonico.service';
 import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.service';
 import { MetricasPortalService } from './metricas-portal.service';
 
@@ -24,11 +25,11 @@ import { MetricasPortalService } from './metricas-portal.service';
 ])], providers: [ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,
   CoordinacionReservaPublicaService, ApartadosService, IntentosReservaPublicaService,
-  RegistroReservaPublicaService, ResolucionReservaPublicaService,
+  CupoTelefonicoService, RegistroReservaPublicaService, ResolucionReservaPublicaService,
   MetricasPortalService], exports: [DisponibilidadModule,
   ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,
   CoordinacionReservaPublicaService, ApartadosService, IntentosReservaPublicaService,
-  RegistroReservaPublicaService, ResolucionReservaPublicaService,
+  CupoTelefonicoService, RegistroReservaPublicaService, ResolucionReservaPublicaService,
   MetricasPortalService] })
 export class ReservasPublicasModule {}

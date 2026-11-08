@@ -14,6 +14,7 @@ import { IntentosReservaPublicaService } from './intentos-reserva-publica.servic
 import { RegistroReservaPublicaService } from './registro-reserva-publica.service';
 import { ResolucionReservaPublicaService } from './resolucion-reserva-publica.service';
 import { MetricasPortalService } from './metricas-portal.service';
+import { proyectarCostoPublico } from './proyeccion-precios-publicos';
 
 /** Frontera pública: selección, apartados, reserva y recuperación del envío propio. */
 @Controller('publico/negocios/:slug')
@@ -82,8 +83,11 @@ export class PortalPublicoController {
       const { resultado, repetida } = await this.registro.registrarConMeta(
         negocio.id, titular.hash, clave, cuerpo);
       if (repetida) this.metricas.contar('recuperacion');
+      // El resultado interno conserva historia; la representación usa el
+      // valor global actual incluso al repetir tras el cierre de licencia.
+      const visible = await this.negocios.mostrarPreciosVigentes(negocio.id);
       res.status(repetida ? 200 : 201);
-      return resultado;
+      return proyectarCostoPublico(resultado, visible);
     } catch (error) { throw this.errorSeguro(error); }
   }
 
@@ -108,8 +112,9 @@ export class PortalPublicoController {
       const resultado = await this.resolucion.resolver(negocio.id, titular.hash,
         clave, (cuerpo as { apartadoId: number }).apartadoId);
       if (resultado.estado === 'registrado') this.metricas.contar('recuperacion');
+      const visible = await this.negocios.mostrarPreciosVigentes(negocio.id);
       res.status(200);
-      return resultado;
+      return proyectarCostoPublico(resultado, visible);
     } catch (error) { throw this.errorSeguro(error); }
   }
 
@@ -191,8 +196,11 @@ export class PortalPublicoController {
       if (resultado.estado !== 'concedida') {
         throw new ConflictException('Apartado no concedido.');
       }
+      // La opción se consulta después de conceder o recuperar la operación;
+      // el costo de la fila permanece intacto aunque ya se haya ocultado.
+      const visible = await this.negocios.mostrarPreciosVigentes(negocio.id);
       res.status(repetida ? 200 : 201);
-      return { ...resultado, servidorAhora };
+      return proyectarCostoPublico({ ...resultado, servidorAhora }, visible);
     } catch (error) { throw this.errorSeguro(error); }
   }
 
@@ -208,7 +216,8 @@ export class PortalPublicoController {
       await this.sesiones.exigirCredencial(negocio.id, titular.hash);
       const resultado = await this.apartados.consultar(negocio.id, titular.hash, apartadoId);
       if (resultado.estado === 'vencido') this.metricas.contar('expiracion');
-      return resultado;
+      const visible = await this.negocios.mostrarPreciosVigentes(negocio.id);
+      return proyectarCostoPublico(resultado, visible);
     } catch (error) { throw this.errorSeguro(error); }
   }
 

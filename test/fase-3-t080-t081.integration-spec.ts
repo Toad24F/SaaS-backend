@@ -131,11 +131,11 @@ describe('M2-T080–T081: duración histórica y lectura coherente', () => {
         continuar();
         const antigua = await pendiente;
         expect(antigua.reglas).toMatchObject({ modo: 'ventana_libre',
-          intervaloMinutos: 15 });
+          tiempoEntreCitasMinutos: 0 });
         expect(antigua.ranuras.length).toBeGreaterThan(0);
         const nueva = await motor.consultar(...args);
         expect(nueva.reglas).toMatchObject({ modo: 'agenda_compacta',
-          intervaloMinutos: 30 });
+          tiempoEntreCitasMinutos: 0 });
         expect(nueva.ranuras).toEqual([]);
         const error = jest.spyOn(configuracion, 'consultarEnContexto')
           .mockRejectedValueOnce(new Error('detalle SQL privado'));

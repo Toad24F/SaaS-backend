@@ -80,7 +80,7 @@ async function conHttp(ejecutar: (app: INestApplication, db: DataSource,
 }
 
 describe('T106–T110 HTTP bloqueos y atención resultante', () => {
-  it('valida permisos y rangos; aplica unión sobre excepción sin borrar horarios', async () => {
+  it('ALA RF-36–RF-37 valida permisos y unión de bloqueos sin borrar la semana', async () => {
     await conHttp(async (app, db, { personalId, sucursalId, tokens }) => {
       const http = app.getHttpServer();
       const auth = (nombre: string) => ({ type: 'bearer' as const, token: tokens[nombre] });
@@ -93,8 +93,12 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
         .send({ ...entrada(personalId, sucursalId), finMinutos: null }).expect(400);
       await db.query(`INSERT INTO horarios_personal
         (negocio_id,personal_id,dia_semana,orden,sucursal_id,inicio_minutos,fin_minutos,
-         descanso_inicio_minutos,descanso_fin_minutos,activo)
-        SELECT negocio_id, ?, 1, 0, ?, 540, 780, 720, 750, 1 FROM personal WHERE id = ?`,
+         activo)
+        SELECT negocio_id, ?, 1, 0, ?, 540, 720, 1 FROM personal WHERE id = ?`,
+      [personalId, sucursalId, personalId]);
+      await db.query(`INSERT INTO horarios_personal
+        (negocio_id,personal_id,dia_semana,orden,sucursal_id,inicio_minutos,fin_minutos,activo)
+        SELECT negocio_id, ?, 1, 1, ?, 750, 780, 1 FROM personal WHERE id = ?`,
       [personalId, sucursalId, personalId]);
       const primero = await request(http).post('/bloqueos')
         .auth(auth('admin').token, { type: 'bearer' })
@@ -118,7 +122,8 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
         .auth(auth('profesional').token, { type: 'bearer' }).expect(200)).body;
       expect(atencion.intervalos.map((x: { inicioMinutos: number; finMinutos: number }) =>
         [x.inicioMinutos, x.finMinutos])).toEqual([[540, 600], [690, 720], [750, 780]]);
-      // La excepción sustituye la semana; el bloqueo todavía recorta su franja.
+      // Una excepción heredada no se reinterpreta: la lectura se cierra en
+      // conflicto hasta que el operador transicione esos datos (ALA RF-37).
       const cabecera = await db.query(`INSERT INTO excepciones_horario
         (negocio_id,personal_id,sucursal_id,fecha_local)
         SELECT negocio_id, ?, ?, '2026-07-06' FROM personal WHERE id = ?`,
@@ -129,8 +134,11 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
         SELECT negocio_id, ?, 0, 540, 780, 720, 750 FROM personal WHERE id = ?`,
       [cabecera.insertId, personalId]);
       expect((await request(http).get(ruta)
-        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body.intervalos)
-        .toEqual(atencion.intervalos);
+        .auth(tokens.admin, { type: 'bearer' }).expect(409)).body.statusCode)
+        .toBe(409);
+      await db.query('DELETE FROM franjas_excepcion_horario WHERE excepcion_id=?',
+        [cabecera.insertId]);
+      await db.query('DELETE FROM excepciones_horario WHERE id=?', [cabecera.insertId]);
       await request(http).patch(`/bloqueos/${primero.body.id}`)
         .auth(tokens.profesional, { type: 'bearer' })
         .send({ finMinutos: null }).expect(400);
@@ -149,7 +157,7 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
           finMinutos: 630 })]));
       await request(http).delete(`/bloqueos/${segundo.body.id}`)
         .auth(auth('profesional').token, { type: 'bearer' }).expect(204);
-      expect((await db.query('SELECT COUNT(*) total FROM horarios_personal'))[0].total).toBe('1');
+      expect((await db.query('SELECT COUNT(*) total FROM horarios_personal'))[0].total).toBe('2');
     });
   });
 

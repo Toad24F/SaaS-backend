@@ -8,7 +8,7 @@ import type { Ocupacion } from './contratos-internos';
 export function ocupacionesQueSeEmpalman(ocupaciones: readonly Ocupacion[],
   inicioUtc: Date, finUtc: Date): Ocupacion[] {
   return ocupaciones.filter((ocupacion) =>
-    ocupacion.inicioUtc < finUtc && ocupacion.finUtc > inicioUtc);
+    ocupacion.inicioUtc < finUtc && ocupacion.finOcupacionUtc > inicioUtc);
 }
 
 /** Lee las dos fuentes persistidas sin restringir sucursal, servicio ni fecha local. */
@@ -26,27 +26,30 @@ export class OcupacionesService {
       throw new Error('Intervalo o instante de ocupaciones inválido.');
     }
 
-    // Una cita que empezó antes del rango aún ocupa si termina dentro de él.
+    // El fin protegido puede entrar al rango aunque la atención ya haya terminado.
+    // COALESCE conserva los registros previos a la captura de separación.
     // Se proyectan solo campos operativos: no se cargan clientes ni titulares.
     const citas = await manager.getRepository(Cita).createQueryBuilder('c')
       .select(['c.id', 'c.negocioId', 'c.personalId', 'c.sucursalId',
-        'c.servicioId', 'c.inicioUtc', 'c.finUtc', 'c.estado'])
+        'c.servicioId', 'c.inicioUtc', 'c.finUtc', 'c.finOcupacionUtc', 'c.estado'])
       .where('c.negocioId = :negocioId AND c.personalId = :personalId',
         { negocioId, personalId })
       .andWhere('c.estado <> :cancelada', { cancelada: 'cancelada' })
-      .andWhere('c.inicioUtc < :hastaUtc AND c.finUtc > :desdeUtc',
+      .andWhere('c.inicioUtc < :hastaUtc AND COALESCE(c.finOcupacionUtc, c.finUtc) > :desdeUtc',
         { desdeUtc, hastaUtc })
       .getMany();
 
-    // La vigencia se decide con el instante capturado, sin esperar limpieza física.
+    // La vigencia se decide con el instante capturado, sin esperar limpieza física;
+    // la separación histórica se ignora desde el límite exacto de expiración.
     const apartados = await manager.getRepository(BloqueoTemporal)
       .createQueryBuilder('a')
       .select(['a.id', 'a.negocioId', 'a.personalId', 'a.sucursalId',
-        'a.servicioId', 'a.inicioUtc', 'a.finUtc', 'a.expiraEn', 'a.liberadoEn'])
+        'a.servicioId', 'a.inicioUtc', 'a.finUtc', 'a.finOcupacionUtc',
+        'a.expiraEn', 'a.liberadoEn'])
       .where('a.negocioId = :negocioId AND a.personalId = :personalId',
         { negocioId, personalId })
       .andWhere('a.liberadoEn IS NULL AND a.expiraEn > :ahora', { ahora })
-      .andWhere('a.inicioUtc < :hastaUtc AND a.finUtc > :desdeUtc',
+      .andWhere('a.inicioUtc < :hastaUtc AND COALESCE(a.finOcupacionUtc, a.finUtc) > :desdeUtc',
         { desdeUtc, hastaUtc })
       .getMany();
 
@@ -54,12 +57,15 @@ export class OcupacionesService {
       ...citas.map((cita) => ({ tipo: 'cita' as const, id: cita.id,
         negocioId: cita.negocioId, personalId: cita.personalId,
         sucursalId: cita.sucursalId, servicioId: cita.servicioId,
-        inicioUtc: cita.inicioUtc, finUtc: cita.finUtc, estado: cita.estado })),
+        inicioUtc: cita.inicioUtc, finUtc: cita.finUtc,
+        finOcupacionUtc: cita.finOcupacionUtc ?? cita.finUtc, estado: cita.estado })),
       ...apartados.map((apartado) => ({ tipo: 'apartado' as const,
         id: apartado.id, negocioId: apartado.negocioId,
         personalId: apartado.personalId, sucursalId: apartado.sucursalId,
         servicioId: apartado.servicioId, inicioUtc: apartado.inicioUtc,
-        finUtc: apartado.finUtc, expiraEn: apartado.expiraEn,
+        finUtc: apartado.finUtc,
+        finOcupacionUtc: apartado.finOcupacionUtc ?? apartado.finUtc,
+        expiraEn: apartado.expiraEn,
         liberadoEn: apartado.liberadoEn })),
     ];
     return resultado.sort((a, b) => a.inicioUtc.getTime() - b.inicioUtc.getTime()

@@ -10,6 +10,7 @@ import { RELOJ, type Reloj } from '../comun/reloj';
 import { CrearRecepcionistaDto, RecepcionistaIdDto, RestablecerContrasenaRecepcionistaDto } from './dto/recepcionistas.dto';
 import { Usuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
+import { CuposUsuariosService } from './cupos-usuarios.service';
 
 // Cada petición revalida sesión, licencia y rol antes de usar la pertenencia.
 // La antigua invitación POST se sustituyó por el alta directa completa.
@@ -19,6 +20,7 @@ import { UsuariosService } from './usuarios.service';
 export class RecepcionistasController {
   constructor(
     private readonly usuarios: UsuariosService,
+    private readonly cuposUsuarios: CuposUsuariosService,
     @Inject(RELOJ) private readonly reloj: Reloj,
   ) {}
 
@@ -42,6 +44,24 @@ export class RecepcionistasController {
     return usuarios.map((usuario) => this.presentar(usuario));
   }
 
+  @Get('cupo')
+  async consultarCupo(@CurrentUser() actor: JwtPayload) {
+    // La pertenencia se toma de la sesión validada, no de un negocio enviado por URL.
+    return (await this.cuposUsuarios.consultar(this.negocioActor(actor))).recepcionistas;
+  }
+
+  @Get('inhabilitados')
+  async listarInhabilitados(@CurrentUser() actor: JwtPayload) {
+    return (await this.usuarios.listarRecepcionistasInhabilitados(actor.sub))
+      .map((usuario) => this.presentar(usuario));
+  }
+
+  @Get('inhabilitados/:id')
+  async consultarInhabilitado(@Param() parametros: RecepcionistaIdDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.usuarios.buscarRecepcionistaInhabilitado(actor.sub, parametros.id));
+  }
+
   @Get(':id')
   async consultar(@Param() parametros: RecepcionistaIdDto, @CurrentUser() actor: JwtPayload) {
     return this.presentar(await this.usuarios.buscarRecepcionista(this.negocioActor(actor), parametros.id));
@@ -52,6 +72,22 @@ export class RecepcionistasController {
   desactivar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto, @CurrentUser() actor: JwtPayload) {
     // Cuenta, sesiones y auditoría usan el mismo instante que la autenticación.
     return this.usuarios.desactivarRecepcionista(actor.sub, parametros.id, this.reloj.ahora());
+  }
+
+  @Post(':id/inhabilitar')
+  @HttpCode(HttpStatus.OK)
+  async inhabilitar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.presentar(await this.usuarios.inhabilitarRecepcionista(
+      actor.sub, parametros.id, this.reloj.ahora()));
+  }
+
+  @Post(':id/restaurar')
+  @HttpCode(HttpStatus.OK)
+  async restaurar(@Param() parametros: RecepcionistaIdDto, @Body() _datos: SinCamposDto,
+    @CurrentUser() actor: JwtPayload) {
+    // La proyección de respuesta mantiene la contraseña fuera del contrato HTTP.
+    return this.presentar(await this.usuarios.restaurarRecepcionista(actor.sub, parametros.id));
   }
 
   @Post(':id/reactivar')
@@ -83,6 +119,7 @@ export class RecepcionistasController {
   private presentar(usuario: Usuario) {
     // Lista explícita de campos: nunca serializar directamente la entidad con su hash.
     return { id: usuario.id, negocioId: usuario.negocioId, nombre: usuario.nombre,
-      email: usuario.email, rol: usuario.rol, activo: usuario.activo, activadoEn: usuario.activadoEn };
+      email: usuario.email, rol: usuario.rol, activo: usuario.activo,
+      inhabilitadoEn: usuario.inhabilitadoEn, activadoEn: usuario.activadoEn };
   }
 }

@@ -1,0 +1,175 @@
+{
+  "revision": "1da14bf",
+  "tipo": "unitarias",
+  "lotes": [
+    {
+      "lote": "unitarias-01",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/altas/entities/identidad-pendiente.spec.ts",
+        "src/app.controller.spec.ts",
+        "src/auditoria/auditoria-fase-2.spec.ts",
+        "src/auditoria/auditoria.service.spec.ts",
+        "src/auditoria/entities/evento-auditoria.entity.spec.ts",
+        "src/auth/auth-flujos.spec.ts",
+        "src/auth/auth.controller.spec.ts",
+        "src/auth/auth.service.spec.ts",
+        "src/auth/entities/limite-intentos.entity.spec.ts",
+        "src/auth/entities/sesion.entity.spec.ts",
+        "src/auth/guards/limite-intentos.guard.spec.ts",
+        "src/auth/services/autorizacion-disponibilidad.spec.ts",
+        "src/auth/services/autorizacion-fase-2.spec.ts",
+        "src/auth/services/autorizacion.service.spec.ts",
+        "src/auth/services/limite-intentos.storage.spec.ts",
+        "src/auth/services/politica-contrasenas.service.spec.ts",
+        "src/auth/strategies/jwt.strategy.spec.ts",
+        "src/bloqueos/calculo-bloqueos.spec.ts",
+        "src/bloqueos/validar-bloqueo.spec.ts",
+        "src/codigos/derivador-codigo.spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 20,
+      "resumen": [
+        "Test Suites: 20 passed, 20 total",
+        "Tests:       99 passed, 99 total",
+        "Time:        18.106 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "unitarias-02",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/codigos/entities/codigo-acceso.entity.spec.ts",
+        "src/codigos/entities/codigo-fase-2.spec.ts",
+        "src/comun/orden-bloqueos.spec.ts",
+        "src/config/configuracion-correo.spec.ts",
+        "src/config/database.config.spec.ts",
+        "src/config/typeorm.datasource.spec.ts",
+        "src/correos/entities/envio-correo.entity.spec.ts",
+        "src/correos/transporte-correo-controlado.spec.ts",
+        "src/correos/transporte-correo-smtp.spec.ts",
+        "src/database/modelo-recepcionistas.spec.ts",
+        "src/database/schema-fase-2.spec.ts",
+        "src/database/schema.spec.ts",
+        "src/disponibilidad/base-fase-3.spec.ts",
+        "src/disponibilidad/candidatos-libres.spec.ts",
+        "src/disponibilidad/configuracion-agenda-ala.spec.ts",
+        "src/disponibilidad/configuracion-agenda.validador.spec.ts",
+        "src/disponibilidad/disponibilidad-entradas.spec.ts",
+        "src/disponibilidad/espacios-libres.spec.ts",
+        "src/disponibilidad/primeros-compactos.spec.ts",
+        "src/disponibilidad/proyeccion-atencion.spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 10,
+      "resumen": [
+        "Test Suites: 20 passed, 20 total",
+        "Tests:       83 passed, 83 total",
+        "Time:        8.864 s, estimated 9 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "unitarias-03",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/disponibilidad/seleccion-compacta.spec.ts",
+        "src/horarios/calendario-t095.spec.ts",
+        "src/horarios/calendario.spec.ts",
+        "src/horarios/fusion-franjas.spec.ts",
+        "src/horarios/horarios-fase-2.spec.ts",
+        "src/licencias/dto/operacion-licencia.dto.spec.ts",
+        "src/licencias/entities/licencia.entity.spec.ts",
+        "src/licencias/licencias.service.spec.ts",
+        "src/licencias/services/calendario-licencias.service.spec.ts",
+        "src/licencias/services/clave-aviso-licencia.spec.ts",
+        "src/licencias/services/consulta-vigencia-licencias.service.spec.ts",
+        "src/licencias/services/politica-acceso-licencia.service.spec.ts",
+        "src/licencias/services/suspension-licencia.service.spec.ts",
+        "src/licencias/services/vista-vigencia-licencia.service.spec.ts",
+        "src/modulos-fase-2.spec.ts",
+        "src/modulos.spec.ts",
+        "src/negocios/entities/negocio-fase-2.spec.ts",
+        "src/negocios/entities/negocio.entity.spec.ts",
+        "src/negocios/validar-rfc.spec.ts",
+        "src/operacion/ejecucion-periodica.service.spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 17,
+      "resumen": [
+        "Test Suites: 20 passed, 20 total",
+        "Tests:       94 passed, 94 total",
+        "Time:        15.95 s, estimated 16 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "unitarias-04",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/profesionales/modelo-oferta-fix.spec.ts",
+        "src/reservas-publicas/apartados-entrada.spec.ts",
+        "src/reservas-publicas/contacto-reserva-publica.spec.ts",
+        "src/reservas-publicas/control-escrituras-publicas.spec.ts",
+        "src/reservas-publicas/coordinacion-reserva-publica.service.spec.ts",
+        "src/reservas-publicas/entradas-publicas.spec.ts",
+        "src/reservas-publicas/errores-publicos.spec.ts",
+        "src/reservas-publicas/limite-cuerpo-publico.spec.ts",
+        "src/reservas-publicas/metricas-portal.service.spec.ts",
+        "src/reservas-publicas/proteccion-portal.service.spec.ts",
+        "src/reservas-publicas/proyeccion-precios-publicos.spec.ts",
+        "src/reservas-publicas/reservas-publicas.contract.spec.ts",
+        "src/servicios/servicios-fase-2.spec.ts",
+        "src/sucursales/sucursal-fase-2.spec.ts",
+        "src/usuarios/entities/usuario-fase-2.spec.ts",
+        "src/usuarios/entities/usuario.entity.spec.ts",
+        "src/usuarios/usuarios.service.spec.ts",
+        "test/ala-preparacion-documental.spec.ts",
+        "test/ala-t001-matriz.spec.ts",
+        "test/ala-t008-t012-modelo.spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 13,
+      "resumen": [
+        "Test Suites: 20 passed, 20 total",
+        "Tests:       86 passed, 86 total",
+        "Time:        12.138 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "unitarias-05",
+      "tipo": "unitarias",
+      "archivos": [
+        "test/ala-t013-t018-modelo.spec.ts",
+        "test/ala-t019-t022-modelo.spec.ts",
+        "test/ala-t023-t027-modelo.spec.ts",
+        "test/contratos-modulo-1.spec.ts",
+        "test/decisiones-modulo-1.spec.ts",
+        "test/fase-4-t097-evidencia.spec.ts",
+        "test/support/datos-negocios.spec.ts",
+        "test/support/modulo-1.spec.ts",
+        "test/support/reloj.spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 4,
+      "resumen": [
+        "Test Suites: 9 passed, 9 total",
+        "Tests:       48 passed, 48 total",
+        "Time:        2.391 s, estimated 3 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    }
+  ]
+}

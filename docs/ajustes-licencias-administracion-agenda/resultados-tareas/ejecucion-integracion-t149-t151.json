@@ -1,0 +1,288 @@
+{
+  "revision": "1da14bf",
+  "tipo": "integracion",
+  "lotes": [
+    {
+      "lote": "integracion-01",
+      "tipo": "integracion",
+      "archivos": [
+        "test/activaciones.integration-spec.ts",
+        "test/ala-t008-t012.integration-spec.ts",
+        "test/ala-t013-t018.integration-spec.ts",
+        "test/ala-t019-t022.integration-spec.ts",
+        "test/ala-t023-t027.integration-spec.ts",
+        "test/ala-t028-t034.integration-spec.ts",
+        "test/ala-t036-t040.integration-spec.ts",
+        "test/ala-t041-t045.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 55,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       44 passed, 44 total",
+        "Time:        53.174 s, estimated 59 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-02",
+      "tipo": "integracion",
+      "archivos": [
+        "test/ala-t046-t049.integration-spec.ts",
+        "test/ala-t051-t056.integration-spec.ts",
+        "test/ala-t058-t060.integration-spec.ts",
+        "test/ala-t090-t093.integration-spec.ts",
+        "test/ala-t102-t109.integration-spec.ts",
+        "test/ala-t110-t115.integration-spec.ts",
+        "test/ala-t116-t121.integration-spec.ts",
+        "test/ala-t122-t132.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 88,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       54 passed, 54 total",
+        "Time:        86.726 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-03",
+      "tipo": "integracion",
+      "archivos": [
+        "test/ala-t142-t145.integration-spec.ts",
+        "test/alta-invitacion.integration-spec.ts",
+        "test/alta-rollback-t036.integration-spec.ts",
+        "test/altas-negocio.integration-spec.ts",
+        "test/altas-t74.integration-spec.ts",
+        "test/auth-dominio-t26-t30.integration-spec.ts",
+        "test/avisos-t116-t120.integration-spec.ts",
+        "test/bajas-t111-t115.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 66,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       52 passed, 52 total",
+        "Time:        64.75 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-04",
+      "tipo": "integracion",
+      "archivos": [
+        "test/bloqueos-t101-t105.integration-spec.ts",
+        "test/carreras-invitaciones-t042-t043.integration-spec.ts",
+        "test/carreras-modulo-1.integration-spec.ts",
+        "test/codigos-auditoria.integration-spec.ts",
+        "test/codigos-fase-2.integration-spec.ts",
+        "test/concurrencia-t52-t57.integration-spec.ts",
+        "test/cuentas-auditoria-fase-2.integration-spec.ts",
+        "test/cuentas-licencias-t38-t44.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 77,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       40 passed, 40 total",
+        "Time:        75.232 s, estimated 76 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-05",
+      "tipo": "integracion",
+      "archivos": [
+        "test/ejecutor-t121-t122.integration-spec.ts",
+        "test/encolado-correo.integration-spec.ts",
+        "test/envios-correo.integration-spec.ts",
+        "test/esquema-t124-t125.integration-spec.ts",
+        "test/fase-3-arranque-entidades.integration-spec.ts",
+        "test/fase-3-t005-t010.integration-spec.ts",
+        "test/fase-3-t011-t015.integration-spec.ts",
+        "test/fase-3-t016-t019.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 40,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       25 passed, 25 total",
+        "Time:        38.83 s, estimated 42 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-06",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fase-3-t020-t025.integration-spec.ts",
+        "test/fase-3-t026-t030.integration-spec.ts",
+        "test/fase-3-t031-t038.integration-spec.ts",
+        "test/fase-3-t039-t043.integration-spec.ts",
+        "test/fase-3-t044-t049.integration-spec.ts",
+        "test/fase-3-t050-t056.integration-spec.ts",
+        "test/fase-3-t074-t077.integration-spec.ts",
+        "test/fase-3-t080-t081.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 36,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       24 passed, 24 total",
+        "Time:        34.104 s, estimated 36 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-07",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fase-4-t001-t007.integration-spec.ts",
+        "test/fase-4-t008-t013.integration-spec.ts",
+        "test/fase-4-t014-t019.integration-spec.ts",
+        "test/fase-4-t025-t030.integration-spec.ts",
+        "test/fase-4-t031-t035.integration-spec.ts",
+        "test/fase-4-t036-t040.integration-spec.ts",
+        "test/fase-4-t041-t044.integration-spec.ts",
+        "test/fase-4-t045-t051.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 47,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       28 passed, 28 total",
+        "Time:        45.258 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-08",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fase-4-t052-t057.integration-spec.ts",
+        "test/fase-4-t058-t062.integration-spec.ts",
+        "test/fase-4-t063-t064.integration-spec.ts",
+        "test/fase-4-t065-t068.integration-spec.ts",
+        "test/fase-4-t072-t073.integration-spec.ts",
+        "test/fase-4-t074-t079.integration-spec.ts",
+        "test/fase-4-t086-t091.integration-spec.ts",
+        "test/fase-4-t092-t096.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 73,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       40 passed, 40 total",
+        "Time:        71.818 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-09",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fix-modulo-1-t002-t005.integration-spec.ts",
+        "test/fix-modulo-1-t009.integration-spec.ts",
+        "test/fix-modulo-1-t019-t023.integration-spec.ts",
+        "test/fix-modulo-1-t024-t029.integration-spec.ts",
+        "test/fix-modulo-1-t034.integration-spec.ts",
+        "test/horarios-t083-t085.integration-spec.ts",
+        "test/horarios-t090-t091.integration-spec.ts",
+        "test/horarios-t092-t096.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 35,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       19 passed, 19 total",
+        "Time:        33.64 s, estimated 35 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-10",
+      "tipo": "integracion",
+      "archivos": [
+        "test/horarios-t097-t100.integration-spec.ts",
+        "test/identidad-fase-2.integration-spec.ts",
+        "test/instalacion-t126-t127.integration-spec.ts",
+        "test/instalacion-t61.integration-spec.ts",
+        "test/invitaciones-t037-t039.integration-spec.ts",
+        "test/licencias-reintentos.integration-spec.ts",
+        "test/mariadb.integration-spec.ts",
+        "test/migrations.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 56,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       42 passed, 42 total",
+        "Time:        54.485 s, estimated 55 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-11",
+      "tipo": "integracion",
+      "archivos": [
+        "test/modelo-recepcionistas.integration-spec.ts",
+        "test/persistencia.integration-spec.ts",
+        "test/procesador-correo.integration-spec.ts",
+        "test/profesionales-t081-t082.integration-spec.ts",
+        "test/recepcionistas-t76-t81.integration-spec.ts",
+        "test/recepcionistas-t78-t84.integration-spec.ts",
+        "test/recuperacion-correo-t040.integration-spec.ts",
+        "test/reserva-correo-fase-2.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 79,
+      "resumen": [
+        "Test Suites: 8 passed, 8 total",
+        "Tests:       47 passed, 47 total",
+        "Time:        77.144 s, estimated 81 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    },
+    {
+      "lote": "integracion-12",
+      "tipo": "integracion",
+      "archivos": [
+        "test/sucursales-t060.integration-spec.ts",
+        "test/sucursales-t062-t066.integration-spec.ts"
+      ],
+      "revision": "1da14bf",
+      "codigo": 0,
+      "duracionSegundos": 11,
+      "resumen": [
+        "Test Suites: 2 passed, 2 total",
+        "Tests:       6 passed, 6 total",
+        "Time:        9.807 s, estimated 10 s"
+      ],
+      "fallos": [],
+      "errorEjecucion": null
+    }
+  ]
+}

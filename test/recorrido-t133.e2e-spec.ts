@@ -88,8 +88,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         const profToken = (await request(http).post('/auth/login').send({
           email: 'prof-t133@example.test', password: PASSWORD }).expect(200)).body.accessToken;
         const horario = { franjas: [{ diaSemana: 1, orden: 0, sucursalId: sede.id,
-          inicioMinutos: 540, finMinutos: 720, descansoInicioMinutos: null,
-          descansoFinMinutos: null, activo: true }] };
+          // ALA RF-36 retiró los campos de descanso de la escritura semanal.
+          inicioMinutos: 540, finMinutos: 720, activo: true }] };
         const semana = (await request(http).put(`${ruta}/horario`)
           .auth(profToken, { type: 'bearer' }).send(horario).expect(200)).body;
         expect(semana).toHaveLength(1);
@@ -123,7 +123,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         const licencia = await db.getRepository(Licencia).findOneByOrFail({ negocioId: alta.negocioId });
         const suspendidaEn = reloj.ahora();
         await request(http).post(`/licencias/${licencia.id}/suspender`)
-          .auth(superToken, { type: 'bearer' }).send({}).expect(200);
+          .auth(superToken, { type: 'bearer' })
+          .set('Idempotency-Key', 't133-suspender-1234567890123456').send({}).expect(200);
         await request(http).get(`${ruta}/horario`)
           .auth(profToken, { type: 'bearer' }).expect(200);
         // Sesiones emitidas al final de la gracia evitan atribuir el 401 a su caducidad.
@@ -140,7 +141,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         await request(http).get(`${ruta}/horario`)
           .auth(profVigente, { type: 'bearer' }).expect(401);
         await request(http).post(`/licencias/${licencia.id}/reactivar`)
-          .auth(superVigente, { type: 'bearer' }).send({}).expect(200);
+          .auth(superVigente, { type: 'bearer' })
+          .set('Idempotency-Key', 't133-reactivar-1234567890123456').send({}).expect(200);
         expect((await request(http).get(`${ruta}/horario`)
           .auth(profVigente, { type: 'bearer' }).expect(200)).body).toEqual(semana);
         expect((await oferta()).map((item) => item.id)).toEqual([servicio.id]);

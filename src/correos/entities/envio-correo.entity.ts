@@ -5,11 +5,20 @@ import {
 import { Negocio } from '../../negocios/entities/negocio.entity';
 import { CodigoAcceso } from '../../codigos/entities/codigo-acceso.entity';
 import { Licencia } from '../../licencias/entities/licencia.entity';
+import { OperacionLicencia } from '../../licencias/entities/operacion-licencia.entity';
 
 export enum TipoEnvioCorreo {
   ACTIVACION_ADMIN = 'activacion_admin',
   RECUPERACION = 'recuperacion',
   AVISO_VENCIMIENTO = 'aviso_vencimiento',
+  AVISO_PREVENTIVO = 'aviso_preventivo',
+  LICENCIA_VENCIDA = 'licencia_vencida',
+  SUSPENSION_PROGRAMADA = 'suspension_programada',
+  SUSPENSION_EFECTIVA = 'suspension_efectiva',
+  SUSPENSION_INMEDIATA = 'suspension_inmediata',
+  SUSPENSION_REVOCADA = 'suspension_revocada',
+  LICENCIA_REACTIVADA = 'licencia_reactivada',
+  LICENCIA_RENOVADA = 'licencia_renovada',
 }
 
 export enum EstadoEnvioCorreo {
@@ -26,9 +35,28 @@ export enum EstadoEnvioCorreo {
 @Index('idx_envios_trabajo', ['estado', 'proximoIntentoEn', 'arrendadoHasta'])
 @Index('idx_envios_codigo', ['negocioId', 'codigoAccesoId'])
 @Index('idx_envios_licencia', ['negocioId', 'licenciaId'])
+@Index('idx_envios_operacion_licencia', ['negocioId', 'licenciaId', 'operacionLicenciaId'])
 @Check('chk_envios_clave', 'BINARY clave_dedupe = BINARY TRIM(clave_dedupe) AND CHAR_LENGTH(clave_dedupe) > 0')
 @Check('chk_envios_correo', 'BINARY correo_destinatario = BINARY LOWER(TRIM(correo_destinatario)) AND CHAR_LENGTH(correo_destinatario) > 0')
-@Check('chk_envios_referencia', "(tipo IN ('activacion_admin','recuperacion') AND codigo_acceso_id IS NOT NULL AND licencia_id IS NULL AND version_vencimiento IS NULL) OR (tipo = 'aviso_vencimiento' AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL AND version_vencimiento >= 1)")
+@Check('chk_envios_referencia', `COALESCE((
+  (tipo IN ('activacion_admin','recuperacion') AND codigo_acceso_id IS NOT NULL
+    AND licencia_id IS NULL AND version_vencimiento IS NULL AND umbral_dias IS NULL
+    AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+  OR (tipo IN ('aviso_vencimiento','licencia_vencida') AND codigo_acceso_id IS NULL
+    AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IS NULL
+    AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+  OR (tipo = 'aviso_preventivo' AND codigo_acceso_id IS NULL
+    AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IN (7,15)
+    AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+  OR (tipo IN ('suspension_programada','suspension_efectiva','suspension_inmediata')
+    AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+    AND version_vencimiento IS NULL AND umbral_dias IS NULL
+    AND version_suspension >= 1 AND operacion_licencia_id IS NULL)
+  OR (tipo IN ('suspension_revocada','licencia_reactivada','licencia_renovada')
+    AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+    AND version_vencimiento IS NULL AND umbral_dias IS NULL
+    AND version_suspension IS NULL AND operacion_licencia_id IS NOT NULL)
+  ), 0)`)
 @Check('chk_envios_intentos', 'intentos >= 0')
 @Check('chk_envios_arrendamiento', "(estado = 'tomado' AND arrendamiento_id IS NOT NULL AND arrendado_hasta IS NOT NULL) OR (estado <> 'tomado' AND arrendamiento_id IS NULL AND arrendado_hasta IS NULL)")
 @Check('chk_envios_confirmacion', "(estado = 'enviado' AND confirmado_en IS NOT NULL) OR (estado <> 'enviado' AND confirmado_en IS NULL)")
@@ -76,6 +104,26 @@ export class EnvioCorreo {
 
   @Column({ name: 'version_vencimiento', type: 'int', unsigned: true, nullable: true })
   versionVencimiento: number | null;
+
+  // Preventivos usan 15/7; suspensión usa ciclo; resultados usan operación.
+  @Column({ name: 'umbral_dias', type: 'int', unsigned: true, nullable: true })
+  umbralDias: number | null;
+
+  @Column({ name: 'version_suspension', type: 'int', unsigned: true, nullable: true })
+  versionSuspension: number | null;
+
+  @Column({ name: 'operacion_licencia_id', type: 'bigint', unsigned: true, nullable: true })
+  operacionLicenciaId: string | null;
+
+  // La referencia triple impide enviar un resultado de otra licencia o negocio.
+  @ManyToOne(() => OperacionLicencia, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([
+    { name: 'negocio_id', referencedColumnName: 'negocioId',
+      foreignKeyConstraintName: 'fk_envios_operacion_licencia' },
+    { name: 'licencia_id', referencedColumnName: 'licenciaId' },
+    { name: 'operacion_licencia_id', referencedColumnName: 'id' },
+  ])
+  operacionLicencia: OperacionLicencia | null;
 
   @Column({ type: 'enum', enum: EstadoEnvioCorreo, default: EstadoEnvioCorreo.PENDIENTE })
   estado: EstadoEnvioCorreo;

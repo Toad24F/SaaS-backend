@@ -163,7 +163,7 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
       const cuerpos = [
         (await auth(request(http).get('/disponibilidad/configuracion')).expect(200)).body,
         (await auth(request(http).put('/disponibilidad/configuracion'))
-          .send({ modo: 'ventana_libre', intervaloMinutos: 10,
+          .send({ modo: 'ventana_libre', tiempoEntreCitasMinutos: 10,
             anticipacionMinutos: 15, diasFuturos: 60 }).expect(200)).body,
         (await auth(request(http).get('/disponibilidad')).query({ ...base,
           desde: '2026-07-06', hasta: '2026-07-06' }).expect(200)).body,
@@ -200,7 +200,8 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
     await escenario(async ({ app, db, a, b, tokens, otroPerfil }) => {
       const http = app.getHttpServer();
       const cuerpo = { personalId: a.personalId, sucursalId: a.sucursales[0],
-        servicioId: a.servicios[0], fechaLocal: '2026-07-06', horaInicio: '10:30' };
+        // ALA RF-47 inicia la secuencia en el primer espacio libre (10:25).
+        servicioId: a.servicios[0], fechaLocal: '2026-07-06', horaInicio: '10:25' };
       const query = { personalId: a.personalId, sucursalId: a.sucursales[0],
         servicioId: a.servicios[0], desde: cuerpo.fechaLocal, hasta: cuerpo.fechaLocal };
       const validar = (token: string, datos: Record<string, unknown> = cuerpo) =>

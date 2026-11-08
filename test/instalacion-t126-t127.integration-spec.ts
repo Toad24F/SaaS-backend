@@ -38,9 +38,11 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
             ORDER BY COLUMN_NAME`, [nombre, tabla]);
           expect(referencia).toEqual(columnas);
         }
-        // Las tablas del portal deben coincidir también en índices, CHECK y FKs;
-        // una columna coincidente por sí sola no protege los límites de negocio.
-        for (const tabla of ['configuracion_agenda', 'clientes', 'citas',
+        // El ajuste ALA-T027 amplía la equivalencia a índices, CHECK y FKs de
+        // todas las tablas afectadas, no solo a sus columnas y tipos.
+        for (const tabla of ['negocios', 'usuarios', 'licencias',
+          'operaciones_licencia', 'envios_correo', 'servicios', 'sucursales',
+          'configuracion_agenda', 'clientes', 'citas',
           'bloqueos_temporales', 'sesiones_reserva_publica',
           'operaciones_apartado', 'intentos_reserva_publica']) {
           expect(nombres).toContain(tabla);

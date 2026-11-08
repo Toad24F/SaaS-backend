@@ -13,8 +13,8 @@ import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { SesionesService } from '../src/auth/services/sesiones.service';
 
-describe('T111–T115 rutas de baja y pertenencia', () => {
-  it('devuelve 204 solo al administrador propio y 409 cuando hay relaciones', async () => {
+describe('T111–T115 baja histórica y pertenencia', () => {
+  it('ALA RF-22 retira DELETE y conserva las filas y relaciones al inhabilitar', async () => {
     await conBaseMigrada(async (db) => {
       const reloj = new RelojPrueba(new Date('2026-10-01T12:00:00Z'));
       const modulo = await Test.createTestingModule({ imports: [AppModule] })
@@ -60,29 +60,28 @@ describe('T111–T115 rutas de baja y pertenencia', () => {
         const rutas = [`/sucursales/${sede.insertId}`, `/servicios/${servicio.insertId}`,
           `/profesionales/${profesional.id}`];
         const http = app.getHttpServer();
-        for (const ruta of rutas) {
-          await request(http).delete(ruta).auth(tokens.ajeno, { type: 'bearer' }).expect(404);
-          await request(http).delete(ruta).auth(tokens.profesional, { type: 'bearer' }).expect(403);
-        }
         await db.query(`INSERT INTO personal_sucursales (negocio_id,personal_id,sucursal_id)
           VALUES (?,?,?)`, [ids.propio, profesional.id, sede.insertId]);
         await db.query(`INSERT INTO personal_servicios (negocio_id,personal_id,servicio_id)
           VALUES (?,?,?)`, [ids.propio, profesional.id, servicio.insertId]);
+        // El router ya no ofrece DELETE, para ningún rol ni aun sin relaciones.
         for (const ruta of rutas) {
-          const respuesta = await request(http).delete(ruta)
-            .auth(tokens.propio, { type: 'bearer' }).expect(409);
-          expect(respuesta.body.message).toContain('desactiv');
+          for (const actor of ['ajeno', 'profesional', 'propio']) {
+            await request(http).delete(ruta).auth(tokens[actor], { type: 'bearer' }).expect(404);
+          }
         }
-        await db.query('DELETE FROM personal_servicios');
-        await db.query('DELETE FROM personal_sucursales');
-        // Una sesión iniciada es una relación real: primero se revoca y retira.
-        await db.query('DELETE FROM sesiones WHERE usuario_id=?', [profesional.id]);
         for (const ruta of rutas) {
-          await request(http).delete(ruta).auth(tokens.propio, { type: 'bearer' }).expect(204);
-          await request(http).delete(ruta).auth(tokens.propio, { type: 'bearer' }).expect(404);
+          await request(http).post(`${ruta}/inhabilitar`)
+            .auth(tokens.ajeno, { type: 'bearer' }).send({}).expect(404);
+          await request(http).post(`${ruta}/inhabilitar`)
+            .auth(tokens.propio, { type: 'bearer' }).send({}).expect(200);
         }
         expect((await db.query('SELECT COUNT(*) total FROM usuarios WHERE id=?',
-          [profesional.id]))[0].total).toBe('0');
+          [profesional.id]))[0].total).toBe('1');
+        expect((await db.query('SELECT COUNT(*) total FROM personal_sucursales WHERE personal_id=?',
+          [profesional.id]))[0].total).toBe('1');
+        expect((await db.query('SELECT COUNT(*) total FROM personal_servicios WHERE personal_id=?',
+          [profesional.id]))[0].total).toBe('1');
       } finally { await app.close(); }
     });
   });

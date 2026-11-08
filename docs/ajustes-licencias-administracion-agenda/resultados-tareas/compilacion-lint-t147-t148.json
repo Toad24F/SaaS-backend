@@ -1,0 +1,14 @@
+[
+  {
+    "comando": "npm run build",
+    "revisionBase": "1da14bf",
+    "codigo": 0,
+    "salida": "\r\n> backend@0.0.1 build\r\n> nest build\r\n\r\n"
+  },
+  {
+    "comando": "npm run lint",
+    "revisionBase": "1da14bf",
+    "codigo": 0,
+    "salida": "\r\n> backend@0.0.1 lint\r\n> oxlint src/ test/\r\n\r\n"
+  }
+]

@@ -8,10 +8,11 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { RELOJ } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
-import { CambiarLimiteSucursalesDto, CorregirCorreoDto, CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
+import { CambiarLimiteSucursalesDto, CambiarLimitesUsuariosDto, CorregirCorreoDto, CrearNegocioDto, NegocioIdDto } from './dto/negocios-http.dto';
 import { NegociosConsultaService } from './negocios-consulta.service';
 import { SinCamposDto } from '../comun/dto/sin-campos.dto';
 import { SucursalesService } from '../sucursales/sucursales.service';
+import { CuposUsuariosService } from '../usuarios/cupos-usuarios.service';
 
 // Primero se valida la sesión y su estado actual; después se exige superadmin.
 @Controller('negocios')
@@ -22,6 +23,7 @@ export class NegociosController {
     private readonly altas: AltasService,
     private readonly consultas: NegociosConsultaService,
     private readonly sucursales: SucursalesService,
+    private readonly cuposUsuarios: CuposUsuariosService,
     @Inject(RELOJ) private readonly reloj: Reloj,
   ) {}
 
@@ -70,5 +72,21 @@ export class NegociosController {
     @CurrentUser() usuario: JwtPayload) {
     // El actor proviene de la sesión; el cupo se serializa en el servicio.
     return this.sucursales.cambiarLimite(usuario.sub, parametros.id, datos.limiteSucursales);
+  }
+
+  @Get(':id/cupo-usuarios')
+  consultarCupoUsuarios(@Param() parametros: NegocioIdDto) {
+    // El rol superadmin viene del guard; el servicio relee los dos consumos bajo barrera.
+    return this.cuposUsuarios.consultar(parametros.id);
+  }
+
+  @Patch(':id/limites-usuarios')
+  cambiarLimitesUsuarios(@Param() parametros: NegocioIdDto,
+    @Body() datos: CambiarLimitesUsuariosDto, @CurrentUser() actor: JwtPayload) {
+    // Actor e ID del negocio se revalidan en la transacción; el cuerpo solo trae límites.
+    return this.cuposUsuarios.cambiarLimites(actor.sub, parametros.id, {
+      profesionales: datos.limiteProfesionalesActivos,
+      recepcionistas: datos.limiteRecepcionistasActivos,
+    });
   }
 }

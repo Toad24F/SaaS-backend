@@ -100,7 +100,8 @@ describe('M3-T058–T062: apartado y reemplazo durable', () => {
         expect((await db.query('SELECT generacion,apartado_actual_id FROM sesiones_reserva_publica WHERE negocio_id=?',
           [a.id]))[0]).toMatchObject({ generacion: '5', apartado_actual_id: null });
         const actual = await servicio.solicitar(a.id, titular,
-          { ...seleccion, horaInicio: '09:15', clave: 'apartado_6789012345' });
+          // ALA RF-46–RF-47 redondea al siguiente inicio válido del tramo.
+          { ...seleccion, horaInicio: '09:30', clave: 'apartado_6789012345' });
         expect(actual).toMatchObject({ estado: 'concedida', generacion: '6' });
         expect(await servicio.solicitar(a.id, titular,
           { ...seleccion, horaInicio: '08:45', clave: 'apartado_5678901234' }))

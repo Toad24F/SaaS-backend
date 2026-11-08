@@ -5,6 +5,7 @@ import { Personal } from '../../profesionales/entities/personal.entity';
 import { Servicio } from '../../servicios/entities/servicio.entity';
 import { Sucursal } from '../../sucursales/entities/sucursal.entity';
 import { Cliente } from './cliente.entity';
+import { BloqueoTemporal } from './bloqueo-temporal.entity';
 
 export type EstadoCita = 'pendiente' | 'confirmada' | 'completada' | 'cancelada' | 'no_asistio';
 export type OrigenCita = 'portal_publico' | 'manual';
@@ -17,9 +18,14 @@ export type OrigenCita = 'portal_publico' | 'manual';
 @Index('idx_citas_sucursal_inicio', ['negocioId', 'sucursalId', 'inicioUtc'])
 @Index('idx_citas_cliente', ['negocioId', 'clienteId'])
 @Index('idx_citas_servicio', ['negocioId', 'servicioId'])
+@Index('uq_citas_apartado_origen', ['negocioId', 'apartadoOrigenId'], { unique: true })
+@Index('idx_citas_contacto_sucursal_inicio',
+  ['negocioId', 'sucursalId', 'telefonoContacto', 'inicioUtc'])
 @Check('chk_citas_intervalo', 'fin_utc > inicio_utc')
 @Check('chk_citas_zona', 'CHAR_LENGTH(TRIM(zona_horaria_reserva)) > 0')
 @Check('chk_citas_costo_aceptado', 'costo_aceptado IS NULL OR costo_aceptado >= 0')
+@Check('chk_citas_separacion', 'separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0')
+@Check('chk_citas_fin_ocupacion', 'fin_ocupacion_utc IS NULL OR fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE)')
 export class Cita {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -65,11 +71,29 @@ export class Cita {
     { name: 'cliente_id', referencedColumnName: 'id' }])
   cliente: Cliente;
 
+  // Un apartado puede originar una sola cita; NULL conserva citas manuales y antiguas.
+  @Column({ name: 'apartado_origen_id', type: 'int', unsigned: true, nullable: true })
+  apartadoOrigenId: number | null;
+
+  @ManyToOne(() => BloqueoTemporal, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn([{ name: 'negocio_id', referencedColumnName: 'negocioId',
+    foreignKeyConstraintName: 'fk_citas_apartado_origen' },
+  { name: 'apartado_origen_id', referencedColumnName: 'id' }])
+  apartadoOrigen: BloqueoTemporal | null;
+
   @Column({ name: 'inicio_utc', type: 'datetime', precision: 3 })
   inicioUtc: Date;
 
   @Column({ name: 'fin_utc', type: 'datetime', precision: 3 })
   finUtc: Date;
+
+  // finUtc sigue siendo el fin de atención; el margen protegido se guarda aparte.
+  // NULL permite al escritor anterior convivir hasta que el nuevo motor lo sustituya.
+  @Column({ name: 'fin_ocupacion_utc', type: 'datetime', precision: 3, nullable: true })
+  finOcupacionUtc: Date | null;
+
+  @Column({ name: 'separacion_minutos', type: 'int', unsigned: true, default: 0 })
+  separacionMinutos: number;
 
   @Column({ name: 'zona_horaria_reserva', type: 'varchar', length: 64 })
   zonaHorariaReserva: string;

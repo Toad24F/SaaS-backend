@@ -966,3 +966,162 @@ CREATE TABLE envios_correo (
     (estado = 'enviado' AND confirmado_en IS NOT NULL)
     OR (estado <> 'enviado' AND confirmado_en IS NULL))
 ) ENGINE=InnoDB;
+
+-- ALA-T008–T009: límites iniciales por negocio y proyección pública de precios.
+-- El consumo de cupos se deriva de usuarios; estos campos solo guardan máximos.
+ALTER TABLE negocios
+  ADD limite_profesionales_activos INT UNSIGNED NOT NULL DEFAULT 5,
+  ADD limite_recepcionistas_activos INT UNSIGNED NOT NULL DEFAULT 3,
+  ADD mostrar_precios_publicos TINYINT(1) NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_negocios_limite_profesionales CHECK (limite_profesionales_activos >= 1),
+  ADD CONSTRAINT chk_negocios_limite_recepcionistas CHECK (limite_recepcionistas_activos >= 1),
+  ADD CONSTRAINT chk_negocios_mostrar_precios CHECK (mostrar_precios_publicos IN (0, 1));
+
+-- ALA-T010–T012: inhabilitar exige desactivar, pero conserva identidad y unicidad.
+-- Personal hereda el estado de usuarios y no recibe una columna duplicada.
+ALTER TABLE usuarios
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_usuarios_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+ALTER TABLE servicios
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_servicios_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+ALTER TABLE sucursales
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_sucursales_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+
+-- ALA-T013–T014: plazo anulable en licencias anteriores y ciclo independiente.
+ALTER TABLE licencias
+  ADD plazo_suspension_dias INT UNSIGNED NULL,
+  ADD version_suspension INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD CONSTRAINT chk_licencias_plazo_suspension
+    CHECK (plazo_suspension_dias IS NULL OR plazo_suspension_dias BETWEEN 0 AND 30);
+
+-- ALA-T015–T016: cada clave identifica un resultado reducido de una licencia.
+-- Actor y pertenencia se fijan con FK; el servicio validará el rol superadmin.
+CREATE TABLE operaciones_licencia (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  licencia_id INT UNSIGNED NOT NULL,
+  actor_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  accion ENUM('suspender','reactivar','renovar') NOT NULL,
+  parametros_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  resultado_reducido TEXT NOT NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_operaciones_licencia_clave (negocio_id,licencia_id,clave),
+  UNIQUE KEY uq_operaciones_licencia_referencia (negocio_id,licencia_id,id),
+  INDEX idx_operaciones_licencia_actor (actor_id),
+  CONSTRAINT fk_operaciones_licencia_licencia FOREIGN KEY (negocio_id,licencia_id)
+    REFERENCES licencias(negocio_id,id),
+  CONSTRAINT fk_operaciones_licencia_actor FOREIGN KEY (actor_id)
+    REFERENCES usuarios(id),
+  CONSTRAINT chk_operaciones_licencia_clave CHECK (
+    CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)),
+  CONSTRAINT chk_operaciones_licencia_hash CHECK (CHAR_LENGTH(parametros_hash) = 64),
+  CONSTRAINT chk_operaciones_licencia_resultado CHECK (JSON_VALID(resultado_reducido))
+) ENGINE=InnoDB;
+
+-- ALA-T017–T018: conservar el aviso viejo; los nuevos usan versión, ciclo u operación.
+ALTER TABLE envios_correo DROP CONSTRAINT chk_envios_referencia;
+ALTER TABLE envios_correo
+  MODIFY tipo ENUM('activacion_admin','recuperacion','aviso_vencimiento',
+    'aviso_preventivo','licencia_vencida','suspension_programada',
+    'suspension_efectiva','suspension_inmediata','suspension_revocada',
+    'licencia_reactivada','licencia_renovada') NOT NULL,
+  ADD umbral_dias INT UNSIGNED NULL,
+  ADD version_suspension INT UNSIGNED NULL,
+  ADD operacion_licencia_id BIGINT UNSIGNED NULL,
+  ADD INDEX idx_envios_operacion_licencia
+    (negocio_id,licencia_id,operacion_licencia_id),
+  ADD CONSTRAINT fk_envios_operacion_licencia
+    FOREIGN KEY (negocio_id,licencia_id,operacion_licencia_id)
+    REFERENCES operaciones_licencia(negocio_id,licencia_id,id);
+ALTER TABLE envios_correo
+  ADD CONSTRAINT chk_envios_referencia CHECK (COALESCE((
+    (tipo IN ('activacion_admin','recuperacion') AND codigo_acceso_id IS NOT NULL
+      AND licencia_id IS NULL AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('aviso_vencimiento','licencia_vencida') AND codigo_acceso_id IS NULL
+      AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo = 'aviso_preventivo' AND codigo_acceso_id IS NULL
+      AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IN (7,15)
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('suspension_programada','suspension_efectiva','suspension_inmediata')
+      AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+      AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension >= 1 AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('suspension_revocada','licencia_reactivada','licencia_renovada')
+      AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+      AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NOT NULL)
+  ), 0));
+
+-- ALA-T019–T020: la separación nueva parte de cero; intervalo_minutos es legado.
+ALTER TABLE configuracion_agenda
+  ADD tiempo_entre_citas_minutos INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD CONSTRAINT chk_agenda_tiempo_entre_citas CHECK (
+    tiempo_entre_citas_minutos BETWEEN 0 AND 60
+    AND tiempo_entre_citas_minutos MOD 5 = 0);
+
+-- ALA-T021–T022: fin_utc sigue siendo el fin de atención, no el protegido.
+-- Las citas anteriores reciben separación cero y fin protegido idéntico.
+ALTER TABLE citas
+  ADD separacion_minutos INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD fin_ocupacion_utc DATETIME(3) NULL,
+  ADD CONSTRAINT chk_citas_separacion CHECK (
+    separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0),
+  ADD CONSTRAINT chk_citas_fin_ocupacion CHECK (
+    fin_ocupacion_utc IS NULL OR
+    fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
+UPDATE citas SET fin_ocupacion_utc = fin_utc WHERE fin_ocupacion_utc IS NULL;
+
+-- Los apartados previos carecen de condiciones de concesión comprobables.
+-- El contexto nuevo se escribirá completo en una sola operación posterior.
+ALTER TABLE bloqueos_temporales
+  ADD separacion_minutos INT UNSIGNED NULL,
+  ADD fin_ocupacion_utc DATETIME(3) NULL,
+  ADD modo_concesion VARCHAR(20) NULL,
+  ADD version_reglas INT UNSIGNED NULL,
+  ADD CONSTRAINT chk_bt_contexto_protegido CHECK (COALESCE((
+    (fin_ocupacion_utc IS NULL AND separacion_minutos IS NULL
+      AND modo_concesion IS NULL AND version_reglas IS NULL)
+    OR (fin_ocupacion_utc IS NOT NULL AND separacion_minutos IS NOT NULL
+      AND modo_concesion IS NOT NULL AND version_reglas IS NOT NULL
+      AND separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0
+      AND modo_concesion IN ('ventana_libre','agenda_compacta')
+      AND version_reglas >= 1)
+  ), 0)),
+  ADD CONSTRAINT chk_bt_fin_ocupacion CHECK (
+    fin_ocupacion_utc IS NULL OR
+    fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
+
+-- ALA-T023–T024: NULL mantiene citas anteriores y manuales sin origen inventado.
+-- Un origen no nulo queda reservado por negocio y la búsqueda telefónica usa índice.
+ALTER TABLE citas
+  ADD apartado_origen_id INT UNSIGNED NULL,
+  ADD UNIQUE KEY uq_citas_apartado_origen (negocio_id,apartado_origen_id),
+  ADD INDEX idx_citas_contacto_sucursal_inicio
+    (negocio_id,sucursal_id,telefono_contacto,inicio_utc),
+  ADD CONSTRAINT fk_citas_apartado_origen
+    FOREIGN KEY (negocio_id,apartado_origen_id)
+    REFERENCES bloqueos_temporales(negocio_id,id) ON DELETE RESTRICT;
+
+-- ALA-T025–T026: primero se identifica el intento anterior; después el apartado
+-- apunta al intento actual. Las FKs compuestas impiden referencias de otro negocio.
+ALTER TABLE intentos_reserva_publica
+  ADD intento_anterior_id BIGINT UNSIGNED NULL,
+  ADD UNIQUE KEY uq_irp_intento_anterior (negocio_id,intento_anterior_id),
+  ADD CONSTRAINT fk_irp_intento_anterior
+    FOREIGN KEY (negocio_id,intento_anterior_id)
+    REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
+ALTER TABLE bloqueos_temporales
+  ADD intento_actual_id BIGINT UNSIGNED NULL,
+  ADD INDEX idx_bt_intento_actual (negocio_id,intento_actual_id),
+  ADD CONSTRAINT fk_bt_intento_actual
+    FOREIGN KEY (negocio_id,intento_actual_id)
+    REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;

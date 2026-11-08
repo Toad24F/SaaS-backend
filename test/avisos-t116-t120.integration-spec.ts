@@ -15,7 +15,7 @@ import { ProcesadorCorreoService } from '../src/correos/procesador-correo.servic
 import { TransporteCorreoControlado } from '../src/correos/transporte-correo-controlado';
 import { AvisosVencimientoService } from '../src/licencias/services/avisos-vencimiento.service';
 
-async function escenario(db: DataSource, correo = 'admin@avisos.test') {
+async function escenario(db: DataSource, correo = 'admin@avisos.test', diasVigencia = 2) {
   const ahora = new Date(Date.now() + 120_000);
   const reloj = new RelojPrueba(ahora);
   const negocio = await db.getRepository(Negocio).save({ nombre: 'Avisos',
@@ -28,7 +28,7 @@ async function escenario(db: DataSource, correo = 'admin@avisos.test') {
     nombre: 'Super', email: `super-${randomUUID()}@avisos.test`, passwordHash: 'hash',
     rol: Rol.SUPERADMIN, activo: true, activadoEn: ahora });
   const licencia = await db.getRepository(Licencia).save({ negocioId: negocio.id,
-    habilitadaEn: ahora, venceEn: new Date(ahora.getTime() + 48 * 60 * 60 * 1000),
+    habilitadaEn: ahora, venceEn: new Date(ahora.getTime() + diasVigencia * 24 * 60 * 60 * 1000),
     versionVencimiento: 1 });
   const bandeja = new BandejaCorreoService();
   const detectar = (conexion = db) => new AvisosVencimientoService(conexion, bandeja);
@@ -42,9 +42,9 @@ async function escenario(db: DataSource, correo = 'admin@avisos.test') {
 }
 
 describe('M1-T116–T120 avisos por vencimiento', () => {
-  it('detecta en la frontera inclusiva de 48 h, una vez por versión y todavía antes de vencer', async () => {
+  it('detecta en la frontera inclusiva de 15 días, una vez por versión', async () => {
     await conBaseMigrada(async (db, otra) => {
-      const f = await escenario(db);
+      const f = await escenario(db, 'admin@avisos.test', 15);
       f.reloj.fijar(new Date(f.reloj.ahora().getTime() - 1));
       expect(await f.detectar().detectar(f.reloj.ahora())).toBe(0);
       f.reloj.avanzar(1);
@@ -52,10 +52,10 @@ describe('M1-T116–T120 avisos por vencimiento', () => {
         f.detectar(otra).detectar(f.reloj.ahora())]);
       expect(resultados.reduce((a, b) => a + b, 0)).toBe(1);
       expect(await f.detectar().detectar(f.reloj.ahora())).toBe(0);
-      const envios = await db.query("SELECT * FROM envios_correo WHERE tipo='aviso_vencimiento'");
+      const envios = await db.query("SELECT * FROM envios_correo WHERE tipo='aviso_preventivo'");
       expect(envios).toHaveLength(1);
       expect(envios[0]).toMatchObject({ correo_destinatario: f.admin.email,
-        version_vencimiento: 1 });
+        version_vencimiento: 1, umbral_dias: 15 });
       expect(await f.procesar().procesarUno()).toMatchObject({ estado: 'enviado' });
       expect(f.transporte.intentos).toHaveLength(1);
       expect(f.transporte.intentos[0].texto).toContain(f.licencia.venceEn!.toISOString());
@@ -84,7 +84,7 @@ describe('M1-T116–T120 avisos por vencimiento', () => {
       const f = await escenario(db);
       await f.detectar().detectar(f.reloj.ahora());
       await f.licencias.renovar(f.superadmin.id, f.licencia.id, f.reloj.ahora());
-      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_vencimiento'"))[0].estado)
+      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_preventivo'"))[0].estado)
         .toBe('descartado');
       expect(await f.procesar().procesarUno()).toBeNull();
       // Se aproxima el nuevo vencimiento sin alterar su versión.
@@ -94,7 +94,9 @@ describe('M1-T116–T120 avisos por vencimiento', () => {
       await f.licencias.suspender(f.superadmin.id, f.licencia.id, f.reloj.ahora());
       f.reloj.avanzar(48 * 60 * 60 * 1000);
       await f.licencias.materializarSuspension(f.superadmin.id, f.licencia.id, f.reloj.ahora());
-      expect(await f.procesar().procesarUno()).toBeNull();
+      // La suspensión puede generar su propio correo; el aviso preventivo anterior queda descartado.
+      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_preventivo' AND version_vencimiento=?",
+        [renovada.versionVencimiento]))[0].estado).toBe('descartado');
       await f.licencias.reactivar(f.superadmin.id, f.licencia.id, f.reloj.ahora());
       expect((await db.getRepository(Licencia).findOneByOrFail({ id: f.licencia.id }))
         .versionVencimiento).toBeGreaterThan(2);
@@ -132,7 +134,7 @@ describe('M1-T116–T120 avisos por vencimiento', () => {
     });
   });
 
-  it('cancelar una suspensión durante la gracia cambia versión e invalida el aviso', async () => {
+  it('cancelar una suspensión durante la gracia conserva la versión del vencimiento', async () => {
     await conBaseMigrada(async (db) => {
       const f = await escenario(db);
       await f.detectar().detectar(f.reloj.ahora());
@@ -140,9 +142,9 @@ describe('M1-T116–T120 avisos por vencimiento', () => {
       f.reloj.avanzar(1000);
       await f.licencias.reactivar(f.superadmin.id, f.licencia.id, f.reloj.ahora());
       const licencia = await db.getRepository(Licencia).findOneByOrFail({ id: f.licencia.id });
-      expect(licencia.versionVencimiento).toBe(2);
-      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_vencimiento'"))[0].estado)
-        .toBe('descartado');
+      expect(licencia.versionVencimiento).toBe(1);
+      expect((await db.query("SELECT estado FROM envios_correo WHERE tipo='aviso_preventivo'"))[0].estado)
+        .toBe('pendiente');
     });
   });
 });

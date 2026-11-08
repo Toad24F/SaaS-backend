@@ -14,6 +14,7 @@ export interface NegocioPublicoAutorizado {
   categoria?: string | null;
   telefono?: string | null;
   mostrarContactoPublico?: boolean;
+  mostrarPreciosPublicos?: boolean;
 }
 
 @Injectable()
@@ -42,7 +43,16 @@ export class ResolverNegocioPublicoService {
     }
     return { id: negocio.id, slug: negocio.slug, nombre: negocio.nombre,
       categoria: negocio.categoria, telefono: negocio.telefonoContacto,
-      mostrarContactoPublico: negocio.mostrarContactoPublico };
+      mostrarContactoPublico: negocio.mostrarContactoPublico,
+      mostrarPreciosPublicos: negocio.mostrarPreciosPublicos };
+  }
+
+  /** Relee la opción vigente tras el commit público, sin exigir licencia para
+   * la recuperación propia de una reserva que ya existe. */
+  async mostrarPreciosVigentes(negocioId: number): Promise<boolean> {
+    const negocio = await this.db.getRepository(Negocio).findOneBy({ id: negocioId });
+    if (!negocio) throw new NotFoundException('Portal no disponible para reservar.');
+    return negocio.mostrarPreciosPublicos;
   }
 
   /** Liberación y recuperación propias siguen disponibles si venció la licencia.

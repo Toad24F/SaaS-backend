@@ -81,8 +81,11 @@ describe('M2-T044–T049: cálculo privado con fuentes reales', () => {
         personalId: negocio.personalId, sucursalId: negocio.sucursales[0],
         servicioId: negocio.servicios[0], desde: fecha, hasta: fecha,
         zonaHoraria: 'America/Chihuahua', calculadoEn: ahora,
-        modalidad: 'publica', reglas: { modo: 'ventana_libre', intervaloMinutos: 15 } });
-      expect(r.ranuras[0]).toEqual({ inicioUtc: h('10:30'), finUtc: h('11:00') });
+        // ALA RF-39–RF-40: el valor inicial es separación cero, sin intervalo.
+        modalidad: 'publica', reglas: { modo: 'ventana_libre',
+          tiempoEntreCitasMinutos: 0 } });
+      // ALA RF-46 redondea 10:07 + 15 minutos al inicio local 10:25.
+      expect(r.ranuras[0]).toEqual({ inicioUtc: h('10:25'), finUtc: h('10:55') });
       expect(r.ranuras.map((x) => x.inicioUtc.getTime()))
         .toEqual([...new Set(r.ranuras.map((x) => x.inicioUtc.getTime()))].sort((a, b) => a - b));
       expect(JSON.stringify(r)).not.toMatch(/titularHash|clienteId|folio/);
@@ -92,8 +95,13 @@ describe('M2-T044–T049: cálculo privado con fuentes reales', () => {
   it('filtra ocupación, descanso, duración completa y extremos contiguos', async () => {
     await conBaseMigrada(async (db) => {
       const { negocio, token } = await preparar(db);
-      await db.query(`UPDATE horarios_personal SET descanso_inicio_minutos=660,
-        descanso_fin_minutos=690 WHERE negocio_id=?`, [negocio.id]);
+      // ALA RF-36: reemplazar el descanso anterior por dos franjas y un hueco.
+      await db.query(`UPDATE horarios_personal SET fin_minutos=660
+        WHERE negocio_id=?`, [negocio.id]);
+      await db.query(`INSERT INTO horarios_personal (negocio_id,personal_id,sucursal_id,
+        dia_semana,orden,inicio_minutos,fin_minutos,activo)
+        VALUES (?,?,?,1,1,690,780,1)`,
+      [negocio.id, negocio.personalId, negocio.sucursales[0]]);
       const cita = await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,
         servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,folio,origen)
         SELECT negocio_id,?, ?, ?,id,?,?,'America/Chihuahua',
@@ -125,14 +133,20 @@ describe('M2-T044–T049: cálculo privado con fuentes reales', () => {
       await db.query(`INSERT INTO configuracion_agenda
         (negocio_id,modo,intervalo_minutos,anticipacion_minutos,dias_futuros)
         VALUES (?,'agenda_compacta',15,30,0)`, [negocio.id]);
-      await db.query(`UPDATE horarios_personal SET descanso_inicio_minutos=720,
-        descanso_fin_minutos=735 WHERE negocio_id=?`, [negocio.id]);
+      // ALA RF-36 conserva dos bloques en lugar de columnas de descanso.
+      await db.query(`UPDATE horarios_personal SET fin_minutos=720
+        WHERE negocio_id=?`, [negocio.id]);
+      await db.query(`INSERT INTO horarios_personal (negocio_id,personal_id,sucursal_id,
+        dia_semana,orden,inicio_minutos,fin_minutos,activo)
+        VALUES (?,?,?,1,1,735,780,1)`,
+      [negocio.id, negocio.personalId, negocio.sucursales[0]]);
       const { servicio } = motor(db);
       const r = await servicio.consultar(token, negocio.personalId,
         negocio.sucursales[0], negocio.servicios[0], fecha, fecha);
+      // ALA RF-46–RF-52: 10:07 + 30 redondea a 10:40; el grupo
+      // compacto solo publica el primer candidato válido en este escenario.
       expect(r.ranuras).toEqual([
-        { inicioUtc: h('10:45'), finUtc: h('11:15') },
-        { inicioUtc: h('12:15'), finUtc: h('12:45') },
+        { inicioUtc: h('10:40'), finUtc: h('11:10') },
       ]);
       expect((await servicio.consultar(token, negocio.personalId,
         negocio.sucursales[0], negocio.servicios[0], '2026-07-07', '2026-07-07')).ranuras)
@@ -157,7 +171,8 @@ describe('M2-T044–T049: cálculo privado con fuentes reales', () => {
       expect(hoy.ranuras[0].inicioUtc).toEqual(h('10:45'));
       const ultimo = await servicio.consultar(token, negocio.personalId,
         negocio.sucursales[0], negocio.servicios[0], '2026-07-07', '2026-07-07');
-      expect(ultimo.ranuras).toHaveLength(3);
+      // ALA RF-47 avanza por duración completa; ya no queda un tercer inicio.
+      expect(ultimo.ranuras).toHaveLength(2);
       expect(ultimo.ranuras[0].inicioUtc.toISOString()).toBe('2026-07-07T15:00:00.000Z');
     });
   });

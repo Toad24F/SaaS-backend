@@ -195,8 +195,10 @@ describe('M3-T041–T044: selección, errores y agenda pública', () => {
         VALUES (?,'ventana_libre',15,0,60)`, [a.id]);
       const leer = async () => (await request(http).get(disponibilidad).query(consulta).expect(200)).body;
       const libre = await leer();
+      // ALA RF-46–RF-47: con duración de 30 minutos y separación cero
+      // los inicios avanzan 09:00, 09:30, 10:00; 09:45 ya no es candidato.
       expect(libre.ranuras.map((r: { inicioUtc: string }) => r.inicioUtc))
-        .toContain('2026-10-20T15:45:00.000Z');
+        .toContain('2026-10-20T16:00:00.000Z');
       // Un apartado de 09:00 a 09:30 deja libre el extremo contiguo 09:30.
       await db.query(`INSERT INTO bloqueos_temporales (negocio_id,personal_id,
         sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)
@@ -209,13 +211,19 @@ describe('M3-T041–T044: selección, errores y agenda pública', () => {
         .toContain('2026-10-20T15:30:00.000Z');
       expect(contiguo.ranuras.map((r: { inicioUtc: string }) => r.inicioUtc))
         .not.toContain('2026-10-20T15:15:00.000Z');
-      await db.query(`UPDATE horarios_personal SET descanso_inicio_minutos=615,
-        descanso_fin_minutos=630 WHERE negocio_id=? AND dia_semana=2 AND orden=1`, [a.id]);
+      // ALA RF-36 representa el descanso como hueco entre franjas, sin
+      // activar las columnas históricas de descanso.
+      await db.query(`UPDATE horarios_personal SET fin_minutos=615
+        WHERE negocio_id=? AND dia_semana=2 AND orden=1`, [a.id]);
+      await db.query(`INSERT INTO horarios_personal (negocio_id,personal_id,sucursal_id,
+        dia_semana,orden,inicio_minutos,fin_minutos,activo)
+        VALUES (?,?,?,2,2,630,660,1)`,
+      [a.id, a.profesionales[0], a.sucursales[0].id]);
       const descanso = await leer();
       expect(descanso.ranuras.map((r: { inicioUtc: string }) => r.inicioUtc))
         .not.toContain('2026-10-20T16:00:00.000Z');
       expect(descanso.ranuras.map((r: { inicioUtc: string }) => r.inicioUtc))
-        .toContain('2026-10-20T15:45:00.000Z');
+        .toContain('2026-10-20T15:30:00.000Z');
       await db.query(`UPDATE configuracion_agenda SET modo='agenda_compacta'
         WHERE negocio_id=?`, [a.id]);
       const compacta = await leer();
@@ -247,8 +255,10 @@ describe('M3-T041–T044: selección, errores y agenda pública', () => {
         (negocio_id,excepcion_id,orden,inicio_minutos,fin_minutos)
         VALUES (?,?,0,120,210)`, [a.id, excepcion.insertId]);
       const invalida = await request(app.getHttpServer()).get(disponibilidad)
-        .query(fecha).expect(400);
-      expect(invalida.body).toMatchObject({ codigo: 'portal_400', accion: 'corregir' });
+        .query(fecha).expect(409);
+      // ALA RF-37: una excepción histórica exige transición antes de
+      // habilitar la lectura, aunque la franja local ya fuera inválida.
+      expect(invalida.body).toMatchObject({ codigo: 'portal_409', accion: 'volver' });
       expect(invalida.body.ranuras).toBeUndefined();
       // En el retroceso de noviembre, 01:30 es ambiguo y tampoco se ofrece.
       await db.query('DELETE FROM franjas_excepcion_horario WHERE excepcion_id=?',

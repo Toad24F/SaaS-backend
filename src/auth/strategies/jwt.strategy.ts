@@ -52,6 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (
       !usuario ||
       !usuario.activo ||
+      usuario.inhabilitadoEn != null ||
       usuario.activadoEn === null ||
       !usuario.nombre
     ) {

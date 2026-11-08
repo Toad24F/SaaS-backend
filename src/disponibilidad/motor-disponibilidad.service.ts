@@ -15,7 +15,9 @@ import { cabeEnAtencion, iniciosAnclados,
   type ProyeccionAtencion } from './proyeccion-atencion';
 import type { ResultadoDisponibilidad, Ocupacion } from './contratos-internos';
 import type { ValoresConfiguracionAgenda } from './configuracion-agenda.validador';
-import { seleccionarCompactas } from './seleccion-compacta';
+import { generarCandidatosLibres } from './candidatos-libres';
+import { seleccionarPrimerosCompactos } from './primeros-compactos';
+import { cabeEnEspacioLibre, construirEspaciosLibres } from './espacios-libres';
 import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
 
 type Modalidad = 'publica' | 'manual';
@@ -50,6 +52,11 @@ export interface ResultadoValidacionInicio {
   motivos: string[];
 }
 
+/** Datos internos de la misma instantánea; no forman parte de la respuesta HTTP. */
+export interface ResultadoRevalidacionEscritura extends ResultadoValidacionInicio {
+  reglasAplicadas: ValoresConfiguracionAgenda;
+}
+
 function mismoHash(a: string, b: string): boolean {
   if (!/^[a-f0-9]{64}$/.test(a) || !/^[a-f0-9]{64}$/.test(b)) return false;
   return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
@@ -68,31 +75,21 @@ function fechaEnZona(instante: Date, zonaHoraria: string): string {
   return `${valor('year')}-${valor('month')}-${valor('day')}`;
 }
 
-/** Aplica límites comerciales a la fecha de la sucursal, no a la fecha UTC. */
-function dentroDeLimites(inicioUtc: Date, fechaLocal: string, hoyLocal: string,
-  ahora: Date, reglas: ValoresConfiguracionAgenda): boolean {
-  const distancia = (Date.parse(`${fechaLocal}T00:00:00Z`) -
-    Date.parse(`${hoyLocal}T00:00:00Z`)) / 86400000;
-  return distancia >= 0 && distancia <= reglas.diasFuturos &&
-    inicioUtc.getTime() >= ahora.getTime() + reglas.anticipacionMinutos * 60000;
-}
-
-/** Filtra intervalos completos; un extremo igual al de otra ocupación es válido. */
-function candidatosValidos(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[],
-  sucursalId: number, duracionMinutos: number, reglas: ValoresConfiguracionAgenda,
-  ahora: Date, hoyLocal: string, zonaHoraria: string, modalidad: Modalidad): Ranura[] {
+/** La modalidad manual conserva inicios por minuto y omite estrategia pública. */
+function candidatosManuales(atencion: ProyeccionAtencion, ocupaciones: Ocupacion[],
+  sucursalId: number, duracionMinutos: number, separacionMinutos: number,
+  ahora: Date): Ranura[] {
   const duracion = duracionMinutos * 60000;
+  const proteccion = (duracionMinutos + separacionMinutos) * 60000;
+  // Los huecos combinan bloqueos ya proyectados con ocupaciones de todas las sedes.
+  const espacios = construirEspaciosLibres(atencion.tramos, sucursalId, ocupaciones);
   return iniciosAnclados(atencion.bloques, atencion.tramos,
-    modalidad === 'manual' ? 1 : reglas.intervaloMinutos, duracionMinutos)
+    1, duracionMinutos + separacionMinutos)
     .flatMap((inicioUtc) => {
     const finUtc = new Date(inicioUtc.getTime() + duracion);
-    // La fecha civil del inicio se evalúa en la zona de la sucursal solicitada.
-    const fechaLocal = fechaEnZona(inicioUtc, zonaHoraria);
-    if ((modalidad === 'publica' &&
-      !dentroDeLimites(inicioUtc, fechaLocal, hoyLocal, ahora, reglas)) ||
-      (modalidad === 'manual' && inicioUtc < ahora) ||
-      !cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finUtc) ||
-      ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finUtc).length) return [];
+    const finProtegidoUtc = new Date(inicioUtc.getTime() + proteccion);
+    if (inicioUtc < ahora ||
+      !cabeEnEspacioLibre(espacios, inicioUtc, finProtegidoUtc)) return [];
     return [{ inicioUtc, finUtc }];
   });
 }
@@ -202,7 +199,7 @@ export class MotorDisponibilidadService {
   /** El escritor público aporta su manager tras esperar los bloqueos; no se
    * permite elegir modalidad ni abrir otra transacción desde esta entrada. */
   async revalidarPublicoEnTransaccion(manager: EntityManager, negocioId: number,
-    entrada: RevalidacionPublica): Promise<ResultadoValidacionInicio> {
+    entrada: RevalidacionPublica): Promise<ResultadoRevalidacionEscritura> {
     if (!manager.queryRunner?.isTransactionActive) {
       throw new Error('La revalidación requiere una transacción activa del escritor.');
     }
@@ -215,7 +212,7 @@ export class MotorDisponibilidadService {
   /** Compartir esta comprobación mantiene iguales las reglas de ocupación para
    * escritores privados y públicos; la exclusión se decide solo aquí. */
   private async revalidarConContexto(contexto: ContextoCalculoDisponibilidad,
-    entrada: RevalidacionEscritura): Promise<ResultadoValidacionInicio> {
+    entrada: RevalidacionEscritura): Promise<ResultadoRevalidacionEscritura> {
     validarModalidad(entrada.modalidad);
     validarFechaLocal(entrada.fechaLocal);
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(entrada.horaInicio)) {
@@ -233,6 +230,7 @@ export class MotorDisponibilidadService {
     const finUtc = new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
     let apartadoValido = true;
     let excluirApartadoId: number | undefined;
+    let separacionPreservada: number | undefined;
     if (entrada.apartadoPropio) {
       const propio = entrada.apartadoPropio;
       // Un ID arbitrario o hash erróneo jamás excluye una ocupación.
@@ -246,25 +244,41 @@ export class MotorDisponibilidadService {
         apartado.servicioId === entrada.servicioId &&
         apartado.inicioUtc.getTime() === inicioUtc.getTime() &&
         apartado.finUtc.getTime() === finUtc.getTime() &&
+        apartado.zonaHorariaApartado === oferta.zonaHoraria &&
+        apartado.modoConcesion !== null && apartado.versionReglas !== null &&
+        apartado.separacionMinutos !== null &&
+        apartado.finOcupacionUtc?.getTime() === finUtc.getTime() +
+          apartado.separacionMinutos * 60000 &&
         apartado.liberadoEn === null && ahora < apartado.expiraEn);
-      if (apartadoValido) excluirApartadoId = propio.id;
+      if (apartadoValido) {
+        excluirApartadoId = propio.id;
+        separacionPreservada = apartado!.separacionMinutos!;
+      }
     }
     const lectura = await this.calcular(contexto, entrada.sucursalId,
       entrada.servicioId, entrada.fechaLocal,
       entrada.fechaLocal, entrada.modalidad, excluirApartadoId);
-    return this.evaluarInicio(lectura, entrada.sucursalId, entrada.fechaLocal,
-      entrada.horaInicio, entrada.modalidad, ahora, !apartadoValido);
+    const evaluacion = this.evaluarInicio(lectura, entrada.sucursalId,
+      entrada.fechaLocal, entrada.horaInicio, entrada.modalidad, ahora,
+      !apartadoValido, separacionPreservada);
+    return { ...evaluacion, reglasAplicadas: lectura.resultado.reglas };
   }
 
   /** Comparte la decisión puntual entre HTTP y el contrato del futuro escritor. */
   private evaluarInicio(lectura: LecturaMotor, sucursalId: number,
     fechaLocal: string, horaInicio: string, modalidad: Modalidad, ahora: Date,
-    apartadoIncompatible = false): ResultadoValidacionInicio {
+    apartadoIncompatible = false,
+    separacionPreservada?: number): ResultadoValidacionInicio {
     const { resultado, oferta, atencion, ocupaciones } = lectura;
     const [horas, minutos] = horaInicio.split(':').map(Number);
     const inicioUtc = resolverInstanteLocal(fechaLocal,
       horas * 60 + minutos, oferta.zonaHoraria);
     const finUtc = new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
+    // El resultado conserva el fin de atención; la comprobación suma la separación.
+    // El consumo del apartado propio mantiene solo su separación capturada;
+    // oferta, licencia, horario y ocupaciones siguen viniendo de la lectura actual.
+    const separacion = separacionPreservada ?? resultado.reglas.tiempoEntreCitasMinutos;
+    const finProtegidoUtc = new Date(finUtc.getTime() + separacion * 60000);
     const motivos: string[] = [...oferta.motivosExclusion];
     if (apartadoIncompatible) motivos.push('apartado_no_vigente_o_incompatible');
     // La negativa funcional informa causas sin crear ni modificar ocupaciones.
@@ -282,24 +296,20 @@ export class MotorDisponibilidadService {
       }
     }
     if (oferta.ofrecido) {
-      if (!cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finUtc)) {
+      if (!cabeEnAtencion(atencion.tramos, sucursalId, inicioUtc, finProtegidoUtc)) {
         motivos.push('fuera_de_atencion');
       }
-      if (ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finUtc).length) {
+      if (ocupacionesQueSeEmpalman(ocupaciones, inicioUtc, finProtegidoUtc).length) {
         motivos.push('ocupado');
-      }
-      if (modalidad === 'publica' && atencion.bloques.some((bloque) =>
-        inicioUtc >= bloque.inicioUtc && inicioUtc < bloque.finUtc) &&
-        !atencion.bloques.some((bloque) => inicioUtc >= bloque.inicioUtc &&
-          inicioUtc < bloque.finUtc &&
-          (inicioUtc.getTime() - bloque.inicioUtc.getTime()) %
-            (resultado.reglas.intervaloMinutos * 60000) === 0)) {
-        motivos.push('fuera_de_secuencia');
       }
     }
     const ofrecido = resultado.ranuras.some((ranura) =>
       ranura.inicioUtc.getTime() === inicioUtc.getTime());
-    if (!motivos.length && !ofrecido) motivos.push('no_ofrecido_por_estrategia');
+    // Un apartado ya concedido no pierde validez si otro inicio vuelve a ser
+    // el primero; esta excepción no se aplica a una concesión nueva.
+    if (!motivos.length && !ofrecido && separacionPreservada === undefined) {
+      motivos.push('no_ofrecido_por_estrategia');
+    }
     return { valido: motivos.length === 0, inicioUtc, finUtc,
       zonaHoraria: oferta.zonaHoraria, modalidad, motivos };
   }
@@ -339,12 +349,21 @@ export class MotorDisponibilidadService {
     // hash, pertenencia, combinación, intervalo exacto y vigencia.
     ocupaciones.push(...leidas.filter((ocupacion) =>
       !(ocupacion.tipo === 'apartado' && ocupacion.id === excluirApartadoId)));
-    const hoyLocal = fechaEnZona(ahora, oferta.zonaHoraria);
-    const candidatos = candidatosValidos(proyeccion, ocupaciones, sucursalId,
-      oferta.duracionMinutos, reglas, ahora, hoyLocal, oferta.zonaHoraria, modalidad);
-    resultado.ranuras = modalidad === 'manual' || reglas.modo === 'ventana_libre'
-      ? candidatos : seleccionarCompactas(proyeccion.tramos, ocupaciones,
-        candidatos, reglas.intervaloMinutos, oferta.duracionMinutos);
+    if (modalidad === 'manual') {
+      resultado.ranuras = candidatosManuales(proyeccion, ocupaciones, sucursalId,
+        oferta.duracionMinutos, reglas.tiempoEntreCitasMinutos, ahora);
+    } else {
+      // Consulta y nueva concesión llegan a calcular() bajo sus respectivas
+      // transacciones; ambas usan exactamente estos candidatos y selección.
+      const espacios = construirEspaciosLibres(proyeccion.tramos, sucursalId,
+        ocupaciones);
+      const candidatos = generarCandidatosLibres(espacios, oferta.duracionMinutos,
+        reglas.tiempoEntreCitasMinutos, { zonaHoraria: oferta.zonaHoraria,
+          ahora, anticipacionMinutos: reglas.anticipacionMinutos,
+          diasFuturos: reglas.diasFuturos, desde, hasta });
+      resultado.ranuras = reglas.modo === 'ventana_libre' ? candidatos :
+        seleccionarPrimerosCompactos(candidatos, oferta.zonaHoraria);
+    }
     return { resultado, oferta, atencion: proyeccion, ocupaciones };
   }
 }

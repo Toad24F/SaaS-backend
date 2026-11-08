@@ -194,9 +194,12 @@ describe('T49 — cambio y autorización de recuperación HTTP', () => {
     await conHttp(async (ctx) => {
       await autorizar(ctx).expect(201);
       const antes = await estado(ctx.db);
-      // Solo se inyecta fallo del registrador; transacción y Guards siguen siendo reales.
-      const fallo = jest.spyOn(ctx.app.get(AuditoriaService), 'registrar').mockRejectedValueOnce(new Error('Fallo de prueba T49'));
-      try { await autorizar(ctx).expect(500); } finally { fallo.mockRestore(); }
+      // El disparador alcanza el INSERT real aunque Nest cree varias
+      // instancias del servicio; se comprueba el rollback de toda la operación.
+      await ctx.db.query(`CREATE TRIGGER auditoria_fallo_t49 BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de prueba T49'`);
+      try { await autorizar(ctx).expect(500); }
+      finally { await ctx.db.query('DROP TRIGGER auditoria_fallo_t49'); }
       expect(await estado(ctx.db)).toEqual(antes);
     });
   });

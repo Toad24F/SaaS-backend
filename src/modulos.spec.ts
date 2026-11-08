@@ -16,6 +16,7 @@ import { CodigosModule } from './codigos/codigos.module';
 import { AltasModule } from './altas/altas.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { Licencia } from './licencias/entities/licencia.entity';
+import { OperacionLicencia } from './licencias/entities/operacion-licencia.entity';
 import { CodigoAcceso } from './codigos/entities/codigo-acceso.entity';
 import { Sesion } from './auth/entities/sesion.entity';
 import { LimiteIntentos } from './auth/entities/limite-intentos.entity';
@@ -28,6 +29,7 @@ import { ProcesadorCorreoService } from './correos/procesador-correo.service';
 import { CorreosModule } from './correos/correos.module';
 import { AvisosVencimientoService } from './licencias/services/avisos-vencimiento.service';
 import { ConciliadorSuspensionesService } from './licencias/services/conciliador-suspensiones.service';
+import { CuposUsuariosService } from './usuarios/cupos-usuarios.service';
 
 const modulos: Type<unknown>[] = [AuthModule, UsuariosModule, NegociosModule, LicenciasModule,
   CodigosModule, AltasModule, AuditoriaModule, CorreosModule];
@@ -49,6 +51,7 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       .overrideProvider(getRepositoryToken(Usuario)).useValue({})
       .overrideProvider(getRepositoryToken(Negocio)).useValue({})
       .overrideProvider(getRepositoryToken(Licencia)).useValue({})
+      .overrideProvider(getRepositoryToken(OperacionLicencia)).useValue({})
       .overrideProvider(getRepositoryToken(CodigoAcceso)).useValue({})
       .overrideProvider(getRepositoryToken(Sesion)).useValue({})
       .overrideProvider(getRepositoryToken(LimiteIntentos)).useValue({})
@@ -63,6 +66,8 @@ describe('Composición de módulos (T07; soporte RF-01–40)', () => {
       .overrideProvider(AvisosVencimientoService).useValue({})
       // El coordinador de suspensiones se prueba con base migrada, no en esta composición aislada.
       .overrideProvider(ConciliadorSuspensionesService).useValue({})
+      // Los cupos se ejercitan con MariaDB en integración; aquí solo se compone el módulo.
+      .overrideProvider(CuposUsuariosService).useValue({})
       .compile();
     try {
       await modulo.init();

@@ -56,7 +56,8 @@ describe('Licencias T051–T057 — renovación, vista y frontera HTTP', () => {
       const adminInicial = await login(app, administrador.email);
       const superInicial = await login(app, superadmin.email);
       const solicitud = await request(app.getHttpServer()).post(`/licencias/${licencia.id}/suspender`)
-        .auth(superInicial, { type: 'bearer' }).send({}).expect(200);
+        .auth(superInicial, { type: 'bearer' })
+        .set('Idempotency-Key', 't051-suspender-1234567890123456').send({}).expect(200);
       expect(solicitud.body).toMatchObject({ estado: 'suspension_pendiente', condicionAcceso: true,
         bloqueoProgramadoEn: new Date(INICIO.getTime() + 48 * 60 * 60 * 1000).toISOString() });
       await request(app.getHttpServer()).get('/licencias/mi-vigencia')
@@ -90,7 +91,8 @@ describe('Licencias T051–T057 — renovación, vista y frontera HTTP', () => {
       const superToken = await login(app, superadmin.email);
       const adminToken = await login(app, administrador.email);
       await request(app.getHttpServer()).post(`/licencias/${licencia.id}/suspender`)
-        .auth(superToken, { type: 'bearer' }).send({}).expect(200);
+        .auth(superToken, { type: 'bearer' })
+        .set('Idempotency-Key', 't051-suspender-1234567890123456').send({}).expect(200);
       reloj.avanzar(60 * 60 * 1000);
       await request(app.getHttpServer()).get('/auth/profile')
         .auth(adminToken, { type: 'bearer' }).expect(401);

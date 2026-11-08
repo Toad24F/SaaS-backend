@@ -12,7 +12,6 @@ import { Usuario } from '../src/usuarios/entities/usuario.entity';
 import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { SesionesService } from '../src/auth/services/sesiones.service';
-import { AuditoriaService } from '../src/auditoria/auditoria.service';
 
 const alta = (n: number) => ({ nombre: `Profesional ${n}`,
   correo: `fix-prof-${n}@example.test`, password: 'Clave-profesional-123',
@@ -148,12 +147,14 @@ describe('FIX-T010–T018: especialidad y catálogo compartido', () => {
       const contar = async (tabla: string) => Number((await db.query(`SELECT COUNT(*) total FROM ${tabla}`))[0].total);
       const antes = await Promise.all(['servicios', 'personal_servicios',
         'personal_servicios_sucursales', 'eventos_auditoria'].map(contar));
-      const auditoria = jest.spyOn(app.get(AuditoriaService), 'registrar')
-        .mockRejectedValueOnce(new Error('Fallo controlado de auditoría'));
+      // El disparador falla en el INSERT real de auditoría para verificar
+      // rollback aunque Nest tenga otra instancia del servicio.
+      await db.query(`CREATE TRIGGER auditoria_fallo_crear BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo controlado de auditoría'`);
       try {
         await request(http).post('/servicios').auth(tokenAutor, { type: 'bearer' })
           .send({ ...servicio, nombre: 'Revertir' }).expect(500);
-      } finally { auditoria.mockRestore(); }
+      } finally { await db.query('DROP TRIGGER auditoria_fallo_crear'); }
       expect((await db.query("SELECT COUNT(*) total FROM servicios WHERE nombre='Revertir'"))[0]
         .total).toBe('0');
       expect(await Promise.all(['servicios', 'personal_servicios',
@@ -193,7 +194,7 @@ describe('FIX-T010–T018: especialidad y catálogo compartido', () => {
       await request(http).post(`/servicios/${profesional.id}/desactivar`)
         .auth(tokenAutor, { type: 'bearer' }).send({}).expect(403);
       await request(http).delete(`/servicios/${profesional.id}`)
-        .auth(tokenAutor, { type: 'bearer' }).expect(403);
+        .auth(tokenAutor, { type: 'bearer' }).expect(404);
       const editado = (await request(http).patch(`/servicios/${profesional.id}`)
         .auth(tokenAutor, { type: 'bearer' })
         .send({ nombre: 'Nuevo', costo: '22.50', duracionMinutos: 45,
@@ -203,13 +204,13 @@ describe('FIX-T010–T018: especialidad y catálogo compartido', () => {
       await request(http).patch(`/servicios/${profesional.id}`)
         .auth(admin, { type: 'bearer' }).send({ descripcion: 'Admin editó' }).expect(200);
       // Una falla posterior al UPDATE revierte todos los campos editados y su evento.
-      const falloEdicion = jest.spyOn(app.get(AuditoriaService), 'registrar')
-        .mockRejectedValueOnce(new Error('Fallo controlado en edición'));
+      await db.query(`CREATE TRIGGER auditoria_fallo_editar BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo controlado en edición'`);
       try {
         await request(http).patch(`/servicios/${profesional.id}`)
           .auth(tokenAutor, { type: 'bearer' })
           .send({ nombre: 'Parcial', descripcion: 'Parcial' }).expect(500);
-      } finally { falloEdicion.mockRestore(); }
+      } finally { await db.query('DROP TRIGGER auditoria_fallo_editar'); }
       const final = (await request(http).get(`/servicios/${profesional.id}`)
         .auth(admin, { type: 'bearer' }).expect(200)).body;
       expect(final).toMatchObject({ creadorPersonalId: autor.id, nombre: 'Nuevo',

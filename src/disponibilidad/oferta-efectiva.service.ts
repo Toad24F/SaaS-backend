@@ -55,7 +55,11 @@ export class OfertaEfectivaService {
       sucursalActiva: sucursal.activo, cuentaActiva: cuenta?.activo ?? false,
       servicioActivo: servicio.activo, seleccionGeneralActiva: seleccion?.activo ?? false,
       atencionActiva: asignacion?.activo ?? false,
-      seleccionSucursalActiva: combinacion?.activo ?? false };
+      seleccionSucursalActiva: combinacion?.activo ?? false,
+      // La validación usa marcas persistidas y no infiere la razón desde activo.
+      sucursalInhabilitada: sucursal.inhabilitadoEn !== null,
+      cuentaInhabilitada: cuenta?.inhabilitadoEn != null,
+      servicioInhabilitado: servicio.inhabilitadoEn !== null };
     // La puerta de oferta se aplica antes de generar ranuras, sin mutar preferencias.
     // El motor toma zona y duración de esta misma lectura, sin consultar otro repositorio.
     return { negocioId, personalId, sucursalId, servicioId, modalidad, fuentes,

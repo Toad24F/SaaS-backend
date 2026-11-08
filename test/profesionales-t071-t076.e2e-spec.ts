@@ -12,7 +12,6 @@ import { Usuario } from '../src/usuarios/entities/usuario.entity';
 import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { SesionesService } from '../src/auth/services/sesiones.service';
-import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { CorreoAcceso } from '../src/altas/entities/correo-acceso.entity';
 
 const password = 'Clave-profesional-123';
@@ -111,12 +110,14 @@ describe('M1-T071–T076: perfil Profesional', () => {
       await request(http).post('/profesionales').auth(tokens[0], { type: 'bearer' })
         .send({ ...alta, password: 'corta' }).expect(400);
       expect(await db.getRepository(Usuario).countBy({ email: alta.correo })).toBe(0);
-      const auditoria = jest.spyOn(app.get(AuditoriaService), 'registrar')
-        .mockRejectedValueOnce(new Error('Fallo de auditoría inyectado'));
+      // El fallo se coloca en la tabla real para alcanzar cualquier instancia
+      // de AuditoriaService creada por los módulos Nest y probar el rollback.
+      await db.query(`CREATE TRIGGER auditoria_fallo_prof BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de auditoría inyectado'`);
       try {
         await request(http).post('/profesionales').auth(tokens[0], { type: 'bearer' })
           .send(alta).expect(500);
-      } finally { auditoria.mockRestore(); }
+      } finally { await db.query('DROP TRIGGER auditoria_fallo_prof'); }
       // El error posterior al perfil debe revertir también usuario y reserva.
       expect(await db.getRepository(Usuario).countBy({ email: alta.correo })).toBe(0);
       expect(await db.getRepository(CorreoAcceso).countBy({ correo: alta.correo })).toBe(0);

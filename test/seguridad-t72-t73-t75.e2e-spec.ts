@@ -47,7 +47,12 @@ async function login(app: INestApplication, email: string, password = PASSWORD_T
 }
 
 function post(app: INestApplication, ruta: string, token: string, body: object = {}) {
-  return request(app.getHttpServer()).post(ruta).auth(token, { type: 'bearer' }).send(body);
+  const peticion = request(app.getHttpServer()).post(ruta).auth(token, { type: 'bearer' });
+  // La autorización se evalúa con la misma cabecera exigida a un superadmin.
+  if (/^\/licencias\/\d+\/(suspender|reactivar|renovar)$/.test(ruta)) {
+    peticion.set('Idempotency-Key', `t72-${ruta.split('/').at(-1)}-1234567890123456`);
+  }
+  return peticion.send(body);
 }
 
 describe('T72 — expiración durante una operación autorizada', () => {

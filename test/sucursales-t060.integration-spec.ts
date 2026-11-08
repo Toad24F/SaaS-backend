@@ -25,6 +25,11 @@ describe('M1-T060: migración incremental de sucursales', () => {
   it('instala restricciones tenant y conserva negocios previos al aplicar la migración', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const existente = await db.query("INSERT INTO negocios (nombre, slug, email_contacto) VALUES ('Previo', 'previo-sucursal', 'previo@example.test')");
+      // Las migraciones ALA y el catálogo posterior al portal agregan FK
+      // sobre las tablas que esta prueba histórica desmonta temporalmente.
+      for (let indice = 0; indice < 10; indice += 1) {
+        await db.undoLastMigration({ transaction: 'each' });
+      }
       // Los índices nuevos y las fuentes de fase 3 dependen de estas tablas;
       // se retiran y restauran junto con el esquema histórico que se prueba.
       const runner = db.createQueryRunner();
@@ -67,6 +72,7 @@ describe('M1-T060: migración incremental de sucursales', () => {
         // Restaura en orden para que la instalación final conserve todas las FKs.
         for (const migracion of portal) await migracion.up(runner);
       } finally { await runner.release(); }
+      await db.runMigrations({ transaction: 'each' });
       expect(await db.query('SELECT id FROM negocios WHERE id = ?', [existente.insertId]))
         .toHaveLength(1);
       const columnas = await db.query('SHOW COLUMNS FROM sucursales');

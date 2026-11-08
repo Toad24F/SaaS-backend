@@ -30,6 +30,7 @@ export interface EstadoApartadoPropio {
   estado: 'vigente' | 'liberado' | 'sustituido' | 'vencido';
   expiraEn: Date;
   servidorAhora: Date;
+  costoAceptado: string | null;
 }
 
 /** Concede apartados en dos commits y conserva una lectura histórica del estado. */
@@ -81,8 +82,10 @@ export class ApartadosService {
       const estado = sesion.generacion !== apartado.generacion ? 'sustituido' :
         apartado.liberadoEn !== null ? 'liberado' :
           servidorAhora >= apartado.expiraEn ? 'vencido' : 'vigente';
+      // La lectura interna mantiene el costo fijado; solo HTTP decide mostrarlo.
       return { apartadoId, generacion: apartado.generacion, estado,
-        expiraEn: apartado.expiraEn, servidorAhora };
+        expiraEn: apartado.expiraEn, servidorAhora,
+        costoAceptado: apartado.costoAceptado };
     });
   }
 
@@ -185,10 +188,16 @@ export class ApartadosService {
     const ahora = this.reloj.ahora();
     const servicio = await manager.getRepository(Servicio).findOneByOrFail({
       id: seleccion.servicioId, negocioId });
+    // Configuración, oferta y horario proceden de la misma revalidación bajo
+    // bloqueos; el navegador no aporta separación, modo ni fin protegido.
+    const separacionMinutos = evaluacion.reglasAplicadas.tiempoEntreCitasMinutos;
     const apartado = await manager.getRepository(BloqueoTemporal).save({
       negocioId, personalId: seleccion.personalId, sucursalId: seleccion.sucursalId,
       servicioId: seleccion.servicioId, inicioUtc: evaluacion.inicioUtc,
-      finUtc: evaluacion.finUtc, expiraEn: new Date(ahora.getTime() + 300_000),
+      finUtc: evaluacion.finUtc,
+      finOcupacionUtc: new Date(evaluacion.finUtc.getTime() + separacionMinutos * 60000),
+      separacionMinutos, modoConcesion: evaluacion.reglasAplicadas.modo,
+      versionReglas: 1, expiraEn: new Date(ahora.getTime() + 300_000),
       liberadoEn: null, titularHash, costoAceptado: servicio.costo,
       zonaHorariaApartado: evaluacion.zonaHoraria, sesionId: sesion.id,
       generacion: sesion.generacion, operacionId: operacion.id,

@@ -5,10 +5,12 @@ import { ConfiguracionAgenda } from '../src/disponibilidad/entities/configuracio
 import { Cliente } from '../src/disponibilidad/entities/cliente.entity';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
 import { BloqueoTemporal } from '../src/disponibilidad/entities/bloqueo-temporal.entity';
+import { OperacionLicencia } from '../src/licencias/entities/operacion-licencia.entity';
+import { EnvioCorreo } from '../src/correos/entities/envio-correo.entity';
 import { conBaseMigrada } from './support/mariadb';
 
 describe('Fase 3: arranque real del DataSource con autoLoadEntities', () => {
-  it('carga los metadatos de las cuatro entidades sin sustituir la conexión de Nest', async () => {
+  it('carga los metadatos y relaciones de agenda, correos y licencias en Nest', async () => {
     await conBaseMigrada(async (baseTemporal) => {
       const anteriorNombre = process.env.TEST_DB_NAME;
       const anteriorConfirmacion = process.env.TEST_DB_CONFIRMED;
@@ -22,7 +24,8 @@ describe('Fase 3: arranque real del DataSource con autoLoadEntities', () => {
         const modulo = await Test.createTestingModule({ imports: [AppModule] }).compile();
         try {
           const conexion = modulo.get(DataSource);
-          for (const entidad of [ConfiguracionAgenda, Cliente, Cita, BloqueoTemporal]) {
+          for (const entidad of [ConfiguracionAgenda, Cliente, Cita, BloqueoTemporal,
+            OperacionLicencia, EnvioCorreo]) {
             expect(conexion.hasMetadata(entidad)).toBe(true);
           }
         } finally { await modulo.close(); }
