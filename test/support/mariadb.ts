@@ -12,7 +12,8 @@ type OpcionesMariaDb = DataSourceOptions & {
   password?: string;
 };
 
-const PATRON_BASE_TEMPORAL = /^citas_persistencia_[a-f0-9]{32}$/;
+// Ambos prefijos pertenecen al ejecutor; nunca se admite un nombre arbitrario.
+const PATRON_BASE_TEMPORAL = /^citas_(?:persistencia|m4_test)_[a-f0-9]{32}$/;
 
 function validarBaseTemporal(nombre: string): void {
   if (!PATRON_BASE_TEMPORAL.test(nombre)) {
@@ -57,12 +58,13 @@ export async function conDosConexiones<T>(
  */
 export async function conBaseMigrada<T>(
   ejecutar: (primera: DataSource, segunda: DataSource) => Promise<T>,
+  prefijo: 'citas_persistencia' | 'citas_m4_test' = 'citas_persistencia',
 ): Promise<T> {
   if (process.env.NODE_ENV !== 'test') {
     throw new Error('El ejecutor migrado requiere NODE_ENV=test.');
   }
 
-  const nombre = `citas_persistencia_${randomUUID().replaceAll('-', '')}`;
+  const nombre = `${prefijo}_${randomUUID().replaceAll('-', '')}`;
   validarBaseTemporal(nombre);
   const base = getDatabaseOptions() as OpcionesMariaDb;
   const administracion = await createConnection({

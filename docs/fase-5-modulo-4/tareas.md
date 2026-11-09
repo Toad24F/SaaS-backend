@@ -4,18 +4,20 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 
 ## 1. Base y pruebas reproducibles
 
-- [ ] **M4-T001 — Crear matriz RF y criterios** · 20 min · Depende de: ninguna · RF-01–RF-47
+- [x] **M4-T001 — Crear matriz RF y criterios** · 20 min · Depende de: ninguna · RF-01–RF-47
       Hecho cuando: la matriz enumera los 47 RF locales, los RF de ajustes aplicables y diez criterios; los vincula a tareas y pruebas previstas, incluida ALA-I001–ALA-I003, y separa evidencia nueva de antecedentes.
-- [ ] **M4-T002 — Inventariar contratos conservados** · 20 min · Depende de: M4-T001 · RF-01–RF-05, RF-21–RF-23, RF-28, RF-33–RF-35
+- [x] **M4-T002 — Inventariar contratos conservados** · 20 min · Depende de: M4-T001 · RF-01–RF-05, RF-21–RF-23, RF-28, RF-33–RF-35
       Hecho cuando: quedan identificados roles, plazo de suspensión configurable, cinco rutas privadas, escritor público, motor manual con separación, cupo telefónico por sucursal y orden de bloqueos sin atribuirles cobertura del módulo 4.
-- [ ] **M4-T003 — Preparar base desechable de integración** · 20 min · Depende de: M4-T002 · RF-03, RF-26, RF-28, RF-44
+- [x] **M4-T003 — Preparar base desechable de integración** · 20 min · Depende de: M4-T002 · RF-03, RF-26, RF-28, RF-44
       Hecho cuando: el ejecutor crea y elimina una base identificada como test y rechaza conectarse a la base cotidiana.
-- [ ] **M4-T004 — Sembrar dos negocios y varios perfiles** · 25 min · Depende de: M4-T003 · RF-02–RF-04, RF-17, RF-23, RF-40
+- [x] **M4-T004 — Sembrar dos negocios y varios perfiles** · 25 min · Depende de: M4-T003 · RF-02–RF-04, RF-17, RF-23, RF-40
       Hecho cuando: los fixtures generan dos negocios, sucursales con zonas distintas, Profesional compartido, cinco estados y teléfonos repetidos con limpieza comprobada.
-- [ ] **M4-T005 — Preparar reloj y fallos controlados** · 20 min · Depende de: M4-T004 · RF-26–RF-27, RF-31, RF-34–RF-35, RF-42
+- [x] **M4-T005 — Preparar reloj y fallos controlados** · 20 min · Depende de: M4-T004 · RF-26–RF-27, RF-31, RF-34–RF-35, RF-42
       Hecho cuando: las pruebas fijan instantes antes, en y después de los límites y pueden forzar rollback sin cambiar el reloj del sistema.
-- [ ] **M4-T006 — Preparar dos conexiones y barreras** · 25 min · Depende de: M4-T003, M4-T005 · RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
+- [x] **M4-T006 — Preparar dos conexiones y barreras** · 25 min · Depende de: M4-T003, M4-T005 · RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
       Hecho cuando: un caso de control demuestra espera y liberación reproducible entre conexiones independientes y cierra ambas aun si falla.
+
+Evidencia del lote M4-T001–M4-T006: [archivos, flujo, pruebas y resultados](resultados-tareas/m4-t001-t006.md). El fallo documental unitario anterior se conserva como pendiente externo; las tareas posteriores permanecen sin marcar.
 
 ## 2. Persistencia aditiva y modelo
 
