@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { validarFechaLocal } from '../horarios/calendario';
 import type { EstadoCita } from '../disponibilidad/entities/cita.entity';
+import { MAX_FECHAS_AGENDA } from './limites-agenda';
 
 export interface ConsultaAgendaEntrada {
   desde: string;
@@ -9,10 +10,8 @@ export interface ConsultaAgendaEntrada {
   personalId?: number;
   estado?: EstadoCita;
   busqueda?: string;
-  pagina: number;
-  limite: number;
 }
-const CAMPOS = ['desde', 'hasta', 'sucursalId', 'personalId', 'estado', 'busqueda', 'pagina', 'limite'];
+const CAMPOS = ['desde', 'hasta', 'sucursalId', 'personalId', 'estado', 'busqueda'];
 const ESTADOS = ['pendiente', 'confirmada', 'completada', 'cancelada', 'no_asistio'];
 const invalida = () => new BadRequestException('Entrada operativa inválida.');
 
@@ -33,13 +32,11 @@ export function validarConsultaAgenda(entrada: unknown): ConsultaAgendaEntrada {
   const inicio = Date.parse(`${d.desde}T00:00:00Z`);
   const fin = Date.parse(`${d.hasta}T00:00:00Z`);
   // Las fechas civiles cuentan inclusive, independientemente de la duración UTC de sus días.
-  if (Number(d.desde.slice(0, 4)) < 1000 || Number(d.hasta.slice(0, 4)) < 1000 || fin < inicio || fin - inicio >= 31 * 86400000) throw invalida();
+  if (Number(d.desde.slice(0, 4)) < 1000 || Number(d.hasta.slice(0, 4)) < 1000 || fin < inicio || fin - inicio >= MAX_FECHAS_AGENDA * 86400000) throw invalida();
   if (d.estado !== undefined && (typeof d.estado !== 'string' || !ESTADOS.includes(d.estado))) throw invalida();
   if (d.busqueda !== undefined && (typeof d.busqueda !== 'string' || d.busqueda.length > 150 ||
     [...d.busqueda].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127))) throw invalida();
-  const pagina = d.pagina === undefined ? 1 : entero(d.pagina, 1_000_000);
-  const limite = d.limite === undefined ? 50 : entero(d.limite, 100);
-  return { desde: d.desde, hasta: d.hasta, pagina, limite,
+  return { desde: d.desde, hasta: d.hasta,
     ...(d.sucursalId === undefined ? {} : { sucursalId: entero(d.sucursalId, 4294967295) }),
     ...(d.personalId === undefined ? {} : { personalId: entero(d.personalId, 4294967295) }),
     ...(d.estado === undefined ? {} : { estado: d.estado as EstadoCita }),

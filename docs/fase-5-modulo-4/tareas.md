@@ -69,10 +69,12 @@ Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y 
 
 ## 4. Consulta de agenda e historial
 
-Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resultados](resultados-tareas/m4-t025-t030.md). Pruebas propias finales 36/36, regresión de integración completa 478/478 y HTTP 203/203 aprobados; el caso temporal añadido después está incluido en la repetición propia final 8/8, como aclara el informe. Build y lint aprobados. Unitarias completas finales: 480 aprobadas y un fallo documental previo. M4-T031 y posteriores continúan pendientes; el trabajo se detiene en M4-T030.
+Ajuste vigente solicitado por el responsable: [periodo completo de calendario](resultados-tareas/ajuste-agenda-periodo-completo.md). Sustituye las páginas de citas por hasta 42 fechas completas, con tope técnico de 1.000 citas y rechazo del exceso antes de calcular causas. Mantiene historial paginado y disponibilidad de 31 fechas. Se revisan los contratos de M4-T025/M4-T030 y el criterio futuro de M4-T090 sin marcar tareas posteriores; los informes de lotes anteriores conservan su alcance histórico.
+
+Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resultados](resultados-tareas/m4-t025-t030.md). Pruebas propias finales 36/36, regresión de integración completa 478/478 y HTTP 203/203 aprobados; el caso temporal añadido después está incluido en la repetición propia final 8/8, como aclara el informe. Build y lint aprobados. Unitarias completas finales: 480 aprobadas y un fallo documental previo. Ese lote no acreditó tareas posteriores.
 
 - [x] **M4-T025 — Validar rango y filtros de agenda** · 20 min · Depende de: M4-T021 · RF-06–RF-08, RF-46–RF-47
-      Hecho cuando: se admiten hasta 31 fechas inclusivas y se rechazan fechas, filtros o campos desconocidos sin consultar datos.
+      Hecho cuando: se admiten hasta 42 fechas inclusivas de agenda y se rechazan fechas, filtros o campos desconocidos sin consultar datos; disponibilidad conserva 31 fechas.
 - [x] **M4-T026 — Listar citas por negocio y periodo** · 25 min · Depende de: M4-T025, M4-T013 · RF-01, RF-03, RF-06, RF-09
       Hecho cuando: la consulta devuelve todos los estados del negocio dentro del periodo y nunca citas ajenas.
 - [x] **M4-T027 — Acotar consulta del Profesional** · 20 min · Depende de: M4-T026, M4-T020 · RF-02–RF-03, RF-07, RF-09
@@ -81,19 +83,21 @@ Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resul
       Hecho cuando: una cita aparece en su fecha local correcta aun cuando sucursales distintas compartan instante UTC.
 - [x] **M4-T029 — Aplicar filtros de sucursal, personal y estado** · 20 min · Depende de: M4-T027–M4-T028 · RF-08–RF-09, RF-46
       Hecho cuando: cada filtro y su combinación limitan resultados sin excluir canceladas salvo petición expresa.
-- [x] **M4-T030 — Buscar por paciente y paginar** · 25 min · Depende de: M4-T029 · RF-03, RF-08, RF-46–RF-47
-      Hecho cuando: búsqueda y páginas permanecen dentro del negocio y tienen orden estable sin devolver listados ilimitados.
-- [ ] **M4-T031 — Incorporar causas de citas afectadas** · 20 min · Depende de: M4-T026, M4-T002 · RF-09, RF-11, RF-46
+- [x] **M4-T030 — Buscar por paciente en el periodo completo** · 25 min · Depende de: M4-T029 · RF-03, RF-08, RF-46–RF-47
+      Hecho cuando: búsqueda y periodo completo permanecen dentro del negocio y tienen orden estable; hasta 42 fechas y 1.000 citas, con rechazo explícito del exceso sin truncamiento. Sustituye la paginación anterior por solicitud del responsable; ver evidencia del ajuste.
+Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests primero y resultados](resultados-tareas/m4-t031-t036.md). Pruebas nuevas 28/28, integración completa 482/482 y HTTP 210/210 aprobados; build y lint aprobados. Unitarias completas: 498 aprobadas y un fallo documental previo identificado. Se habilitan tres lecturas HTTP privadas; frontend, directorio y escritores no se acreditan. M4-T037 y posteriores continúan pendientes; el trabajo se detiene en M4-T036.
+
+- [x] **M4-T031 — Incorporar causas de citas afectadas** · 20 min · Depende de: M4-T026, M4-T002 · RF-09, RF-11, RF-46
       Hecho cuando: causas actuales se muestran para citas afectadas sin cambiar horario ni estado y desaparecen al cesar la causa.
-- [ ] **M4-T032 — Consultar detalle autorizado** · 20 min · Depende de: M4-T027 · RF-02–RF-03, RF-07, RF-29
+- [x] **M4-T032 — Consultar detalle autorizado** · 20 min · Depende de: M4-T027 · RF-02–RF-03, RF-07, RF-29
       Hecho cuando: el detalle muestra origen, estado y snapshot propio, y un ID ajeno equivale a uno inexistente.
-- [ ] **M4-T033 — Consultar historial de una cita** · 20 min · Depende de: M4-T010, M4-T014, M4-T032 · RF-30, RF-32, RF-36, RF-41, RF-45
+- [x] **M4-T033 — Consultar historial de una cita** · 20 min · Depende de: M4-T010, M4-T014, M4-T032 · RF-30, RF-32, RF-36, RF-41, RF-45
       Hecho cuando: eventos se ordenan por momento y versión y solo se muestran a personal autorizado de ese negocio.
-- [ ] **M4-T034 — Exponer rutas de agenda y detalle** · 25 min · Depende de: M4-T025–M4-T033, M4-T024 · RF-01–RF-09, RF-11, RF-29, RF-45–RF-47
+- [x] **M4-T034 — Exponer rutas de agenda y detalle** · 25 min · Depende de: M4-T025–M4-T033, M4-T024 · RF-01–RF-09, RF-11, RF-29, RF-45–RF-47
       Hecho cuando: lista, detalle e historial responden bajo guardas privadas y `no-store`, sin rutas públicas nuevas.
-- [ ] **M4-T035 — Probar filtros, estados y zonas** · 25 min · Depende de: M4-T034, M4-T004 · RF-02–RF-03, RF-06–RF-09, RF-29
+- [x] **M4-T035 — Probar filtros, estados y zonas** · 25 min · Depende de: M4-T034, M4-T004 · RF-02–RF-03, RF-06–RF-09, RF-29
       Hecho cuando: día, semana y mes se reconstruyen desde consultas acotadas y cinco estados y zonas aparecen en la fecha correcta.
-- [ ] **M4-T036 — Probar vacío frente a fallo de agenda** · 20 min · Depende de: M4-T034, M4-T024 · RF-05, RF-46–RF-47
+- [x] **M4-T036 — Probar vacío frente a fallo de agenda** · 20 min · Depende de: M4-T034, M4-T024 · RF-05, RF-46–RF-47
       Hecho cuando: una consulta válida sin citas devuelve vacío, mientras un fallo técnico informa error sin resultado parcial.
 
 ## 5. Directorio de clientes
@@ -217,7 +221,7 @@ Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resul
 - [ ] **M4-T089 — Crear cliente HTTP de agenda y clientes** · 25 min · Depende de: M4-T034, M4-T044, M4-T088 · RF-03, RF-06–RF-09, RF-13–RF-14, RF-46–RF-47
       Hecho cuando: las vistas usan respuestas reales y no reemplazan fallos con datos de demo.
 - [ ] **M4-T090 — Conectar vistas día, semana y mes** · 25 min · Depende de: M4-T089 · RF-06–RF-07, RF-09, RF-12
-      Hecho cuando: las tres vistas muestran citas reales y dividen consultas que excedan 31 fechas.
+      Hecho cuando: las tres vistas muestran citas reales del periodo completo de hasta 42 fechas, incluida la cuadrícula mensual de seis semanas; ante exceso de volumen se pide acotar sin mostrar resultados parciales.
 - [ ] **M4-T091 — Conectar filtros y búsqueda de agenda** · 20 min · Depende de: M4-T090 · RF-08–RF-09, RF-46
       Hecho cuando: sucursal, Profesional, estado y nombre actualizan la vista sin mezclar resultados de solicitudes fuera de orden.
 - [ ] **M4-T092 — Conectar detalle e historial de cita** · 20 min · Depende de: M4-T090, M4-T033 · RF-02, RF-07, RF-29, RF-32, RF-36, RF-41

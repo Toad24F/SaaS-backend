@@ -27,6 +27,7 @@ import { OperacionModule } from './operacion/operacion.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.module';
 import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publicas-http.module';
+import { CitasHttpModule } from './citas/citas-http.module';
 
 @Module({
   imports: [
@@ -69,6 +70,8 @@ import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publica
     DisponibilidadHttpModule,
     // Inicializa la sesión pública; apartados y reservas se habilitan en tareas posteriores.
     ReservasPublicasHttpModule,
+    // Agenda, detalle e historial son lecturas privadas; no registra escritores manuales.
+    CitasHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

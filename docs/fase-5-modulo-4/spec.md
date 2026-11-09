@@ -25,6 +25,9 @@ Se aplica la [constitución del módulo 4](constitucion-modulo-4.md), junto con 
 - **RF-06.** Cuando el personal autorizado abra la agenda, el sistema deberá permitir consultar las citas en vistas diaria, semanal y mensual.
 - **RF-07.** Cuando se muestre una cita, el sistema deberá identificar su fecha, horario, sucursal, servicio, Profesional y estado, usando la zona horaria de la sucursal para expresar el horario.
 - **RF-08.** Cuando se consulte la agenda, el sistema deberá permitir filtrar por sucursal, Profesional y estado, y buscar citas por el nombre del paciente dentro del alcance autorizado.
+
+Contrato de lectura ajustado por solicitud del responsable: la agenda consulta un rango civil inclusivo de hasta 42 fechas y devuelve todas sus citas autorizadas en una única fotografía transaccional, sin páginas de citas. La respuesta del calendario es un resumen; contacto completo, notas y precio históricos se consultan en el detalle autorizado. Un periodo con más de 1.000 citas tras los filtros se rechaza completo con un mensaje para acotar; nunca se presenta un calendario truncado. Este tope es técnico y provisional, no un cupo de reservas. Disponibilidad conserva 31 fechas y los historiales/directorio conservan paginación. Véase [evidencia del ajuste](resultados-tareas/ajuste-agenda-periodo-completo.md).
+
 - **RF-09.** Mientras una cita permanezca registrada, el sistema deberá permitir verla en su periodo correspondiente aunque haya sido cancelada o marcada como No asistió, distinguiendo visualmente los cinco estados.
 - **RF-10.** Cuando otra persona registre o modifique una cita visible, el sistema deberá actualizar la agenda abierta automáticamente e informar si una selección o formulario abierto dejó de reflejar el estado vigente.
 - **RF-11.** Cuando un cambio operativo de horario, bloqueo u oferta afecte citas existentes, la agenda deberá permitir identificar esas citas y sus causas vigentes sin modificarlas automáticamente.

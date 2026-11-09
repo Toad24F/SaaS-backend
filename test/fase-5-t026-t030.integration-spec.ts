@@ -7,6 +7,7 @@ import { ConsultaAgendaService } from '../src/citas/consulta-agenda.service';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
 import { conBaseOperativa } from './support/operacion-fase-5';
 import { crearAccesoOperativo } from './support/acceso-operativo';
+import { crearCausasOperativas } from './support/causas-operativas';
 
 // La semilla nace el 1 de enero UTC: en México varias citas pertenecen al 31 de diciembre.
 const rango = { desde: '2025-12-31', hasta: '2026-01-30' };
@@ -15,7 +16,7 @@ const rango = { desde: '2025-12-31', hasta: '2026-01-30' };
 async function escenario(db: DataSource) {
   const f = await crearAccesoOperativo(db);
   const acceso = new AccesoOperativoService(db, new AutorizacionService(), new PoliticaAccesoLicenciaService(), f.reloj);
-  const agenda = new ConsultaAgendaService(acceso);
+  const agenda = new ConsultaAgendaService(acceso, crearCausasOperativas(db, f.reloj));
   const actor = (rol: Rol, negocio = 0) => {
     const u = f.actores.find((a) => a.rol === rol && a.negocioId === f.negocios[negocio].id)!;
     return { sub: u.id, sesionId: u.sesionId };
@@ -35,7 +36,7 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
           if (negocio === 0) expect(new Set(pagina.citas.map((c) => c.origen)).size).toBe(2);
           expect(pagina.citas.every((c) => c.negocioId === f.negocios[negocio].id)).toBe(true);
           expect(pagina.citas.every((c) => c.version === 1)).toBe(true);
-          expect(pagina.hayMas).toBe(false);
+          expect(pagina).not.toHaveProperty('hayMas');
         }
       }
       const u = f.actores.find((a) => a.rol === Rol.SUPERADMIN)!;
@@ -49,7 +50,10 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
       const actor = f.actor(Rol.PROFESIONAL);
       const resultado = await f.agenda.listar(actor, { ...rango, personalId: String(actor.sub) });
       expect(resultado.citas).toHaveLength(5);
-      expect(resultado.citas.every((c) => c.personalId === actor.sub && c.nombreContacto === 'Paciente propio' && c.motivoConsulta === 'Nota propia')).toBe(true);
+      expect(resultado.citas.every((c) => c.personalId === actor.sub && c.nombreContacto === 'Paciente propio')).toBe(true);
+      expect(resultado.citas[0]).not.toHaveProperty('motivoConsulta');
+      const detalle = await f.agenda.detalle(actor, String(resultado.citas[0].id), {});
+      expect(detalle).toMatchObject({ motivoConsulta: 'Nota propia', telefonoContacto: '6141234567' });
       expect(JSON.stringify(resultado)).not.toContain('Nota ajena');
       for (const personalId of [f.negocios[0].profesionales[1], f.negocios[1].profesionales[0], 999999]) {
         await expect(f.agenda.listar(actor, { ...rango, personalId: String(personalId) })).rejects.toMatchObject({ status: 404 });
@@ -121,7 +125,7 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
     });
   });
 
-  it('T030 busca el contacto histórico literalmente y pagina con orden estable por inicio e ID', async () => {
+  it('T030 busca el contacto histórico literalmente y devuelve el periodo con orden estable por inicio e ID', async () => {
     await conBaseOperativa(async (db) => {
       const f = await escenario(db);
       const a = f.negocios[0];
@@ -129,13 +133,9 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
       await db.getRepository(Cita).update({ negocioId: a.id }, { nombreContacto: 'Ana %_!\\',
         inicioUtc: new Date('2026-01-15T12:00:00Z'), finUtc: new Date('2026-01-15T12:30:00Z'), finOcupacionUtc: null });
       await db.query("UPDATE clientes SET nombre_completo='Ficha corregida' WHERE negocio_id=?", [a.id]);
-      const recibidas: number[] = [];
-      for (const pagina of ['1', '2', '3', '4']) {
-        const r = await f.agenda.listar(f.actor(Rol.ADMIN_NEGOCIO), { ...rango, busqueda: '%_!\\', pagina, limite: '2' });
-        recibidas.push(...r.citas.map((c) => c.id));
-        expect(r.citas.length).toBeLessThanOrEqual(2);
-        expect(r.hayMas).toBe(Number(pagina) < 3);
-      }
+      const r = await f.agenda.listar(f.actor(Rol.ADMIN_NEGOCIO), { ...rango, busqueda: '%_!\\' });
+      const recibidas = r.citas.map((c) => c.id);
+      expect(r).not.toHaveProperty('hayMas');
       expect(recibidas).toEqual(ids);
       for (const busqueda of ['Ficha corregida', "' OR 1=1 --", 'Paciente ajeno']) {
         expect((await f.agenda.listar(f.actor(Rol.ADMIN_NEGOCIO), { ...rango, busqueda })).citas).toEqual([]);
@@ -144,7 +144,7 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
     });
   });
 
-  it('T030 aplica límites por defecto y máximo sobre más de cien citas reales', async () => {
+  it('T030 devuelve más de cien citas reales sin ocultarlas tras páginas', async () => {
     await conBaseOperativa(async (db) => {
       const f = await escenario(db);
       const a = f.negocios[0];
@@ -157,15 +157,10 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
           FROM citas WHERE id=?`, [`PAG-${i}`, a.ocupaciones[0]]);
       }
       const actor = f.actor(Rol.RECEPCIONISTA);
-      const primera = await f.agenda.listar(actor, rango);
-      expect(primera.citas).toHaveLength(50);
-      expect(primera.hayMas).toBe(true);
-      const maxima = await f.agenda.listar(actor, { ...rango, limite: '100' });
-      const segunda = await f.agenda.listar(actor, { ...rango, limite: '100', pagina: '2' });
-      expect(maxima.citas).toHaveLength(100);
-      expect(segunda.citas).toHaveLength(11);
-      expect(segunda.hayMas).toBe(false);
-      expect(new Set([...maxima.citas, ...segunda.citas].map((c) => c.id)).size).toBe(111);
+      const completa = await f.agenda.listar(actor, rango);
+      expect(completa.citas).toHaveLength(111);
+      expect(new Set(completa.citas.map((c) => c.id)).size).toBe(111);
+      expect(completa).not.toHaveProperty('hayMas');
     });
   });
 

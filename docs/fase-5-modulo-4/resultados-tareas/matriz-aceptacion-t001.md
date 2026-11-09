@@ -18,9 +18,9 @@ Fuentes: [constitución](../constitucion-modulo-4.md), [RF locales y diez criter
 | RF-03 | M4-T018, M4-T022, M4-T047 | T01, T09 | Pendiente | IDs cruzados no revelan ni modifican datos ajenos. |
 | RF-04 | M4-T023, M4-T065 | T01, T08 | Pendiente | Cuenta y licencia se releen incluso con sesión abierta. |
 | RF-05 | M4-T024, M4-T101, M4-T114 | T01, T09 | Pendiente | Denegación comprensible sin detalles privados. |
-| RF-06 | M4-T025–M4-T026, M4-T090 | T02, T11 | Pendiente | Día, semana y mes con consultas de hasta 31 fechas. |
+| RF-06 | M4-T025–M4-T026, M4-T090 | T02, T11 | Pendiente | Día, semana y cuadrícula mensual con periodos completos de hasta 42 fechas; exceso de volumen explícito. |
 | RF-07 | M4-T028, M4-T035, M4-T092 | T02 | Pendiente | Horario y combinación en zona de sucursal. |
-| RF-08 | M4-T029–M4-T030, M4-T091 | T02 | Pendiente | Filtros y búsqueda paginada, orden estable. |
+| RF-08 | M4-T029–M4-T030, M4-T091 | T02 | Pendiente | Filtros y búsqueda sobre el periodo completo autorizado, orden estable y rechazo del exceso sin truncamiento. |
 | RF-09 | M4-T026, M4-T035, M4-T090 | T02 | Pendiente | Cinco estados visibles, incluidas canceladas. |
 | RF-10 | M4-T100, M4-T103 | T02, T11 | Pendiente | Cambio remoto actualiza agenda y advierte obsolescencia. |
 | RF-11 | M4-T031, M4-T090 | T02 | Pendiente | Causas vigentes sin mutar las citas afectadas. |
@@ -123,4 +123,8 @@ Las entidades completas, instalación/actualización y el evento atómico de alt
 
 Los permisos cerrados, revalidación de sesión/rol/negocio/licencia, alcance y errores seguros tienen evidencia propia en [M4-T020–M4-T024](m4-t020-t024.md). No habilitan ni acreditan por sí solos las futuras rutas, consultas paginadas o escrituras del panel; sus RF completos permanecen pendientes.
 
-El servicio de consulta por periodo, alcance Profesional, proyección histórica por zona, filtros, búsqueda y páginas tiene evidencia propia en [M4-T025–M4-T030](m4-t025-t030.md). Acredita esta lectura interna; causas, detalle, historial, rutas y agenda conectada siguen pendientes y los RF completos no se cierran con este lote.
+El servicio de consulta por periodo, alcance Profesional, proyección histórica por zona, filtros, búsqueda y páginas tiene evidencia propia en [M4-T025–M4-T030](m4-t025-t030.md). Ese lote acreditó la lectura interna sin causas, detalle, historial, rutas o agenda conectada, ni cerró los RF completos.
+
+Las causas vigentes, snapshot de detalle, historial ordenado y tres rutas privadas reales se verifican en [M4-T031–M4-T036](m4-t031-t036.md), incluyendo filtros/zonas y vacío frente a fallo sin resultado parcial. Esta evidencia habilita lecturas backend; no acredita frontend, directorio, escritores o aceptación completa de los RF de gestión.
+
+El [ajuste de periodo completo](ajuste-agenda-periodo-completo.md), solicitado después de revisar la demo visual, sustituye las páginas de citas por hasta 42 fechas completas y rechazo explícito al superar 1.000 citas tras alcance/filtros. Mantiene historial paginado, detalle completo y disponibilidad de 31 fechas. Las evidencias anteriores conservan los contratos y resultados históricos de sus revisiones; este ajuste rige el lector actual. La aceptación de frontend sigue pendiente.

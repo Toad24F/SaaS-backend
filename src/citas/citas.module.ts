@@ -7,10 +7,10 @@ import { AutorizacionService } from '../auth/services/autorizacion.service';
 import { RELOJ, RelojSistema } from '../comun/reloj';
 import { AccesoOperativoService } from './acceso-operativo.service';
 import { ConsultaAgendaService } from './consulta-agenda.service';
+import { DisponibilidadModule } from '../disponibilidad/disponibilidad.module';
 
-/** Persistencia compartida: carga el modelo en Nest sin habilitar rutas operativas. */
-// Se exporta la frontera de acceso para futuros casos de uso; aún no se registran controladores.
-@Module({ imports: [LicenciasModule, TypeOrmModule.forFeature([EventoCita, IntentoCitaManual])],
+/** Dominio compartido: reutiliza las causas sin importar controladores ni escritores públicos. */
+@Module({ imports: [LicenciasModule, DisponibilidadModule, TypeOrmModule.forFeature([EventoCita, IntentoCitaManual])],
   providers: [AccesoOperativoService, ConsultaAgendaService, AutorizacionService, { provide: RELOJ, useClass: RelojSistema }],
   exports: [TypeOrmModule, AccesoOperativoService, ConsultaAgendaService] })
 export class CitasModule {}

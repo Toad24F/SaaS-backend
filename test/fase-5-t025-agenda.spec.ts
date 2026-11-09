@@ -3,21 +3,22 @@ import { validarConsultaAgenda } from '../src/citas/consulta-agenda.entrada';
 import { limiteCivilUtc, proyectarHorarioCita } from '../src/citas/horario-agenda';
 import { ConsultaAgendaService } from '../src/citas/consulta-agenda.service';
 import type { AccesoOperativoService } from '../src/citas/acceso-operativo.service';
+import type { CitasAfectadasService } from '../src/disponibilidad/citas-afectadas.service';
 
 const periodo = { desde: '2026-01-01', hasta: '2026-01-31' };
 
 describe('M4-T025: entrada cerrada de agenda', () => {
-  it('admite día, semana y 31 fechas, con paginación limitada por defecto', () => {
+  it('admite día, semana y mes sin paginar el periodo', () => {
     for (const hasta of ['2026-01-01', '2026-01-07', '2026-01-31']) {
-      expect(validarConsultaAgenda({ ...periodo, hasta })).toMatchObject({ pagina: 1, limite: 50 });
+      expect(validarConsultaAgenda({ ...periodo, hasta })).toEqual({ ...periodo, hasta });
     }
-    expect(validarConsultaAgenda({ desde: '2028-02-29', hasta: '2028-03-01', pagina: '2', limite: '100',
+    expect(validarConsultaAgenda({ desde: '2028-02-29', hasta: '2028-03-01',
       sucursalId: '1', personalId: '2', estado: 'no_asistio', busqueda: '  Ana  ' }))
-      .toMatchObject({ pagina: 2, limite: 100, sucursalId: 1, personalId: 2, busqueda: 'Ana' });
+      .toMatchObject({ sucursalId: 1, personalId: 2, busqueda: 'Ana' });
   });
 
   it.each([
-    null, [], {}, { ...periodo, desde: '2026-02-29' }, { ...periodo, hasta: '2026-02-01' },
+    null, [], {}, { ...periodo, desde: '2026-02-29' }, { ...periodo, hasta: '2026-02-12' },
     { ...periodo, desde: '2026-02-01' }, { ...periodo, desde: '2026-1-01' },
     { ...periodo, desde: '0000-01-01' }, { ...periodo, negocioId: '2' },
     { ...periodo, estado: 'inventado' }, { ...periodo, estado: ['pendiente'] },
@@ -28,7 +29,7 @@ describe('M4-T025: entrada cerrada de agenda', () => {
     { ...periodo, busqueda: 'a'.repeat(151) }, { ...periodo, busqueda: 'Ana\u0000' },
   ])('rechaza entrada inválida sin abrir acceso: %j', async (entrada) => {
     const acceso = { ejecutar: jest.fn() };
-    const agenda = new ConsultaAgendaService(acceso as unknown as AccesoOperativoService);
+    const agenda = new ConsultaAgendaService(acceso as unknown as AccesoOperativoService, {} as CitasAfectadasService);
     expect(() => validarConsultaAgenda(entrada)).toThrow(BadRequestException);
     await expect(agenda.listar({ sub: 1, sesionId: 'sesion' }, entrada)).rejects.toMatchObject({ status: 400 });
     expect(acceso.ejecutar).not.toHaveBeenCalled();
