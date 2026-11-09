@@ -21,7 +21,9 @@ Evidencia del lote M4-T001–M4-T006: [archivos, flujo, pruebas y resultados](re
 
 ## 2. Persistencia aditiva y modelo
 
-Evidencia M4-T007–M4-T012: [archivos, flujo de migración, tests y resultados](resultados-tareas/m4-t007-t012.md). Integración y HTTP completos aprobados; el fallo documental unitario previo permanece identificado. M4-T013 y las tareas posteriores continúan pendientes.
+Evidencia M4-T007–M4-T012: [archivos, flujo de migración, tests y resultados](resultados-tareas/m4-t007-t012.md). Integración y HTTP completos aprobados; el fallo documental unitario previo permanece identificado. Ese lote no acreditó tareas posteriores.
+
+Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y resultados](resultados-tareas/m4-t013-t019.md). Integración completa 454/454 y HTTP 199/199 aprobados; se conserva el pendiente documental unitario previo. M4-T020 y las tareas posteriores continúan pendientes.
 
 - [x] **M4-T007 — Migrar versión de citas** · 20 min · Depende de: M4-T003, M4-T002 · RF-29–RF-30, RF-38, RF-43
       Hecho cuando: citas existentes reciben versión 1 sin alterar estado, folio, intervalos, costo ni contacto.
@@ -35,19 +37,19 @@ Evidencia M4-T007–M4-T012: [archivos, flujo de migración, tests y resultados]
       Hecho cuando: la restricción de auditoría admite recurso `cliente` y sigue rechazando tipos no previstos.
 - [x] **M4-T012 — Añadir referencias e índices del nuevo modelo** · 25 min · Depende de: M4-T007–M4-T011 · RF-03, RF-17, RF-27, RF-43, RF-45
       Hecho cuando: intentos y eventos no pueden enlazar actor, cita o sesión de otro negocio y sus consultas tienen índices acotados.
-- [ ] **M4-T013 — Representar versiones en entidades** · 15 min · Depende de: M4-T007–M4-T008 · RF-18, RF-30, RF-38, RF-43
+- [x] **M4-T013 — Representar versiones en entidades** · 15 min · Depende de: M4-T007–M4-T008 · RF-18, RF-30, RF-38, RF-43
       Hecho cuando: las entidades de cita y cliente reflejan las columnas de versión sin alterar snapshots existentes.
-- [ ] **M4-T014 — Representar intentos y eventos en entidades** · 25 min · Depende de: M4-T009–M4-T012 · RF-24, RF-27, RF-30, RF-36, RF-41, RF-45
+- [x] **M4-T014 — Representar intentos y eventos en entidades** · 25 min · Depende de: M4-T009–M4-T012 · RF-24, RF-27, RF-30, RF-36, RF-41, RF-45
       Hecho cuando: las entidades reflejan estados, índices, referencias y nulabilidad de las migraciones.
-- [ ] **M4-T015 — Sincronizar esquema de referencia** · 20 min · Depende de: M4-T012–M4-T014 · RF-03, RF-18, RF-24, RF-43, RF-45
+- [x] **M4-T015 — Sincronizar esquema de referencia** · 20 min · Depende de: M4-T012–M4-T014 · RF-03, RF-18, RF-24, RF-43, RF-45
       Hecho cuando: `db/schema.sql`, entidades y migraciones describen las mismas columnas y restricciones nuevas.
-- [ ] **M4-T016 — Probar instalación limpia** · 25 min · Depende de: M4-T015 · RF-03, RF-15–RF-19, RF-24, RF-45
+- [x] **M4-T016 — Probar instalación limpia** · 25 min · Depende de: M4-T015 · RF-03, RF-15–RF-19, RF-24, RF-45
       Hecho cuando: todas las migraciones aplican en una base vacía desechable y sus FKs y versiones se consultan correctamente.
-- [ ] **M4-T017 — Probar actualización desde fase 4** · 25 min · Depende de: M4-T015 · RF-18, RF-24–RF-25, RF-41, RF-45
+- [x] **M4-T017 — Probar actualización desde fase 4** · 25 min · Depende de: M4-T015 · RF-18, RF-24–RF-25, RF-41, RF-45
       Hecho cuando: una base de fase 4 conserva clientes, citas, apartados, intentos, folios y snapshots sin inventar datos faltantes.
-- [ ] **M4-T018 — Probar restricciones cruzadas y rollback** · 25 min · Depende de: M4-T016–M4-T017 · RF-03, RF-19, RF-26, RF-45
+- [x] **M4-T018 — Probar restricciones cruzadas y rollback** · 25 min · Depende de: M4-T016–M4-T017 · RF-03, RF-19, RF-26, RF-45
       Hecho cuando: referencias de otro negocio y eventos parciales fallan sin dejar filas nuevas.
-- [ ] **M4-T019 — Auditar alta pública en su commit** · 25 min · Depende de: M4-T010, M4-T014 · RF-24, RF-37, RF-45
+- [x] **M4-T019 — Auditar alta pública en su commit** · 25 min · Depende de: M4-T010, M4-T014 · RF-24, RF-37, RF-45
       Hecho cuando: cada cita pública nueva crea un solo evento de alta con identidad pública comprobada en el mismo commit y la regresión pública sigue aprobada.
 
 ## 3. Autorización y respuestas privadas

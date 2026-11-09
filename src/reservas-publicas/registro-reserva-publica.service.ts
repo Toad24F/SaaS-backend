@@ -7,6 +7,7 @@ import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilid
 import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.entity';
 import { Cita } from '../disponibilidad/entities/cita.entity';
 import { Cliente } from '../disponibilidad/entities/cliente.entity';
+import { EventoCita } from '../citas/entities/evento-cita.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -178,7 +179,7 @@ export class RegistroReservaPublicaService {
     // 18 caracteres aleatorios más prefijo caben en VARCHAR(20) y la unicidad
     // global de folio se mantiene en la base de datos.
     const folio = `P-${randomBytes(9).toString('hex').toUpperCase()}`;
-    const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId,
+    const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId, version: 1,
       sucursalId: apartado.sucursalId, personalId: apartado.personalId,
       servicioId: apartado.servicioId, clienteId: cliente.id, inicioUtc, finUtc,
       // Origen y protección son los del apartado; cambiarlos con la
@@ -190,6 +191,21 @@ export class RegistroReservaPublicaService {
       nombreContacto: contacto.nombre, telefonoContacto: contacto.telefono,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
       nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, folio });
+    // La sesión ya fue comprobada y bloqueada por el escritor. El evento comparte
+    // su manager y commit: un fallo revierte también cliente, cita y consumo.
+    // Se eligen valores operativos explícitos; contacto, notas, hashes y credenciales no se auditan.
+    await manager.getRepository(EventoCita).insert({ negocioId: intento.negocioId,
+      citaId: cita.id, actorUsuarioId: null, sesionPublicaId: sesion.id,
+      accion: 'alta', ocurridoEn: ahora, versionResultante: cita.version,
+      valoresAntes: null, motivo: null, valoresDespues: {
+        estado: cita.estado, origen: cita.origen, folio: cita.folio,
+        clienteId: cita.clienteId, sucursalId: cita.sucursalId,
+        servicioId: cita.servicioId, personalId: cita.personalId,
+        inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
+        separacionMinutos: cita.separacionMinutos,
+        finOcupacionUtc: cita.finOcupacionUtc!.toISOString(),
+        zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
+      } });
     await manager.getRepository(BloqueoTemporal).update({ id: apartado.id,
       negocioId: intento.negocioId }, { liberadoEn: ahora });
     await manager.getRepository(SesionReservaPublica).update({ id: sesion.id,

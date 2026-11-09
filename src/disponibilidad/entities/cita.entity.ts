@@ -23,12 +23,18 @@ export type OrigenCita = 'portal_publico' | 'manual';
   ['negocioId', 'sucursalId', 'telefonoContacto', 'inicioUtc'])
 @Check('chk_citas_intervalo', 'fin_utc > inicio_utc')
 @Check('chk_citas_zona', 'CHAR_LENGTH(TRIM(zona_horaria_reserva)) > 0')
+@Check('chk_citas_version', 'version >= 1')
 @Check('chk_citas_costo_aceptado', 'costo_aceptado IS NULL OR costo_aceptado >= 0')
 @Check('chk_citas_separacion', 'separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0')
 @Check('chk_citas_fin_ocupacion', 'fin_ocupacion_utc IS NULL OR fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE)')
 export class Cita {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
+
+  // Versión explícita: los escritores posteriores la incrementarán solo con cambios reales.
+  // No usar VersionColumn: guardar una entidad no debe aumentar la versión automáticamente.
+  @Column({ type: 'int', unsigned: true, default: 1 })
+  version: number;
 
   @Column({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;

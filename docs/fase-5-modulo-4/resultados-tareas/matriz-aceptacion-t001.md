@@ -118,3 +118,5 @@ Los resultados de módulos 2/3 y ajustes son contexto de implementación; no acr
 `test/fase-5-t001-t002.spec.ts` verifica estructura completa y enlaces. `test/fase-5-t003-t006.integration-spec.ts` prueba infraestructura y fixtures en MariaDB. Ninguna convierte en aprobados los RF funcionales de esta matriz. Comandos y resultados propios se registran en [el informe del lote](resultados-m4-t001-t006.md).
 
 Las migraciones aditivas, sus restricciones y la regresión de instalación tienen evidencia propia en [M4-T007–M4-T012](m4-t007-t012.md). No acreditan todavía entidades completas, escritor manual, autorización operativa ni la aceptación funcional de los RF.
+
+Las entidades completas, instalación/actualización y el evento atómico de alta pública se verifican en [M4-T013–M4-T019](m4-t013-t019.md). Esta evidencia es parcial para RF-24/RF-37/RF-45: no acredita aún los escritores y permisos operativos del panel ni cierra sus aceptaciones completas.

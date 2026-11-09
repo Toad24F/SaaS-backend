@@ -1127,6 +1127,8 @@ ALTER TABLE bloqueos_temporales
     REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
 
 -- M4-T007–T008: versiones iniciales sin cambiar snapshots ni el índice telefónico.
+-- M4-T013–T015: Cita/Cliente usan columnas explícitas, no incrementos automáticos
+-- de ORM. IntentoCitaManual y EventoCita reflejan el DDL y sus referencias siguientes.
 ALTER TABLE citas
   ADD version INT UNSIGNED NOT NULL DEFAULT 1,
   ADD CONSTRAINT chk_citas_version CHECK (version >= 1);
