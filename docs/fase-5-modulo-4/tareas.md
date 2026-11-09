@@ -4,59 +4,67 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 
 ## 1. Base y pruebas reproducibles
 
-- [ ] **M4-T001 — Crear matriz RF y criterios** · 20 min · Depende de: ninguna · RF-01–RF-47
+- [x] **M4-T001 — Crear matriz RF y criterios** · 20 min · Depende de: ninguna · RF-01–RF-47
       Hecho cuando: la matriz enumera los 47 RF locales, los RF de ajustes aplicables y diez criterios; los vincula a tareas y pruebas previstas, incluida ALA-I001–ALA-I003, y separa evidencia nueva de antecedentes.
-- [ ] **M4-T002 — Inventariar contratos conservados** · 20 min · Depende de: M4-T001 · RF-01–RF-05, RF-21–RF-23, RF-28, RF-33–RF-35
+- [x] **M4-T002 — Inventariar contratos conservados** · 20 min · Depende de: M4-T001 · RF-01–RF-05, RF-21–RF-23, RF-28, RF-33–RF-35
       Hecho cuando: quedan identificados roles, plazo de suspensión configurable, cinco rutas privadas, escritor público, motor manual con separación, cupo telefónico por sucursal y orden de bloqueos sin atribuirles cobertura del módulo 4.
-- [ ] **M4-T003 — Preparar base desechable de integración** · 20 min · Depende de: M4-T002 · RF-03, RF-26, RF-28, RF-44
+- [x] **M4-T003 — Preparar base desechable de integración** · 20 min · Depende de: M4-T002 · RF-03, RF-26, RF-28, RF-44
       Hecho cuando: el ejecutor crea y elimina una base identificada como test y rechaza conectarse a la base cotidiana.
-- [ ] **M4-T004 — Sembrar dos negocios y varios perfiles** · 25 min · Depende de: M4-T003 · RF-02–RF-04, RF-17, RF-23, RF-40
+- [x] **M4-T004 — Sembrar dos negocios y varios perfiles** · 25 min · Depende de: M4-T003 · RF-02–RF-04, RF-17, RF-23, RF-40
       Hecho cuando: los fixtures generan dos negocios, sucursales con zonas distintas, Profesional compartido, cinco estados y teléfonos repetidos con limpieza comprobada.
-- [ ] **M4-T005 — Preparar reloj y fallos controlados** · 20 min · Depende de: M4-T004 · RF-26–RF-27, RF-31, RF-34–RF-35, RF-42
+- [x] **M4-T005 — Preparar reloj y fallos controlados** · 20 min · Depende de: M4-T004 · RF-26–RF-27, RF-31, RF-34–RF-35, RF-42
       Hecho cuando: las pruebas fijan instantes antes, en y después de los límites y pueden forzar rollback sin cambiar el reloj del sistema.
-- [ ] **M4-T006 — Preparar dos conexiones y barreras** · 25 min · Depende de: M4-T003, M4-T005 · RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
+- [x] **M4-T006 — Preparar dos conexiones y barreras** · 25 min · Depende de: M4-T003, M4-T005 · RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
       Hecho cuando: un caso de control demuestra espera y liberación reproducible entre conexiones independientes y cierra ambas aun si falla.
+
+Evidencia del lote M4-T001–M4-T006: [archivos, flujo, pruebas y resultados](resultados-tareas/resultados-m4-t001-t006.md). Ese cierre conservó el fallo documental unitario anterior como pendiente externo y no acreditó tareas posteriores.
 
 ## 2. Persistencia aditiva y modelo
 
-- [ ] **M4-T007 — Migrar versión de citas** · 20 min · Depende de: M4-T003, M4-T002 · RF-29–RF-30, RF-38, RF-43
+Evidencia M4-T007–M4-T012: [archivos, flujo de migración, tests y resultados](resultados-tareas/m4-t007-t012.md). Integración y HTTP completos aprobados; el fallo documental unitario previo permanece identificado. Ese lote no acreditó tareas posteriores.
+
+Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y resultados](resultados-tareas/m4-t013-t019.md). Integración completa 454/454 y HTTP 199/199 aprobados; se conserva el pendiente documental unitario previo. Ese lote no acreditó tareas posteriores.
+
+- [x] **M4-T007 — Migrar versión de citas** · 20 min · Depende de: M4-T003, M4-T002 · RF-29–RF-30, RF-38, RF-43
       Hecho cuando: citas existentes reciben versión 1 sin alterar estado, folio, intervalos, costo ni contacto.
-- [ ] **M4-T008 — Migrar versión de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-18–RF-19, RF-43
+- [x] **M4-T008 — Migrar versión de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-18–RF-19, RF-43
       Hecho cuando: cada ficha recibe versión 1 y el teléfono conserva su índice no único.
-- [ ] **M4-T009 — Migrar intentos manuales** · 25 min · Depende de: M4-T003, M4-T002 · RF-20, RF-24, RF-26–RF-28
+- [x] **M4-T009 — Migrar intentos manuales** · 25 min · Depende de: M4-T003, M4-T002 · RF-20, RF-24, RF-26–RF-28
       Hecho cuando: la tabla representa clave única por negocio y actor, huella, tres estados y resultado opcional sin guardar contacto ni notas.
-- [ ] **M4-T010 — Migrar eventos de cita** · 25 min · Depende de: M4-T003, M4-T002 · RF-24, RF-29–RF-36, RF-41, RF-45
+- [x] **M4-T010 — Migrar eventos de cita** · 25 min · Depende de: M4-T003, M4-T002 · RF-24, RF-29–RF-36, RF-41, RF-45
       Hecho cuando: el historial admite actor de personal o sesión pública, valores anterior/nuevo y motivo opcional sin sobrescribir eventos.
-- [ ] **M4-T011 — Extender auditoría de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-15, RF-18, RF-45
+- [x] **M4-T011 — Extender auditoría de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-15, RF-18, RF-45
       Hecho cuando: la restricción de auditoría admite recurso `cliente` y sigue rechazando tipos no previstos.
-- [ ] **M4-T012 — Añadir referencias e índices del nuevo modelo** · 25 min · Depende de: M4-T007–M4-T011 · RF-03, RF-17, RF-27, RF-43, RF-45
+- [x] **M4-T012 — Añadir referencias e índices del nuevo modelo** · 25 min · Depende de: M4-T007–M4-T011 · RF-03, RF-17, RF-27, RF-43, RF-45
       Hecho cuando: intentos y eventos no pueden enlazar actor, cita o sesión de otro negocio y sus consultas tienen índices acotados.
-- [ ] **M4-T013 — Representar versiones en entidades** · 15 min · Depende de: M4-T007–M4-T008 · RF-18, RF-30, RF-38, RF-43
+- [x] **M4-T013 — Representar versiones en entidades** · 15 min · Depende de: M4-T007–M4-T008 · RF-18, RF-30, RF-38, RF-43
       Hecho cuando: las entidades de cita y cliente reflejan las columnas de versión sin alterar snapshots existentes.
-- [ ] **M4-T014 — Representar intentos y eventos en entidades** · 25 min · Depende de: M4-T009–M4-T012 · RF-24, RF-27, RF-30, RF-36, RF-41, RF-45
+- [x] **M4-T014 — Representar intentos y eventos en entidades** · 25 min · Depende de: M4-T009–M4-T012 · RF-24, RF-27, RF-30, RF-36, RF-41, RF-45
       Hecho cuando: las entidades reflejan estados, índices, referencias y nulabilidad de las migraciones.
-- [ ] **M4-T015 — Sincronizar esquema de referencia** · 20 min · Depende de: M4-T012–M4-T014 · RF-03, RF-18, RF-24, RF-43, RF-45
+- [x] **M4-T015 — Sincronizar esquema de referencia** · 20 min · Depende de: M4-T012–M4-T014 · RF-03, RF-18, RF-24, RF-43, RF-45
       Hecho cuando: `db/schema.sql`, entidades y migraciones describen las mismas columnas y restricciones nuevas.
-- [ ] **M4-T016 — Probar instalación limpia** · 25 min · Depende de: M4-T015 · RF-03, RF-15–RF-19, RF-24, RF-45
+- [x] **M4-T016 — Probar instalación limpia** · 25 min · Depende de: M4-T015 · RF-03, RF-15–RF-19, RF-24, RF-45
       Hecho cuando: todas las migraciones aplican en una base vacía desechable y sus FKs y versiones se consultan correctamente.
-- [ ] **M4-T017 — Probar actualización desde fase 4** · 25 min · Depende de: M4-T015 · RF-18, RF-24–RF-25, RF-41, RF-45
+- [x] **M4-T017 — Probar actualización desde fase 4** · 25 min · Depende de: M4-T015 · RF-18, RF-24–RF-25, RF-41, RF-45
       Hecho cuando: una base de fase 4 conserva clientes, citas, apartados, intentos, folios y snapshots sin inventar datos faltantes.
-- [ ] **M4-T018 — Probar restricciones cruzadas y rollback** · 25 min · Depende de: M4-T016–M4-T017 · RF-03, RF-19, RF-26, RF-45
+- [x] **M4-T018 — Probar restricciones cruzadas y rollback** · 25 min · Depende de: M4-T016–M4-T017 · RF-03, RF-19, RF-26, RF-45
       Hecho cuando: referencias de otro negocio y eventos parciales fallan sin dejar filas nuevas.
-- [ ] **M4-T019 — Auditar alta pública en su commit** · 25 min · Depende de: M4-T010, M4-T014 · RF-24, RF-37, RF-45
+- [x] **M4-T019 — Auditar alta pública en su commit** · 25 min · Depende de: M4-T010, M4-T014 · RF-24, RF-37, RF-45
       Hecho cuando: cada cita pública nueva crea un solo evento de alta con identidad pública comprobada en el mismo commit y la regresión pública sigue aprobada.
 
 ## 3. Autorización y respuestas privadas
 
-- [ ] **M4-T020 — Definir permisos operativos cerrados** · 20 min · Depende de: M4-T002 · RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38
+Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y resultados](resultados-tareas/m4-t020-t024.md). Pruebas propias 62/62, integración completa 471/471 y HTTP 203/203 aprobados; build y lint aprobados. Unitarias completas: 452 aprobadas y un fallo documental previo identificado. M4-T025 y posteriores continúan pendientes; el trabajo se detiene en M4-T024.
+
+- [x] **M4-T020 — Definir permisos operativos cerrados** · 20 min · Depende de: M4-T002 · RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38
       Hecho cuando: Administración y Recepción tienen permisos de gestión, Profesional solo lectura propia y Superadmin no hereda acceso a citas.
-- [ ] **M4-T021 — Revalidar identidad y negocio por operación** · 25 min · Depende de: M4-T020 · RF-01–RF-04, RF-13, RF-20, RF-29
+- [x] **M4-T021 — Revalidar identidad y negocio por operación** · 25 min · Depende de: M4-T020 · RF-01–RF-04, RF-13, RF-20, RF-29
       Hecho cuando: cada caso de uso reconstruye sesión, rol, negocio y licencia actuales sin usar `negocioId` del cuerpo o JWT como autorización suficiente.
-- [ ] **M4-T022 — Probar alcance por rol** · 25 min · Depende de: M4-T021, M4-T004 · RF-01–RF-05, RF-13–RF-14, RF-29
+- [x] **M4-T022 — Probar alcance por rol** · 25 min · Depende de: M4-T021, M4-T004 · RF-01–RF-05, RF-13–RF-14, RF-29
       Hecho cuando: dos negocios y los tres roles prueban lectura propia, denegación de escritura Profesional y ausencia de datos cruzados.
-- [ ] **M4-T023 — Probar licencia y sesión abierta** · 25 min · Depende de: M4-T021, M4-T005 · RF-04–RF-05, RF-20, RF-34
+- [x] **M4-T023 — Probar licencia y sesión abierta** · 25 min · Depende de: M4-T021, M4-T005 · RF-04–RF-05, RF-20, RF-34
       Hecho cuando: vencimiento, suspensión inmediata y suspensión con plazo configurable niegan operaciones nuevas en su límite exacto incluso con sesión anterior; la prueba no supone 48 horas para todos los casos.
-- [ ] **M4-T024 — Normalizar errores operativos seguros** · 20 min · Depende de: M4-T021 · RF-05, RF-19, RF-23, RF-26–RF-27, RF-43, RF-46–RF-47
+- [x] **M4-T024 — Normalizar errores operativos seguros** · 20 min · Depende de: M4-T021 · RF-05, RF-19, RF-23, RF-26–RF-27, RF-43, RF-46–RF-47
       Hecho cuando: inválido, ajeno, conflicto, temporal e inesperado producen mensajes distintos sin SQL, trazas ni contacto ajeno.
 
 ## 4. Consulta de agenda e historial

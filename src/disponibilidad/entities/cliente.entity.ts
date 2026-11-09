@@ -9,9 +9,14 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 @Index('idx_cliente_por_negocio_telefono', ['negocioId', 'telefono'])
 @Check('chk_clientes_nombre', 'CHAR_LENGTH(TRIM(nombre_completo)) > 0')
 @Check('chk_clientes_telefono', 'CHAR_LENGTH(telefono) = 10')
+@Check('chk_clientes_version', 'version >= 1')
 export class Cliente {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
+
+  // La versión pertenece a esta ficha; corregirla no debe reescribir snapshots de citas.
+  @Column({ type: 'int', unsigned: true, default: 1 })
+  version: number;
 
   @Column({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;

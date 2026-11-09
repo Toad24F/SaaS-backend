@@ -28,6 +28,9 @@ describe('Fase 3: arranque real del DataSource con autoLoadEntities', () => {
             OperacionLicencia, EnvioCorreo]) {
             expect(conexion.hasMetadata(entidad)).toBe(true);
           }
+          // M4 debe funcionar también con autoLoadEntities real, no solo con el glob del ejecutor.
+          expect(conexion.hasMetadata('EventoCita')).toBe(true);
+          expect(conexion.hasMetadata('IntentoCitaManual')).toBe(true);
         } finally { await modulo.close(); }
       } finally {
         if (anteriorNombre === undefined) delete process.env.TEST_DB_NAME;

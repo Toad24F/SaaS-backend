@@ -1,4 +1,4 @@
-import { conBaseMigrada } from './support/mariadb';
+import { conBaseMigrada, retrocederHastaMigracion } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
 import { getDatabaseOptions } from '../src/config/database.config';
@@ -56,9 +56,8 @@ describe('ALA-T142–T145: activación y migración segura', () => {
     await conBaseMigrada(async (db) => {
       // Volver al último esquema público anterior a ALA, solo en la base
       // temporal que conBaseMigrada creó y destruirá para este caso.
-      for (let indice = 0; indice < 9; indice += 1) {
-        await db.undoLastMigration();
-      }
+      // Las migraciones futuras también deben retirarse antes de sembrar el esquema previo.
+      const retiradas = await retrocederHastaMigracion(db, 'DatosPublicosCatalogo1760000033000');
       const [ultima] = await db.query('SELECT name FROM migrations ORDER BY id DESC LIMIT 1');
       expect(ultima.name).toBe('DatosPublicosCatalogo1760000033000');
       const { negocios: [a] } = await crearEscenarioPortal(db, new RelojPrueba(AHORA));
@@ -71,7 +70,7 @@ describe('ALA-T142–T145: activación y migración segura', () => {
           FROM citas WHERE negocio_id=? ORDER BY id`, [a.id]),
       };
       const aplicadas = await db.runMigrations({ transaction: 'each' });
-      expect(aplicadas).toHaveLength(9);
+      expect(aplicadas).toHaveLength(retiradas);
       expect(await db.query('SELECT id,nombre,email FROM usuarios WHERE negocio_id=? ORDER BY id',
         [a.id])).toEqual(antes.usuarios);
       expect(await db.query(`SELECT personal_id,sucursal_id,activo

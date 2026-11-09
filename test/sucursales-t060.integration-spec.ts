@@ -1,4 +1,4 @@
-import { conBaseMigrada } from './support/mariadb';
+import { conBaseMigrada, retrocederHastaMigracion } from './support/mariadb';
 import { Sucursal } from '../src/sucursales/entities/sucursal.entity';
 import { Sucursales1760000010000 } from '../src/database/migrations/1760000010000-Sucursales';
 import { Servicios1760000011000 } from '../src/database/migrations/1760000011000-Servicios';
@@ -25,11 +25,9 @@ describe('M1-T060: migración incremental de sucursales', () => {
   it('instala restricciones tenant y conserva negocios previos al aplicar la migración', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const existente = await db.query("INSERT INTO negocios (nombre, slug, email_contacto) VALUES ('Previo', 'previo-sucursal', 'previo@example.test')");
-      // Las migraciones ALA y el catálogo posterior al portal agregan FK
-      // sobre las tablas que esta prueba histórica desmonta temporalmente.
-      for (let indice = 0; indice < 10; indice += 1) {
-        await db.undoLastMigration({ transaction: 'each' });
-      }
+      // Retirar todos los módulos posteriores permite reaplicar inhabilitado_en
+      // al restaurar las tablas, sin depender de un conteo fijo de migraciones.
+      await retrocederHastaMigracion(db, 'RelacionesReservaPublica1760000032000');
       // Los índices nuevos y las fuentes de fase 3 dependen de estas tablas;
       // se retiran y restauran junto con el esquema histórico que se prueba.
       const runner = db.createQueryRunner();
