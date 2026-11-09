@@ -1,5 +1,6 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
+import { normalizarTelefonoMexicano, validarNombreContacto } from '../comun/contacto-persona';
 
 export interface ContactoReservaPublica {
   nombre: string;
@@ -23,20 +24,9 @@ export function validarContactoReservaPublica(entrada: unknown): ContactoReserva
   if (Object.keys(datos).some((campo) => !['nombre', 'telefono', 'notas'].includes(campo))) {
     throw new BadRequestException('Corrija los campos del formulario.');
   }
-  const nombre = typeof datos.nombre === 'string' ? datos.nombre.trim() : '';
-  if (!nombre || [...nombre].length > 150) {
-    throw new BadRequestException('Corrija el nombre: máximo 150 caracteres.');
-  }
-  if (typeof datos.telefono !== 'string') {
-    throw new BadRequestException('Corrija el teléfono: use diez dígitos mexicanos.');
-  }
-  // Solo se quitan los separadores permitidos. Letras y prefijos distintos de
-  // +52 permanecen, por lo que fallan la expresión de diez dígitos.
-  const sinSeparadores = datos.telefono.replace(/[\s-]/g, '');
-  const telefono = sinSeparadores.startsWith('+52') ? sinSeparadores.slice(3) : sinSeparadores;
-  if (!/^\d{10}$/.test(telefono)) {
-    throw new BadRequestException('Corrija el teléfono: use diez dígitos mexicanos.');
-  }
+  // Portal y directorio comparten el mismo contrato de contacto; las notas siguen siendo del formulario público.
+  const nombre = validarNombreContacto(datos.nombre);
+  const telefono = normalizarTelefonoMexicano(datos.telefono);
   if (datos.notas !== undefined && datos.notas !== null && typeof datos.notas !== 'string') {
     throw new BadRequestException('Corrija las notas.');
   }

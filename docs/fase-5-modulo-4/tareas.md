@@ -85,7 +85,7 @@ Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resul
       Hecho cuando: cada filtro y su combinación limitan resultados sin excluir canceladas salvo petición expresa.
 - [x] **M4-T030 — Buscar por paciente en el periodo completo** · 25 min · Depende de: M4-T029 · RF-03, RF-08, RF-46–RF-47
       Hecho cuando: búsqueda y periodo completo permanecen dentro del negocio y tienen orden estable; hasta 42 fechas y 1.000 citas, con rechazo explícito del exceso sin truncamiento. Sustituye la paginación anterior por solicitud del responsable; ver evidencia del ajuste.
-Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests primero y resultados](resultados-tareas/m4-t031-t036.md). Pruebas nuevas 28/28, integración completa 482/482 y HTTP 210/210 aprobados; build y lint aprobados. Unitarias completas: 498 aprobadas y un fallo documental previo identificado. Se habilitan tres lecturas HTTP privadas; frontend, directorio y escritores no se acreditan. M4-T037 y posteriores continúan pendientes; el trabajo se detiene en M4-T036.
+Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests primero y resultados](resultados-tareas/m4-t031-t036.md). Pruebas nuevas 28/28, integración completa 482/482 y HTTP 210/210 aprobados; build y lint aprobados. Unitarias completas: 498 aprobadas y un fallo documental previo identificado. Ese lote habilitó tres lecturas HTTP privadas; no acreditó frontend, directorio ni escritores y se detuvo en M4-T036.
 
 - [x] **M4-T031 — Incorporar causas de citas afectadas** · 20 min · Depende de: M4-T026, M4-T002 · RF-09, RF-11, RF-46
       Hecho cuando: causas actuales se muestran para citas afectadas sin cambiar horario ni estado y desaparecen al cesar la causa.
@@ -102,17 +102,19 @@ Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests
 
 ## 5. Directorio de clientes
 
-- [ ] **M4-T037 — Validar datos de cliente** · 20 min · Depende de: M4-T021 · RF-15, RF-17, RF-19, RF-47
+Evidencia M4-T037–M4-T042: [archivos, flujo del directorio, tests primero y resultados](resultados-tareas/m4-t037-t042.md). Pruebas nuevas 47/47, integración completa 492/492 y HTTP 214/214 aprobados; build y lint aprobados. Unitarias completas: 544 aprobadas y un fallo documental previo identificado. Se acredita el dominio de clientes, sin rutas HTTP ni frontend. M4-T043 y posteriores continúan pendientes; el trabajo se detiene en M4-T042.
+
+- [x] **M4-T037 — Validar datos de cliente** · 20 min · Depende de: M4-T021 · RF-15, RF-17, RF-19, RF-47
       Hecho cuando: nombre y teléfono siguen límites y normalización acordados, rechazan campos desconocidos y nunca fusionan por teléfono.
-- [ ] **M4-T038 — Buscar fichas por negocio** · 20 min · Depende de: M4-T037, M4-T013 · RF-03, RF-13, RF-17
+- [x] **M4-T038 — Buscar fichas por negocio** · 20 min · Depende de: M4-T037, M4-T013 · RF-03, RF-13, RF-17
       Hecho cuando: nombre y teléfono devuelven fichas paginadas del negocio, incluso varias con el mismo número.
-- [ ] **M4-T039 — Consultar ficha e historial** · 20 min · Depende de: M4-T038, M4-T026 · RF-13–RF-14, RF-18
+- [x] **M4-T039 — Consultar ficha e historial** · 20 min · Depende de: M4-T038, M4-T026 · RF-13–RF-14, RF-18
       Hecho cuando: el historial usa el ID propio de cliente y muestra solo citas del mismo negocio.
-- [ ] **M4-T040 — Dar de alta ficha independiente** · 20 min · Depende de: M4-T037, M4-T021 · RF-15, RF-17, RF-19, RF-45
+- [x] **M4-T040 — Dar de alta ficha independiente** · 20 min · Depende de: M4-T037, M4-T021 · RF-15, RF-17, RF-19, RF-45
       Hecho cuando: se crea una ficha sin cita con teléfono compartible y un fallo no deja ficha parcial.
-- [ ] **M4-T041 — Corregir ficha con versión observada** · 25 min · Depende de: M4-T040, M4-T013 · RF-18–RF-19, RF-43, RF-45
+- [x] **M4-T041 — Corregir ficha con versión observada** · 25 min · Depende de: M4-T040, M4-T013 · RF-18–RF-19, RF-43, RF-45
       Hecho cuando: una versión anterior recibe conflicto y una corrección válida no modifica snapshots de citas.
-- [ ] **M4-T042 — Auditar alta y corrección de cliente** · 20 min · Depende de: M4-T011, M4-T041 · RF-15, RF-18, RF-45
+- [x] **M4-T042 — Auditar alta y corrección de cliente** · 20 min · Depende de: M4-T011, M4-T041 · RF-15, RF-18, RF-45
       Hecho cuando: alta y cambio efectivos crean un evento con actor y valores permitidos dentro del mismo commit, sin secretos.
 - [ ] **M4-T043 — Resolver elección de cliente existente** · 20 min · Depende de: M4-T039, M4-T021 · RF-03, RF-16–RF-17, RF-20
       Hecho cuando: un ID propio identifica exactamente una ficha y un ID ajeno no se sustituye por una coincidencia telefónica.

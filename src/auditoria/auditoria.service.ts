@@ -16,6 +16,8 @@ export interface RegistrarAuditoria {
   recursoTipo?: string | null;
   recursoId?: number | null;
   accion: string;
+  // Los casos con reloj capturado pueden conservar el mismo instante del cambio; el resto usa el default de DB.
+  ocurridoEn?: Date;
   valoresAntes: ValoresAuditoria | null;
   valoresDespues: ValoresAuditoria | null;
 }
