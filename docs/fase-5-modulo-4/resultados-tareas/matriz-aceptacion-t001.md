@@ -122,3 +122,5 @@ Las migraciones aditivas, sus restricciones y la regresión de instalación tien
 Las entidades completas, instalación/actualización y el evento atómico de alta pública se verifican en [M4-T013–M4-T019](m4-t013-t019.md). Esta evidencia es parcial para RF-24/RF-37/RF-45: no acredita aún los escritores y permisos operativos del panel ni cierra sus aceptaciones completas.
 
 Los permisos cerrados, revalidación de sesión/rol/negocio/licencia, alcance y errores seguros tienen evidencia propia en [M4-T020–M4-T024](m4-t020-t024.md). No habilitan ni acreditan por sí solos las futuras rutas, consultas paginadas o escrituras del panel; sus RF completos permanecen pendientes.
+
+El servicio de consulta por periodo, alcance Profesional, proyección histórica por zona, filtros, búsqueda y páginas tiene evidencia propia en [M4-T025–M4-T030](m4-t025-t030.md). Acredita esta lectura interna; causas, detalle, historial, rutas y agenda conectada siguen pendientes y los RF completos no se cierran con este lote.

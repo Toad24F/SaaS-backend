@@ -40,9 +40,11 @@ export class AccesoOperativoService {
 
   /** La operación y su autorización usan el mismo manager; un error nunca se vuelve lista vacía. */
   async ejecutar<T>(identidad: IdentidadOperativa, permiso: Permiso,
-    operacion: (contexto: ContextoOperativo) => Promise<T>): Promise<T> {
+    operacion: (contexto: ContextoOperativo) => Promise<T>,
+    aislamiento: 'READ COMMITTED' | 'REPEATABLE READ' = 'READ COMMITTED'): Promise<T> {
     try {
-      return await this.db.transaction('READ COMMITTED', async (manager) =>
+      // Las lecturas de varias consultas pueden pedir fotografía estable; los escritores conservan RC.
+      return await this.db.transaction(aislamiento, async (manager) =>
         operacion(await this.resolverEnTransaccion(manager, identidad, permiso)));
     } catch (error) { throw normalizarErrorOperativo(error); }
   }

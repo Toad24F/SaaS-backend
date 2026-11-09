@@ -54,7 +54,7 @@ Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y result
 
 ## 3. Autorización y respuestas privadas
 
-Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y resultados](resultados-tareas/m4-t020-t024.md). Pruebas propias 62/62, integración completa 471/471 y HTTP 203/203 aprobados; build y lint aprobados. Unitarias completas: 452 aprobadas y un fallo documental previo identificado. M4-T025 y posteriores continúan pendientes; el trabajo se detiene en M4-T024.
+Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y resultados](resultados-tareas/m4-t020-t024.md). Pruebas propias 62/62, integración completa 471/471 y HTTP 203/203 aprobados; build y lint aprobados. Unitarias completas: 452 aprobadas y un fallo documental previo identificado. Ese lote no acreditó tareas posteriores.
 
 - [x] **M4-T020 — Definir permisos operativos cerrados** · 20 min · Depende de: M4-T002 · RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38
       Hecho cuando: Administración y Recepción tienen permisos de gestión, Profesional solo lectura propia y Superadmin no hereda acceso a citas.
@@ -69,17 +69,19 @@ Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y 
 
 ## 4. Consulta de agenda e historial
 
-- [ ] **M4-T025 — Validar rango y filtros de agenda** · 20 min · Depende de: M4-T021 · RF-06–RF-08, RF-46–RF-47
+Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resultados](resultados-tareas/m4-t025-t030.md). Pruebas propias finales 36/36, regresión de integración completa 478/478 y HTTP 203/203 aprobados; el caso temporal añadido después está incluido en la repetición propia final 8/8, como aclara el informe. Build y lint aprobados. Unitarias completas finales: 480 aprobadas y un fallo documental previo. M4-T031 y posteriores continúan pendientes; el trabajo se detiene en M4-T030.
+
+- [x] **M4-T025 — Validar rango y filtros de agenda** · 20 min · Depende de: M4-T021 · RF-06–RF-08, RF-46–RF-47
       Hecho cuando: se admiten hasta 31 fechas inclusivas y se rechazan fechas, filtros o campos desconocidos sin consultar datos.
-- [ ] **M4-T026 — Listar citas por negocio y periodo** · 25 min · Depende de: M4-T025, M4-T013 · RF-01, RF-03, RF-06, RF-09
+- [x] **M4-T026 — Listar citas por negocio y periodo** · 25 min · Depende de: M4-T025, M4-T013 · RF-01, RF-03, RF-06, RF-09
       Hecho cuando: la consulta devuelve todos los estados del negocio dentro del periodo y nunca citas ajenas.
-- [ ] **M4-T027 — Acotar consulta del Profesional** · 20 min · Depende de: M4-T026, M4-T020 · RF-02–RF-03, RF-07, RF-09
+- [x] **M4-T027 — Acotar consulta del Profesional** · 20 min · Depende de: M4-T026, M4-T020 · RF-02–RF-03, RF-07, RF-09
       Hecho cuando: un Profesional solo recibe sus citas y su contacto/notas aunque manipule el filtro de personal.
-- [ ] **M4-T028 — Proyectar fecha y zona de sucursal** · 25 min · Depende de: M4-T026 · RF-06–RF-07, RF-09
+- [x] **M4-T028 — Proyectar fecha y zona de sucursal** · 25 min · Depende de: M4-T026 · RF-06–RF-07, RF-09
       Hecho cuando: una cita aparece en su fecha local correcta aun cuando sucursales distintas compartan instante UTC.
-- [ ] **M4-T029 — Aplicar filtros de sucursal, personal y estado** · 20 min · Depende de: M4-T027–M4-T028 · RF-08–RF-09, RF-46
+- [x] **M4-T029 — Aplicar filtros de sucursal, personal y estado** · 20 min · Depende de: M4-T027–M4-T028 · RF-08–RF-09, RF-46
       Hecho cuando: cada filtro y su combinación limitan resultados sin excluir canceladas salvo petición expresa.
-- [ ] **M4-T030 — Buscar por paciente y paginar** · 25 min · Depende de: M4-T029 · RF-03, RF-08, RF-46–RF-47
+- [x] **M4-T030 — Buscar por paciente y paginar** · 25 min · Depende de: M4-T029 · RF-03, RF-08, RF-46–RF-47
       Hecho cuando: búsqueda y páginas permanecen dentro del negocio y tienen orden estable sin devolver listados ilimitados.
 - [ ] **M4-T031 — Incorporar causas de citas afectadas** · 20 min · Depende de: M4-T026, M4-T002 · RF-09, RF-11, RF-46
       Hecho cuando: causas actuales se muestran para citas afectadas sin cambiar horario ni estado y desaparecen al cesar la causa.
