@@ -23,7 +23,8 @@ export type ValoresAuditoria = Record<string, unknown>;
 @Index('idx_auditoria_negocio_fecha', ['negocioId', 'ocurridoEn'])
 @Index('idx_auditoria_actor_fecha', ['actorUsuarioId', 'ocurridoEn'])
 @Check('chk_auditoria_destino', '(usuario_id IS NULL AND licencia_id IS NULL AND alta_administrador_id IS NULL AND recurso_tipo IS NULL) OR negocio_id IS NOT NULL')
-@Check('chk_auditoria_recurso', "(recurso_tipo IS NULL AND recurso_id IS NULL) OR (recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo') AND recurso_id IS NOT NULL AND recurso_id > 0)")
+// M4 incorpora cliente y cierra el caso de tipo nulo con referencia parcial.
+@Check('chk_auditoria_recurso', "(recurso_tipo IS NULL AND recurso_id IS NULL) OR (recurso_tipo IS NOT NULL AND recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo','cliente') AND recurso_id IS NOT NULL AND recurso_id > 0)")
 @Check('chk_auditoria_accion', 'CHAR_LENGTH(TRIM(accion)) > 0')
 export class EventoAuditoria {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })

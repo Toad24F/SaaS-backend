@@ -17,21 +17,23 @@ Ejecutar la [constitución](constitucion-modulo-4.md), la [especificación](spec
 - [x] **M4-T006 — Preparar dos conexiones y barreras** · 25 min · Depende de: M4-T003, M4-T005 · RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
       Hecho cuando: un caso de control demuestra espera y liberación reproducible entre conexiones independientes y cierra ambas aun si falla.
 
-Evidencia del lote M4-T001–M4-T006: [archivos, flujo, pruebas y resultados](resultados-tareas/m4-t001-t006.md). El fallo documental unitario anterior se conserva como pendiente externo; las tareas posteriores permanecen sin marcar.
+Evidencia del lote M4-T001–M4-T006: [archivos, flujo, pruebas y resultados](resultados-tareas/resultados-m4-t001-t006.md). Ese cierre conservó el fallo documental unitario anterior como pendiente externo y no acreditó tareas posteriores.
 
 ## 2. Persistencia aditiva y modelo
 
-- [ ] **M4-T007 — Migrar versión de citas** · 20 min · Depende de: M4-T003, M4-T002 · RF-29–RF-30, RF-38, RF-43
+Evidencia M4-T007–M4-T012: [archivos, flujo de migración, tests y resultados](resultados-tareas/m4-t007-t012.md). Integración y HTTP completos aprobados; el fallo documental unitario previo permanece identificado. M4-T013 y las tareas posteriores continúan pendientes.
+
+- [x] **M4-T007 — Migrar versión de citas** · 20 min · Depende de: M4-T003, M4-T002 · RF-29–RF-30, RF-38, RF-43
       Hecho cuando: citas existentes reciben versión 1 sin alterar estado, folio, intervalos, costo ni contacto.
-- [ ] **M4-T008 — Migrar versión de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-18–RF-19, RF-43
+- [x] **M4-T008 — Migrar versión de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-18–RF-19, RF-43
       Hecho cuando: cada ficha recibe versión 1 y el teléfono conserva su índice no único.
-- [ ] **M4-T009 — Migrar intentos manuales** · 25 min · Depende de: M4-T003, M4-T002 · RF-20, RF-24, RF-26–RF-28
+- [x] **M4-T009 — Migrar intentos manuales** · 25 min · Depende de: M4-T003, M4-T002 · RF-20, RF-24, RF-26–RF-28
       Hecho cuando: la tabla representa clave única por negocio y actor, huella, tres estados y resultado opcional sin guardar contacto ni notas.
-- [ ] **M4-T010 — Migrar eventos de cita** · 25 min · Depende de: M4-T003, M4-T002 · RF-24, RF-29–RF-36, RF-41, RF-45
+- [x] **M4-T010 — Migrar eventos de cita** · 25 min · Depende de: M4-T003, M4-T002 · RF-24, RF-29–RF-36, RF-41, RF-45
       Hecho cuando: el historial admite actor de personal o sesión pública, valores anterior/nuevo y motivo opcional sin sobrescribir eventos.
-- [ ] **M4-T011 — Extender auditoría de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-15, RF-18, RF-45
+- [x] **M4-T011 — Extender auditoría de clientes** · 15 min · Depende de: M4-T003, M4-T002 · RF-15, RF-18, RF-45
       Hecho cuando: la restricción de auditoría admite recurso `cliente` y sigue rechazando tipos no previstos.
-- [ ] **M4-T012 — Añadir referencias e índices del nuevo modelo** · 25 min · Depende de: M4-T007–M4-T011 · RF-03, RF-17, RF-27, RF-43, RF-45
+- [x] **M4-T012 — Añadir referencias e índices del nuevo modelo** · 25 min · Depende de: M4-T007–M4-T011 · RF-03, RF-17, RF-27, RF-43, RF-45
       Hecho cuando: intentos y eventos no pueden enlazar actor, cita o sesión de otro negocio y sus consultas tienen índices acotados.
 - [ ] **M4-T013 — Representar versiones en entidades** · 15 min · Depende de: M4-T007–M4-T008 · RF-18, RF-30, RF-38, RF-43
       Hecho cuando: las entidades de cita y cliente reflejan las columnas de versión sin alterar snapshots existentes.

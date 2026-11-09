@@ -1,4 +1,4 @@
-import { conBaseMigrada } from './support/mariadb';
+import { conBaseMigrada, retrocederHastaMigracion } from './support/mariadb';
 
 describe('ALA-T008–T012: migraciones de cupos e inhabilitación', () => {
   it('instala valores iniciales y rechaza cupos cero en una base desechable', async () => {
@@ -22,9 +22,8 @@ describe('ALA-T008–T012: migraciones de cupos e inhabilitación', () => {
     await conBaseMigrada(async (db) => {
       const nuevas = ['CuposVisibilidadNegocio1760000034000', 'InhabilitacionRecursos1760000035000'];
       expect(nuevas.every((nombre) => db.migrations.some((m) => m.name === nombre))).toBe(true);
-      // La base temporal vuelve al esquema anterior y luego aplica las dos migraciones nuevas.
-      await db.undoLastMigration();
-      await db.undoLastMigration();
+      // El límite explícito evita que migraciones de módulos posteriores falseen el escenario.
+      await retrocederHastaMigracion(db, 'DatosPublicosCatalogo1760000033000');
       const negocio = Number((await db.query("INSERT INTO negocios (nombre,slug,email_contacto) VALUES ('Original','ala-previo','original@example.test')")).insertId);
       const usuario = Number((await db.query(`INSERT INTO usuarios
         (negocio_id,nombre,email,password_hash,rol,activo,activado_en,creado_en)

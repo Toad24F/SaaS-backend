@@ -1125,3 +1125,99 @@ ALTER TABLE bloqueos_temporales
   ADD CONSTRAINT fk_bt_intento_actual
     FOREIGN KEY (negocio_id,intento_actual_id)
     REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
+
+-- M4-T007–T008: versiones iniciales sin cambiar snapshots ni el índice telefónico.
+ALTER TABLE citas
+  ADD version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_citas_version CHECK (version >= 1);
+ALTER TABLE clientes
+  ADD version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_clientes_version CHECK (version >= 1);
+
+-- M4-T009: la clave pertenece al actor y negocio. Solo se persiste la huella,
+-- nunca el formulario, el contacto ni las notas del envío manual.
+CREATE TABLE intentos_cita_manual (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  actor_usuario_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  contenido_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  estado ENUM('preparado','registrado','no_registrado') NOT NULL DEFAULT 'preparado',
+  cita_id INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+  resuelto_en DATETIME(6) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_icm_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_icm_actor_clave (negocio_id,actor_usuario_id,clave),
+  UNIQUE KEY uq_icm_cita (negocio_id,cita_id),
+  CONSTRAINT chk_icm_clave CHECK (
+    CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)),
+  CONSTRAINT chk_icm_hash CHECK (contenido_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_icm_resultado CHECK (
+    (estado='preparado' AND cita_id IS NULL AND resuelto_en IS NULL)
+    OR (estado='registrado' AND cita_id IS NOT NULL AND resuelto_en IS NOT NULL)
+    OR (estado='no_registrado' AND cita_id IS NULL AND resuelto_en IS NOT NULL))
+) ENGINE=InnoDB;
+
+-- M4-T010: cada revisión agrega un evento con actor de personal o sesión pública.
+-- No se inventan eventos históricos para citas previas a esta migración.
+CREATE TABLE eventos_cita (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  actor_usuario_id INT UNSIGNED NULL,
+  sesion_publica_id INT UNSIGNED NULL,
+  accion ENUM('alta','cambio_estado','cancelacion','reactivacion','cambio_horario') NOT NULL,
+  ocurrido_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  version_resultante INT UNSIGNED NOT NULL,
+  valores_antes JSON NULL,
+  valores_despues JSON NOT NULL,
+  motivo VARCHAR(2000) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ec_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_ec_cita_version (negocio_id,cita_id,version_resultante),
+  CONSTRAINT chk_ec_actor CHECK (
+    (actor_usuario_id IS NOT NULL AND sesion_publica_id IS NULL)
+    OR (actor_usuario_id IS NULL AND sesion_publica_id IS NOT NULL)),
+  CONSTRAINT chk_ec_origen_publico CHECK (sesion_publica_id IS NULL OR accion='alta'),
+  CONSTRAINT chk_ec_version CHECK (version_resultante >= 1)
+) ENGINE=InnoDB;
+-- Los triggers de una sola sentencia permiten ejecutar este script sin DELIMITER.
+CREATE TRIGGER trg_ec_no_actualizar BEFORE UPDATE ON eventos_cita
+  FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial de citas es inmutable.';
+CREATE TRIGGER trg_ec_no_borrar BEFORE DELETE ON eventos_cita
+  FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial de citas es inmutable.';
+
+-- M4-T011: ampliar destinos con cliente sin aceptar un tipo nulo con ID presente.
+ALTER TABLE eventos_auditoria
+  DROP CONSTRAINT chk_auditoria_recurso,
+  ADD CONSTRAINT chk_auditoria_recurso CHECK (
+    (recurso_tipo IS NULL AND recurso_id IS NULL)
+    OR (recurso_tipo IS NOT NULL
+      AND recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo','cliente')
+      AND recurso_id IS NOT NULL AND recurso_id > 0));
+
+-- M4-T012: FKs compuestas impiden referencias cruzadas. Los índices acotan
+-- intentos por actor/estado y la lectura del historial por cita y fecha.
+ALTER TABLE intentos_cita_manual
+  ADD INDEX idx_icm_actor_estado_fecha (negocio_id,actor_usuario_id,estado,creado_en,id),
+  ADD CONSTRAINT fk_icm_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_icm_actor FOREIGN KEY (negocio_id,actor_usuario_id)
+    REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_icm_cita FOREIGN KEY (negocio_id,cita_id)
+    REFERENCES citas(negocio_id,id) ON DELETE RESTRICT;
+ALTER TABLE eventos_cita
+  ADD INDEX idx_ec_cita_fecha (negocio_id,cita_id,ocurrido_en,id),
+  ADD INDEX idx_ec_actor_fecha (negocio_id,actor_usuario_id,ocurrido_en),
+  ADD INDEX idx_ec_sesion (negocio_id,sesion_publica_id),
+  ADD CONSTRAINT fk_ec_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_ec_cita FOREIGN KEY (negocio_id,cita_id)
+    REFERENCES citas(negocio_id,id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_ec_actor FOREIGN KEY (negocio_id,actor_usuario_id)
+    REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_ec_sesion FOREIGN KEY (negocio_id,sesion_publica_id)
+    REFERENCES sesiones_reserva_publica(negocio_id,id) ON DELETE RESTRICT;

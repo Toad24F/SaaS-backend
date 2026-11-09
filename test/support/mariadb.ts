@@ -21,6 +21,20 @@ function validarBaseTemporal(nombre: string): void {
   }
 }
 
+/** Reconstruye un límite histórico explícito en una base creada por el ejecutor. */
+export async function retrocederHastaMigracion(db: DataSource, nombre: string): Promise<number> {
+  if (process.env.NODE_ENV !== 'test') throw new Error('La reversión histórica requiere NODE_ENV=test.');
+  validarBaseTemporal(String(db.options.database));
+  const aplicadas: { name: string }[] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC');
+  const cantidad = aplicadas.findIndex((fila) => fila.name === nombre);
+  // Si el límite no existe, fallar antes de retirar cualquier migración.
+  if (cantidad < 0) throw new Error(`No se encontró el límite histórico ${nombre}.`);
+  for (let indice = 0; indice < cantidad; indice += 1) {
+    await db.undoLastMigration({ transaction: 'each' });
+  }
+  return cantidad;
+}
+
 export async function conDosConexiones<T>(
   ejecutar: (primera: DataSource, segunda: DataSource) => Promise<T>,
 ): Promise<T> {

@@ -1,4 +1,4 @@
-import { conBaseMigrada } from './support/mariadb';
+import { conBaseMigrada, retrocederHastaMigracion } from './support/mariadb';
 
 async function crearNegocioLicencia(db: { query: (sql: string, valores?: unknown[]) => Promise<any> }, sufijo: string) {
   const negocio = Number((await db.query('INSERT INTO negocios (nombre,slug,email_contacto) VALUES (?,?,?)',
@@ -16,8 +16,8 @@ describe('ALA-T013–T018: migraciones y restricciones de licencia/correo', () =
       const nombres = ['PlazoCicloSuspension1760000036000',
         'OperacionesLicencia1760000037000', 'ReferenciasCorreoLicencia1760000038000'];
       expect(nombres.every((nombre) => db.migrations.some((m) => m.name === nombre))).toBe(true);
-      // Simula una instalación previa con datos antes de aplicar las nuevas migraciones.
-      for (const _ of nombres) await db.undoLastMigration();
+      // Simula el esquema real anterior al bloque, aunque haya migraciones posteriores.
+      await retrocederHastaMigracion(db, 'InhabilitacionRecursos1760000035000');
       const ids = await crearNegocioLicencia(db, 'previo');
       await db.query(`UPDATE licencias SET
         suspension_solicitada_en=DATE_ADD(habilitada_en, INTERVAL 1 DAY),

@@ -1,4 +1,4 @@
-import { conBaseMigrada } from './support/mariadb';
+import { conBaseMigrada, retrocederHastaMigracion } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
 
@@ -7,11 +7,8 @@ describe('ALA-T019–T022: migrar separación y extremos protegidos', () => {
     await conBaseMigrada(async (db) => {
       const nuevas = ['SeparacionAgenda1760000039000', 'ExtremosProtegidos1760000040000'];
       expect(nuevas.every((nombre) => db.migrations.some((m) => m.name === nombre))).toBe(true);
-      // Retrocede también las dos migraciones posteriores a este bloque para
-      // que la fixture se escriba realmente antes de SeparacionAgenda.
-      for (let indice = 0; indice < 4; indice += 1) {
-        await db.undoLastMigration();
-      }
+      // La fixture se escribe realmente antes de SeparacionAgenda, no antes de las últimas N.
+      await retrocederHastaMigracion(db, 'ReferenciasCorreoLicencia1760000038000');
       const escenario = await crearEscenarioPortal(db,
         new RelojPrueba(new Date('2026-10-20T12:00:00Z')));
       const negocio = escenario.negocios[0].id;

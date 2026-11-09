@@ -44,4 +44,4 @@ La modalidad `publica` de una ruta privada significa reglas de cálculo y no acc
 
 ## Frontera de evidencia
 
-M4-T006 demuestra solo que dos conexiones reales esperan y continúan sobre el bloqueo común del Profesional y que se limpian ante fallo. M4-T051 en adelante debe probar los escritores reales. M2-I004/M3-I001 y ALA-I001–ALA-I003 continúan pendientes, al igual que M3-T136. El [informe del lote](m4-t001-t006.md) registra la evidencia nueva; los resultados históricos no sustituyen estas integraciones.
+M4-T006 demuestra solo que dos conexiones reales esperan y continúan sobre el bloqueo común del Profesional y que se limpian ante fallo. M4-T051 en adelante debe probar los escritores reales. M2-I004/M3-I001 y ALA-I001–ALA-I003 continúan pendientes, al igual que M3-T136. El [informe del lote](resultados-m4-t001-t006.md) registra la evidencia nueva; los resultados históricos no sustituyen estas integraciones.
