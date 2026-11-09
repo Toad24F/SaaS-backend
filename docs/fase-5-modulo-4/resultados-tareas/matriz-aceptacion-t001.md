@@ -120,3 +120,5 @@ Los resultados de módulos 2/3 y ajustes son contexto de implementación; no acr
 Las migraciones aditivas, sus restricciones y la regresión de instalación tienen evidencia propia en [M4-T007–M4-T012](m4-t007-t012.md). No acreditan todavía entidades completas, escritor manual, autorización operativa ni la aceptación funcional de los RF.
 
 Las entidades completas, instalación/actualización y el evento atómico de alta pública se verifican en [M4-T013–M4-T019](m4-t013-t019.md). Esta evidencia es parcial para RF-24/RF-37/RF-45: no acredita aún los escritores y permisos operativos del panel ni cierra sus aceptaciones completas.
+
+Los permisos cerrados, revalidación de sesión/rol/negocio/licencia, alcance y errores seguros tienen evidencia propia en [M4-T020–M4-T024](m4-t020-t024.md). No habilitan ni acreditan por sí solos las futuras rutas, consultas paginadas o escrituras del panel; sus RF completos permanecen pendientes.

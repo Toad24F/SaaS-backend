@@ -17,6 +17,12 @@ export enum Permiso {
   CONFIGURAR_AGENDA = 'configurar_agenda',
   CONSULTAR_DISPONIBILIDAD = 'consultar_disponibilidad',
   VALIDAR_DISPONIBILIDAD_MANUAL = 'validar_disponibilidad_manual',
+  CONSULTAR_CITAS = 'consultar_citas',
+  CONSULTAR_CLIENTES = 'consultar_clientes',
+  GESTIONAR_CLIENTES = 'gestionar_clientes',
+  CREAR_CITA_MANUAL = 'crear_cita_manual',
+  CAMBIAR_ESTADO_CITA = 'cambiar_estado_cita',
+  CAMBIAR_HORARIO_CITA = 'cambiar_horario_cita',
 }
 
 // La matriz es cerrada: ningún rol hereda facultades de otro por coincidencia de negocio.
@@ -28,6 +34,9 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.GESTIONAR_LIMITE_SUCURSALES,
   ]),
   [Rol.ADMIN_NEGOCIO]: new Set([
+    // Gestión operativa explícita; no se deriva del permiso de disponibilidad.
+    Permiso.CONSULTAR_CITAS, Permiso.CONSULTAR_CLIENTES, Permiso.GESTIONAR_CLIENTES,
+    Permiso.CREAR_CITA_MANUAL, Permiso.CAMBIAR_ESTADO_CITA, Permiso.CAMBIAR_HORARIO_CITA,
     Permiso.CONFIGURAR_AGENDA,
     Permiso.CONSULTAR_DISPONIBILIDAD,
     Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
@@ -39,12 +48,16 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.GESTIONAR_BLOQUEOS,
     Permiso.GESTIONAR_SERVICIOS_PROPIOS,
   ]),
-  // Solo lectura/validación de disponibilidad; no hereda gestión de horarios u oferta.
+  // Recepción gestiona citas/clientes y consulta disponibilidad, sin gestionar horarios u oferta.
   [Rol.RECEPCIONISTA]: new Set([
+    Permiso.CONSULTAR_CITAS, Permiso.CONSULTAR_CLIENTES, Permiso.GESTIONAR_CLIENTES,
+    Permiso.CREAR_CITA_MANUAL, Permiso.CAMBIAR_ESTADO_CITA, Permiso.CAMBIAR_HORARIO_CITA,
     Permiso.CONSULTAR_DISPONIBILIDAD,
     Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
   ]),
   [Rol.PROFESIONAL]: new Set([
+    // El contexto operativo limita esta lectura al perfil propio; no habilita escrituras ni directorio.
+    Permiso.CONSULTAR_CITAS,
     Permiso.CONSULTAR_DISPONIBILIDAD,
     Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
     Permiso.CREAR_EDITAR_SERVICIOS,
@@ -71,7 +84,9 @@ export interface RecursoAutorizado {
 @Injectable()
 export class AutorizacionService {
   exigir(rol: Rol, permiso: Permiso): void {
-    if (!PERMISOS_POR_ROL[rol]?.has(permiso)) {
+    // Solo las claves propias representan roles; el prototipo nunca concede autoridad.
+    const permisos = Object.hasOwn(PERMISOS_POR_ROL, rol) ? PERMISOS_POR_ROL[rol] : undefined;
+    if (!permisos?.has(permiso)) {
       throw new ForbiddenException(
         'Acceso denegado: privilegios insuficientes.',
       );

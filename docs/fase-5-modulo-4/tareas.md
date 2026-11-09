@@ -23,7 +23,7 @@ Evidencia del lote M4-T001–M4-T006: [archivos, flujo, pruebas y resultados](re
 
 Evidencia M4-T007–M4-T012: [archivos, flujo de migración, tests y resultados](resultados-tareas/m4-t007-t012.md). Integración y HTTP completos aprobados; el fallo documental unitario previo permanece identificado. Ese lote no acreditó tareas posteriores.
 
-Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y resultados](resultados-tareas/m4-t013-t019.md). Integración completa 454/454 y HTTP 199/199 aprobados; se conserva el pendiente documental unitario previo. M4-T020 y las tareas posteriores continúan pendientes.
+Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y resultados](resultados-tareas/m4-t013-t019.md). Integración completa 454/454 y HTTP 199/199 aprobados; se conserva el pendiente documental unitario previo. Ese lote no acreditó tareas posteriores.
 
 - [x] **M4-T007 — Migrar versión de citas** · 20 min · Depende de: M4-T003, M4-T002 · RF-29–RF-30, RF-38, RF-43
       Hecho cuando: citas existentes reciben versión 1 sin alterar estado, folio, intervalos, costo ni contacto.
@@ -54,15 +54,17 @@ Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y result
 
 ## 3. Autorización y respuestas privadas
 
-- [ ] **M4-T020 — Definir permisos operativos cerrados** · 20 min · Depende de: M4-T002 · RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38
+Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y resultados](resultados-tareas/m4-t020-t024.md). Pruebas propias 62/62, integración completa 471/471 y HTTP 203/203 aprobados; build y lint aprobados. Unitarias completas: 452 aprobadas y un fallo documental previo identificado. M4-T025 y posteriores continúan pendientes; el trabajo se detiene en M4-T024.
+
+- [x] **M4-T020 — Definir permisos operativos cerrados** · 20 min · Depende de: M4-T002 · RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38
       Hecho cuando: Administración y Recepción tienen permisos de gestión, Profesional solo lectura propia y Superadmin no hereda acceso a citas.
-- [ ] **M4-T021 — Revalidar identidad y negocio por operación** · 25 min · Depende de: M4-T020 · RF-01–RF-04, RF-13, RF-20, RF-29
+- [x] **M4-T021 — Revalidar identidad y negocio por operación** · 25 min · Depende de: M4-T020 · RF-01–RF-04, RF-13, RF-20, RF-29
       Hecho cuando: cada caso de uso reconstruye sesión, rol, negocio y licencia actuales sin usar `negocioId` del cuerpo o JWT como autorización suficiente.
-- [ ] **M4-T022 — Probar alcance por rol** · 25 min · Depende de: M4-T021, M4-T004 · RF-01–RF-05, RF-13–RF-14, RF-29
+- [x] **M4-T022 — Probar alcance por rol** · 25 min · Depende de: M4-T021, M4-T004 · RF-01–RF-05, RF-13–RF-14, RF-29
       Hecho cuando: dos negocios y los tres roles prueban lectura propia, denegación de escritura Profesional y ausencia de datos cruzados.
-- [ ] **M4-T023 — Probar licencia y sesión abierta** · 25 min · Depende de: M4-T021, M4-T005 · RF-04–RF-05, RF-20, RF-34
+- [x] **M4-T023 — Probar licencia y sesión abierta** · 25 min · Depende de: M4-T021, M4-T005 · RF-04–RF-05, RF-20, RF-34
       Hecho cuando: vencimiento, suspensión inmediata y suspensión con plazo configurable niegan operaciones nuevas en su límite exacto incluso con sesión anterior; la prueba no supone 48 horas para todos los casos.
-- [ ] **M4-T024 — Normalizar errores operativos seguros** · 20 min · Depende de: M4-T021 · RF-05, RF-19, RF-23, RF-26–RF-27, RF-43, RF-46–RF-47
+- [x] **M4-T024 — Normalizar errores operativos seguros** · 20 min · Depende de: M4-T021 · RF-05, RF-19, RF-23, RF-26–RF-27, RF-43, RF-46–RF-47
       Hecho cuando: inválido, ajeno, conflicto, temporal e inesperado producen mensajes distintos sin SQL, trazas ni contacto ajeno.
 
 ## 4. Consulta de agenda e historial
