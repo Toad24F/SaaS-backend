@@ -11,7 +11,7 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { bloquearNegocioAgenda } from '../comun/bloqueos-coordinados';
 import { proyectarHorarioCita } from '../citas/horario-agenda';
 import { validarAltaCliente, validarBusquedaClientes, validarConsultaFicha, validarCorreccionCliente,
-  validarIdCliente, validarPaginacionClientes } from './clientes.entrada';
+  validarIdCliente, validarPaginacionClientes, type DatosCliente } from './clientes.entrada';
 
 type Identidad = Pick<JwtPayload, 'sub' | 'sesionId'>;
 const CAMPOS_FICHA = ['id', 'negocioId', 'version', 'nombreCompleto', 'telefono', 'creadoEn'] as const;
@@ -86,12 +86,25 @@ export class ClientesService {
     return this.acceso.ejecutar(identidad, Permiso.GESTIONAR_CLIENTES, async (inicial) => {
       const ctx = await this.bloquearAcceso(inicial, identidad);
       const actual = await this.acceso.resolverEnTransaccion(ctx.manager, identidad, Permiso.GESTIONAR_CLIENTES);
-      // Siempre INSERT: coincidencia de teléfono o incluso de nombre no fusiona ni actualiza otra persona.
-      const repositorio = actual.manager.getRepository(Cliente);
-      const ficha = await repositorio.save(repositorio.create({ ...datos, negocioId: actual.negocioId, version: 1, creadoEn: actual.ahora }));
-      await this.registrar(actual, ficha, null, ['nombreCompleto', 'telefono']);
-      return proyectarFicha(ficha);
+      return this.insertarFicha(actual, datos);
     });
+  }
+
+  /** Alta interna del escritor manual: el llamador ya mantiene los bloqueos comunes.
+   * Comparte manager, reloj y auditoría con la cita; nunca abre otro commit ni fusiona por contacto.
+   */
+  async crearParaCitaEnTransaccion(manager: EntityManager, identidad: Identidad, entrada: unknown, instante?: Date) {
+    const datos = validarAltaCliente(entrada);
+    const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CREAR_CITA_MANUAL, instante);
+    return this.insertarFicha(ctx, datos);
+  }
+
+  private async insertarFicha(ctx: ContextoOperativo, datos: DatosCliente) {
+    // Siempre INSERT: ni teléfono ni nombre coincidentes sobrescriben otra persona.
+    const repositorio = ctx.manager.getRepository(Cliente);
+    const ficha = await repositorio.save(repositorio.create({ ...datos, negocioId: ctx.negocioId, version: 1, creadoEn: ctx.ahora }));
+    await this.registrar(ctx, ficha, null, ['nombreCompleto', 'telefono']);
+    return proyectarFicha(ficha);
   }
 
   async corregir(identidad: Identidad, entradaId: unknown, entrada: unknown) {

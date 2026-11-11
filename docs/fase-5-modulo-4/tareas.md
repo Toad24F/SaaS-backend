@@ -131,7 +131,9 @@ Evidencia M4-T043–M4-T047: [archivos, elección por ID, flujo HTTP, tests prim
 
 ## 6. Escritor manual e intentos
 
-Evidencia M4-T048–M4-T052: [archivos, contrato, flujo, tests primero y resultados](resultados-tareas/m4-t048-t052.md). 55 tests nuevos aprobados (35 unitarios y 20 de integración); unitarias completas 580/580, regresión relevante de integración 72/72 y HTTP 41/41, con build y lint aprobados. Se acredita preparación idempotente y colaboración transaccional bajo bloqueos, sin crear citas ni habilitar rutas manuales. M4-T053 y posteriores permanecen pendientes; el trabajo se detiene en M4-T052.
+Evidencia M4-T048–M4-T052: [archivos, contrato, flujo, tests primero y resultados](resultados-tareas/m4-t048-t052.md). 55 tests nuevos aprobados (35 unitarios y 20 de integración); unitarias completas 580/580, regresión relevante de integración 72/72 y HTTP 41/41, con build y lint aprobados. Ese lote acreditó preparación idempotente y colaboración transaccional bajo bloqueos, sin crear citas ni habilitar rutas manuales, y se detuvo en M4-T052 sin acreditar tareas posteriores.
+
+Evidencia M4-T053–M4-T058: [archivos, snapshots, flujo atómico, tests primero y resultados](resultados-tareas/m4-t053-t058.md). 17 tests de integración nuevos aprobados; regresión relevante de integración 84/84 y HTTP 41/41, unitarias completas 580/580, build y lint aprobados. Se acredita registro manual real de servicio con ficha elegida/nueva, cita Confirmada, evento, intento atómico y repetición sin duplicados. No se exponen rutas ni resolutor; M4-T059 y posteriores permanecen pendientes. El trabajo se detiene en M4-T058.
 
 - [x] **M4-T048 — Validar selección y contacto manual** · 25 min · Depende de: M4-T037, M4-T043, M4-T002 · RF-16–RF-17, RF-20–RF-21, RF-47
       Hecho cuando: se admite cliente propio o nuevo, fecha/hora y notas; se rechazan precio, fin, zona y IDs ajenos enviados como autoridad.
@@ -143,17 +145,17 @@ Evidencia M4-T048–M4-T052: [archivos, contrato, flujo, tests primero y resulta
       Hecho cuando: intento precede recursos de dominio y la fila del Profesional serializa sucursales y servicios con `READ COMMITTED`.
 - [x] **M4-T052 — Revalidar selección tras la espera** · 25 min · Depende de: M4-T051, M4-T048 · RF-21–RF-23, RF-28, RF-44
       Hecho cuando: el mismo manager relee licencia, oferta, duración, separación vigente, horario, bloqueos, ocupaciones protegidas y cupo telefónico compartido por sucursal antes de escribir.
-- [ ] **M4-T053 — Copiar costo y nombres actuales** · 20 min · Depende de: M4-T052 · RF-24–RF-25, RF-44
+- [x] **M4-T053 — Copiar costo y nombres actuales** · 20 min · Depende de: M4-T052 · RF-24–RF-25, RF-44
       Hecho cuando: la copia toma costo y nombres vigentes al registro y no admite valores autoritativos del navegador.
-- [ ] **M4-T054 — Vincular cliente propio o crear uno nuevo** · 25 min · Depende de: M4-T052, M4-T043 · RF-16–RF-17, RF-24, RF-26
+- [x] **M4-T054 — Vincular cliente propio o crear uno nuevo** · 25 min · Depende de: M4-T052, M4-T043 · RF-16–RF-17, RF-24, RF-26
       Hecho cuando: un cliente existente se relee por negocio y uno nuevo se crea dentro de la transacción de la cita.
-- [ ] **M4-T055 — Crear cita manual con folio único** · 25 min · Depende de: M4-T053–M4-T054, M4-T013 · RF-23–RF-25, RF-28
+- [x] **M4-T055 — Crear cita manual con folio único** · 25 min · Depende de: M4-T053–M4-T054, M4-T013 · RF-23–RF-25, RF-28
       Hecho cuando: la cita queda Confirmada con inicio, fin de atención, separación capturada, fin protegido, zona, costo y contacto históricos y un folio no duplicado; el alta respeta el cupo telefónico compartido.
-- [ ] **M4-T056 — Registrar evento inicial manual** · 20 min · Depende de: M4-T055, M4-T010, M4-T014 · RF-24, RF-45
+- [x] **M4-T056 — Registrar evento inicial manual** · 20 min · Depende de: M4-T055, M4-T010, M4-T014 · RF-24, RF-45
       Hecho cuando: el alta manual tiene un evento con actor real y versión inicial en la misma transacción.
-- [ ] **M4-T057 — Confirmar resultado e intento juntos** · 20 min · Depende de: M4-T055–M4-T056 · RF-24, RF-26–RF-27
+- [x] **M4-T057 — Confirmar resultado e intento juntos** · 20 min · Depende de: M4-T055–M4-T056 · RF-24, RF-26–RF-27
       Hecho cuando: cliente nuevo, cita, evento e intento registrado aparecen juntos o ninguno aparece tras fallo.
-- [ ] **M4-T058 — Repetir resultado ya registrado** · 20 min · Depende de: M4-T057, M4-T050 · RF-24, RF-27, RF-43
+- [x] **M4-T058 — Repetir resultado ya registrado** · 20 min · Depende de: M4-T057, M4-T050 · RF-24, RF-27, RF-43
       Hecho cuando: repetir la misma clave y contenido devuelve el mismo folio sin crear cliente, cita o evento adicionales.
 - [ ] **M4-T059 — Resolver intento frente al escritor** · 25 min · Depende de: M4-T057, M4-T051 · RF-26–RF-27, RF-44, RF-46
       Hecho cuando: el resolutor espera al escritor o responde 503 y nunca declara fracaso por ausencia sin exclusión.

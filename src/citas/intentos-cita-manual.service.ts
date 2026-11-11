@@ -25,7 +25,7 @@ export interface SeleccionManualRevalidada extends ContextoOperativo {
 }
 
 /** Infraestructura del escritor privado: prepara intentos y conserva la exclusión hasta el commit.
- * Este lote no crea clientes/citas ni resuelve resultados inciertos; tampoco expone nuevas rutas.
+ * El registro colabora dentro del callback; la resolución de ausencia y las rutas se componen aparte.
  */
 @Injectable()
 export class IntentosCitaManualService {
@@ -62,7 +62,8 @@ export class IntentosCitaManualService {
    * No sustituye la implementación ni las carreras de aceptación del escritor completo.
    */
   async conSeleccionRevalidada<T>(identidad: Identidad, entradaClave: unknown, entrada: unknown,
-    guardar: (contexto: SeleccionManualRevalidada) => Promise<T>): Promise<T> {
+    guardar: (contexto: SeleccionManualRevalidada) => Promise<T>,
+    repetir?: (contexto: ContextoOperativo, intento: IntentoCitaManual) => Promise<T>): Promise<T> {
     const clave = validarClaveManual(entradaClave);
     const seleccion = validarSeleccionManual(entrada);
     const contenidoHash = huellaSeleccionManual(seleccion);
@@ -73,6 +74,12 @@ export class IntentosCitaManualService {
       const intento = await this.leerIntento(antes, clave);
       if (!intento) throw new NotFoundException();
       this.exigirHuella(intento, contenidoHash);
+      // Una respuesta ya registrada se recupera bajo el mismo intento bloqueado, antes de
+      // comprobar oferta/cupo/horario actuales. La sesión, el rol y la licencia siguen vigentes.
+      if (intento.estado === 'registrado' && repetir) {
+        const actual = await this.acceso.resolverEnTransaccion(antes.manager, identidad, Permiso.CREAR_CITA_MANUAL);
+        return repetir(actual, intento);
+      }
       if (intento.estado !== 'preparado') throw new ConflictException();
       await bloquearNegocioAgenda(antes.manager, antes.negocioId);
       const licencia = await antes.manager.getRepository(Licencia).createQueryBuilder('licencia')
