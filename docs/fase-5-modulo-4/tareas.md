@@ -167,14 +167,16 @@ Evidencia M4-T053–M4-T058: [archivos, snapshots, flujo atómico, tests primero
       Hecho cuando: tres rutas privadas aplican rol, origen del actor, `no-store` y respuestas de creación, repetición, conflicto e incertidumbre.
 Evidencia M4-T059–M4-T062: [archivos, flujo de resolución, tests primero y resultados](resultados-tareas/m4-t059-t062.md). Se verifican resolución contra escritor en ambos órdenes, cierre terminal, timeout SQL real 503, cinco puntos de rollback y tres rutas privadas. Unitarias completas 580/580; integración relevante 90/90 y HTTP relevante 45/45; build y lint aprobados. Se marcan solo estas cuatro tareas y el trabajo se detiene en T062.
 
-- [ ] **M4-T063 — Probar reserva manual válida** · 25 min · Depende de: M4-T062, M4-T004 · RF-16–RF-17, RF-20–RF-25
+- [x] **M4-T063 — Probar reserva manual válida** · 25 min · Depende de: M4-T062, M4-T004 · RF-16–RF-17, RF-20–RF-25
       Hecho cuando: servicio y separación dentro de horario crean exactamente una cita Confirmada con cliente elegido o nuevo y snapshot completo; el tercer registro futuro del mismo teléfono en la sucursal se rechaza sin fusionar fichas ni dejar filas parciales.
-- [ ] **M4-T064 — Probar ocupaciones de otras sucursales** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-23, RF-28
+- [x] **M4-T064 — Probar ocupaciones de otras sucursales** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-23, RF-28
       Hecho cuando: intervalos protegidos iguales y parciales del mismo Profesional se rechazan entre sucursales, incluso si solo invade la separación; extremos protegidos contiguos se aceptan.
-- [ ] **M4-T065 — Probar cambios durante la espera** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-26, RF-44
+- [x] **M4-T065 — Probar cambios durante la espera** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-26, RF-44
       Hecho cuando: cambios de licencia, oferta, costo, duración, separación y horario confirmados primero se observan antes del registro y no dejan filas parciales.
-- [ ] **M4-T066 — Probar recuperación HTTP incierta** · 25 min · Depende de: M4-T062, M4-T005 · RF-26–RF-27, RF-43–RF-47
+- [x] **M4-T066 — Probar recuperación HTTP incierta** · 25 min · Depende de: M4-T062, M4-T005 · RF-26–RF-27, RF-43–RF-47
       Hecho cuando: pérdida antes y después del commit devuelve ausencia terminal o el mismo folio, nunca otra cita.
+
+Evidencia M4-T063–M4-T066: [archivos, flujos, tests primero y resultados](resultados-tareas/m4-t063-t066.md). Se añaden 26 casos de aceptación: reserva HTTP con ficha elegida/nueva y cupo, ocupaciones protegidas entre sucursales, seis cambios confirmados durante espera real y recuperación tras pérdida de socket antes/después del commit. Unitarias completas 580/580; integración relevante 108/108 y HTTP relevante 53/53; build y lint aprobados. No requirió cambios de producción. Solo se marcan estas cuatro tareas y el trabajo se detiene en T066.
 
 ## 7. Ciclo de vida e historial
 
