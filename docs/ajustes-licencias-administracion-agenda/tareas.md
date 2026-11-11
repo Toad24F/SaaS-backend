@@ -25,7 +25,7 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
 
 - [x] **ALA-T002 — Alinear las referencias documentales del ajuste** · 15 min · Depende de: ALA-T001 · RF-22–RF-24, RF-36–RF-42, RF-64
   Hecho cuando: La revisión documental usa inhabilitación y alcance solo backend, identifica precedencias y conserva el estado de aprobación que existía al ejecutar esta tarea. La aprobación posterior queda registrada en los encabezados normativos, sin reescribir su evidencia histórica.
-  Evidencia: [resultado del bloque](resultados-tareas/resultado-t002-t007.md).
+  Evidencia: [resultado del bloque](resultados-tareas/resultado-t002-t007.md). Complemento posterior: [corrección del test tras la aprobación documental](resultados-tareas/correccion-test-aprobacion-documental.md); conserva la evidencia histórica y verifica el estado normativo vigente.
 
 - [x] **ALA-T003 — Registrar cambios de contratos y reglas conservadas** · 25 min · Depende de: ALA-T002 · RF-03, RF-15, RF-32–RF-42, RF-60, RF-64–RF-68
   Hecho cuando: Un inventario enumera entradas retiradas/nuevas, nueve rutas públicas, cinco privadas y permisos que deben conservarse.

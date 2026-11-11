@@ -102,7 +102,9 @@ Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests
 
 ## 5. Directorio de clientes
 
-Evidencia M4-T037–M4-T042: [archivos, flujo del directorio, tests primero y resultados](resultados-tareas/m4-t037-t042.md). Pruebas nuevas 47/47, integración completa 492/492 y HTTP 214/214 aprobados; build y lint aprobados. Unitarias completas: 544 aprobadas y un fallo documental previo identificado. Se acredita el dominio de clientes, sin rutas HTTP ni frontend. M4-T043 y posteriores continúan pendientes; el trabajo se detiene en M4-T042.
+Evidencia M4-T037–M4-T042: [archivos, flujo del directorio, tests primero y resultados](resultados-tareas/m4-t037-t042.md). Pruebas nuevas 47/47, integración completa 492/492 y HTTP 214/214 aprobados; build y lint aprobados. Unitarias completas: 544 aprobadas y un fallo documental previo identificado. Ese lote acreditó el dominio de clientes, sin rutas HTTP ni frontend, y se detuvo en M4-T042; no acreditó tareas posteriores.
+
+Evidencia M4-T043–M4-T047: [archivos, elección por ID, flujo HTTP, tests primero y resultados](resultados-tareas/m4-t043-t047.md). Nueve tests nuevos aprobados; regresión de integración 494/494 y HTTP 221/221 aprobadas. La composición definitiva pasó además 12 tests de integración focalizados, siete HTTP, build y lint. Unitarias completas: 544 aprobadas y un fallo documental previo identificado. Se acredita selección interna y cinco rutas privadas del directorio; frontend y escritor manual siguen pendientes. El trabajo se detiene en M4-T047.
 
 - [x] **M4-T037 — Validar datos de cliente** · 20 min · Depende de: M4-T021 · RF-15, RF-17, RF-19, RF-47
       Hecho cuando: nombre y teléfono siguen límites y normalización acordados, rechazan campos desconocidos y nunca fusionan por teléfono.
@@ -116,15 +118,15 @@ Evidencia M4-T037–M4-T042: [archivos, flujo del directorio, tests primero y re
       Hecho cuando: una versión anterior recibe conflicto y una corrección válida no modifica snapshots de citas.
 - [x] **M4-T042 — Auditar alta y corrección de cliente** · 20 min · Depende de: M4-T011, M4-T041 · RF-15, RF-18, RF-45
       Hecho cuando: alta y cambio efectivos crean un evento con actor y valores permitidos dentro del mismo commit, sin secretos.
-- [ ] **M4-T043 — Resolver elección de cliente existente** · 20 min · Depende de: M4-T039, M4-T021 · RF-03, RF-16–RF-17, RF-20
+- [x] **M4-T043 — Resolver elección de cliente existente** · 20 min · Depende de: M4-T039, M4-T021 · RF-03, RF-16–RF-17, RF-20
       Hecho cuando: un ID propio identifica exactamente una ficha y un ID ajeno no se sustituye por una coincidencia telefónica.
-- [ ] **M4-T044 — Exponer rutas privadas de clientes** · 25 min · Depende de: M4-T038–M4-T043, M4-T024 · RF-13–RF-19, RF-43, RF-45–RF-47
+- [x] **M4-T044 — Exponer rutas privadas de clientes** · 25 min · Depende de: M4-T038–M4-T043, M4-T024 · RF-13–RF-19, RF-43, RF-45–RF-47
       Hecho cuando: lista, ficha, historial, alta y corrección aplican permisos, versiones y `no-store`.
-- [ ] **M4-T045 — Probar teléfonos compartidos** · 20 min · Depende de: M4-T044, M4-T004 · RF-15–RF-17, RF-19
+- [x] **M4-T045 — Probar teléfonos compartidos** · 20 min · Depende de: M4-T044, M4-T004 · RF-15–RF-17, RF-19
       Hecho cuando: dos fichas con el mismo teléfono conservan IDs y nombres distintos y la selección exige ID explícito.
-- [ ] **M4-T046 — Probar snapshots ante corrección** · 20 min · Depende de: M4-T044, M4-T004 · RF-14, RF-18, RF-43, RF-45
+- [x] **M4-T046 — Probar snapshots ante corrección** · 20 min · Depende de: M4-T044, M4-T004 · RF-14, RF-18, RF-43, RF-45
       Hecho cuando: editar la ficha no altera contacto de citas previas y una segunda edición con versión vieja recibe 409.
-- [ ] **M4-T047 — Probar aislamiento del directorio** · 20 min · Depende de: M4-T044, M4-T022 · RF-03, RF-13–RF-14, RF-19
+- [x] **M4-T047 — Probar aislamiento del directorio** · 20 min · Depende de: M4-T044, M4-T022 · RF-03, RF-13–RF-14, RF-19
       Hecho cuando: negocio ajeno y Profesional no leen ni corrigen fichas y la respuesta no revela su existencia.
 
 ## 6. Escritor manual e intentos

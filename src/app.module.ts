@@ -28,7 +28,7 @@ import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.module';
 import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publicas-http.module';
 import { CitasHttpModule } from './citas/citas-http.module';
-import { ClientesModule } from './clientes/clientes.module';
+import { ClientesHttpModule } from './clientes/clientes-http.module';
 
 @Module({
   imports: [
@@ -73,8 +73,8 @@ import { ClientesModule } from './clientes/clientes.module';
     ReservasPublicasHttpModule,
     // Agenda, detalle e historial son lecturas privadas; no registra escritores manuales.
     CitasHttpModule,
-    // Registra el dominio de fichas sin habilitar sus rutas privadas todavía.
-    ClientesModule,
+    // Habilita lista, ficha, historial, alta y corrección bajo autenticación privada.
+    ClientesHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

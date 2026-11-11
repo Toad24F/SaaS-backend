@@ -218,7 +218,7 @@ describe('M4-T038–T042: fichas propias, versión y auditoría atómica', () =>
     });
   });
 
-  it('registra el dominio en Nest sin habilitar las rutas reservadas a M4-T044', async () => {
+  it('registra el dominio en Nest y mantiene las rutas de clientes bajo autenticación', async () => {
     await conBaseOperativa(async (db, segunda) => {
       const f = await crearClientesOperativos(db, segunda);
       const modulo = await Test.createTestingModule({ imports: [AppModule] })
@@ -229,7 +229,8 @@ describe('M4-T038–T042: fichas propias, versión y auditoría atómica', () =>
         const clientes = modulo.get(ClientesService);
         expect(clientes).toBeInstanceOf(ClientesService);
         await expect(clientes.crear(f.identidad(Rol.RECEPCIONISTA), { nombreCompleto: 'Composición Nest', telefono: '6141234567' })).resolves.toMatchObject({ version: 1 });
-        await request(app.getHttpServer()).get('/clientes').expect(404);
+        // M4-T044 habilita la ruta privada: una petición anónima ahora exige sesión.
+        await request(app.getHttpServer()).get('/clientes').expect(401);
       } finally { await app.close(); }
     });
   });

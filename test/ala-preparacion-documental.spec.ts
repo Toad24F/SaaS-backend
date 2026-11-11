@@ -5,18 +5,29 @@ const raiz = resolve(process.cwd(), 'docs/ajustes-licencias-administracion-agend
 const leer = (archivo: string): string => readFileSync(resolve(raiz, archivo), 'utf8');
 
 describe('ALA-T002, T003 y T007: preparación documental', () => {
-  it('alinea el lenguaje y la precedencia sin dar la propuesta por aprobada', () => {
+  it('alinea el lenguaje y la precedencia aprobados sin atribuir implementación', () => {
     const constitucion = leer('constitucion.md');
     const spec = leer('spec.md');
     const plan = leer('plan.md');
     expect(constitucion).toContain('inhabilitación recuperable');
     expect(constitucion).toContain('alcance exclusivamente backend');
     expect(constitucion).not.toMatch(/\barchivad[oa]s?\b/i);
+    // Los encabezados actuales registran la aprobación posterior a la preparación documental.
+    // Aprobación normativa e implementación siguen siendo hechos distintos en las tres fuentes.
     for (const fuente of [constitucion, spec, plan]) {
-      expect(fuente).toContain('pendiente de aprobación');
+      expect(fuente).toMatch(/^Estado: aprobad[ao][^\r\n]*8 de noviembre de 2026\./m);
+      expect(fuente).not.toContain('pendiente de aprobación');
+      expect(fuente).toMatch(/no acredita por sí sol[ao] implementación ni integración manual/);
     }
-    expect(spec).toContain('Referencias y precedencia propuesta');
+    expect(spec).toMatch(/^## Referencias y precedencia\r?$/m);
+    expect(spec).toContain('Estos RF sustituyen únicamente las reglas incompatibles');
+    for (const fuente of [constitucion, plan]) {
+      expect(fuente).toContain('prevalecen sobre antecedentes incompatibles');
+    }
     expect(plan).toContain('nueve rutas públicas y cinco privadas');
+    // La evidencia histórica conserva el estado real del día de ejecución; no se reescribe al aprobar.
+    expect(leer('resultados-tareas/resultado-t002-t007.md'))
+      .toContain('Estado de constitución, spec y plan: propuesta pendiente de aprobación.');
   });
 
   it('enumera contratos retirados, nuevos y conservados con sus permisos', () => {

@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { Brackets } from 'typeorm';
+import { Brackets, type EntityManager } from 'typeorm';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -27,6 +27,16 @@ function proyectarFicha(ficha: Cliente) {
 @Injectable()
 export class ClientesService {
   constructor(private readonly acceso: AccesoOperativoService, private readonly auditoria: AuditoriaService) {}
+
+  /** Selección interna para el escritor manual: releer después de sus bloqueos, en su propio commit.
+   * El ID es obligatorio; ni un teléfono coincidente ni datos del navegador suplen una ficha ajena.
+   * No abre otra transacción ni reserva capacidad: el escritor conserva la revalidación y sus bloqueos.
+   */
+  async resolverExistenteEnTransaccion(manager: EntityManager, identidad: Identidad, entradaId: unknown) {
+    const id = validarIdCliente(entradaId);
+    const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CREAR_CITA_MANUAL);
+    return proyectarFicha(await this.exigirFicha(ctx, id));
+  }
 
   async listar(identidad: Identidad, entrada: unknown) {
     const filtro = validarBusquedaClientes(entrada);
