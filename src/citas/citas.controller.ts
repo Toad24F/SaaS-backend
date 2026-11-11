@@ -8,6 +8,7 @@ import { ErroresOperativosFilter } from './errores-operativos.filter';
 import { IntentosCitaManualService } from './intentos-cita-manual.service';
 import { RegistroCitaManualService } from './registro-cita-manual.service';
 import { CambioEstadoCitaService } from './cambio-estado-cita.service';
+import { CambioHorarioCitaService } from './cambio-horario-cita.service';
 
 /** El guard autentica la sesión; cada caso de uso relee permisos y pertenencia en servidor. */
 @Controller('citas')
@@ -16,7 +17,7 @@ import { CambioEstadoCitaService } from './cambio-estado-cita.service';
 export class CitasController {
   constructor(private readonly agenda: ConsultaAgendaService,
     private readonly intentos: IntentosCitaManualService, private readonly registro: RegistroCitaManualService,
-    private readonly estados: CambioEstadoCitaService) {}
+    private readonly estados: CambioEstadoCitaService, private readonly horarios: CambioHorarioCitaService) {}
 
   /** El actor procede de la sesión; el servicio comprueba pertenencia, versión y reglas bajo bloqueo.
    * Solo se responde después de confirmar estado e historial juntos (o un no-op autorizado).
@@ -25,6 +26,15 @@ export class CitasController {
   @Header('Cache-Control', 'no-store')
   cambiarEstado(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() entrada: unknown) {
     return this.estados.cambiar(actor, id, entrada);
+  }
+
+  /** La entrada propone solo fecha, hora y versión. El servicio autoriza la cita y
+   * confirma horario e historial bajo el bloqueo común antes de responder.
+   * El controlador nunca calcula fines, precios, zona ni exclusiones del motor. */
+  @Patch(':id/horario')
+  @Header('Cache-Control', 'no-store')
+  cambiarHorario(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() entrada: unknown) {
+    return this.horarios.cambiar(actor, id, entrada);
   }
 
   /** El sobre separa clave estable de selección; ninguna identidad del cuerpo es autoridad. */

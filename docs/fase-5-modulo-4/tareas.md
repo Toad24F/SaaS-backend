@@ -221,15 +221,17 @@ Evidencia M4-T077–M4-T082: [archivos, flujo interno, tests primero y resultado
       Hecho cuando: oferta, licencia, horario, bloqueos y ocupaciones protegidas de cualquier sucursal se releen antes de aceptar el destino, con la separación histórica de la cita.
 - [x] **M4-T082 — Guardar movimiento e historial atómicos** · 25 min · Depende de: M4-T081, M4-T010 · RF-38, RF-41–RF-43, RF-45
       Hecho cuando: inicio, fin de atención, fin protegido, zona y versión cambian juntos con un evento anterior/nuevo bajo el mismo folio; separación, costo y combinación se conservan, o ninguno cambia.
-- [ ] **M4-T083 — Exponer cambio privado de horario** · 20 min · Depende de: M4-T082, M4-T024 · RF-38–RF-43, RF-47
+Evidencia M4-T083–M4-T087: [archivos, flujo HTTP, tests primero y resultados](resultados-tareas/m4-t083-t087.md). Se expone PATCH privado de horario y se acreditan zonas/límites, conflicto/contigüidad, rollback/versiones y cuatro carreras reales contra apartados públicos. Tests nuevos 25/25; unitarias completas 641/641, integración relevante 136/136 y HTTP completo 277/277; build y lint aprobados. Solo se cierran estas cinco tareas y el trabajo se detiene en T087; T088 y posteriores siguen pendientes.
+
+- [x] **M4-T083 — Exponer cambio privado de horario** · 20 min · Depende de: M4-T082, M4-T024 · RF-38–RF-43, RF-47
       Hecho cuando: la ruta acepta solo fecha, hora y versión y responde conflicto o resultado autorizado sin datos internos.
-- [ ] **M4-T084 — Probar zona y horario inválido** · 25 min · Depende de: M4-T083, M4-T005 · RF-38–RF-39, RF-42
+- [x] **M4-T084 — Probar zona y horario inválido** · 25 min · Depende de: M4-T083, M4-T005 · RF-38–RF-39, RF-42
       Hecho cuando: cambios de hora, inicio pasado y cierre de atención se rechazan sin alterar cita o historial.
-- [ ] **M4-T085 — Probar conflicto y extremos contiguos** · 25 min · Depende de: M4-T083, M4-T004 · RF-39–RF-42, RF-44
+- [x] **M4-T085 — Probar conflicto y extremos contiguos** · 25 min · Depende de: M4-T083, M4-T004 · RF-39–RF-42, RF-44
       Hecho cuando: solapamiento parcial de ocupación protegida en otra sucursal se rechaza y un extremo protegido contiguo válido conserva un solo folio.
-- [ ] **M4-T086 — Probar rollback y versión obsoleta** · 25 min · Depende de: M4-T083, M4-T005 · RF-41–RF-43, RF-45
+- [x] **M4-T086 — Probar rollback y versión obsoleta** · 25 min · Depende de: M4-T083, M4-T005 · RF-41–RF-43, RF-45
       Hecho cuando: fallo entre actualización y evento revierte horario, versión e historial, y edición vieja recibe 409.
-- [ ] **M4-T087 — Probar movimiento contra apartado público** · 25 min · Depende de: M4-T083, M4-T006 · RF-40, RF-43–RF-44
+- [x] **M4-T087 — Probar movimiento contra apartado público** · 25 min · Depende de: M4-T083, M4-T006 · RF-40, RF-43–RF-44
       Hecho cuando: dos conexiones dejan el apartado o el nuevo horario, nunca ambas ocupaciones incompatibles.
 
 ## 9. Frontend conectado
