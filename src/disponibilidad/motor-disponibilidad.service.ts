@@ -227,6 +227,37 @@ export class MotorDisponibilidadService {
       reglasAplicadas: { ...lectura.resultado.reglas, tiempoEntreCitasMinutos: cita.separacionMinutos } };
   }
 
+  /** Entrada interna de movimiento: el ID no es una exclusión libre. Se relee la cita,
+   * se comprueba su negocio/perfil y se deriva su duración y separación persistidas.
+   * El escritor mantiene negocio, recursos, Profesional y cita bloqueados hasta el commit. */
+  async revalidarMovimientoEnTransaccion(manager: EntityManager,
+    token: Pick<JwtPayload, 'sub' | 'sesionId'>, citaId: number,
+    destino: { fechaLocal: string; horaInicio: string }, ahora: Date): Promise<ResultadoRevalidacionEscritura> {
+    if (!manager.queryRunner?.isTransactionActive) throw new Error('Se requiere una transacción activa.');
+    validarFechaLocal(destino.fechaLocal);
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(destino.horaInicio)) throw new BadRequestException('Hora de inicio inválida.');
+    const cita = await manager.getRepository(Cita).findOneBy({ id: citaId });
+    if (!cita) throw new NotFoundException();
+    const contexto = await this.contextos.resolver(manager, token, cita.personalId, ahora);
+    if (cita.negocioId !== contexto.negocioId || cita.personalId !== contexto.personalId) throw new NotFoundException();
+    if (cita.estado === 'cancelada' || cita.inicioUtc <= ahora) throw new ConflictException();
+    const duracion = cita.finUtc.getTime() - cita.inicioUtc.getTime();
+    if (!Number.isFinite(duracion) || duracion <= 0 || !Number.isInteger(cita.separacionMinutos) ||
+      cita.separacionMinutos < 0 || cita.separacionMinutos > 60 || cita.separacionMinutos % 5 !== 0 ||
+      (cita.finOcupacionUtc !== null && cita.finOcupacionUtc.getTime() !== cita.finUtc.getTime() + cita.separacionMinutos * 60000)) {
+      throw new Error('Intervalo histórico de cita incoherente.');
+    }
+    const oferta = await this.oferta.consultar(contexto, cita.sucursalId, cita.servicioId, 'manual');
+    const [horas, minutos] = destino.horaInicio.split(':').map(Number);
+    const inicioUtc = resolverInstanteLocal(destino.fechaLocal, horas * 60 + minutos, oferta.zonaHoraria);
+    const finUtc = new Date(inicioUtc.getTime() + duracion);
+    const lectura = await this.calcular(contexto, cita.sucursalId, cita.servicioId,
+      destino.fechaLocal, destino.fechaLocal, 'manual', undefined, cita.id);
+    const evaluacion = this.evaluarInicio(lectura, cita.sucursalId, destino.fechaLocal,
+      destino.horaInicio, 'manual', ahora, false, cita.separacionMinutos, { inicioUtc, finUtc });
+    return { ...evaluacion, reglasAplicadas: { ...lectura.resultado.reglas, tiempoEntreCitasMinutos: cita.separacionMinutos } };
+  }
+
   /** El escritor público aporta su manager tras esperar los bloqueos; no se
    * permite elegir modalidad ni abrir otra transacción desde esta entrada. */
   async revalidarPublicoEnTransaccion(manager: EntityManager, negocioId: number,
@@ -349,7 +380,7 @@ export class MotorDisponibilidadService {
   private async calcular(contexto: ContextoCalculoDisponibilidad,
     sucursalId: number, servicioId: number, desde: string, hasta: string,
     modalidad: Modalidad,
-    excluirApartadoId?: number): Promise<LecturaMotor> {
+    excluirApartadoId?: number, excluirCitaId?: number): Promise<LecturaMotor> {
     const { personalId, ahora } = contexto;
     const reglas = await this.configuracion.consultarEnContexto(contexto);
     const oferta = await this.oferta.consultar(contexto, sucursalId,
@@ -376,10 +407,11 @@ export class MotorDisponibilidadService {
     const hastaUtc = new Date(Math.max(...proyeccion.bloques.map((b) =>
       b.finUtc.getTime())));
     const leidas = await this.ocupaciones.consultar(contexto, desdeUtc, hastaUtc);
-    // La exclusión llega únicamente desde revalidarEnTransaccion tras comprobar
-    // hash, pertenencia, combinación, intervalo exacto y vigencia.
+    // Solo las entradas internas comprobadas excluyen apartados o la cita que se mueve.
+    // Los tipos permanecen separados aunque compartan ID.
     ocupaciones.push(...leidas.filter((ocupacion) =>
-      !(ocupacion.tipo === 'apartado' && ocupacion.id === excluirApartadoId)));
+      !(ocupacion.tipo === 'apartado' && ocupacion.id === excluirApartadoId) &&
+      !(ocupacion.tipo === 'cita' && ocupacion.id === excluirCitaId)));
     if (modalidad === 'manual') {
       resultado.ranuras = candidatosManuales(proyeccion, ocupaciones, sucursalId,
         oferta.duracionMinutos, reglas.tiempoEntreCitasMinutos, ahora);

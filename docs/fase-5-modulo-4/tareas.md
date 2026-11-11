@@ -207,17 +207,19 @@ Evidencia M4-T073–M4-T076: [archivos, flujos, tests primero y resultados](resu
 
 ## 8. Cambio de horario
 
-- [ ] **M4-T077 — Autorizar exclusión de cita propia en el motor** · 25 min · Depende de: M4-T052, M4-T068 · RF-03, RF-38–RF-40, RF-44
+Evidencia M4-T077–M4-T082: [archivos, flujo interno, tests primero y resultados](resultados-tareas/m4-t077-t082.md). Se añade movimiento transaccional con duración/separación históricas, exclusión comprobada de la cita propia, versión y evento atómicos. Suite nueva final 20/20 de integración y 25/25 unitarios; unitarias completas 641/641, integración completa 608/608 y HTTP completo 252/252; build y lint aprobados. Solo se cierran estas seis tareas; el trabajo se detiene en T082, sin exponer la ruta de T083 ni avanzar a frontend.
+
+- [x] **M4-T077 — Autorizar exclusión de cita propia en el motor** · 25 min · Depende de: M4-T052, M4-T068 · RF-03, RF-38–RF-40, RF-44
       Hecho cuando: solo una cita comprobada del negocio y Profesional puede excluir su intervalo al evaluar el destino.
-- [ ] **M4-T078 — Validar con duración original** · 25 min · Depende de: M4-T077 · RF-38–RF-40
+- [x] **M4-T078 — Validar con duración original** · 25 min · Depende de: M4-T077 · RF-38–RF-40
       Hecho cuando: mover una cita usa duración y separación guardadas aunque el servicio o la configuración hayan cambiado, y no modifica su costo histórico.
-- [ ] **M4-T079 — Validar entrada de fecha y hora nuevas** · 20 min · Depende de: M4-T078 · RF-38–RF-39, RF-42, RF-47
+- [x] **M4-T079 — Validar entrada de fecha y hora nuevas** · 20 min · Depende de: M4-T078 · RF-38–RF-39, RF-42, RF-47
       Hecho cuando: se rechazan fecha pasada, hora ambigua o inexistente y cambios de servicio, sucursal, Profesional, precio o fin enviados por cliente.
-- [ ] **M4-T080 — Bloquear cita y comprobar versión** · 20 min · Depende de: M4-T079, M4-T051 · RF-38, RF-40, RF-43–RF-44
+- [x] **M4-T080 — Bloquear cita y comprobar versión** · 20 min · Depende de: M4-T079, M4-T051 · RF-38, RF-40, RF-43–RF-44
       Hecho cuando: una versión vieja o cita ajena no modifica el horario y el bloqueo sigue el orden compartido.
-- [ ] **M4-T081 — Revalidar destino completo** · 25 min · Depende de: M4-T080, M4-T078 · RF-39–RF-40, RF-44
+- [x] **M4-T081 — Revalidar destino completo** · 25 min · Depende de: M4-T080, M4-T078 · RF-39–RF-40, RF-44
       Hecho cuando: oferta, licencia, horario, bloqueos y ocupaciones protegidas de cualquier sucursal se releen antes de aceptar el destino, con la separación histórica de la cita.
-- [ ] **M4-T082 — Guardar movimiento e historial atómicos** · 25 min · Depende de: M4-T081, M4-T010 · RF-38, RF-41–RF-43, RF-45
+- [x] **M4-T082 — Guardar movimiento e historial atómicos** · 25 min · Depende de: M4-T081, M4-T010 · RF-38, RF-41–RF-43, RF-45
       Hecho cuando: inicio, fin de atención, fin protegido, zona y versión cambian juntos con un evento anterior/nuevo bajo el mismo folio; separación, costo y combinación se conservan, o ninguno cambia.
 - [ ] **M4-T083 — Exponer cambio privado de horario** · 20 min · Depende de: M4-T082, M4-T024 · RF-38–RF-43, RF-47
       Hecho cuando: la ruta acepta solo fecha, hora y versión y responde conflicto o resultado autorizado sin datos internos.

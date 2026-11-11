@@ -11,8 +11,10 @@ import { IntentosCitaManualService } from './intentos-cita-manual.service';
 import { RegistroCitaManualService } from './registro-cita-manual.service';
 import { CambioEstadoCitaService } from './cambio-estado-cita.service';
 
+import { CambioHorarioCitaService } from './cambio-horario-cita.service';
+
 /** Dominio compartido: reutiliza las causas sin importar controladores ni escritores públicos. */
 @Module({ imports: [AccesoOperativoModule, DisponibilidadModule, ClientesModule, TypeOrmModule.forFeature([EventoCita, IntentoCitaManual])],
-  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CupoTelefonicoService],
-  exports: [TypeOrmModule, AccesoOperativoModule, ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService] })
+  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, CupoTelefonicoService],
+  exports: [TypeOrmModule, AccesoOperativoModule, ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService] })
 export class CitasModule {}
