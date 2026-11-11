@@ -194,14 +194,16 @@ Evidencia M4-T063–M4-T066: [archivos, flujos, tests primero y resultados](resu
       Hecho cuando: solo un inicio futuro con licencia, oferta y horario vigentes y sin solapamiento protegido puede volver a ocupar, conservando la separación histórica; el cupo telefónico no bloquea esta reactivación.
 Evidencia M4-T067–M4-T072: [archivos, flujo transaccional, tests primero y resultados](resultados-tareas/m4-t067-t072.md). Se implementan validación cerrada, versión, cambios de estado con evento atómico, límites de fin de atención, cancelación y reactivación histórica sin cupo de alta. Se añaden 36 unitarios y 29 casos de integración con bloqueos, rollback y dos actores. Unitarias completas 616/616; integración relevante 137/137 y HTTP relevante 53/53; build y lint aprobados. Solo se marcan estas seis tareas y el trabajo se detiene en T072; no se expone aún la ruta de T074.
 
-- [ ] **M4-T073 — Conservar motivo opcional y correcciones** · 20 min · Depende de: M4-T070–M4-T072 · RF-32, RF-36, RF-45
+- [x] **M4-T073 — Conservar motivo opcional y correcciones** · 20 min · Depende de: M4-T070–M4-T072 · RF-32, RF-36, RF-45
       Hecho cuando: el historial muestra motivo solo si se proporcionó y conserva estado anterior, nuevo, actor e instante.
-- [ ] **M4-T074 — Exponer cambio de estado** · 20 min · Depende de: M4-T067–M4-T073, M4-T024 · RF-29–RF-37, RF-43–RF-47
+- [x] **M4-T074 — Exponer cambio de estado** · 20 min · Depende de: M4-T067–M4-T073, M4-T024 · RF-29–RF-37, RF-43–RF-47
       Hecho cuando: la ruta privada aplica versión, permisos y errores seguros y devuelve el nuevo estado confirmado.
-- [ ] **M4-T075 — Probar cinco estados y límite temporal** · 25 min · Depende de: M4-T074, M4-T005 · RF-29–RF-33, RF-36–RF-37
+- [x] **M4-T075 — Probar cinco estados y límite temporal** · 25 min · Depende de: M4-T074, M4-T005 · RF-29–RF-33, RF-36–RF-37
       Hecho cuando: antes/en/después del fin se observan transiciones permitidas y solo Cancelada libera el intervalo.
-- [ ] **M4-T076 — Probar cancelación y reactivación concurrentes** · 25 min · Depende de: M4-T074, M4-T006 · RF-33–RF-35, RF-43–RF-45
+- [x] **M4-T076 — Probar cancelación y reactivación concurrentes** · 25 min · Depende de: M4-T074, M4-T006 · RF-33–RF-35, RF-43–RF-45
       Hecho cuando: una reserva rival y una reactivación del mismo horario dejan una sola ocupación incompatible y eventos reales únicos.
+
+Evidencia M4-T073–M4-T076: [archivos, flujos, tests primero y resultados](resultados-tareas/m4-t073-t076.md). Se publica PATCH de estado y se proyectan motivos aportados y versiones de correcciones. Los 23 casos nuevos cubren historial, cinco estados/límites HTTP, reserva pública Pendiente y seis carreras con dos conexiones y escritores reales. Unitarias completas 616/616; integración relevante 144/144 y HTTP relevante 72/72; build y lint aprobados. Solo se marcan estas cuatro tareas y el trabajo se detiene en T076; T077 y posteriores permanecen pendientes.
 
 ## 8. Cambio de horario
 

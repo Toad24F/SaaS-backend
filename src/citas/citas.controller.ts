@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Header, HttpCode, Param, Post, Query, Res, UseFilters, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, HttpCode, Param, Patch, Post, Query, Res, UseFilters, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -7,6 +7,7 @@ import { ConsultaAgendaService } from './consulta-agenda.service';
 import { ErroresOperativosFilter } from './errores-operativos.filter';
 import { IntentosCitaManualService } from './intentos-cita-manual.service';
 import { RegistroCitaManualService } from './registro-cita-manual.service';
+import { CambioEstadoCitaService } from './cambio-estado-cita.service';
 
 /** El guard autentica la sesión; cada caso de uso relee permisos y pertenencia en servidor. */
 @Controller('citas')
@@ -14,7 +15,17 @@ import { RegistroCitaManualService } from './registro-cita-manual.service';
 @UseFilters(ErroresOperativosFilter)
 export class CitasController {
   constructor(private readonly agenda: ConsultaAgendaService,
-    private readonly intentos: IntentosCitaManualService, private readonly registro: RegistroCitaManualService) {}
+    private readonly intentos: IntentosCitaManualService, private readonly registro: RegistroCitaManualService,
+    private readonly estados: CambioEstadoCitaService) {}
+
+  /** El actor procede de la sesión; el servicio comprueba pertenencia, versión y reglas bajo bloqueo.
+   * Solo se responde después de confirmar estado e historial juntos (o un no-op autorizado).
+   */
+  @Patch(':id/estado')
+  @Header('Cache-Control', 'no-store')
+  cambiarEstado(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() entrada: unknown) {
+    return this.estados.cambiar(actor, id, entrada);
+  }
 
   /** El sobre separa clave estable de selección; ninguna identidad del cuerpo es autoridad. */
   @Post('manuales/intentos')

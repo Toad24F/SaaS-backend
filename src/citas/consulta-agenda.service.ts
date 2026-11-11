@@ -25,7 +25,8 @@ const CAMPOS_RESUMEN = ['id', 'version', 'negocioId', 'sucursalId', 'personalId'
   'nombreSucursal', 'nombreServicio', 'nombreProfesional'] as const satisfies readonly (keyof Cita)[];
 
 // Solo se publica el contrato operativo: una fila JSON antigua no puede introducir contacto o secretos.
-const CAMPOS_EVENTO = new Set(['estado', 'origen', 'folio', 'clienteId', 'sucursalId', 'servicioId',
+// Estado y versión anteriores/nuevos conservan la trazabilidad de las correcciones autorizadas.
+const CAMPOS_EVENTO = new Set(['estado', 'version', 'origen', 'folio', 'clienteId', 'sucursalId', 'servicioId',
   'personalId', 'inicioUtc', 'finUtc', 'separacionMinutos', 'finOcupacionUtc', 'zonaHoraria', 'costoAceptado']);
 function valoresOperativos(valores: Record<string, unknown> | null) {
   if (valores === null) return null;
@@ -118,7 +119,9 @@ export class ConsultaAgendaService {
       return { eventos: filas.slice(0, pagina.limite).map((evento) => ({ id: evento.id,
         actorUsuarioId: evento.actorUsuarioId, origenActor: evento.actorUsuarioId === null ? 'portal_publico' : 'personal',
         accion: evento.accion, ocurridoEn: evento.ocurridoEn, versionResultante: evento.versionResultante,
-        valoresAntes: valoresOperativos(evento.valoresAntes), valoresDespues: valoresOperativos(evento.valoresDespues), motivo: evento.motivo })),
+        valoresAntes: valoresOperativos(evento.valoresAntes), valoresDespues: valoresOperativos(evento.valoresDespues),
+        // La ausencia de motivo no se rellena con notas de atención ni con texto inventado.
+        ...(evento.motivo === null ? {} : { motivo: evento.motivo }) })),
         ...pagina, hayMas: filas.length > pagina.limite };
     }, 'REPEATABLE READ');
   }
