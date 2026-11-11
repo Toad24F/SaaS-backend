@@ -180,18 +180,20 @@ Evidencia M4-T063–M4-T066: [archivos, flujos, tests primero y resultados](resu
 
 ## 7. Ciclo de vida e historial
 
-- [ ] **M4-T067 — Validar entrada de cambio de estado** · 20 min · Depende de: M4-T013, M4-T021 · RF-29–RF-32, RF-43, RF-47
+- [x] **M4-T067 — Validar entrada de cambio de estado** · 20 min · Depende de: M4-T013, M4-T021 · RF-29–RF-32, RF-43, RF-47
       Hecho cuando: solo se admiten cinco estados, versión y motivo opcional válido; se rechazan campos desconocidos.
-- [ ] **M4-T068 — Comprobar versión antes de modificar** · 20 min · Depende de: M4-T067 · RF-30, RF-36, RF-43
+- [x] **M4-T068 — Comprobar versión antes de modificar** · 20 min · Depende de: M4-T067 · RF-30, RF-36, RF-43
       Hecho cuando: una versión vieja devuelve 409 y deja estado, versión e historial sin cambios.
-- [ ] **M4-T069 — Cambiar Pendiente y Confirmada** · 20 min · Depende de: M4-T068, M4-T010 · RF-29–RF-30, RF-36–RF-37, RF-45
+- [x] **M4-T069 — Cambiar Pendiente y Confirmada** · 20 min · Depende de: M4-T068, M4-T010 · RF-29–RF-30, RF-36–RF-37, RF-45
       Hecho cuando: un cambio efectivo guarda nuevo estado y evento; repetir el mismo estado con versión vigente no duplica evento.
-- [ ] **M4-T070 — Restringir Completada y No asistió** · 20 min · Depende de: M4-T069, M4-T005 · RF-30–RF-33, RF-36
+- [x] **M4-T070 — Restringir Completada y No asistió** · 20 min · Depende de: M4-T069, M4-T005 · RF-30–RF-33, RF-36
       Hecho cuando: antes de `fin_utc` se rechazan ambos estados y desde el límite exacto se admiten sin liberar ocupación.
-- [ ] **M4-T071 — Cancelar bajo el bloqueo del Profesional** · 25 min · Depende de: M4-T068, M4-T051 · RF-30, RF-32–RF-33, RF-43–RF-45
+- [x] **M4-T071 — Cancelar bajo el bloqueo del Profesional** · 25 min · Depende de: M4-T068, M4-T051 · RF-30, RF-32–RF-33, RF-43–RF-45
       Hecho cuando: cancelar conserva la cita y libera solo su ocupación tras confirmar versión y evento en la misma transacción.
-- [ ] **M4-T072 — Reactivar cita futura** · 25 min · Depende de: M4-T071, M4-T052 · RF-30, RF-33–RF-35, RF-44
+- [x] **M4-T072 — Reactivar cita futura** · 25 min · Depende de: M4-T071, M4-T052 · RF-30, RF-33–RF-35, RF-44
       Hecho cuando: solo un inicio futuro con licencia, oferta y horario vigentes y sin solapamiento protegido puede volver a ocupar, conservando la separación histórica; el cupo telefónico no bloquea esta reactivación.
+Evidencia M4-T067–M4-T072: [archivos, flujo transaccional, tests primero y resultados](resultados-tareas/m4-t067-t072.md). Se implementan validación cerrada, versión, cambios de estado con evento atómico, límites de fin de atención, cancelación y reactivación histórica sin cupo de alta. Se añaden 36 unitarios y 29 casos de integración con bloqueos, rollback y dos actores. Unitarias completas 616/616; integración relevante 137/137 y HTTP relevante 53/53; build y lint aprobados. Solo se marcan estas seis tareas y el trabajo se detiene en T072; no se expone aún la ruta de T074.
+
 - [ ] **M4-T073 — Conservar motivo opcional y correcciones** · 20 min · Depende de: M4-T070–M4-T072 · RF-32, RF-36, RF-45
       Hecho cuando: el historial muestra motivo solo si se proporcionó y conserva estado anterior, nuevo, actor e instante.
 - [ ] **M4-T074 — Exponer cambio de estado** · 20 min · Depende de: M4-T067–M4-T073, M4-T024 · RF-29–RF-37, RF-43–RF-47

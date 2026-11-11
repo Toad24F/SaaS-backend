@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { timingSafeEqual } from 'node:crypto';
@@ -19,6 +19,7 @@ import { generarCandidatosLibres } from './candidatos-libres';
 import { seleccionarPrimerosCompactos } from './primeros-compactos';
 import { cabeEnEspacioLibre, construirEspaciosLibres } from './espacios-libres';
 import { BloqueoTemporal } from './entities/bloqueo-temporal.entity';
+import { Cita } from './entities/cita.entity';
 
 type Modalidad = 'publica' | 'manual';
 type Ranura = { inicioUtc: Date; finUtc: Date };
@@ -197,6 +198,35 @@ export class MotorDisponibilidadService {
     return this.revalidarConContexto(contexto, entrada);
   }
 
+  /** Entrada interna del escritor de estados: relee una cancelada persistida y conserva su intervalo.
+   * No acepta exclusiones, fines ni separación arbitrarios y no excluye ninguna ocupación activa.
+   * El llamador conserva sus bloqueos de negocio/recursos/Profesional/cita hasta confirmar el estado.
+   */
+  async revalidarCitaCanceladaEnTransaccion(manager: EntityManager,
+    token: Pick<JwtPayload, 'sub' | 'sesionId'>, citaId: number, ahora: Date): Promise<ResultadoRevalidacionEscritura> {
+    if (!manager.queryRunner?.isTransactionActive) throw new Error('Se requiere una transacción activa.');
+    const cita = await manager.getRepository(Cita).findOneBy({ id: citaId });
+    if (!cita) throw new NotFoundException();
+    const contexto = await this.contextos.resolver(manager, token, cita.personalId, ahora);
+    if (cita.negocioId !== contexto.negocioId) throw new NotFoundException();
+    if (cita.estado !== 'cancelada' || cita.inicioUtc <= ahora) throw new ConflictException();
+    if (!Number.isFinite(cita.inicioUtc.getTime()) || !Number.isFinite(cita.finUtc.getTime()) || cita.finUtc <= cita.inicioUtc ||
+      !Number.isInteger(cita.separacionMinutos) || cita.separacionMinutos < 0 || cita.separacionMinutos > 60 || cita.separacionMinutos % 5 !== 0 ||
+      (cita.finOcupacionUtc !== null && cita.finOcupacionUtc.getTime() !== cita.finUtc.getTime() + cita.separacionMinutos * 60000)) {
+      throw new Error('Intervalo histórico de cita incoherente.');
+    }
+    const oferta = await this.oferta.consultar(contexto, cita.sucursalId, cita.servicioId, 'manual');
+    // La atención vigente usa la zona actual de sucursal; el compromiso conserva sus UTC y zona originales.
+    const fechaLocal = fechaEnZona(cita.inicioUtc, oferta.zonaHoraria);
+    const horaInicio = new Intl.DateTimeFormat('en-GB', { timeZone: oferta.zonaHoraria,
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(cita.inicioUtc);
+    const lectura = await this.calcular(contexto, cita.sucursalId, cita.servicioId, fechaLocal, fechaLocal, 'manual');
+    const evaluacion = this.evaluarInicio(lectura, cita.sucursalId, fechaLocal, horaInicio, 'manual', ahora,
+      false, cita.separacionMinutos, { inicioUtc: cita.inicioUtc, finUtc: cita.finUtc });
+    return { ...evaluacion, zonaHoraria: cita.zonaHorariaReserva,
+      reglasAplicadas: { ...lectura.resultado.reglas, tiempoEntreCitasMinutos: cita.separacionMinutos } };
+  }
+
   /** El escritor público aporta su manager tras esperar los bloqueos; no se
    * permite elegir modalidad ni abrir otra transacción desde esta entrada. */
   async revalidarPublicoEnTransaccion(manager: EntityManager, negocioId: number,
@@ -269,12 +299,12 @@ export class MotorDisponibilidadService {
   private evaluarInicio(lectura: LecturaMotor, sucursalId: number,
     fechaLocal: string, horaInicio: string, modalidad: Modalidad, ahora: Date,
     apartadoIncompatible = false,
-    separacionPreservada?: number): ResultadoValidacionInicio {
+    separacionPreservada?: number, intervaloConservado?: Ranura): ResultadoValidacionInicio {
     const { resultado, oferta, atencion, ocupaciones } = lectura;
     const [horas, minutos] = horaInicio.split(':').map(Number);
-    const inicioUtc = resolverInstanteLocal(fechaLocal,
+    const inicioUtc = intervaloConservado?.inicioUtc ?? resolverInstanteLocal(fechaLocal,
       horas * 60 + minutos, oferta.zonaHoraria);
-    const finUtc = new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
+    const finUtc = intervaloConservado?.finUtc ?? new Date(inicioUtc.getTime() + oferta.duracionMinutos * 60000);
     // El resultado conserva el fin de atención; la comprobación suma la separación.
     // El consumo del apartado propio mantiene solo su separación capturada;
     // oferta, licencia, horario y ocupaciones siguen viniendo de la lectura actual.
@@ -306,8 +336,8 @@ export class MotorDisponibilidadService {
     }
     const ofrecido = resultado.ranuras.some((ranura) =>
       ranura.inicioUtc.getTime() === inicioUtc.getTime());
-    // Un apartado ya concedido no pierde validez si otro inicio vuelve a ser
-    // el primero; esta excepción no se aplica a una concesión nueva.
+    // Un apartado concedido o una cancelada que recupera su intervalo histórico no adopta
+    // la estrategia de selección de reservas nuevas; todos los demás controles siguen vigentes.
     if (!motivos.length && !ofrecido && separacionPreservada === undefined) {
       motivos.push('no_ofrecido_por_estrategia');
     }
