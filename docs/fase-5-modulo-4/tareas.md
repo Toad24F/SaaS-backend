@@ -131,15 +131,17 @@ Evidencia M4-T043–M4-T047: [archivos, elección por ID, flujo HTTP, tests prim
 
 ## 6. Escritor manual e intentos
 
-- [ ] **M4-T048 — Validar selección y contacto manual** · 25 min · Depende de: M4-T037, M4-T043, M4-T002 · RF-16–RF-17, RF-20–RF-21, RF-47
+Evidencia M4-T048–M4-T052: [archivos, contrato, flujo, tests primero y resultados](resultados-tareas/m4-t048-t052.md). 55 tests nuevos aprobados (35 unitarios y 20 de integración); unitarias completas 580/580, regresión relevante de integración 72/72 y HTTP 41/41, con build y lint aprobados. Se acredita preparación idempotente y colaboración transaccional bajo bloqueos, sin crear citas ni habilitar rutas manuales. M4-T053 y posteriores permanecen pendientes; el trabajo se detiene en M4-T052.
+
+- [x] **M4-T048 — Validar selección y contacto manual** · 25 min · Depende de: M4-T037, M4-T043, M4-T002 · RF-16–RF-17, RF-20–RF-21, RF-47
       Hecho cuando: se admite cliente propio o nuevo, fecha/hora y notas; se rechazan precio, fin, zona y IDs ajenos enviados como autoridad.
-- [ ] **M4-T049 — Preparar intento bajo actor y negocio** · 25 min · Depende de: M4-T009, M4-T014, M4-T048, M4-T021 · RF-03, RF-20, RF-27, RF-43
+- [x] **M4-T049 — Preparar intento bajo actor y negocio** · 25 min · Depende de: M4-T009, M4-T014, M4-T048, M4-T021 · RF-03, RF-20, RF-27, RF-43
       Hecho cuando: una clave opaca crea una sola fila preparada con huella y sin contacto persistido.
-- [ ] **M4-T050 — Deduplicar clave y contenido** · 20 min · Depende de: M4-T049 · RF-24, RF-27, RF-43
+- [x] **M4-T050 — Deduplicar clave y contenido** · 20 min · Depende de: M4-T049 · RF-24, RF-27, RF-43
       Hecho cuando: misma clave y contenido reutilizan intento; contenido diferente recibe 409 sin cambiar su fila.
-- [ ] **M4-T051 — Integrar bloqueo común del escritor** · 25 min · Depende de: M4-T006, M4-T049, M4-T002 · RF-21–RF-23, RF-28, RF-44
+- [x] **M4-T051 — Integrar bloqueo común del escritor** · 25 min · Depende de: M4-T006, M4-T049, M4-T002 · RF-21–RF-23, RF-28, RF-44
       Hecho cuando: intento precede recursos de dominio y la fila del Profesional serializa sucursales y servicios con `READ COMMITTED`.
-- [ ] **M4-T052 — Revalidar selección tras la espera** · 25 min · Depende de: M4-T051, M4-T048 · RF-21–RF-23, RF-28, RF-44
+- [x] **M4-T052 — Revalidar selección tras la espera** · 25 min · Depende de: M4-T051, M4-T048 · RF-21–RF-23, RF-28, RF-44
       Hecho cuando: el mismo manager relee licencia, oferta, duración, separación vigente, horario, bloqueos, ocupaciones protegidas y cupo telefónico compartido por sucursal antes de escribir.
 - [ ] **M4-T053 — Copiar costo y nombres actuales** · 20 min · Depende de: M4-T052 · RF-24–RF-25, RF-44
       Hecho cuando: la copia toma costo y nombres vigentes al registro y no admite valores autoritativos del navegador.

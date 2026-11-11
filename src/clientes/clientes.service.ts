@@ -31,10 +31,11 @@ export class ClientesService {
   /** Selección interna para el escritor manual: releer después de sus bloqueos, en su propio commit.
    * El ID es obligatorio; ni un teléfono coincidente ni datos del navegador suplen una ficha ajena.
    * No abre otra transacción ni reserva capacidad: el escritor conserva la revalidación y sus bloqueos.
+   * El instante interno opcional conserva la misma decisión temporal que motor y cupo.
    */
-  async resolverExistenteEnTransaccion(manager: EntityManager, identidad: Identidad, entradaId: unknown) {
+  async resolverExistenteEnTransaccion(manager: EntityManager, identidad: Identidad, entradaId: unknown, instante?: Date) {
     const id = validarIdCliente(entradaId);
-    const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CREAR_CITA_MANUAL);
+    const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CREAR_CITA_MANUAL, instante);
     return proyectarFicha(await this.exigirFicha(ctx, id));
   }
 

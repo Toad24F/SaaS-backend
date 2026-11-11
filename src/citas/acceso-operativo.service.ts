@@ -51,7 +51,7 @@ export class AccesoOperativoService {
 
   /** Los futuros escritores deben llamarlo otra vez tras esperar sus bloqueos comunes. */
   async resolverEnTransaccion(manager: EntityManager, identidad: IdentidadOperativa,
-    permiso: Permiso): Promise<ContextoOperativo> {
+    permiso: Permiso, instante?: Date): Promise<ContextoOperativo> {
     try {
       if (!manager.queryRunner?.isTransactionActive) throw new Error('Se requiere una transacción operativa activa.');
       if (!identidad || !Number.isSafeInteger(identidad.sub) || identidad.sub <= 0
@@ -59,7 +59,8 @@ export class AccesoOperativoService {
         throw new UnauthorizedException();
       }
       if (!PERMISOS_OPERATIVOS.has(permiso)) throw new ForbiddenException();
-      const ahora = this.reloj.ahora();
+      // Un escritor interno puede compartir el instante capturado tras sus bloqueos con ficha y motor.
+      const ahora = instante ?? this.reloj.ahora();
       // Una sola lectura une sesión, cuenta, negocio y licencia actuales. No consulta claims
       // de rol/negocio del JWT, ni acepta un negocio del formulario como autoridad.
       const actor = await manager.getRepository(Usuario).createQueryBuilder('usuario')

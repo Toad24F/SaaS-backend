@@ -180,7 +180,7 @@ export class MotorDisponibilidadService {
    * No abre transacción ni escribe; su resultado no es una reserva garantizada. */
   async revalidarEnTransaccion(manager: EntityManager,
     token: Pick<JwtPayload, 'sub' | 'sesionId'>,
-    entrada: RevalidacionEscritura): Promise<ResultadoValidacionInicio> {
+    entrada: RevalidacionEscritura, instante?: Date): Promise<ResultadoRevalidacionEscritura> {
     if (!manager.queryRunner?.isTransactionActive) {
       throw new Error('La revalidación requiere una transacción activa del escritor.');
     }
@@ -190,7 +190,8 @@ export class MotorDisponibilidadService {
       throw new BadRequestException('Hora de inicio inválida.');
     }
     // Se captura después de que el escritor obtenga su bloqueo común.
-    const ahora = this.reloj.ahora();
+    // El escritor privado comparte opcionalmente su único instante posterior a los bloqueos.
+    const ahora = instante ?? this.reloj.ahora();
     const contexto = await this.contextos.resolver(manager, token,
       entrada.personalId, ahora);
     return this.revalidarConContexto(contexto, entrada);
