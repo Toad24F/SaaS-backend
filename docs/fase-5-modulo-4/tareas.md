@@ -157,14 +157,16 @@ Evidencia M4-T053–M4-T058: [archivos, snapshots, flujo atómico, tests primero
       Hecho cuando: cliente nuevo, cita, evento e intento registrado aparecen juntos o ninguno aparece tras fallo.
 - [x] **M4-T058 — Repetir resultado ya registrado** · 20 min · Depende de: M4-T057, M4-T050 · RF-24, RF-27, RF-43
       Hecho cuando: repetir la misma clave y contenido devuelve el mismo folio sin crear cliente, cita o evento adicionales.
-- [ ] **M4-T059 — Resolver intento frente al escritor** · 25 min · Depende de: M4-T057, M4-T051 · RF-26–RF-27, RF-44, RF-46
+- [x] **M4-T059 — Resolver intento frente al escritor** · 25 min · Depende de: M4-T057, M4-T051 · RF-26–RF-27, RF-44, RF-46
       Hecho cuando: el resolutor espera al escritor o responde 503 y nunca declara fracaso por ausencia sin exclusión.
-- [ ] **M4-T060 — Cerrar ausencia terminal y petición tardía** · 25 min · Depende de: M4-T059, M4-T050 · RF-27, RF-43–RF-44
+- [x] **M4-T060 — Cerrar ausencia terminal y petición tardía** · 25 min · Depende de: M4-T059, M4-T050 · RF-27, RF-43–RF-44
       Hecho cuando: `no_registrado` queda durable y una preparación o escritura tardía de la misma clave no crea cita.
-- [ ] **M4-T061 — Probar rollback entre escrituras** · 25 min · Depende de: M4-T057, M4-T005 · RF-24, RF-26–RF-27, RF-45
+- [x] **M4-T061 — Probar rollback entre escrituras** · 25 min · Depende de: M4-T057, M4-T005 · RF-24, RF-26–RF-27, RF-45
       Hecho cuando: fallos tras cada inserción revierten cliente nuevo, cita, evento y resultado, permitiendo reintentar la misma clave preparada.
-- [ ] **M4-T062 — Exponer preparación, registro y resolución** · 25 min · Depende de: M4-T058–M4-T060, M4-T024 · RF-20, RF-22–RF-28, RF-43–RF-47
+- [x] **M4-T062 — Exponer preparación, registro y resolución** · 25 min · Depende de: M4-T058–M4-T060, M4-T024 · RF-20, RF-22–RF-28, RF-43–RF-47
       Hecho cuando: tres rutas privadas aplican rol, origen del actor, `no-store` y respuestas de creación, repetición, conflicto e incertidumbre.
+Evidencia M4-T059–M4-T062: [archivos, flujo de resolución, tests primero y resultados](resultados-tareas/m4-t059-t062.md). Se verifican resolución contra escritor en ambos órdenes, cierre terminal, timeout SQL real 503, cinco puntos de rollback y tres rutas privadas. Unitarias completas 580/580; integración relevante 90/90 y HTTP relevante 45/45; build y lint aprobados. Se marcan solo estas cuatro tareas y el trabajo se detiene en T062.
+
 - [ ] **M4-T063 — Probar reserva manual válida** · 25 min · Depende de: M4-T062, M4-T004 · RF-16–RF-17, RF-20–RF-25
       Hecho cuando: servicio y separación dentro de horario crean exactamente una cita Confirmada con cliente elegido o nuevo y snapshot completo; el tercer registro futuro del mismo teléfono en la sucursal se rechaza sin fusionar fichas ni dejar filas parciales.
 - [ ] **M4-T064 — Probar ocupaciones de otras sucursales** · 25 min · Depende de: M4-T063, M4-T006 · RF-21–RF-23, RF-28

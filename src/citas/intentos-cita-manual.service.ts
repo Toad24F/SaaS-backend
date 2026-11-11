@@ -24,8 +24,8 @@ export interface SeleccionManualRevalidada extends ContextoOperativo {
   finOcupacionUtc: Date;
 }
 
-/** Infraestructura del escritor privado: prepara intentos y conserva la exclusión hasta el commit.
- * El registro colabora dentro del callback; la resolución de ausencia y las rutas se componen aparte.
+/** Infraestructura del escritor privado: prepara/resuelve intentos y conserva la exclusión hasta el commit.
+ * El registro y la recuperación de la cita colaboran dentro de callbacks con el mismo manager.
  */
 @Injectable()
 export class IntentosCitaManualService {
@@ -57,7 +57,39 @@ export class IntentosCitaManualService {
     });
   }
 
-  /** Colaboración interna del futuro registro: solo el callback puede escribir tras revalidar.
+  /** Comparte la exclusión del escritor incluso si la preparación todavía no insertó su fila.
+   * Solo una ausencia observada bajo estos bloqueos puede convertirse en un cierre terminal.
+   */
+  async resolver<T>(identidad: Identidad, entradaClave: unknown, entrada: unknown,
+    recuperar: (ctx: ContextoOperativo, intento: IntentoCitaManual) => Promise<T>) {
+    const clave = validarClaveManual(entradaClave);
+    const contenidoHash = huellaSeleccionManual(validarSeleccionManual(entrada));
+    return this.acceso.ejecutar(identidad, Permiso.CREAR_CITA_MANUAL, async (inicial) => {
+      // El actor precede al intento igual que en preparar/registrar. Esperar aquí excluye
+      // también una inserción tardía; no se infiere ausencia mediante una lectura sin bloqueo.
+      await this.bloquearUsuarios(inicial, [inicial.actorId]);
+      const intento = await this.leerIntento(inicial, clave);
+      const ctx = await this.acceso.resolverEnTransaccion(inicial.manager, identidad, Permiso.CREAR_CITA_MANUAL);
+      if (intento) {
+        this.exigirHuella(intento, contenidoHash);
+        if (intento.estado === 'registrado') return { estado: 'registrado' as const, resultado: await recuperar(ctx, intento) };
+        if (intento.estado === 'no_registrado') return { estado: 'no_registrado' as const };
+        const cambio = await ctx.manager.getRepository(IntentoCitaManual).update({ id: intento.id,
+          negocioId: ctx.negocioId, actorUsuarioId: ctx.actorId, estado: 'preparado' },
+        { estado: 'no_registrado', resueltoEn: ctx.ahora, actualizadoEn: ctx.ahora });
+        if (cambio.affected !== 1) throw new ConflictException();
+      } else {
+        // La lápida conserva únicamente la huella del contenido. Preparar después con esta
+        // clave dará conflicto, aunque su solicitud ya estuviera en tránsito al cerrar aquí.
+        await ctx.manager.getRepository(IntentoCitaManual).insert({ negocioId: ctx.negocioId,
+          actorUsuarioId: ctx.actorId, clave, contenidoHash, estado: 'no_registrado', citaId: null,
+          creadoEn: ctx.ahora, actualizadoEn: ctx.ahora, resueltoEn: ctx.ahora });
+      }
+      return { estado: 'no_registrado' as const };
+    }, 'READ COMMITTED');
+  }
+
+  /** Colaboración interna del registro: solo el callback puede escribir tras revalidar.
    * Debe guardar todo con este manager antes de devolver; fuera del callback el resultado no reserva.
    * No sustituye la implementación ni las carreras de aceptación del escritor completo.
    */

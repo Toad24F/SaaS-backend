@@ -22,13 +22,20 @@ export interface ResultadoCitaManual {
 }
 interface RegistroConMeta { resultado: ResultadoCitaManual; repetida: boolean }
 
-/** Escritor privado real: confirma cliente, cita, evento e intento juntos; sin rutas ni efectos externos. */
+/** Escritor privado real: confirma cliente, cita, evento e intento juntos, sin efectos externos. */
 @Injectable()
 export class RegistroCitaManualService {
   constructor(private readonly intentos: IntentosCitaManualService, private readonly clientes: ClientesService) {}
 
   async registrar(identidad: Identidad, clave: unknown, entrada: unknown): Promise<ResultadoCitaManual> {
     return (await this.registrarConMeta(identidad, clave, entrada)).resultado;
+  }
+
+  /** Recupera únicamente la cita persistida; el colaborador conserva la exclusión hasta el commit.
+   * Si no logra adquirir los bloqueos o leer un resultado coherente, propaga 503/500, nunca ausencia.
+   */
+  resolver(identidad: Identidad, clave: unknown, entrada: unknown) {
+    return this.intentos.resolver(identidad, clave, entrada, (ctx, intento) => this.recuperar(ctx, intento));
   }
 
   /** Creación o repetición se decide dentro de la misma exclusión que confirma el resultado. */
