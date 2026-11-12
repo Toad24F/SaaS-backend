@@ -260,13 +260,13 @@ Evidencia M4-T077–M4-T082: [archivos, flujo interno, tests primero y resultado
       Hecho cuando: búsqueda y detalle muestran datos reales del negocio, incluidos teléfonos compartidos sin fusionarlos.
 - [x] **M4-T099 — Conectar alta y corrección de ficha** · 25 min · Depende de: M4-T098 · RF-15, RF-18–RF-19, RF-43
       Hecho cuando: alta y edición envían versión, conservan los datos corregibles ante error y no alteran citas previas.
-- [ ] **M4-T100 — Actualizar agenda abierta y avisar obsolescencia** · 25 min · Depende de: M4-T090–M4-T092, M4-T096–M4-T097 · RF-10, RF-43, RF-46
+- [x] **M4-T100 — Actualizar agenda abierta y avisar obsolescencia** · 25 min · Depende de: M4-T090–M4-T092, M4-T096–M4-T097 · RF-10, RF-43, RF-46
       Hecho cuando: cambios de otra sesión aparecen sin acción manual y un formulario con versión anterior recibe aviso antes de guardarse.
-- [ ] **M4-T101 — Mostrar vacío y errores por separado** · 20 min · Depende de: M4-T089–M4-T100 · RF-05, RF-19, RF-26–RF-27, RF-46–RF-47
+- [x] **M4-T101 — Mostrar vacío y errores por separado** · 20 min · Depende de: M4-T089–M4-T100 · RF-05, RF-19, RF-26–RF-27, RF-46–RF-47
       Hecho cuando: ausencia legítima, entrada inválida, permiso, conflicto y fallo técnico tienen mensajes distintos y ninguna pantalla usa datos ficticios como respaldo.
-- [ ] **M4-T102 — Ajustar móvil, teclado y foco** · 25 min · Depende de: M4-T090–M4-T101 · RF-06–RF-12, RF-13–RF-14, RF-20
+- [x] **M4-T102 — Ajustar móvil, teclado y foco** · 25 min · Depende de: M4-T090–M4-T101 · RF-06–RF-12, RF-13–RF-14, RF-20
       Hecho cuando: agenda, directorio y formularios se completan en móvil y teclado sin controles ocultos, desbordamiento o pérdida de foco.
-- [ ] **M4-T103 — Probar estado del frontend con Node** · 25 min · Depende de: M4-T090–M4-T102 · RF-08–RF-10, RF-16–RF-19, RF-27, RF-43, RF-46–RF-47
+- [x] **M4-T103 — Probar estado del frontend con Node** · 25 min · Depende de: M4-T090–M4-T102 · RF-08–RF-10, RF-16–RF-19, RF-27, RF-43, RF-46–RF-47
       Hecho cuando: filtros, respuestas fuera de orden, recuperación y errores tienen pruebas aprobadas sin depender de la demo.
 
 ## 10. Navegador, seguridad y carreras finales
