@@ -47,6 +47,14 @@ describe('M3-T003–T006: preparación de integración pública', () => {
     });
   });
 
+  it('rechaza una fixture dirigida a una base que el ejecutor no creó', async () => {
+    // La comprobación ocurre antes de cualquier INSERT; un nombre test cotidiano tampoco autoriza limpieza.
+    const destinoNoAutorizado = { options: { database: 'citas_desarrollo' } };
+    await expect(crearEscenarioPortal(destinoNoAutorizado as never,
+      new RelojPrueba(new Date('2026-10-20T12:00:00Z'))))
+      .rejects.toThrow('base desechable migrada');
+  });
+
   it('controla el milisegundo anterior, exacto y posterior y revierte un fallo', async () => {
     await conBaseMigrada(async (db) => {
       const reloj = new RelojPrueba(new Date('2026-10-20T12:00:00Z'));

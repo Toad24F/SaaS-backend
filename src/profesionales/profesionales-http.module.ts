@@ -3,8 +3,9 @@ import { AuthModule } from '../auth/auth.module';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ProfesionalesController } from './profesionales.controller';
 import { ProfesionalesModule } from './profesionales.module';
+import { UsuariosModule } from '../usuarios/usuarios.module';
 
 // Composición HTTP separada del dominio para mantener imports acíclicos.
-@Module({ imports: [AuthModule, ProfesionalesModule],
+@Module({ imports: [AuthModule, ProfesionalesModule, UsuariosModule],
   controllers: [ProfesionalesController], providers: [RolesGuard] })
 export class ProfesionalesHttpModule {}

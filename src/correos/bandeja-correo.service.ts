@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import type { EntityManager } from 'typeorm';
 import { CodigoAcceso, PropositoCodigoAcceso } from '../codigos/entities/codigo-acceso.entity';
 import { Licencia } from '../licencias/entities/licencia.entity';
+import { claveAvisoLicencia } from '../licencias/services/clave-aviso-licencia';
 import { avisoElegible } from '../licencias/services/aviso-elegible';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -15,12 +16,37 @@ export interface EncolarAviso extends SolicitudBase {
   usuarioId: number;
   versionVencimiento: number;
 }
+export interface EncolarEventoLicencia extends SolicitudBase {
+  licenciaId: number;
+  correoDestinatario: string;
+  tipo: TipoEnvioCorreo;
+  versionVencimiento?: number;
+  umbralDias?: 7 | 15;
+  versionSuspension?: number;
+  operacionLicenciaId?: string;
+}
 type ReferenciaEnvio = Pick<EnvioCorreo, 'negocioId' | 'tipo' | 'correoDestinatario' |
-  'codigoAccesoId' | 'licenciaId' | 'versionVencimiento' | 'claveDedupe'>;
+  'codigoAccesoId' | 'licenciaId' | 'versionVencimiento' | 'claveDedupe'> &
+  Partial<Pick<EnvioCorreo, 'umbralDias' | 'versionSuspension' | 'operacionLicenciaId'>>;
 
 /** Registra pendientes en la transacción de dominio sin depender del transporte. */
 @Injectable()
 export class BandejaCorreoService {
+  /** El llamador posee la barrera del negocio y la licencia; la bandeja no envía SMTP. */
+  async encolarEventoLicencia(manager: EntityManager,
+    datos: EncolarEventoLicencia): Promise<EnvioCorreo> {
+    this.validarTransaccion(manager, datos);
+    const referencia: ReferenciaEnvio = {
+      negocioId: datos.negocioId, licenciaId: datos.licenciaId,
+      tipo: datos.tipo, correoDestinatario: datos.correoDestinatario,
+      codigoAccesoId: null, versionVencimiento: datos.versionVencimiento ?? null,
+      umbralDias: datos.umbralDias ?? null, versionSuspension: datos.versionSuspension ?? null,
+      operacionLicenciaId: datos.operacionLicenciaId ?? null,
+      claveDedupe: claveAvisoLicencia(datos),
+    };
+    return this.guardar(manager, referencia, datos.ahora);
+  }
+
   async encolarCodigo(manager: EntityManager, datos: EncolarCodigo): Promise<EnvioCorreo> {
     this.validarTransaccion(manager, datos);
     const codigo = await manager.getRepository(CodigoAcceso).createQueryBuilder('codigo')//bloquea la fila para evitar que otro proceso encole el mismo código al mismo tiempo

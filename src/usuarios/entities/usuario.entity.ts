@@ -23,6 +23,7 @@ const normalizadorCorreo = {
 @Check('chk_usuarios_rol_negocio', "(rol = 'superadmin' AND negocio_id IS NULL) OR (rol IN ('admin_negocio','recepcionista','profesional') AND negocio_id IS NOT NULL)")
 @Check('chk_usuarios_email_normalizado', 'BINARY email = BINARY LOWER(TRIM(email)) AND CHAR_LENGTH(email) > 0')
 @Check('chk_usuarios_activo', 'activo IN (0, 1)')
+@Check('chk_usuarios_inhabilitado_inactivo', 'inhabilitado_en IS NULL OR activo = 0')
 // Compatibilidad temporal con el alta de fase 1; Profesional siempre exige cuenta completa.
 @Check('chk_usuarios_activacion', "(rol = 'admin_negocio' AND activado_en IS NULL AND nombre IS NULL AND password_hash IS NULL) OR (activado_en IS NOT NULL AND nombre IS NOT NULL AND CHAR_LENGTH(TRIM(nombre)) > 0 AND password_hash IS NOT NULL AND CHAR_LENGTH(password_hash) > 0 AND activado_en >= creado_en)")
 export class Usuario {
@@ -57,6 +58,10 @@ export class Usuario {
 
     @Column({ default: true })
     activo: boolean;
+
+    // Retirada recuperable: el estado vive en la cuenta, también para Profesional.
+    @Column({ name: 'inhabilitado_en', type: 'datetime', precision: 6, nullable: true })
+    inhabilitadoEn: Date | null;
 
     // Activación y credenciales son obligatorias para Profesional.
     @Column({ name: 'activado_en', type: 'datetime', precision: 6, nullable: true })

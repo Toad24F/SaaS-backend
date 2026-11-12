@@ -7,6 +7,7 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 @Check('chk_agenda_modo', "modo IN ('ventana_libre','agenda_compacta')")
 @Check('chk_agenda_intervalo', 'intervalo_minutos IN (5,10,15,20,30,60)')
 @Check('chk_agenda_anticipacion', 'anticipacion_minutos MOD 5 = 0')
+@Check('chk_agenda_tiempo_entre_citas', 'tiempo_entre_citas_minutos BETWEEN 0 AND 60 AND tiempo_entre_citas_minutos MOD 5 = 0')
 export class ConfiguracionAgenda {
   @PrimaryColumn({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;
@@ -22,6 +23,10 @@ export class ConfiguracionAgenda {
 
   @Column({ name: 'intervalo_minutos', type: 'int', unsigned: true, default: 15 })
   intervaloMinutos: number;
+
+  // Separación nueva; cero no se deriva del intervalo público heredado.
+  @Column({ name: 'tiempo_entre_citas_minutos', type: 'int', unsigned: true, default: 0 })
+  tiempoEntreCitasMinutos: number;
 
   @Column({ name: 'anticipacion_minutos', type: 'int', unsigned: true, default: 15 })
   anticipacionMinutos: number;

@@ -1,4 +1,4 @@
-import { conBaseMigrada } from './support/mariadb';
+import { conBaseMigrada, retrocederHastaMigracion } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
 import type { DataSource } from 'typeorm';
@@ -69,6 +69,8 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
 
   it('conserva datos anteriores al actualizar y admite teléfono compartido', async () => {
     await conBaseMigrada(async (db) => {
+      // Retira por nombre todos los módulos posteriores antes de reconstruir fase 3.
+      await retrocederHastaMigracion(db, 'RelacionesReservaPublica1760000032000');
       // Retrocede también las relaciones de T014 para reconstruir fase 3.
       for (const nombre of [...migracionesPortal].reverse()) {
         const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');

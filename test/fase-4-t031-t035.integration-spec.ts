@@ -106,7 +106,9 @@ describe('M3-T031–T035: motor compartido y regresión privada', () => {
       const transacciones = jest.spyOn(db, 'transaction');
       await db.transaction('READ COMMITTED', async (manager) => {
         const valido = await motor.revalidarPublicoEnTransaccion(manager, a.id, entrada);
-        expect(valido).toMatchObject({ valido: true, modalidad: 'publica',
+        // ALA RF-47 y RF-55: un apartado histórico sin contexto de concesión
+        // no concede por sí solo un inicio que la agenda ya no ofrece.
+        expect(valido).toMatchObject({ valido: false, modalidad: 'publica',
           inicioUtc: inicio, finUtc: fin });
         const modalidadInyectada = await motor.revalidarPublicoEnTransaccion(
           manager, a.id, { ...entrada, modalidad: 'manual' } as typeof entrada);

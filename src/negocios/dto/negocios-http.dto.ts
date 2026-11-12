@@ -60,3 +60,16 @@ export class CambiarLimiteSucursalesDto {
   @Max(4294967295, { message: 'limiteSucursales está fuera de rango' })
   limiteSucursales: number;
 }
+
+/** Sustituye juntos los dos límites; no acepta un cambio parcial. */
+export class CambiarLimitesUsuariosDto {
+  @IsInt()
+  @Min(1)
+  @Max(4294967295)
+  limiteProfesionalesActivos: number;
+
+  @IsInt()
+  @Min(1)
+  @Max(4294967295)
+  limiteRecepcionistasActivos: number;
+}

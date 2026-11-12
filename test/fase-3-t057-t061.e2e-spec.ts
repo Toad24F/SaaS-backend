@@ -12,9 +12,10 @@ import { conBaseMigrada } from './support/mariadb';
 import { RelojPrueba } from './support/reloj';
 
 const ahora = new Date('2026-07-06T16:07:00Z');
-const inicial = { modo: 'ventana_libre', intervaloMinutos: 15,
+// ALA retira el intervalo público configurable; este recorrido conserva permisos.
+const inicial = { modo: 'ventana_libre', tiempoEntreCitasMinutos: 0,
   anticipacionMinutos: 15, diasFuturos: 60 };
-const nueva = { modo: 'agenda_compacta', intervaloMinutos: 10,
+const nueva = { modo: 'agenda_compacta', tiempoEntreCitasMinutos: 10,
   anticipacionMinutos: 0, diasFuturos: 0 };
 
 describe('M2-T057–T061: configuración y consulta HTTP privadas', () => {

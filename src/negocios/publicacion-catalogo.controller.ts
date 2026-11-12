@@ -1,45 +1,48 @@
-import { Body, Controller, Patch, UseGuards, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
-import { Repository } from 'typeorm';
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { IsBoolean, IsString, MaxLength, ValidateIf } from 'class-validator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { Negocio } from './entities/negocio.entity';
+import { PublicacionCatalogoService } from './publicacion-catalogo.service';
 
 class PublicacionCatalogoDto {
-  @IsOptional()
+  // Todos los campos son parciales; ValidateIf rechaza null y permite omisión.
+  @ValidateIf((_objeto, valor) => valor !== undefined)
   @IsString()
   @MaxLength(100)
   categoria?: string;
 
-  @IsOptional()
+  @ValidateIf((_objeto, valor) => valor !== undefined)
   @IsString()
   @MaxLength(20)
   telefono?: string;
 
+  @ValidateIf((_objeto, valor) => valor !== undefined)
   @IsBoolean()
-  mostrarContactoPublico: boolean;
+  mostrarContactoPublico?: boolean;
+
+  @ValidateIf((_objeto, valor) => valor !== undefined)
+  @IsBoolean()
+  mostrarPreciosPublicos?: boolean;
 }
 
 @Controller('negocios/publicacion-catalogo')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Rol.ADMIN_NEGOCIO)
 export class PublicacionCatalogoController {
-  constructor(@InjectRepository(Negocio) private readonly negocios: Repository<Negocio>) {}
+  constructor(private readonly publicacion: PublicacionCatalogoService) {}
+
+  @Get()
+  consultar(@CurrentUser() actor: JwtPayload) {
+    return this.publicacion.consultar(actor.sub);
+  }
 
   @Patch()
   async actualizar(@CurrentUser() actor: JwtPayload, @Body() datos: PublicacionCatalogoDto) {
-    const negocio = await this.negocios.findOneBy({ id: actor.negocioId! });
-    if (!negocio) throw new NotFoundException('Negocio no encontrado.');
-    if (datos.categoria !== undefined) negocio.categoria = datos.categoria.trim() || null;
-    if (datos.telefono !== undefined) negocio.telefonoContacto = datos.telefono.trim() || null;
-    negocio.mostrarContactoPublico = datos.mostrarContactoPublico;
-    await this.negocios.save(negocio);
-    return { categoria: negocio.categoria, telefono: negocio.telefonoContacto,
-      mostrarContactoPublico: negocio.mostrarContactoPublico };
+    // La escritura en servicio revalida pertenencia y comparte barrera con catálogo.
+    return this.publicacion.actualizar(actor.sub, datos);
   }
 }

@@ -4,6 +4,9 @@ import { Check, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 
 @Entity({ name: 'negocios' })
 @Check('chk_negocios_activacion', 'activado_en IS NULL OR activado_en >= creado_en')
 @Check('chk_negocios_cupo', 'limite_sucursales_activas >= 1')
+@Check('chk_negocios_limite_profesionales', 'limite_profesionales_activos >= 1')
+@Check('chk_negocios_limite_recepcionistas', 'limite_recepcionistas_activos >= 1')
+@Check('chk_negocios_mostrar_precios', 'mostrar_precios_publicos IN (0, 1)')
 @Check('chk_negocios_rfc', 'rfc IS NULL OR CHAR_LENGTH(TRIM(rfc)) > 0')
 @Check('chk_negocios_correo_administrador',
   'correo_administrador IS NULL OR (BINARY correo_administrador = BINARY LOWER(TRIM(correo_administrador)) AND CHAR_LENGTH(correo_administrador) > 0)')
@@ -34,6 +37,17 @@ export class Negocio {
 
   @Column({ name: 'limite_sucursales_activas', type: 'int', unsigned: true, default: 1 })
   limiteSucursalesActivas: number;
+
+  // Los cupos son límites configurados; el consumo se calcula desde usuarios activos.
+  @Column({ name: 'limite_profesionales_activos', type: 'int', unsigned: true, default: 5 })
+  limiteProfesionalesActivos: number;
+
+  @Column({ name: 'limite_recepcionistas_activos', type: 'int', unsigned: true, default: 3 })
+  limiteRecepcionistasActivos: number;
+
+  // La proyección pública consulta este valor vigente sin borrar costos históricos.
+  @Column({ name: 'mostrar_precios_publicos', type: 'boolean', default: true })
+  mostrarPreciosPublicos: boolean;
 
   @Column({
     name: 'telefono_contacto',

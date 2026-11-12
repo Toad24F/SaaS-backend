@@ -1,13 +1,13 @@
 import { validarConfiguracionAgenda } from './configuracion-agenda.validador';
 
-describe('M2-T020/T024: conjunto completo de agenda', () => {
-  const base = { modo: 'ventana_libre', intervaloMinutos: 15,
+describe('M2-T020/T024 y ALA-T087: conjunto completo de agenda', () => {
+  const base = { modo: 'ventana_libre', tiempoEntreCitasMinutos: 0,
     anticipacionMinutos: 15, diasFuturos: 60 };
 
-  it('admite los seis pasos, anticipación 0/5/15 y horizonte 0/60', () => {
-    for (const intervaloMinutos of [5, 10, 15, 20, 30, 60]) {
-      expect(validarConfiguracionAgenda({ ...base, intervaloMinutos }))
-        .toMatchObject({ intervaloMinutos });
+  it('admite separación 0–60, anticipación 0/5/15 y horizonte 0/60', () => {
+    for (const tiempoEntreCitasMinutos of [0, 5, 10, 15, 20, 30, 60]) {
+      expect(validarConfiguracionAgenda({ ...base, tiempoEntreCitasMinutos }))
+        .toMatchObject({ tiempoEntreCitasMinutos });
     }
     for (const anticipacionMinutos of [0, 5, 15]) {
       expect(validarConfiguracionAgenda({ ...base, anticipacionMinutos }))
@@ -28,7 +28,8 @@ describe('M2-T020/T024: conjunto completo de agenda', () => {
         .map((anticipacionMinutos) => ({ ...base, anticipacionMinutos })),
       ...[-1, 0.5, Number.MAX_SAFE_INTEGER + 1, '60']
         .map((diasFuturos) => ({ ...base, diasFuturos })),
-      { ...base, intervaloMinutos: 7 }]) {
+      { ...base, tiempoEntreCitasMinutos: 7 },
+      { ...base, intervaloMinutos: 15 }]) {
       expect(() => validarConfiguracionAgenda(valor)).toThrow();
     }
   });

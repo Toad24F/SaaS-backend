@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { ResolverNegocioPublicoService } from './resolver-negocio-publico.service';
 import type { FiltrosCatalogoPublico } from './entradas-publicas';
+import { proyectarPreciosPublicos } from './proyeccion-precios-publicos';
 
 interface FilaOferta {
   servicioId: number; servicioNombre: string; costo: string; duracionMinutos: number;
@@ -26,6 +27,7 @@ export class CatalogoPublicoService {
       const negocio = await this.negocios.resolverEnContexto(manager, slug, ahora);
       // Cada JOIN usa negocio_id y cada estado activo: una selección parcial
       // nunca convierte un servicio o una sucursal en oferta pública.
+      // La marca se comprueba además del estado para excluir retiradas recuperables.
       const filas = await manager.query(`SELECT
         s.id AS servicioId, s.nombre AS servicioNombre, s.costo AS costo,
         s.duracion_minutos AS duracionMinutos, s.descripcion AS descripcion,
@@ -44,6 +46,8 @@ export class CatalogoPublicoService {
         JOIN servicios s ON s.negocio_id=pss.negocio_id AND s.id=pss.servicio_id
         WHERE pss.negocio_id=? AND pss.activo=1 AND ps.activo=1
           AND pv.activo=1 AND u.activo=1 AND u.activado_en IS NOT NULL
+          AND u.inhabilitado_en IS NULL AND su.inhabilitado_en IS NULL
+          AND s.inhabilitado_en IS NULL
           AND u.rol='profesional' AND su.activo=1 AND s.activo=1
         ORDER BY s.nombre,s.id,su.nombre,su.id,u.nombre,u.id`,
       [negocio.id]) as FilaOferta[];
@@ -65,11 +69,13 @@ export class CatalogoPublicoService {
       const profesionales = [...new Map(deSucursal.map((fila) => [fila.personalId,
         { id: fila.personalId, nombre: fila.personalNombre,
           ...(fila.especialidad ? { especialidad: fila.especialidad } : {}) }])).values()];
-      return { negocio: { slug: negocio.slug, nombre: negocio.nombre,
+      const resultado = { negocio: { slug: negocio.slug, nombre: negocio.nombre,
         ...(negocio.categoria ? { categoria: negocio.categoria } : {}),
         ...(negocio.mostrarContactoPublico && negocio.telefono ?
           { telefono: negocio.telefono } : {}) },
         servicios, sucursales, profesionales };
+      // Oferta y visibilidad proceden de la misma instantánea del negocio.
+      return proyectarPreciosPublicos(resultado, negocio.mostrarPreciosPublicos ?? true);
     });
   }
 }

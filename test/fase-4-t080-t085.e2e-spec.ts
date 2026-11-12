@@ -175,7 +175,7 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       await f.reservar({ ...CONTACTO, notas: 'x'.repeat(2001) }).expect(400);
       const r = await f.reservar().expect(201);
       expect(r.body).toEqual({ folio: expect.any(String), estado: 'pendiente',
-        costoAceptado: '100.00', nombreNegocio: 'Portal 1', nombreServicio: 'Corte',
+        costo: '100.00', nombreNegocio: 'Portal 1', nombreServicio: 'Corte',
         nombreSucursal: 'Sucursal 1-0', nombreProfesional: 'Profesional 1-1',
         zonaHoraria: 'America/Chihuahua', inicioUtc: '2026-10-20T14:00:00.000Z',
         finUtc: '2026-10-20T14:30:00.000Z' });
@@ -233,8 +233,8 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       await f.preparar().expect(201);
       await f.db.query('UPDATE servicios SET costo=250 WHERE id=?', [f.servicioId]);
       const original = (await f.reservar().expect(201)).body;
-      expect(original.costoAceptado).toBe('100.00');
-      expect((await f.apartar('09:00')).costoAceptado).toBe('250.00');
+      expect(original.costo).toBe('100.00');
+      expect((await f.apartar('09:00')).costo).toBe('250.00');
       await f.db.query("UPDATE negocios SET nombre='Nuevo' WHERE id=?", [f.negocioId]);
       await f.db.query("UPDATE servicios SET nombre='Nuevo',duracion_minutos=60,costo=999 WHERE id=?", [f.servicioId]);
       await f.db.query("UPDATE sucursales SET nombre='Nueva',zona_horaria='UTC' WHERE id=?", [f.sucursalId]);

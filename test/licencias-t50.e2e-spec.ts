@@ -11,7 +11,6 @@ import { Negocio } from '../src/negocios/entities/negocio.entity';
 import { Licencia } from '../src/licencias/entities/licencia.entity';
 import { CodigoAcceso } from '../src/codigos/entities/codigo-acceso.entity';
 import { EventoAuditoria } from '../src/auditoria/entities/evento-auditoria.entity';
-import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { AltaNegocioHistorica as AltaNegocioCreada } from './support/altas-historicas';
 import { servicios } from './support/escenarios-t51-t60';
 import { SesionesService } from '../src/auth/services/sesiones.service';
@@ -70,9 +69,14 @@ async function conHttp(ejecutar: (ctx: Contexto) => Promise<void>) {
 // Cada petición se construye al ejecutarla; actor y hora nunca se envían en el cuerpo.
 const acciones = ['suspender', 'reactivar', 'renovar'] as const;
 type Accion = typeof acciones[number];
+let renovacionSecuencia = 0;
+// Suspender y reactivar repiten su clave; cada renovación intencional recibe otra.
 const operar = (ctx: Contexto, accion: Accion, id: number | string = ctx.licencias[0].id,
   token = ctx.tokens[0], body: object = {}) => request(ctx.app.getHttpServer())
-  .post(`/licencias/${id}/${accion}`).auth(token, { type: 'bearer' }).send(body);
+  .post(`/licencias/${id}/${accion}`).auth(token, { type: 'bearer' })
+  .set('Idempotency-Key', accion === 'renovar'
+    ? `t50-renovar-${++renovacionSecuencia}-1234567890123456`
+    : `t50-${accion}-1234567890123456`).send(body);
 const perfil = (ctx: Contexto, indice: number) => request(ctx.app.getHttpServer())
   .get('/auth/profile').auth(ctx.tokens[indice], { type: 'bearer' });
 const licencia = (ctx: Contexto, id = ctx.licencias[0].id) => ctx.db.getRepository(Licencia).findOneByOrFail({ id });
@@ -157,7 +161,8 @@ describe('T50 — administración HTTP de licencias', () => {
       await ctx.db.getRepository(Licencia).update(ctx.licencias[0].id, { venceEn: ctx.reloj.ahora() });
       const antes = await estado(ctx.db);
       await operar(ctx, 'suspender').expect(409);
-      await operar(ctx, 'reactivar').expect(200);
+      // Sin suspensión previa, una clave nueva no representa una transición real.
+      await operar(ctx, 'reactivar').expect(409);
       expect(await estado(ctx.db)).toEqual(antes);
       await perfil(ctx, 1).expect(401);
       ctx.reloj.avanzar(1000);
@@ -236,9 +241,12 @@ describe('T50 — administración HTTP de licencias', () => {
     await conHttp(async (ctx) => {
       if (accion === 'reactivar') await operar(ctx, 'suspender').expect(200);
       const antes = await estado(ctx.db);
-      // Único doble: fuerza el error del registrador; Guards, bloqueos y transacción son reales.
-      const fallo = jest.spyOn(ctx.app.get(AuditoriaService), 'registrar').mockRejectedValueOnce(new Error(`Fallo de prueba T50 ${accion}`));
-      try { await operar(ctx, accion).expect(500); } finally { fallo.mockRestore(); }
+      // El error SQL del INSERT de auditoría prueba el mismo commit que la
+      // transición, independientemente de instancias Nest duplicadas.
+      await ctx.db.query(`CREATE TRIGGER auditoria_fallo_t50 BEFORE INSERT ON eventos_auditoria
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de prueba T50'`);
+      try { await operar(ctx, accion).expect(500); }
+      finally { await ctx.db.query('DROP TRIGGER auditoria_fallo_t50'); }
       expect(await estado(ctx.db)).toEqual(antes);
     });
   });

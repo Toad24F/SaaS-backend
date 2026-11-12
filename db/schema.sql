@@ -966,3 +966,260 @@ CREATE TABLE envios_correo (
     (estado = 'enviado' AND confirmado_en IS NOT NULL)
     OR (estado <> 'enviado' AND confirmado_en IS NULL))
 ) ENGINE=InnoDB;
+
+-- ALA-T008–T009: límites iniciales por negocio y proyección pública de precios.
+-- El consumo de cupos se deriva de usuarios; estos campos solo guardan máximos.
+ALTER TABLE negocios
+  ADD limite_profesionales_activos INT UNSIGNED NOT NULL DEFAULT 5,
+  ADD limite_recepcionistas_activos INT UNSIGNED NOT NULL DEFAULT 3,
+  ADD mostrar_precios_publicos TINYINT(1) NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_negocios_limite_profesionales CHECK (limite_profesionales_activos >= 1),
+  ADD CONSTRAINT chk_negocios_limite_recepcionistas CHECK (limite_recepcionistas_activos >= 1),
+  ADD CONSTRAINT chk_negocios_mostrar_precios CHECK (mostrar_precios_publicos IN (0, 1));
+
+-- ALA-T010–T012: inhabilitar exige desactivar, pero conserva identidad y unicidad.
+-- Personal hereda el estado de usuarios y no recibe una columna duplicada.
+ALTER TABLE usuarios
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_usuarios_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+ALTER TABLE servicios
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_servicios_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+ALTER TABLE sucursales
+  ADD inhabilitado_en DATETIME(6) NULL,
+  ADD CONSTRAINT chk_sucursales_inhabilitado_inactivo
+    CHECK (inhabilitado_en IS NULL OR activo = 0);
+
+-- ALA-T013–T014: plazo anulable en licencias anteriores y ciclo independiente.
+ALTER TABLE licencias
+  ADD plazo_suspension_dias INT UNSIGNED NULL,
+  ADD version_suspension INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD CONSTRAINT chk_licencias_plazo_suspension
+    CHECK (plazo_suspension_dias IS NULL OR plazo_suspension_dias BETWEEN 0 AND 30);
+
+-- ALA-T015–T016: cada clave identifica un resultado reducido de una licencia.
+-- Actor y pertenencia se fijan con FK; el servicio validará el rol superadmin.
+CREATE TABLE operaciones_licencia (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  licencia_id INT UNSIGNED NOT NULL,
+  actor_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  accion ENUM('suspender','reactivar','renovar') NOT NULL,
+  parametros_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  resultado_reducido TEXT NOT NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_operaciones_licencia_clave (negocio_id,licencia_id,clave),
+  UNIQUE KEY uq_operaciones_licencia_referencia (negocio_id,licencia_id,id),
+  INDEX idx_operaciones_licencia_actor (actor_id),
+  CONSTRAINT fk_operaciones_licencia_licencia FOREIGN KEY (negocio_id,licencia_id)
+    REFERENCES licencias(negocio_id,id),
+  CONSTRAINT fk_operaciones_licencia_actor FOREIGN KEY (actor_id)
+    REFERENCES usuarios(id),
+  CONSTRAINT chk_operaciones_licencia_clave CHECK (
+    CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)),
+  CONSTRAINT chk_operaciones_licencia_hash CHECK (CHAR_LENGTH(parametros_hash) = 64),
+  CONSTRAINT chk_operaciones_licencia_resultado CHECK (JSON_VALID(resultado_reducido))
+) ENGINE=InnoDB;
+
+-- ALA-T017–T018: conservar el aviso viejo; los nuevos usan versión, ciclo u operación.
+ALTER TABLE envios_correo DROP CONSTRAINT chk_envios_referencia;
+ALTER TABLE envios_correo
+  MODIFY tipo ENUM('activacion_admin','recuperacion','aviso_vencimiento',
+    'aviso_preventivo','licencia_vencida','suspension_programada',
+    'suspension_efectiva','suspension_inmediata','suspension_revocada',
+    'licencia_reactivada','licencia_renovada') NOT NULL,
+  ADD umbral_dias INT UNSIGNED NULL,
+  ADD version_suspension INT UNSIGNED NULL,
+  ADD operacion_licencia_id BIGINT UNSIGNED NULL,
+  ADD INDEX idx_envios_operacion_licencia
+    (negocio_id,licencia_id,operacion_licencia_id),
+  ADD CONSTRAINT fk_envios_operacion_licencia
+    FOREIGN KEY (negocio_id,licencia_id,operacion_licencia_id)
+    REFERENCES operaciones_licencia(negocio_id,licencia_id,id);
+ALTER TABLE envios_correo
+  ADD CONSTRAINT chk_envios_referencia CHECK (COALESCE((
+    (tipo IN ('activacion_admin','recuperacion') AND codigo_acceso_id IS NOT NULL
+      AND licencia_id IS NULL AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('aviso_vencimiento','licencia_vencida') AND codigo_acceso_id IS NULL
+      AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo = 'aviso_preventivo' AND codigo_acceso_id IS NULL
+      AND licencia_id IS NOT NULL AND version_vencimiento >= 1 AND umbral_dias IN (7,15)
+      AND version_suspension IS NULL AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('suspension_programada','suspension_efectiva','suspension_inmediata')
+      AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+      AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension >= 1 AND operacion_licencia_id IS NULL)
+    OR (tipo IN ('suspension_revocada','licencia_reactivada','licencia_renovada')
+      AND codigo_acceso_id IS NULL AND licencia_id IS NOT NULL
+      AND version_vencimiento IS NULL AND umbral_dias IS NULL
+      AND version_suspension IS NULL AND operacion_licencia_id IS NOT NULL)
+  ), 0));
+
+-- ALA-T019–T020: la separación nueva parte de cero; intervalo_minutos es legado.
+ALTER TABLE configuracion_agenda
+  ADD tiempo_entre_citas_minutos INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD CONSTRAINT chk_agenda_tiempo_entre_citas CHECK (
+    tiempo_entre_citas_minutos BETWEEN 0 AND 60
+    AND tiempo_entre_citas_minutos MOD 5 = 0);
+
+-- ALA-T021–T022: fin_utc sigue siendo el fin de atención, no el protegido.
+-- Las citas anteriores reciben separación cero y fin protegido idéntico.
+ALTER TABLE citas
+  ADD separacion_minutos INT UNSIGNED NOT NULL DEFAULT 0,
+  ADD fin_ocupacion_utc DATETIME(3) NULL,
+  ADD CONSTRAINT chk_citas_separacion CHECK (
+    separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0),
+  ADD CONSTRAINT chk_citas_fin_ocupacion CHECK (
+    fin_ocupacion_utc IS NULL OR
+    fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
+UPDATE citas SET fin_ocupacion_utc = fin_utc WHERE fin_ocupacion_utc IS NULL;
+
+-- Los apartados previos carecen de condiciones de concesión comprobables.
+-- El contexto nuevo se escribirá completo en una sola operación posterior.
+ALTER TABLE bloqueos_temporales
+  ADD separacion_minutos INT UNSIGNED NULL,
+  ADD fin_ocupacion_utc DATETIME(3) NULL,
+  ADD modo_concesion VARCHAR(20) NULL,
+  ADD version_reglas INT UNSIGNED NULL,
+  ADD CONSTRAINT chk_bt_contexto_protegido CHECK (COALESCE((
+    (fin_ocupacion_utc IS NULL AND separacion_minutos IS NULL
+      AND modo_concesion IS NULL AND version_reglas IS NULL)
+    OR (fin_ocupacion_utc IS NOT NULL AND separacion_minutos IS NOT NULL
+      AND modo_concesion IS NOT NULL AND version_reglas IS NOT NULL
+      AND separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0
+      AND modo_concesion IN ('ventana_libre','agenda_compacta')
+      AND version_reglas >= 1)
+  ), 0)),
+  ADD CONSTRAINT chk_bt_fin_ocupacion CHECK (
+    fin_ocupacion_utc IS NULL OR
+    fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE));
+
+-- ALA-T023–T024: NULL mantiene citas anteriores y manuales sin origen inventado.
+-- Un origen no nulo queda reservado por negocio y la búsqueda telefónica usa índice.
+ALTER TABLE citas
+  ADD apartado_origen_id INT UNSIGNED NULL,
+  ADD UNIQUE KEY uq_citas_apartado_origen (negocio_id,apartado_origen_id),
+  ADD INDEX idx_citas_contacto_sucursal_inicio
+    (negocio_id,sucursal_id,telefono_contacto,inicio_utc),
+  ADD CONSTRAINT fk_citas_apartado_origen
+    FOREIGN KEY (negocio_id,apartado_origen_id)
+    REFERENCES bloqueos_temporales(negocio_id,id) ON DELETE RESTRICT;
+
+-- ALA-T025–T026: primero se identifica el intento anterior; después el apartado
+-- apunta al intento actual. Las FKs compuestas impiden referencias de otro negocio.
+ALTER TABLE intentos_reserva_publica
+  ADD intento_anterior_id BIGINT UNSIGNED NULL,
+  ADD UNIQUE KEY uq_irp_intento_anterior (negocio_id,intento_anterior_id),
+  ADD CONSTRAINT fk_irp_intento_anterior
+    FOREIGN KEY (negocio_id,intento_anterior_id)
+    REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
+ALTER TABLE bloqueos_temporales
+  ADD intento_actual_id BIGINT UNSIGNED NULL,
+  ADD INDEX idx_bt_intento_actual (negocio_id,intento_actual_id),
+  ADD CONSTRAINT fk_bt_intento_actual
+    FOREIGN KEY (negocio_id,intento_actual_id)
+    REFERENCES intentos_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
+
+-- M4-T007–T008: versiones iniciales sin cambiar snapshots ni el índice telefónico.
+-- M4-T013–T015: Cita/Cliente usan columnas explícitas, no incrementos automáticos
+-- de ORM. IntentoCitaManual y EventoCita reflejan el DDL y sus referencias siguientes.
+ALTER TABLE citas
+  ADD version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_citas_version CHECK (version >= 1);
+ALTER TABLE clientes
+  ADD version INT UNSIGNED NOT NULL DEFAULT 1,
+  ADD CONSTRAINT chk_clientes_version CHECK (version >= 1);
+
+-- M4-T009: la clave pertenece al actor y negocio. Solo se persiste la huella,
+-- nunca el formulario, el contacto ni las notas del envío manual.
+CREATE TABLE intentos_cita_manual (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  actor_usuario_id INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  contenido_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  estado ENUM('preparado','registrado','no_registrado') NOT NULL DEFAULT 'preparado',
+  cita_id INT UNSIGNED NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+  resuelto_en DATETIME(6) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_icm_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_icm_actor_clave (negocio_id,actor_usuario_id,clave),
+  UNIQUE KEY uq_icm_cita (negocio_id,cita_id),
+  CONSTRAINT chk_icm_clave CHECK (
+    CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)),
+  CONSTRAINT chk_icm_hash CHECK (contenido_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_icm_resultado CHECK (
+    (estado='preparado' AND cita_id IS NULL AND resuelto_en IS NULL)
+    OR (estado='registrado' AND cita_id IS NOT NULL AND resuelto_en IS NOT NULL)
+    OR (estado='no_registrado' AND cita_id IS NULL AND resuelto_en IS NOT NULL))
+) ENGINE=InnoDB;
+
+-- M4-T010: cada revisión agrega un evento con actor de personal o sesión pública.
+-- No se inventan eventos históricos para citas previas a esta migración.
+CREATE TABLE eventos_cita (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  actor_usuario_id INT UNSIGNED NULL,
+  sesion_publica_id INT UNSIGNED NULL,
+  accion ENUM('alta','cambio_estado','cancelacion','reactivacion','cambio_horario') NOT NULL,
+  ocurrido_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  version_resultante INT UNSIGNED NOT NULL,
+  valores_antes JSON NULL,
+  valores_despues JSON NOT NULL,
+  motivo VARCHAR(2000) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ec_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_ec_cita_version (negocio_id,cita_id,version_resultante),
+  CONSTRAINT chk_ec_actor CHECK (
+    (actor_usuario_id IS NOT NULL AND sesion_publica_id IS NULL)
+    OR (actor_usuario_id IS NULL AND sesion_publica_id IS NOT NULL)),
+  CONSTRAINT chk_ec_origen_publico CHECK (sesion_publica_id IS NULL OR accion='alta'),
+  CONSTRAINT chk_ec_version CHECK (version_resultante >= 1)
+) ENGINE=InnoDB;
+-- Los triggers de una sola sentencia permiten ejecutar este script sin DELIMITER.
+CREATE TRIGGER trg_ec_no_actualizar BEFORE UPDATE ON eventos_cita
+  FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial de citas es inmutable.';
+CREATE TRIGGER trg_ec_no_borrar BEFORE DELETE ON eventos_cita
+  FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial de citas es inmutable.';
+
+-- M4-T011: ampliar destinos con cliente sin aceptar un tipo nulo con ID presente.
+ALTER TABLE eventos_auditoria
+  DROP CONSTRAINT chk_auditoria_recurso,
+  ADD CONSTRAINT chk_auditoria_recurso CHECK (
+    (recurso_tipo IS NULL AND recurso_id IS NULL)
+    OR (recurso_tipo IS NOT NULL
+      AND recurso_tipo IN ('sucursal','servicio','profesional','horario','bloqueo','cliente')
+      AND recurso_id IS NOT NULL AND recurso_id > 0));
+
+-- M4-T012: FKs compuestas impiden referencias cruzadas. Los índices acotan
+-- intentos por actor/estado y la lectura del historial por cita y fecha.
+ALTER TABLE intentos_cita_manual
+  ADD INDEX idx_icm_actor_estado_fecha (negocio_id,actor_usuario_id,estado,creado_en,id),
+  ADD CONSTRAINT fk_icm_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_icm_actor FOREIGN KEY (negocio_id,actor_usuario_id)
+    REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_icm_cita FOREIGN KEY (negocio_id,cita_id)
+    REFERENCES citas(negocio_id,id) ON DELETE RESTRICT;
+ALTER TABLE eventos_cita
+  ADD INDEX idx_ec_cita_fecha (negocio_id,cita_id,ocurrido_en,id),
+  ADD INDEX idx_ec_actor_fecha (negocio_id,actor_usuario_id,ocurrido_en),
+  ADD INDEX idx_ec_sesion (negocio_id,sesion_publica_id),
+  ADD CONSTRAINT fk_ec_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_ec_cita FOREIGN KEY (negocio_id,cita_id)
+    REFERENCES citas(negocio_id,id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_ec_actor FOREIGN KEY (negocio_id,actor_usuario_id)
+    REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_ec_sesion FOREIGN KEY (negocio_id,sesion_publica_id)
+    REFERENCES sesiones_reserva_publica(negocio_id,id) ON DELETE RESTRICT;

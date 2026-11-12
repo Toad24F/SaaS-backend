@@ -1,0 +1,416 @@
+{
+  "version": 1,
+  "archivosTotales": 221,
+  "cantidades": {
+    "unitarias": 89,
+    "integracion": 90,
+    "http": 42
+  },
+  "lotes": [
+    {
+      "id": "unitarias-01",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/altas/entities/identidad-pendiente.spec.ts",
+        "src/app.controller.spec.ts",
+        "src/auditoria/auditoria-fase-2.spec.ts",
+        "src/auditoria/auditoria.service.spec.ts",
+        "src/auditoria/entities/evento-auditoria.entity.spec.ts",
+        "src/auth/auth-flujos.spec.ts",
+        "src/auth/auth.controller.spec.ts",
+        "src/auth/auth.service.spec.ts",
+        "src/auth/entities/limite-intentos.entity.spec.ts",
+        "src/auth/entities/sesion.entity.spec.ts",
+        "src/auth/guards/limite-intentos.guard.spec.ts",
+        "src/auth/services/autorizacion-disponibilidad.spec.ts",
+        "src/auth/services/autorizacion-fase-2.spec.ts",
+        "src/auth/services/autorizacion.service.spec.ts",
+        "src/auth/services/limite-intentos.storage.spec.ts",
+        "src/auth/services/politica-contrasenas.service.spec.ts",
+        "src/auth/strategies/jwt.strategy.spec.ts",
+        "src/bloqueos/calculo-bloqueos.spec.ts",
+        "src/bloqueos/validar-bloqueo.spec.ts",
+        "src/codigos/derivador-codigo.spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm test -- --runInBand"
+    },
+    {
+      "id": "unitarias-02",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/codigos/entities/codigo-acceso.entity.spec.ts",
+        "src/codigos/entities/codigo-fase-2.spec.ts",
+        "src/comun/orden-bloqueos.spec.ts",
+        "src/config/configuracion-correo.spec.ts",
+        "src/config/database.config.spec.ts",
+        "src/config/typeorm.datasource.spec.ts",
+        "src/correos/entities/envio-correo.entity.spec.ts",
+        "src/correos/transporte-correo-controlado.spec.ts",
+        "src/correos/transporte-correo-smtp.spec.ts",
+        "src/database/modelo-recepcionistas.spec.ts",
+        "src/database/schema-fase-2.spec.ts",
+        "src/database/schema.spec.ts",
+        "src/disponibilidad/base-fase-3.spec.ts",
+        "src/disponibilidad/candidatos-libres.spec.ts",
+        "src/disponibilidad/configuracion-agenda-ala.spec.ts",
+        "src/disponibilidad/configuracion-agenda.validador.spec.ts",
+        "src/disponibilidad/disponibilidad-entradas.spec.ts",
+        "src/disponibilidad/espacios-libres.spec.ts",
+        "src/disponibilidad/primeros-compactos.spec.ts",
+        "src/disponibilidad/proyeccion-atencion.spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm test -- --runInBand"
+    },
+    {
+      "id": "unitarias-03",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/disponibilidad/seleccion-compacta.spec.ts",
+        "src/horarios/calendario-t095.spec.ts",
+        "src/horarios/calendario.spec.ts",
+        "src/horarios/fusion-franjas.spec.ts",
+        "src/horarios/horarios-fase-2.spec.ts",
+        "src/licencias/dto/operacion-licencia.dto.spec.ts",
+        "src/licencias/entities/licencia.entity.spec.ts",
+        "src/licencias/licencias.service.spec.ts",
+        "src/licencias/services/calendario-licencias.service.spec.ts",
+        "src/licencias/services/clave-aviso-licencia.spec.ts",
+        "src/licencias/services/consulta-vigencia-licencias.service.spec.ts",
+        "src/licencias/services/politica-acceso-licencia.service.spec.ts",
+        "src/licencias/services/suspension-licencia.service.spec.ts",
+        "src/licencias/services/vista-vigencia-licencia.service.spec.ts",
+        "src/modulos-fase-2.spec.ts",
+        "src/modulos.spec.ts",
+        "src/negocios/entities/negocio-fase-2.spec.ts",
+        "src/negocios/entities/negocio.entity.spec.ts",
+        "src/negocios/validar-rfc.spec.ts",
+        "src/operacion/ejecucion-periodica.service.spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm test -- --runInBand"
+    },
+    {
+      "id": "unitarias-04",
+      "tipo": "unitarias",
+      "archivos": [
+        "src/profesionales/modelo-oferta-fix.spec.ts",
+        "src/reservas-publicas/apartados-entrada.spec.ts",
+        "src/reservas-publicas/contacto-reserva-publica.spec.ts",
+        "src/reservas-publicas/control-escrituras-publicas.spec.ts",
+        "src/reservas-publicas/coordinacion-reserva-publica.service.spec.ts",
+        "src/reservas-publicas/entradas-publicas.spec.ts",
+        "src/reservas-publicas/errores-publicos.spec.ts",
+        "src/reservas-publicas/limite-cuerpo-publico.spec.ts",
+        "src/reservas-publicas/metricas-portal.service.spec.ts",
+        "src/reservas-publicas/proteccion-portal.service.spec.ts",
+        "src/reservas-publicas/proyeccion-precios-publicos.spec.ts",
+        "src/reservas-publicas/reservas-publicas.contract.spec.ts",
+        "src/servicios/servicios-fase-2.spec.ts",
+        "src/sucursales/sucursal-fase-2.spec.ts",
+        "src/usuarios/entities/usuario-fase-2.spec.ts",
+        "src/usuarios/entities/usuario.entity.spec.ts",
+        "src/usuarios/usuarios.service.spec.ts",
+        "test/ala-preparacion-documental.spec.ts",
+        "test/ala-t001-matriz.spec.ts",
+        "test/ala-t008-t012-modelo.spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm test -- --runInBand"
+    },
+    {
+      "id": "unitarias-05",
+      "tipo": "unitarias",
+      "archivos": [
+        "test/ala-t013-t018-modelo.spec.ts",
+        "test/ala-t019-t022-modelo.spec.ts",
+        "test/ala-t023-t027-modelo.spec.ts",
+        "test/contratos-modulo-1.spec.ts",
+        "test/decisiones-modulo-1.spec.ts",
+        "test/fase-4-t097-evidencia.spec.ts",
+        "test/support/datos-negocios.spec.ts",
+        "test/support/modulo-1.spec.ts",
+        "test/support/reloj.spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm test -- --runInBand"
+    },
+    {
+      "id": "integracion-01",
+      "tipo": "integracion",
+      "archivos": [
+        "test/activaciones.integration-spec.ts",
+        "test/ala-t008-t012.integration-spec.ts",
+        "test/ala-t013-t018.integration-spec.ts",
+        "test/ala-t019-t022.integration-spec.ts",
+        "test/ala-t023-t027.integration-spec.ts",
+        "test/ala-t028-t034.integration-spec.ts",
+        "test/ala-t036-t040.integration-spec.ts",
+        "test/ala-t041-t045.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-02",
+      "tipo": "integracion",
+      "archivos": [
+        "test/ala-t046-t049.integration-spec.ts",
+        "test/ala-t051-t056.integration-spec.ts",
+        "test/ala-t058-t060.integration-spec.ts",
+        "test/ala-t090-t093.integration-spec.ts",
+        "test/ala-t102-t109.integration-spec.ts",
+        "test/ala-t110-t115.integration-spec.ts",
+        "test/ala-t116-t121.integration-spec.ts",
+        "test/ala-t122-t132.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-03",
+      "tipo": "integracion",
+      "archivos": [
+        "test/ala-t142-t145.integration-spec.ts",
+        "test/alta-invitacion.integration-spec.ts",
+        "test/alta-rollback-t036.integration-spec.ts",
+        "test/altas-negocio.integration-spec.ts",
+        "test/altas-t74.integration-spec.ts",
+        "test/auth-dominio-t26-t30.integration-spec.ts",
+        "test/avisos-t116-t120.integration-spec.ts",
+        "test/bajas-t111-t115.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-04",
+      "tipo": "integracion",
+      "archivos": [
+        "test/bloqueos-t101-t105.integration-spec.ts",
+        "test/carreras-invitaciones-t042-t043.integration-spec.ts",
+        "test/carreras-modulo-1.integration-spec.ts",
+        "test/codigos-auditoria.integration-spec.ts",
+        "test/codigos-fase-2.integration-spec.ts",
+        "test/concurrencia-t52-t57.integration-spec.ts",
+        "test/cuentas-auditoria-fase-2.integration-spec.ts",
+        "test/cuentas-licencias-t38-t44.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-05",
+      "tipo": "integracion",
+      "archivos": [
+        "test/ejecutor-t121-t122.integration-spec.ts",
+        "test/encolado-correo.integration-spec.ts",
+        "test/envios-correo.integration-spec.ts",
+        "test/esquema-t124-t125.integration-spec.ts",
+        "test/fase-3-arranque-entidades.integration-spec.ts",
+        "test/fase-3-t005-t010.integration-spec.ts",
+        "test/fase-3-t011-t015.integration-spec.ts",
+        "test/fase-3-t016-t019.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-06",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fase-3-t020-t025.integration-spec.ts",
+        "test/fase-3-t026-t030.integration-spec.ts",
+        "test/fase-3-t031-t038.integration-spec.ts",
+        "test/fase-3-t039-t043.integration-spec.ts",
+        "test/fase-3-t044-t049.integration-spec.ts",
+        "test/fase-3-t050-t056.integration-spec.ts",
+        "test/fase-3-t074-t077.integration-spec.ts",
+        "test/fase-3-t080-t081.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-07",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fase-4-t001-t007.integration-spec.ts",
+        "test/fase-4-t008-t013.integration-spec.ts",
+        "test/fase-4-t014-t019.integration-spec.ts",
+        "test/fase-4-t025-t030.integration-spec.ts",
+        "test/fase-4-t031-t035.integration-spec.ts",
+        "test/fase-4-t036-t040.integration-spec.ts",
+        "test/fase-4-t041-t044.integration-spec.ts",
+        "test/fase-4-t045-t051.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-08",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fase-4-t052-t057.integration-spec.ts",
+        "test/fase-4-t058-t062.integration-spec.ts",
+        "test/fase-4-t063-t064.integration-spec.ts",
+        "test/fase-4-t065-t068.integration-spec.ts",
+        "test/fase-4-t072-t073.integration-spec.ts",
+        "test/fase-4-t074-t079.integration-spec.ts",
+        "test/fase-4-t086-t091.integration-spec.ts",
+        "test/fase-4-t092-t096.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-09",
+      "tipo": "integracion",
+      "archivos": [
+        "test/fix-modulo-1-t002-t005.integration-spec.ts",
+        "test/fix-modulo-1-t009.integration-spec.ts",
+        "test/fix-modulo-1-t019-t023.integration-spec.ts",
+        "test/fix-modulo-1-t024-t029.integration-spec.ts",
+        "test/fix-modulo-1-t034.integration-spec.ts",
+        "test/horarios-t083-t085.integration-spec.ts",
+        "test/horarios-t090-t091.integration-spec.ts",
+        "test/horarios-t092-t096.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-10",
+      "tipo": "integracion",
+      "archivos": [
+        "test/horarios-t097-t100.integration-spec.ts",
+        "test/identidad-fase-2.integration-spec.ts",
+        "test/instalacion-t126-t127.integration-spec.ts",
+        "test/instalacion-t61.integration-spec.ts",
+        "test/invitaciones-t037-t039.integration-spec.ts",
+        "test/licencias-reintentos.integration-spec.ts",
+        "test/mariadb.integration-spec.ts",
+        "test/migrations.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-11",
+      "tipo": "integracion",
+      "archivos": [
+        "test/modelo-recepcionistas.integration-spec.ts",
+        "test/persistencia.integration-spec.ts",
+        "test/procesador-correo.integration-spec.ts",
+        "test/profesionales-t081-t082.integration-spec.ts",
+        "test/recepcionistas-t76-t81.integration-spec.ts",
+        "test/recepcionistas-t78-t84.integration-spec.ts",
+        "test/recuperacion-correo-t040.integration-spec.ts",
+        "test/reserva-correo-fase-2.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "integracion-12",
+      "tipo": "integracion",
+      "archivos": [
+        "test/sucursales-t060.integration-spec.ts",
+        "test/sucursales-t062-t066.integration-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:integration -- --runInBand"
+    },
+    {
+      "id": "http-01",
+      "tipo": "http",
+      "archivos": [
+        "test/ala-t035.e2e-spec.ts",
+        "test/ala-t050.e2e-spec.ts",
+        "test/ala-t057.e2e-spec.ts",
+        "test/ala-t061-t065.e2e-spec.ts",
+        "test/ala-t066-t070.e2e-spec.ts",
+        "test/ala-t071-t074.e2e-spec.ts",
+        "test/ala-t075-t076.e2e-spec.ts",
+        "test/ala-t078-t081.e2e-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:e2e -- --runInBand"
+    },
+    {
+      "id": "http-02",
+      "tipo": "http",
+      "archivos": [
+        "test/ala-t082-t085.e2e-spec.ts",
+        "test/ala-t086-t089.e2e-spec.ts",
+        "test/ala-t098-t101.e2e-spec.ts",
+        "test/ala-t116-t121.e2e-spec.ts",
+        "test/ala-t133-t140.e2e-spec.ts",
+        "test/app.e2e-spec.ts",
+        "test/auth-t45.e2e-spec.ts",
+        "test/auth-t46.e2e-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:e2e -- --runInBand"
+    },
+    {
+      "id": "http-03",
+      "tipo": "http",
+      "archivos": [
+        "test/bajas-t111-t115.e2e-spec.ts",
+        "test/bloqueos-t106-t110.e2e-spec.ts",
+        "test/credenciales-t49.e2e-spec.ts",
+        "test/envios-correo.e2e-spec.ts",
+        "test/fase-3-t057-t061.e2e-spec.ts",
+        "test/fase-3-t062-t066.e2e-spec.ts",
+        "test/fase-3-t067-t073.e2e-spec.ts",
+        "test/fase-4-t080-t085.e2e-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:e2e -- --runInBand"
+    },
+    {
+      "id": "http-04",
+      "tipo": "http",
+      "archivos": [
+        "test/fix-modulo-1-t010-t018.e2e-spec.ts",
+        "test/fix-modulo-1-t024-t029.e2e-spec.ts",
+        "test/fix-modulo-1-t030-t034.e2e-spec.ts",
+        "test/horarios-t093-t095.e2e-spec.ts",
+        "test/http-identidad-t041-t044.e2e-spec.ts",
+        "test/licencias-t50.e2e-spec.ts",
+        "test/licencias-vigencia-t051-t057.e2e-spec.ts",
+        "test/negocios-t47.e2e-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:e2e -- --runInBand"
+    },
+    {
+      "id": "http-05",
+      "tipo": "http",
+      "archivos": [
+        "test/profesionales-t071-t076.e2e-spec.ts",
+        "test/profesionales-t077-t080.e2e-spec.ts",
+        "test/recepcionistas-t48.e2e-spec.ts",
+        "test/recorrido-t133.e2e-spec.ts",
+        "test/recorridos-t51-t58-t60.e2e-spec.ts",
+        "test/regresion-auth-t128.e2e-spec.ts",
+        "test/seguridad-t131-t132.e2e-spec.ts",
+        "test/seguridad-t72-t73-t75.e2e-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:e2e -- --runInBand"
+    },
+    {
+      "id": "http-06",
+      "tipo": "http",
+      "archivos": [
+        "test/servicios-t067-t070.e2e-spec.ts",
+        "test/sucursales-t065.e2e-spec.ts"
+      ],
+      "minutosPrevistos": 15,
+      "comando": "npm run test:e2e -- --runInBand"
+    }
+  ]
+}

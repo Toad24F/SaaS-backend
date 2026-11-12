@@ -11,8 +11,11 @@ import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity
 import { huellaContactoReservaPublica, validarContactoReservaPublica } from './contacto-reserva-publica';
 import type { ResultadoReservaPublica } from './contratos';
 import { exigirEscriturasPublicas } from './control-escrituras-publicas';
+import { CupoTelefonicoExcedidoException, esCausaCupoTelefonico } from './cupo-telefonico.service';
 
-interface PreparacionIntento { clave: string; apartadoId: number }
+interface PreparacionIntento {
+  clave: string; apartadoId: number; intentoAnteriorId: string | null;
+}
 export interface IntentoPreparado {
   id: string;
   apartadoId: number;
@@ -24,13 +27,18 @@ function validarPreparacion(entrada: unknown): PreparacionIntento {
     throw new BadRequestException('Intento inválido.');
   }
   const datos = entrada as Record<string, unknown>;
-  if (Object.keys(datos).length !== 2 ||
-    Object.keys(datos).some((campo) => !['clave', 'apartadoId'].includes(campo)) ||
+  if (Object.keys(datos).length !== (datos.intentoAnteriorId === undefined ? 2 : 3) ||
+    Object.keys(datos).some((campo) =>
+      !['clave', 'apartadoId', 'intentoAnteriorId'].includes(campo)) ||
     typeof datos.clave !== 'string' || !/^[A-Za-z0-9_-]{16,64}$/.test(datos.clave) ||
-    !Number.isSafeInteger(datos.apartadoId) || Number(datos.apartadoId) < 1) {
+    !Number.isSafeInteger(datos.apartadoId) || Number(datos.apartadoId) < 1 ||
+    (datos.intentoAnteriorId !== undefined &&
+      (typeof datos.intentoAnteriorId !== 'string' ||
+        !/^[1-9]\d{0,19}$/.test(datos.intentoAnteriorId)))) {
     throw new BadRequestException('Intento inválido.');
   }
-  return { clave: datos.clave, apartadoId: datos.apartadoId as number };
+  return { clave: datos.clave, apartadoId: datos.apartadoId as number,
+    intentoAnteriorId: (datos.intentoAnteriorId as string | undefined) ?? null };
 }
 
 /** Colaborador interno: vincula un intento al apartado sin registrar cita. */
@@ -48,7 +56,7 @@ export class IntentosReservaPublicaService {
   /** El estado HTTP se decide dentro de la exclusión, sin preconsultas sujetas a carreras. */
   async prepararConMeta(negocioId: number, titularHash: string,
     entrada: unknown): Promise<{ resultado: IntentoPreparado; repetida: boolean }> {
-    const { clave, apartadoId } = validarPreparacion(entrada);
+    const { clave, apartadoId, intentoAnteriorId } = validarPreparacion(entrada);
     return this.coordinacion.transaccion(clave, async (manager) => {
       const sesion = await this.coordinacion.bloquearSesion(manager, negocioId, titularHash);
       const repo = manager.getRepository(IntentoReservaPublica);
@@ -57,7 +65,8 @@ export class IntentosReservaPublicaService {
         .where(`intento.negocioId=:negocioId AND intento.sesionId=:sesionId
           AND intento.clave=:clave`, { negocioId, sesionId: sesion.id, clave }).getOne();
       if (existente) {
-        if (existente.apartadoId !== apartadoId || existente.estado === 'no_registrado') {
+        if (existente.apartadoId !== apartadoId || existente.estado === 'no_registrado' ||
+          existente.intentoAnteriorId !== intentoAnteriorId) {
           throw new ConflictException('Clave de intento incompatible o cerrada.');
         }
         return { resultado: { id: existente.id, apartadoId, estado: existente.estado }, repetida: true };
@@ -66,7 +75,7 @@ export class IntentosReservaPublicaService {
       // detiene la creación de intentos nuevos mientras el portal está cerrado.
       exigirEscriturasPublicas();
       // Solo un apartado propio, actual, público y vigente puede originar un
-      // intento nuevo. La preparación nunca cambia su expiraEn ni su puntero.
+      // intento nuevo. La preparación no cambia su expiraEn.
       const apartado = await manager.getRepository(BloqueoTemporal).findOneBy({
         id: apartadoId, negocioId, sesionId: sesion.id, titularHash,
         generacion: sesion.generacion });
@@ -75,8 +84,27 @@ export class IntentosReservaPublicaService {
         apartado.costoAceptado === null || apartado.zonaHorariaApartado === null) {
         throw new NotFoundException('Apartado no disponible.');
       }
+      // El puntero identifica el único escritor autorizado. Solo un rechazo
+      // propio, terminal y por cupo admite sucesión explícita.
+      if (apartado.intentoActualId === null) {
+        if (intentoAnteriorId !== null) {
+          throw new ConflictException('No existe intento anterior corregible.');
+        }
+      } else {
+        if (apartado.intentoActualId !== intentoAnteriorId) {
+          throw new ConflictException('Intento actual incompatible.');
+        }
+        const anterior = await repo.findOneBy({ id: intentoAnteriorId!,
+          negocioId, sesionId: sesion.id, apartadoId });
+        if (!anterior || anterior.estado !== 'no_registrado' ||
+          !esCausaCupoTelefonico(anterior.causaPublica)) {
+          throw new ConflictException('Intento anterior no corregible.');
+        }
+      }
       const intento = await this.coordinacion.bloquearOCrearIntento(manager, sesion,
-        clave, apartadoId);
+        clave, apartadoId, intentoAnteriorId);
+      await manager.getRepository(BloqueoTemporal).update({ id: apartadoId, negocioId },
+        { intentoActualId: intento.id });
       return { resultado: { id: intento.id, apartadoId, estado: 'preparado' }, repetida: false };
     });
   }
@@ -105,6 +133,11 @@ export class IntentosReservaPublicaService {
   async reconocerEnTransaccion(manager: EntityManager, intento: IntentoReservaPublica,
     huella: string): Promise<ResultadoReservaPublica | null> {
     if (intento.estado === 'no_registrado') {
+      // El rechazo específico es terminal incluso con otro formulario; se
+      // reproduce sin volver a contar ni reabrir el apartado.
+      if (esCausaCupoTelefonico(intento.causaPublica)) {
+        throw new CupoTelefonicoExcedidoException();
+      }
       throw new ConflictException('Intento cerrado sin registro.');
     }
     if (intento.formularioHash !== null) {

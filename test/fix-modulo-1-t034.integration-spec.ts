@@ -144,15 +144,13 @@ describe('FIX-T034: reintentos, carreras y conservación de historial', () => {
         .map((fila) => fila.id)).toEqual([servicio.id]);
       expect(await eventos(db, negocio.id, servicio.id, 'servicio_creado')).toBe(1);
       expect(await eventos(db, negocio.id, sucursal.id, 'sucursal_desactivada')).toBe(1);
-      await expect(profesionales(db).eliminar(admin.id, perfil.id))
-        .rejects.toBeInstanceOf(ConflictException);
-      await expect(servicios(db).eliminar(admin.id, servicio.id))
-        .rejects.toBeInstanceOf(ConflictException);
-      await expect(sucursales(db).eliminar(admin.id, sucursal.id))
-        .rejects.toBeInstanceOf(ConflictException);
-      expect(await eventos(db, negocio.id, perfil.id, 'profesional_eliminado')).toBe(0);
-      expect(await eventos(db, negocio.id, servicio.id, 'servicio_eliminado')).toBe(0);
-      expect(await eventos(db, negocio.id, sucursal.id, 'sucursal_eliminada')).toBe(0);
+      // La inhabilitación conserva el historial que antes impedía borrar.
+      await profesionales(db).inhabilitar(admin.id, perfil.id, new Date());
+      await servicios(db).inhabilitar(admin.id, servicio.id);
+      await sucursales(db).inhabilitar(admin.id, sucursal.id, new Date());
+      expect(await eventos(db, negocio.id, perfil.id, 'profesional_inhabilitado')).toBe(1);
+      expect(await eventos(db, negocio.id, servicio.id, 'servicio_inhabilitado')).toBe(1);
+      expect(await eventos(db, negocio.id, sucursal.id, 'sucursal_inhabilitada')).toBe(1);
     });
   });
 });

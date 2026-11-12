@@ -155,7 +155,8 @@ describe('M3-T045–T051: protocolo común de escritura', () => {
         await esperarBarrera(db, a.id, () => app.get(LicenciasService).materializarSuspension(
           Number(superadmin.insertId), Number(licencia.insertId), AHORA));
         await esperarBarrera(db, a.id, () => app.get(ConfiguracionAgendaService).guardar(
-          Number(admin.insertId), { modo: 'agenda_compacta', intervaloMinutos: 15,
+          // ALA RF-40: el intervalo configurable fue sustituido por separación.
+          Number(admin.insertId), { modo: 'agenda_compacta', tiempoEntreCitasMinutos: 0,
             anticipacionMinutos: 15, diasFuturos: 60 }));
         await esperarBarrera(db, a.id, () => app.get(SucursalesService).editar(
           Number(admin.insertId), a.sucursales[0].id,

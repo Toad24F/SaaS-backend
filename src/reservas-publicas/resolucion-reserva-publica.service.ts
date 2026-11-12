@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable,
+import { BadRequestException, ConflictException, Inject, Injectable,
   NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.entity';
@@ -7,15 +7,19 @@ import { CoordinacionReservaPublicaService } from './coordinacion-reserva-public
 import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
+import { RELOJ, type Reloj } from '../comun/reloj';
+import { CAUSA_CUPO_TELEFONICO, esCausaCupoTelefonico } from './cupo-telefonico.service';
 
 export type ResolucionIntento = { estado: 'registrado'; resultado: ResultadoReservaPublica } |
-  { estado: 'no_registrado' };
+  { estado: 'no_registrado'; causa?: typeof CAUSA_CUPO_TELEFONICO;
+    puedeCorregir?: boolean };
 
 /** Resolución interna bajo el mismo orden de filas que el escritor. */
 @Injectable()
 export class ResolucionReservaPublicaService {
   constructor(private readonly coordinacion: CoordinacionReservaPublicaService,
-    private readonly intentos: IntentosReservaPublicaService) {}
+    private readonly intentos: IntentosReservaPublicaService,
+    @Inject(RELOJ) private readonly reloj: Reloj) {}
 
   async resolver(negocioId: number, titularHash: string, clave: string,
     apartadoId: number): Promise<ResolucionIntento> {
@@ -38,7 +42,23 @@ export class ResolucionReservaPublicaService {
         return { estado: 'registrado', resultado:
           await this.intentos.proyectarRegistradoEnTransaccion(manager, intento) };
       }
-      if (intento?.estado === 'no_registrado') return { estado: 'no_registrado' };
+      if (intento?.estado === 'no_registrado') {
+        if (!esCausaCupoTelefonico(intento.causaPublica)) {
+          return { estado: 'no_registrado' };
+        }
+        // Resolver el rechazo conocido no libera el apartado. La sesión
+        // bloqueada protege el puntero mientras se calcula si aún cabe corregir.
+        const apartadoActual = await manager.getRepository(BloqueoTemporal).findOneBy({
+          id: apartadoId, negocioId, sesionId: sesion.id, titularHash });
+        const puedeCorregir = !!apartadoActual &&
+          sesion.apartadoActualId === apartadoActual.id &&
+          sesion.generacion === apartadoActual.generacion &&
+          apartadoActual.intentoActualId === intento.id &&
+          apartadoActual.liberadoEn === null &&
+          this.reloj.ahora() < apartadoActual.expiraEn;
+        return { estado: 'no_registrado', causa: CAUSA_CUPO_TELEFONICO,
+          puedeCorregir };
+      }
       const apartado = await manager.getRepository(BloqueoTemporal).findOneBy({
         id: apartadoId, negocioId, sesionId: sesion.id, titularHash });
       if (!apartado) throw new NotFoundException('Intento no disponible.');

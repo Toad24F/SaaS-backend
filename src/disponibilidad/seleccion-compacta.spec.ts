@@ -10,7 +10,8 @@ const tramo = (b: BloqueOriginal, inicio: string, fin: string): TramoEfectivo =>
   ({ bloque: b, inicioUtc: h(inicio), finUtc: h(fin) });
 const ocupacion = (id: number, inicio: string, fin: string): Ocupacion => ({
   tipo: 'cita', id, negocioId: 1, personalId: 1, sucursalId: 2,
-  servicioId: 3, inicioUtc: h(inicio), finUtc: h(fin), estado: 'confirmada',
+  servicioId: 3, inicioUtc: h(inicio), finUtc: h(fin),
+  finOcupacionUtc: h(fin), estado: 'confirmada',
 });
 const candidato = (inicio: string, fin: string) =>
   ({ inicioUtc: h(inicio), finUtc: h(fin) });

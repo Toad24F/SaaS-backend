@@ -102,7 +102,8 @@ export class CoordinacionReservaPublicaService {
 
   /** El intento también nace bajo sesión; la unicidad durable protege el reintento. */
   async bloquearOCrearIntento(manager: EntityManager, sesion: SesionReservaPublica,
-    clave: string, apartadoId: number): Promise<IntentoReservaPublica> {
+    clave: string, apartadoId: number,
+    intentoAnteriorId: string | null = null): Promise<IntentoReservaPublica> {
     transaccionActiva(manager);
     const bloqueada = await this.bloquearSesion(manager, sesion.negocioId,
       sesion.titularHash);
@@ -113,13 +114,14 @@ export class CoordinacionReservaPublicaService {
         AND intento.clave = :clave`,
       { negocioId: sesion.negocioId, sesionId: sesion.id, clave }).getOne();
     if (existente) {
-      if (existente.apartadoId !== apartadoId) {
+      if (existente.apartadoId !== apartadoId ||
+        existente.intentoAnteriorId !== intentoAnteriorId) {
         throw new ConflictException('Clave de intento incompatible.');
       }
       return existente;
     }
     return repo.save(repo.create({ negocioId: sesion.negocioId, sesionId: sesion.id,
-      clave, apartadoId, estado: 'preparado', formularioHash: null,
+      clave, apartadoId, intentoAnteriorId, estado: 'preparado', formularioHash: null,
       causaPublica: null, citaId: null }));
   }
 

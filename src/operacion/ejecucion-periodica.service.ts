@@ -41,6 +41,8 @@ export class EjecucionPeriodicaService implements OnApplicationBootstrap, OnModu
     try {
       const ahora = this.reloj.ahora();
       await this.conciliador.conciliar(ahora);
+      // Primero resuelve el límite natural; después el umbral preventivo vigente.
+      await this.avisos.detectarLimites(ahora);
       await this.avisos.detectar(ahora);
       // Un límite por vuelta evita monopolizar el proceso ante una cola grande.
       for (let i = 0; i < MAX_ENVIOS_CICLO; i++) {

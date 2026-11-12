@@ -13,7 +13,8 @@ interface EscenarioNegocio {
 /** Siembra oferta, zonas y ocupaciones separadas en una base que el ejecutor destruirá. */
 export async function crearEscenarioPortal(db: DataSource, reloj: Reloj):
   Promise<{ negocios: EscenarioNegocio[] }> {
-  if (!/^citas_persistencia_[a-f0-9]{32}$/.test(String(db.options.database))) {
+  // M4 reutiliza la semilla pública únicamente dentro de su base efímera test.
+  if (!/^citas_(?:persistencia|m4_test)_[a-f0-9]{32}$/.test(String(db.options.database))) {
     throw new Error('El escenario público exige una base desechable migrada.');
   }
   const negocios: EscenarioNegocio[] = [];

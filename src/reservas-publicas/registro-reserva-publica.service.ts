@@ -7,6 +7,7 @@ import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilid
 import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.entity';
 import { Cita } from '../disponibilidad/entities/cita.entity';
 import { Cliente } from '../disponibilidad/entities/cliente.entity';
+import { EventoCita } from '../citas/entities/evento-cita.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -20,6 +21,8 @@ import { OperacionApartado } from './entities/operacion-apartado.entity';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { IntentosReservaPublicaService } from './intentos-reserva-publica.service';
 import { exigirEscriturasPublicas } from './control-escrituras-publicas';
+import { CAUSA_CUPO_TELEFONICO, CupoTelefonicoExcedidoException,
+  CupoTelefonicoService } from './cupo-telefonico.service';
 
 interface CopiaHistorica {
   negocio: string; servicio: string; sucursal: string; profesional: string;
@@ -32,6 +35,7 @@ export class RegistroReservaPublicaService {
   constructor(@InjectDataSource() private readonly db: DataSource,
     private readonly coordinacion: CoordinacionReservaPublicaService,
     private readonly intentos: IntentosReservaPublicaService,
+    private readonly cupo: CupoTelefonicoService,
     private readonly motor: MotorDisponibilidadService,
     @Inject(RELOJ) private readonly reloj: Reloj) {}
 
@@ -45,7 +49,7 @@ export class RegistroReservaPublicaService {
     entrada: unknown): Promise<{ resultado: ResultadoReservaPublica; repetida: boolean }> {
     const contacto = validarContactoReservaPublica(entrada);
     const huella = huellaContactoReservaPublica(contacto);
-    return this.coordinacion.transaccion(clave, async (manager) => {
+    const decision = await this.coordinacion.transaccion(clave, async (manager) => {
       const sesion = await this.coordinacion.bloquearSesion(manager, negocioId, titularHash);
       const intento = await manager.getRepository(IntentoReservaPublica)
         .createQueryBuilder('i').setLock('pessimistic_write')
@@ -55,7 +59,8 @@ export class RegistroReservaPublicaService {
       // Una respuesta perdida se reproduce antes de comprobar vigencia comercial
       // o del apartado; el resultado durable jamás crea una segunda cita.
       const anterior = await this.intentos.reconocerEnTransaccion(manager, intento, huella);
-      if (anterior) return { resultado: anterior, repetida: true };
+      if (anterior) return { tipo: 'registrada' as const,
+        resultado: anterior, repetida: true };
       // Una respuesta perdida conserva su resultado; el interruptor solo
       // detiene el primer commit de una cita todavía no registrada.
       exigirEscriturasPublicas();
@@ -73,9 +78,12 @@ export class RegistroReservaPublicaService {
         id: sesion.id, negocioId });
       const ahora = this.reloj.ahora();
       if (!apartado || !actual || actual.apartadoActualId !== apartado.id ||
+        apartado.intentoActualId !== intento.id ||
         actual.generacion !== apartado.generacion || apartado.liberadoEn !== null ||
         ahora >= apartado.expiraEn || apartado.costoAceptado === null ||
-        apartado.zonaHorariaApartado === null || apartado.operacionId === null) {
+        apartado.zonaHorariaApartado === null || apartado.operacionId === null ||
+        apartado.modoConcesion === null || apartado.versionReglas === null ||
+        apartado.separacionMinutos === null || apartado.finOcupacionUtc === null) {
         throw new ConflictException('Apartado vencido o incompatible.');
       }
       const operacion = await manager.getRepository(OperacionApartado).findOneBy({
@@ -118,10 +126,26 @@ export class RegistroReservaPublicaService {
       // Una orden de cierre recibida durante la revalidación se observa antes
       // del primer INSERT; la transacción revierte sin consumir el apartado.
       exigirEscriturasPublicas();
+      // La barrera de negocio sigue bloqueada desde bloquearRecursos: ningún
+      // profesional de esta sucursal puede contar e insertar simultáneamente.
+      const ocupadas = await this.cupo.contar(manager, negocioId,
+        apartado.sucursalId, contacto.telefono, instanteFinal);
+      if (ocupadas >= 2) {
+        // El rechazo se confirma sin tocar cliente, cita, apartado ni sesión.
+        // El 409 se emite fuera de la transacción para no revertir este cierre.
+        await manager.getRepository(IntentoReservaPublica).update({
+          id: intento.id, negocioId }, { estado: 'no_registrado',
+          formularioHash: huella, causaPublica: CAUSA_CUPO_TELEFONICO, citaId: null });
+        return { tipo: 'cupo' as const };
+      }
       const resultado = await this.guardarTodo(manager, sesion, intento, apartado, contacto,
         huella, validacion.inicioUtc, validacion.finUtc, copia, instanteFinal);
-      return { resultado, repetida: false };
+      return { tipo: 'registrada' as const, resultado, repetida: false };
     });
+    if (decision.tipo === 'cupo') {
+      throw new CupoTelefonicoExcedidoException();
+    }
+    return { resultado: decision.resultado, repetida: decision.repetida };
   }
 
   /** T075: la copia toma el precio del apartado y los nombres vigentes bajo
@@ -155,14 +179,33 @@ export class RegistroReservaPublicaService {
     // 18 caracteres aleatorios más prefijo caben en VARCHAR(20) y la unicidad
     // global de folio se mantiene en la base de datos.
     const folio = `P-${randomBytes(9).toString('hex').toUpperCase()}`;
-    const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId,
+    const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId, version: 1,
       sucursalId: apartado.sucursalId, personalId: apartado.personalId,
       servicioId: apartado.servicioId, clienteId: cliente.id, inicioUtc, finUtc,
+      // Origen y protección son los del apartado; cambiarlos con la
+      // configuración actual alteraría una condición ya concedida.
+      apartadoOrigenId: apartado.id, separacionMinutos: apartado.separacionMinutos!,
+      finOcupacionUtc: apartado.finOcupacionUtc!,
       zonaHorariaReserva: copia.zona, estado: 'pendiente', origen: 'portal_publico',
       motivoConsulta: contacto.notas, costoAceptado: copia.costo,
       nombreContacto: contacto.nombre, telefonoContacto: contacto.telefono,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
       nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, folio });
+    // La sesión ya fue comprobada y bloqueada por el escritor. El evento comparte
+    // su manager y commit: un fallo revierte también cliente, cita y consumo.
+    // Se eligen valores operativos explícitos; contacto, notas, hashes y credenciales no se auditan.
+    await manager.getRepository(EventoCita).insert({ negocioId: intento.negocioId,
+      citaId: cita.id, actorUsuarioId: null, sesionPublicaId: sesion.id,
+      accion: 'alta', ocurridoEn: ahora, versionResultante: cita.version,
+      valoresAntes: null, motivo: null, valoresDespues: {
+        estado: cita.estado, origen: cita.origen, folio: cita.folio,
+        clienteId: cita.clienteId, sucursalId: cita.sucursalId,
+        servicioId: cita.servicioId, personalId: cita.personalId,
+        inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
+        separacionMinutos: cita.separacionMinutos,
+        finOcupacionUtc: cita.finOcupacionUtc!.toISOString(),
+        zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
+      } });
     await manager.getRepository(BloqueoTemporal).update({ id: apartado.id,
       negocioId: intento.negocioId }, { liberadoEn: ahora });
     await manager.getRepository(SesionReservaPublica).update({ id: sesion.id,

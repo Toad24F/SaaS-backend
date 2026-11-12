@@ -221,6 +221,11 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
         const titulares = await Promise.all([
           crearSesion(db, base, 'c'), crearSesion(db, base, 'd'),
         ]);
+        // ALA RF-46: la cuadrícula de cinco minutos se ancla al inicio de
+        // cada bloque; 04:15 solo se ofrece si el segundo bloque inicia allí.
+        await db.query(`UPDATE horarios_personal SET inicio_minutos=255
+          WHERE negocio_id=? AND sucursal_id=?`,
+        [base.negocioId, base.sucursales[1]]);
         const barrera = new BarreraDosParticipantes();
         const entradas = [
           seleccion(base, 'operacion_parcial_a_123456'),
@@ -421,9 +426,9 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
   }, 120000);
 
   it.each([
-    ['anticipación', { modo: 'ventana_libre', intervaloMinutos: 15,
+    ['anticipación', { modo: 'ventana_libre', tiempoEntreCitasMinutos: 0,
       anticipacionMinutos: 180, diasFuturos: 60 }, {}],
-    ['horizonte', { modo: 'ventana_libre', intervaloMinutos: 15,
+    ['horizonte', { modo: 'ventana_libre', tiempoEntreCitasMinutos: 0,
       anticipacionMinutos: 15, diasFuturos: 0 },
     { fechaLocal: '2026-10-21', horaInicio: '08:00' }],
   ])('T090: no usa %s obsoleta después de esperar', async (_caso, configuracion, cambios) => {
@@ -452,7 +457,7 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
     });
   }, 120000);
 
-  it('T090: el cambio a agenda compacta invalida una ranura ya no ofrecida', async () => {
+  it('T090: el cambio a agenda compacta conserva el apartado anterior', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const reloj = new RelojPrueba(AHORA);
       const base = await sembrarBase(db, reloj);
@@ -475,15 +480,17 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
           () => moduloA.get(RegistroReservaPublicaService).registrar(base.negocioId,
             envio.titular, envio.clave, CONTACTO),
           async () => { await moduloB.get(ConfiguracionAgendaService).guardar(base.adminId,
-            { modo: 'agenda_compacta', intervaloMinutos: 15,
+            { modo: 'agenda_compacta', tiempoEntreCitasMinutos: 0,
               anticipacionMinutos: 15, diasFuturos: 60 }); });
-        expect(resultado.status).toBe('rejected');
-        expect(await contar(db, 'citas', base.negocioId)).toBe(1);
+        // ALA RF-54 conserva el modo del apartado concedido; RF-40 elimina
+        // intervaloMinutos del contrato de configuración nuevo.
+        expect(resultado.status).toBe('fulfilled');
+        expect(await contar(db, 'citas', base.negocioId)).toBe(2);
       } finally { await Promise.all([moduloA.close(), moduloB.close()]); }
     });
   }, 120000);
 
-  it('T091: una excepción vacía confirmada primero rechaza la reserva', async () => {
+  it('T091: retirar la semana primero rechaza la reserva', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const reloj = new RelojPrueba(AHORA);
       const base = await sembrarBase(db, reloj);
@@ -501,8 +508,10 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
           'SELECT id FROM usuarios WHERE id=? FOR UPDATE', [base.profesionalId],
           () => moduloA.get(RegistroReservaPublicaService).registrar(base.negocioId,
             envio.titular, envio.clave, CONTACTO),
-          async () => { await moduloB.get(HorariosService).guardarExcepcion(base.negocioId,
-            base.profesionalId, '2026-10-20', base.sucursales[0], [], '2026-10-20'); });
+          // ALA RF-37 retira excepciones operativas; una semana vacía ejerce
+          // la misma revalidación de oferta sin abrir horas especiales.
+          async () => { await moduloB.get(HorariosService).guardarSemana(base.negocioId,
+            base.profesionalId, [], '2026-10-20'); });
         expect(resultado.status).toBe('rejected');
         expect(await contar(db, 'citas', base.negocioId)).toBe(0);
       } finally { await Promise.all([moduloA.close(), moduloB.close()]); }

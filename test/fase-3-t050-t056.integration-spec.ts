@@ -78,16 +78,14 @@ describe('M2-T050–T056: compactación, manual y validación puntual', () => {
       const leer = () => f.servicio.consultar(f.token, f.negocio.personalId,
         f.negocio.sucursales[0], f.negocio.servicios[0], '2026-07-06', '2026-07-06');
       const vigente = await leer();
-      expect(vigente.ranuras.map((r) => r.inicioUtc.toISOString())).toEqual([
-        h('10:30').toISOString(), h('11:30').toISOString(),
-        h('12:30').toISOString(),
-      ]);
+      // ALA RF-46–RF-52: Compacta ofrece el primer inicio válido del grupo
+      // independiente, redondeado a cinco minutos desde el reloj 10:07.
+      expect(vigente.ranuras.map((r) => r.inicioUtc.toISOString()))
+        .toEqual([h('10:10').toISOString()]);
       // La fila queda persistida; solo el reloj decide si sigue siendo referencia.
       await db.query('UPDATE bloqueos_temporales SET expira_en=? WHERE id=?', [ahora, id]);
       const vencido = await leer();
-      expect(vencido.ranuras.map((r) => r.inicioUtc.toISOString())).toEqual([
-        h('10:30').toISOString(), h('11:30').toISOString(),
-      ]);
+      expect(vencido.ranuras[0].inicioUtc).toEqual(h('10:10'));
       // El lunes siguiente conserva su propio grupo aunque el actual tenga huecos.
       expect((await f.servicio.consultar(f.token, f.negocio.personalId,
         f.negocio.sucursales[0], f.negocio.servicios[0],
@@ -128,8 +126,13 @@ describe('M2-T050–T056: compactación, manual y validación puntual', () => {
       const f = await preparar(db);
       const ids = [f.token, f.negocio.personalId, f.negocio.sucursales[0],
         f.negocio.servicios[0]] as const;
-      await db.query(`UPDATE horarios_personal SET descanso_inicio_minutos=660,
-        descanso_fin_minutos=690 WHERE negocio_id=?`, [f.negocio.id]);
+      // ALA RF-36: dos franjas sustituyen el descanso operativo retirado.
+      await db.query(`UPDATE horarios_personal SET fin_minutos=660
+        WHERE negocio_id=?`, [f.negocio.id]);
+      await db.query(`INSERT INTO horarios_personal (negocio_id,personal_id,sucursal_id,
+        dia_semana,orden,inicio_minutos,fin_minutos,activo)
+        VALUES (?,?,?,1,1,690,780,1)`,
+      [f.negocio.id, f.negocio.personalId, f.negocio.sucursales[0]]);
       expect((await f.servicio.validar(...ids, '2026-07-06', '10:06', 'manual')).motivos)
         .toContain('inicio_pasado');
       expect((await f.servicio.validar(...ids, '2026-07-06', '10:45', 'manual')).motivos)

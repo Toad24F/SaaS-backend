@@ -1,5 +1,7 @@
 import { HttpException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
+import { CupoTelefonicoExcedidoException, MENSAJE_CUPO_TELEFONICO,
+  CAUSA_CUPO_TELEFONICO } from './cupo-telefonico.service';
 
 const CODIGOS_TEMPORALES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT',
   'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_LOCK_WAIT_TIMEOUT',
@@ -18,6 +20,12 @@ const RESPUESTAS: Record<number, { mensaje: string; accion: string }> = {
 /** Reduce una causa interna a estado, mensaje y acción públicos; nunca copia SQL,
  * trazas, secretos ni el mensaje original de una excepción no controlada. */
 export function normalizarErrorPublico(error: unknown): HttpException {
+  // Solo la excepción de dominio conocida expone el mensaje normativo; las
+  // demás causas 409 conservan la redacción genérica sin datos internos.
+  if (error instanceof CupoTelefonicoExcedidoException) {
+    return new HttpException({ codigo: CAUSA_CUPO_TELEFONICO,
+      mensaje: MENSAJE_CUPO_TELEFONICO, accion: 'corregir' }, 409);
+  }
   let estado = 500;
   if (error instanceof HttpException) {
     estado = error.getStatus();

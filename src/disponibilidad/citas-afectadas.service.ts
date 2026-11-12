@@ -98,30 +98,34 @@ export class CitasAfectadasService {
         if (cita.inicioUtc >= ahora) {
           const estado = await this.oferta.consultar(contexto, cita.sucursalId,
             cita.servicioId, 'publica');
-          // Solo desactivaciones futuras: reglas comerciales y duración de catálogo
-          // no recalculan el intervalo ya comprometido de la cita.
+          // El lector histórico distingue inhabilitación de inactividad sin
+          // recalcular el intervalo comprometido de la cita.
           for (const codigo of estado.motivosExclusion) {
-            const referenciaTipo = codigo === 'cuenta_inactiva' ? 'personal' :
-              codigo === 'sucursal_inactiva' ? 'sucursal' :
-              codigo === 'servicio_inactivo' ? 'servicio' : null;
+            const referenciaTipo = codigo === 'cuenta_inactiva' ||
+              codigo === 'cuenta_inhabilitada' ? 'personal' :
+              codigo === 'sucursal_inactiva' || codigo === 'sucursal_inhabilitada' ? 'sucursal' :
+              codigo === 'servicio_inactivo' || codigo === 'servicio_inhabilitado' ? 'servicio' : null;
             const referenciaId = referenciaTipo === 'personal' ? cita.personalId :
               referenciaTipo === 'sucursal' ? cita.sucursalId :
               referenciaTipo === 'servicio' ? cita.servicioId : null;
             causas.push(causa(codigo, referenciaTipo, referenciaId));
           }
         }
-        const fechaFinLocal = fechaEnZona(new Date(cita.finUtc.getTime() - 1),
+        // El margen se toma de la cita histórica, nunca de la configuración
+        // vigente. Las citas previas sin extremo protegido usan fin de atención.
+        const finProtegidoUtc = cita.finOcupacionUtc ?? cita.finUtc;
+        const fechaFinLocal = fechaEnZona(new Date(finProtegidoUtc.getTime() - 1),
           sede.zonaHoraria);
         const proyeccion = await this.atencion.consultar(contexto, cita.sucursalId,
           fechaLocal, fechaFinLocal);
         const cobertura = proyeccion.bloques.map((bloque) => ({ bloque,
           inicioUtc: bloque.inicioUtc, finUtc: bloque.finUtc }));
         if (!cabeEnAtencion(cobertura, cita.sucursalId,
-          cita.inicioUtc, cita.finUtc)) {
+          cita.inicioUtc, finProtegidoUtc)) {
           causas.push(causa('horario_insuficiente', 'sucursal', cita.sucursalId));
         }
         for (const descanso of proyeccion.descansos) {
-          if (empalma(cita.inicioUtc, cita.finUtc,
+          if (empalma(cita.inicioUtc, finProtegidoUtc,
             { inicio: descanso.inicioUtc, fin: descanso.finUtc })) {
             causas.push(causa('descanso', descanso.origen === 'semanal'
               ? 'horario' : 'franja_excepcion', descanso.bloqueId));
@@ -130,7 +134,7 @@ export class CitasAfectadasService {
         const bloqueos = await this.bloqueos.consultar(contexto, cita.sucursalId,
           fechaLocal, fechaFinLocal, sede.zonaHoraria);
         for (const bloqueo of bloqueos) {
-          if (empalma(cita.inicioUtc, cita.finUtc, bloqueo)) {
+          if (empalma(cita.inicioUtc, finProtegidoUtc, bloqueo)) {
             causas.push(causa('bloqueo', 'bloqueo', bloqueo.id));
           }
         }

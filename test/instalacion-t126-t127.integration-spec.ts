@@ -38,11 +38,15 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
             ORDER BY COLUMN_NAME`, [nombre, tabla]);
           expect(referencia).toEqual(columnas);
         }
-        // Las tablas del portal deben coincidir también en índices, CHECK y FKs;
-        // una columna coincidente por sí sola no protege los límites de negocio.
-        for (const tabla of ['configuracion_agenda', 'clientes', 'citas',
+        // El ajuste ALA-T027 amplía la equivalencia a índices, CHECK y FKs de
+        // todas las tablas afectadas, no solo a sus columnas y tipos.
+        for (const tabla of ['negocios', 'usuarios', 'licencias',
+          'operaciones_licencia', 'envios_correo', 'servicios', 'sucursales',
+          'configuracion_agenda', 'clientes', 'citas',
           'bloqueos_temporales', 'sesiones_reserva_publica',
-          'operaciones_apartado', 'intentos_reserva_publica']) {
+          'operaciones_apartado', 'intentos_reserva_publica',
+          // M4 agrega tablas y amplía auditoría: también se contrasta su DDL canónico.
+          'intentos_cita_manual', 'eventos_cita', 'eventos_auditoria']) {
           expect(nombres).toContain(tabla);
           const fechas = `SELECT COLUMN_NAME columna,
             DATETIME_PRECISION precisionTemporal FROM information_schema.COLUMNS
@@ -79,6 +83,14 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
             expect(sql).toEqual(migracion);
           }
         }
+        // Compara también la protección inmutable del historial en las dos instalaciones.
+        const triggers = `SELECT TRIGGER_NAME nombre,ACTION_TIMING momento,
+          EVENT_MANIPULATION evento,ACTION_STATEMENT sentencia
+          FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=? AND EVENT_OBJECT_TABLE='eventos_cita'
+          ORDER BY TRIGGER_NAME`;
+        const [triggersMigrados] = await conexion.query(triggers, [migradaNombre]);
+        const [triggersSql] = await conexion.query(triggers, [nombre]);
+        expect(triggersSql).toEqual(triggersMigrados);
         expect(migrada.options).toMatchObject({ synchronize: false, migrationsRun: false });
         const antes = await migrada.query('SELECT COUNT(*) total FROM migrations');
         // El número crece por módulo; lo esencial es que todo esté aplicado una sola vez.

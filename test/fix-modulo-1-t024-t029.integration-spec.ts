@@ -123,8 +123,9 @@ describe('FIX-T024–T029: estado individual y carreras con horarios', () => {
     });
   });
 
-  it.each(['semana', 'excepcion'] as const)(
-    'serializa reactivación frente a edición de %s en dos conexiones', async (tipo) => {
+  // ALA RF-37 retiró el escritor de excepciones; la carrera operativa vigente
+  // enfrenta la reactivación con el reemplazo semanal.
+  it('serializa reactivación frente a edición de semana en dos conexiones', async () => {
       await conBaseMigrada(async (db, segunda) => {
         const { negocio, admin, sucursales, perfil } = await preparar(db);
         const [centro, norte] = sucursales;
@@ -143,13 +144,10 @@ describe('FIX-T024–T029: estado individual y carreras con horarios', () => {
         const resultados = await Promise.allSettled([
           barrera.esperar().then(() => profesionales(db).cambiarAtencionSucursal(
             admin.id, perfil.id, norte.id, true, desde)),
-          barrera.esperar().then(() => tipo === 'semana'
-            ? horarios(segunda).guardarSemana(negocio.id, perfil.id, [
+          barrera.esperar().then(() =>
+            horarios(segunda).guardarSemana(negocio.id, perfil.id, [
               { ...semana[0] }, { ...semana[1], inicioMinutos: 570, finMinutos: 630 },
-            ], desde)
-            : horarios(segunda).guardarExcepcion(negocio.id, perfil.id,
-              '2026-10-05', norte.id, [{ orden: 1, inicioMinutos: 570,
-                finMinutos: 630 }], desde)),
+            ], desde)),
         ]);
         expect(resultados[0].status).toBe('fulfilled');
         expect(resultados[1].status).toBe('rejected');

@@ -3,6 +3,8 @@ export interface MensajeCorreo {
   destinatario: string;
   asunto: string;
   texto: string;
+  /** ID de la fila durable; se conserva entre intentos del mismo envío. */
+  identidadLogica?: string;
 }
 
 export interface ResultadoEntregaCorreo {

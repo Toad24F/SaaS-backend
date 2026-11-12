@@ -4,13 +4,9 @@ import { In } from 'typeorm';
 import { Personal } from '../profesionales/entities/personal.entity';
 import { PersonalSucursal } from '../profesionales/entities/personal-sucursal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
-import { validarRecurrencias, type ExcepcionCalendario } from './calendario';
+import { validarRecurrencias } from './calendario';
 import { HorarioPersonal } from './entities/horario-personal.entity';
-
-interface FilaSql {
-  id: number; sucursal_id: number; fecha_local: string;
-  inicio_minutos: number | null; fin_minutos: number | null;
-}
+import { exigirHorarioTransicionado } from './transicion-horarios';
 
 /** Revalida horarios de todos los perfiles afectados bajo el orden de ID estable. */
 export class CoordinacionHorarios {
@@ -35,6 +31,7 @@ export class CoordinacionHorarios {
   async validarPerfiles(manager: EntityManager, negocioId: number, ids: number[],
     desde: string, cambio?: { sucursalId: number; zonaHoraria?: string; activo?: boolean }) {
     for (const personalId of [...new Set(ids)].sort((a, b) => a - b)) {
+      await exigirHorarioTransicionado(manager, negocioId, personalId);
       const relaciones = await manager.getRepository(PersonalSucursal).findBy({
         negocioId, personalId });
       const sucursalIds = relaciones.map((r) => r.sucursalId);
@@ -52,32 +49,9 @@ export class CoordinacionHorarios {
         negocioId, personalId, activo: true });
       const semana = existentes.filter((f) => f.sucursalId !== null &&
         zonas.has(f.sucursalId));
-      // DATE_FORMAT preserva la fecha civil de MariaDB incluso si el driver
-      // convierte las entidades DATE con el huso del proceso.
-      const filas = await manager.query(`SELECT e.id, e.sucursal_id,
-        DATE_FORMAT(e.fecha_local, '%Y-%m-%d') fecha_local,
-        f.inicio_minutos, f.fin_minutos
-        FROM excepciones_horario e LEFT JOIN franjas_excepcion_horario f
-          ON f.negocio_id = e.negocio_id AND f.excepcion_id = e.id
-        WHERE e.negocio_id = ? AND e.personal_id = ?`,
-      [negocioId, personalId]) as FilaSql[];
-      const porId = new Map<number, ExcepcionCalendario>();
-      for (const fila of filas) {
-        if (!zonas.has(Number(fila.sucursal_id))) continue;
-        let excepcion = porId.get(Number(fila.id));
-        if (!excepcion) {
-          excepcion = { sucursalId: Number(fila.sucursal_id),
-            fechaLocal: fila.fecha_local, franjas: [] };
-          porId.set(Number(fila.id), excepcion);
-        }
-        if (fila.inicio_minutos !== null) excepcion.franjas.push({
-          inicioMinutos: Number(fila.inicio_minutos),
-          finMinutos: Number(fila.fin_minutos) });
-      }
-      const conflicto = validarRecurrencias(semana, [...porId.values()], zonas, desde);
+      const conflicto = validarRecurrencias(semana, [], zonas, desde);
       if (conflicto) {
-        const referencias = conflicto.filas.map((indice) => indice < semana.length
-          ? `franja ${semana[indice].id}` : `excepción ${[...porId.keys()][indice - semana.length]}`);
+        const referencias = conflicto.filas.map((indice) => `franja ${semana[indice].id}`);
         throw new ConflictException(`Profesional ${personalId}: empalme entre filas ${
           conflicto.filas.join(' y ')} (${referencias.join(' y ')}), inicioMinutos.`);
       }
