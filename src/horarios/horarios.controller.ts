@@ -22,11 +22,13 @@ export class HorariosController {
   private desde(): string { return this.reloj.ahora().toISOString().slice(0, 10); }
 
   @Get(':id/horario')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL, Rol.RECEPCIONISTA)
   consultarSemana(@Param() parametros: ProfesionalIdDto, @CurrentUser() actor: JwtPayload) {
     return this.acceso.consultarSemana(actor.sub, parametros.id);
   }
 
   @Get(':id/atencion')
+  @Roles(Rol.ADMIN_NEGOCIO, Rol.PROFESIONAL, Rol.RECEPCIONISTA)
   consultarAtencion(@Param() parametros: ProfesionalIdDto,
     @Query() consulta: ConsultarAtencionDto, @CurrentUser() actor: JwtPayload) {
     // La fachada comprueba la propiedad actual antes de proyectar intervalos.

@@ -10,6 +10,8 @@ No activar cancelación automática de pendientes, WhatsApp, reportes PDF ni pag
 
 ## 2. Módulos y contratos
 
+Ajuste autorizado el 2026-11-12 para RF-01–RF-05 y RF-06: separar `CONSULTAR_HORARIO` de `GESTIONAR_HORARIO`. Declarar Administración, Recepción y Profesional en los dos GET de horario semanal y atención, conservando la propiedad del Profesional y los permisos del PUT. La fachada reconstruye actor y negocio desde persistencia. Atención usa una lectura interna de bloqueos autorizada con `CONSULTAR_HORARIO`, filtrada por negocio, perfil y periodo; incluye colectivos y aplica sucursal al proyectar. No reutilizar el listado de gestión ni conceder `GESTIONAR_BLOQUEOS` a Recepción. Conservar guardas de sesión/licencia y contratos de fechas/respuesta. No requiere migraciones ni frontend. Véase [informe del ajuste](resultados-tareas/ajuste-consulta-horarios-recepcion.md).
+
 | Módulo | Responsabilidad y frontera | RF cubiertos |
 | --- | --- | --- |
 | M01 — Acceso operativo | Revalidar sesión, rol, pertenencia y licencia en cada lectura y escritura. Administración y Recepción gestionan su negocio; Profesional solo lee sus citas. Extender la matriz cerrada de permisos, sin herencia implícita. | RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38, RF-47 |

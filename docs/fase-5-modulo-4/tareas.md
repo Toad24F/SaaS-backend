@@ -54,6 +54,8 @@ Evidencia M4-T013–M4-T019: [entidades, flujo del alta pública, tests y result
 
 ## 3. Autorización y respuestas privadas
 
+Ajuste autorizado el 2026-11-12: [consulta de horario y atención por Recepción](resultados-tareas/ajuste-consulta-horarios-recepcion.md). Amplía las dos lecturas del módulo 1 mediante permiso independiente, conservando escritura, aislamiento y propiedad del Profesional. Su verificación se registra como ajuste de M4-T020–M4-T024; no modifica las casillas ni acredita frontend o tareas posteriores.
+
 Evidencia M4-T020–M4-T024: [archivos, flujo de autorización, tests primero y resultados](resultados-tareas/m4-t020-t024.md). Pruebas propias 62/62, integración completa 471/471 y HTTP 203/203 aprobados; build y lint aprobados. Unitarias completas: 452 aprobadas y un fallo documental previo identificado. Ese lote no acreditó tareas posteriores.
 
 - [x] **M4-T020 — Definir permisos operativos cerrados** · 20 min · Depende de: M4-T002 · RF-01–RF-05, RF-13–RF-14, RF-20, RF-29, RF-38

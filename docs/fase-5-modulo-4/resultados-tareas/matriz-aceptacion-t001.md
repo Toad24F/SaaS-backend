@@ -11,6 +11,8 @@ Fuentes: [constitución](../constitucion-modulo-4.md), [RF locales y diez criter
 
 ## RF locales
 
+Ajuste backend de RF-01–RF-06: [consulta de horario y atención por Recepción](ajuste-consulta-horarios-recepcion.md), autorizado el 2026-11-12. Su evidencia acredita las dos lecturas y la separación de permisos; no cierra los RF completos ni sus criterios de interfaz.
+
 | RF | Tareas previstas | Grupo | Resultado | Prueba de aceptación prevista |
 | --- | --- | --- | --- | --- |
 | RF-01 | M4-T020–M4-T022, M4-T105 | T01, T11 | Pendiente | Administración y Recepción gestionan su negocio. |
