@@ -85,7 +85,7 @@ Evidencia M4-T025–M4-T030: [archivos, flujo de consulta, tests primero y resul
       Hecho cuando: cada filtro y su combinación limitan resultados sin excluir canceladas salvo petición expresa.
 - [x] **M4-T030 — Buscar por paciente en el periodo completo** · 25 min · Depende de: M4-T029 · RF-03, RF-08, RF-46–RF-47
       Hecho cuando: búsqueda y periodo completo permanecen dentro del negocio y tienen orden estable; hasta 42 fechas y 1.000 citas, con rechazo explícito del exceso sin truncamiento. Sustituye la paginación anterior por solicitud del responsable; ver evidencia del ajuste.
-Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests primero y resultados](resultados-tareas/m4-t031-t036.md). Pruebas nuevas 28/28, integración completa 482/482 y HTTP 210/210 aprobados; build y lint aprobados. Unitarias completas: 498 aprobadas y un fallo documental previo identificado. Ese lote habilitó tres lecturas HTTP privadas; no acreditó frontend, directorio ni escritores y se detuvo en M4-T036.
+      Evidencia M4-T031–M4-T036: [archivos, flujo de causas/detalle/historial, tests primero y resultados](resultados-tareas/m4-t031-t036.md). Pruebas nuevas 28/28, integración completa 482/482 y HTTP 210/210 aprobados; build y lint aprobados. Unitarias completas: 498 aprobadas y un fallo documental previo identificado. Ese lote habilitó tres lecturas HTTP privadas; no acreditó frontend, directorio ni escritores y se detuvo en M4-T036.
 
 - [x] **M4-T031 — Incorporar causas de citas afectadas** · 20 min · Depende de: M4-T026, M4-T002 · RF-09, RF-11, RF-46
       Hecho cuando: causas actuales se muestran para citas afectadas sin cambiar horario ni estado y desaparecen al cesar la causa.
@@ -165,7 +165,7 @@ Evidencia M4-T053–M4-T058: [archivos, snapshots, flujo atómico, tests primero
       Hecho cuando: fallos tras cada inserción revierten cliente nuevo, cita, evento y resultado, permitiendo reintentar la misma clave preparada.
 - [x] **M4-T062 — Exponer preparación, registro y resolución** · 25 min · Depende de: M4-T058–M4-T060, M4-T024 · RF-20, RF-22–RF-28, RF-43–RF-47
       Hecho cuando: tres rutas privadas aplican rol, origen del actor, `no-store` y respuestas de creación, repetición, conflicto e incertidumbre.
-Evidencia M4-T059–M4-T062: [archivos, flujo de resolución, tests primero y resultados](resultados-tareas/m4-t059-t062.md). Se verifican resolución contra escritor en ambos órdenes, cierre terminal, timeout SQL real 503, cinco puntos de rollback y tres rutas privadas. Unitarias completas 580/580; integración relevante 90/90 y HTTP relevante 45/45; build y lint aprobados. Se marcan solo estas cuatro tareas y el trabajo se detiene en T062.
+      Evidencia M4-T059–M4-T062: [archivos, flujo de resolución, tests primero y resultados](resultados-tareas/m4-t059-t062.md). Se verifican resolución contra escritor en ambos órdenes, cierre terminal, timeout SQL real 503, cinco puntos de rollback y tres rutas privadas. Unitarias completas 580/580; integración relevante 90/90 y HTTP relevante 45/45; build y lint aprobados. Se marcan solo estas cuatro tareas y el trabajo se detiene en T062.
 
 - [x] **M4-T063 — Probar reserva manual válida** · 25 min · Depende de: M4-T062, M4-T004 · RF-16–RF-17, RF-20–RF-25
       Hecho cuando: servicio y separación dentro de horario crean exactamente una cita Confirmada con cliente elegido o nuevo y snapshot completo; el tercer registro futuro del mismo teléfono en la sucursal se rechaza sin fusionar fichas ni dejar filas parciales.
@@ -192,7 +192,7 @@ Evidencia M4-T063–M4-T066: [archivos, flujos, tests primero y resultados](resu
       Hecho cuando: cancelar conserva la cita y libera solo su ocupación tras confirmar versión y evento en la misma transacción.
 - [x] **M4-T072 — Reactivar cita futura** · 25 min · Depende de: M4-T071, M4-T052 · RF-30, RF-33–RF-35, RF-44
       Hecho cuando: solo un inicio futuro con licencia, oferta y horario vigentes y sin solapamiento protegido puede volver a ocupar, conservando la separación histórica; el cupo telefónico no bloquea esta reactivación.
-Evidencia M4-T067–M4-T072: [archivos, flujo transaccional, tests primero y resultados](resultados-tareas/m4-t067-t072.md). Se implementan validación cerrada, versión, cambios de estado con evento atómico, límites de fin de atención, cancelación y reactivación histórica sin cupo de alta. Se añaden 36 unitarios y 29 casos de integración con bloqueos, rollback y dos actores. Unitarias completas 616/616; integración relevante 137/137 y HTTP relevante 53/53; build y lint aprobados. Solo se marcan estas seis tareas y el trabajo se detiene en T072; no se expone aún la ruta de T074.
+      Evidencia M4-T067–M4-T072: [archivos, flujo transaccional, tests primero y resultados](resultados-tareas/m4-t067-t072.md). Se implementan validación cerrada, versión, cambios de estado con evento atómico, límites de fin de atención, cancelación y reactivación histórica sin cupo de alta. Se añaden 36 unitarios y 29 casos de integración con bloqueos, rollback y dos actores. Unitarias completas 616/616; integración relevante 137/137 y HTTP relevante 53/53; build y lint aprobados. Solo se marcan estas seis tareas y el trabajo se detiene en T072; no se expone aún la ruta de T074.
 
 - [x] **M4-T073 — Conservar motivo opcional y correcciones** · 20 min · Depende de: M4-T070–M4-T072 · RF-32, RF-36, RF-45
       Hecho cuando: el historial muestra motivo solo si se proporcionó y conserva estado anterior, nuevo, actor e instante.
@@ -221,7 +221,7 @@ Evidencia M4-T077–M4-T082: [archivos, flujo interno, tests primero y resultado
       Hecho cuando: oferta, licencia, horario, bloqueos y ocupaciones protegidas de cualquier sucursal se releen antes de aceptar el destino, con la separación histórica de la cita.
 - [x] **M4-T082 — Guardar movimiento e historial atómicos** · 25 min · Depende de: M4-T081, M4-T010 · RF-38, RF-41–RF-43, RF-45
       Hecho cuando: inicio, fin de atención, fin protegido, zona y versión cambian juntos con un evento anterior/nuevo bajo el mismo folio; separación, costo y combinación se conservan, o ninguno cambia.
-Evidencia M4-T083–M4-T087: [archivos, flujo HTTP, tests primero y resultados](resultados-tareas/m4-t083-t087.md). Se expone PATCH privado de horario y se acreditan zonas/límites, conflicto/contigüidad, rollback/versiones y cuatro carreras reales contra apartados públicos. Tests nuevos 25/25; unitarias completas 641/641, integración relevante 136/136 y HTTP completo 277/277; build y lint aprobados. Solo se cierran estas cinco tareas y el trabajo se detiene en T087; T088 y posteriores siguen pendientes.
+      Evidencia M4-T083–M4-T087: [archivos, flujo HTTP, tests primero y resultados](resultados-tareas/m4-t083-t087.md). Se expone PATCH privado de horario y se acreditan zonas/límites, conflicto/contigüidad, rollback/versiones y cuatro carreras reales contra apartados públicos. Tests nuevos 25/25; unitarias completas 641/641, integración relevante 136/136 y HTTP completo 277/277; build y lint aprobados. Solo se cierran estas cinco tareas y el trabajo se detiene en T087; T088 y posteriores siguen pendientes.
 
 - [x] **M4-T083 — Exponer cambio privado de horario** · 20 min · Depende de: M4-T082, M4-T024 · RF-38–RF-43, RF-47
       Hecho cuando: la ruta acepta solo fecha, hora y versión y responde conflicto o resultado autorizado sin datos internos.
@@ -236,29 +236,29 @@ Evidencia M4-T083–M4-T087: [archivos, flujo HTTP, tests primero y resultados](
 
 ## 9. Frontend conectado
 
-- [ ] **M4-T088 — Habilitar navegación por rol** · 20 min · Depende de: M4-T034, M4-T044 · RF-01–RF-03, RF-06, RF-13
+- [x] **M4-T088 — Habilitar navegación por rol** · 20 min · Depende de: M4-T034, M4-T044 · RF-01–RF-03, RF-06, RF-13
       Hecho cuando: Agenda y Clientes aparecen en conectado solo para roles autorizados, y Profesional no recibe el directorio.
-- [ ] **M4-T089 — Crear cliente HTTP de agenda y clientes** · 25 min · Depende de: M4-T034, M4-T044, M4-T088 · RF-03, RF-06–RF-09, RF-13–RF-14, RF-46–RF-47
+- [x] **M4-T089 — Crear cliente HTTP de agenda y clientes** · 25 min · Depende de: M4-T034, M4-T044, M4-T088 · RF-03, RF-06–RF-09, RF-13–RF-14, RF-46–RF-47
       Hecho cuando: las vistas usan respuestas reales y no reemplazan fallos con datos de demo.
-- [ ] **M4-T090 — Conectar vistas día, semana y mes** · 25 min · Depende de: M4-T089 · RF-06–RF-07, RF-09, RF-12
+- [x] **M4-T090 — Conectar vistas día, semana y mes** · 25 min · Depende de: M4-T089 · RF-06–RF-07, RF-09, RF-12
       Hecho cuando: las tres vistas muestran citas reales del periodo completo de hasta 42 fechas, incluida la cuadrícula mensual de seis semanas; ante exceso de volumen se pide acotar sin mostrar resultados parciales.
-- [ ] **M4-T091 — Conectar filtros y búsqueda de agenda** · 20 min · Depende de: M4-T090 · RF-08–RF-09, RF-46
+- [x] **M4-T091 — Conectar filtros y búsqueda de agenda** · 20 min · Depende de: M4-T090 · RF-08–RF-09, RF-46
       Hecho cuando: sucursal, Profesional, estado y nombre actualizan la vista sin mezclar resultados de solicitudes fuera de orden.
-- [ ] **M4-T092 — Conectar detalle e historial de cita** · 20 min · Depende de: M4-T090, M4-T033 · RF-02, RF-07, RF-29, RF-32, RF-36, RF-41
+- [x] **M4-T092 — Conectar detalle e historial de cita** · 20 min · Depende de: M4-T090, M4-T033 · RF-02, RF-07, RF-29, RF-32, RF-36, RF-41
       Hecho cuando: detalle muestra origen, estado, contacto autorizado, notas e historial real bajo la zona correspondiente.
-- [ ] **M4-T093 — Construir formulario manual conectado** · 25 min · Depende de: M4-T089, M4-T062 · RF-16, RF-20–RF-21, RF-24
+- [x] **M4-T093 — Construir formulario manual conectado** · 25 min · Depende de: M4-T089, M4-T062 · RF-16, RF-20–RF-21, RF-24
       Hecho cuando: el formulario permite cliente existente o nuevo y no calcula precio, fin ni disponibilidad como autoridad local.
-- [ ] **M4-T094 — Conectar selección de disponibilidad manual** · 25 min · Depende de: M4-T093, M4-T002 · RF-20–RF-23, RF-46
+- [x] **M4-T094 — Conectar selección de disponibilidad manual** · 25 min · Depende de: M4-T093, M4-T002 · RF-20–RF-23, RF-46
       Hecho cuando: solo horarios devueltos por el motor privado pueden seleccionarse y un fallo no aparece como agenda llena.
-- [ ] **M4-T095 — Conectar preparación y recuperación manual** · 25 min · Depende de: M4-T093–M4-T094, M4-T062 · RF-24, RF-26–RF-27, RF-43
+- [x] **M4-T095 — Conectar preparación y recuperación manual** · 25 min · Depende de: M4-T093–M4-T094, M4-T062 · RF-24, RF-26–RF-27, RF-43
       Hecho cuando: doble envío o recarga incierta resuelven la misma clave antes de permitir otra cita y no duplican folio.
-- [ ] **M4-T096 — Conectar cambio de estado** · 20 min · Depende de: M4-T092, M4-T074 · RF-29–RF-37, RF-43
+- [x] **M4-T096 — Conectar cambio de estado** · 20 min · Depende de: M4-T092, M4-T074 · RF-29–RF-37, RF-43
       Hecho cuando: solo Administración y Recepción ven controles, muestran motivo opcional y manejan versión obsoleta sin sobrescribir.
-- [ ] **M4-T097 — Conectar cambio de horario** · 25 min · Depende de: M4-T092, M4-T083 · RF-38–RF-43
+- [x] **M4-T097 — Conectar cambio de horario** · 25 min · Depende de: M4-T092, M4-T083 · RF-38–RF-43
       Hecho cuando: se editan solo fecha y hora, se conserva folio y un rechazo mantiene el horario anterior visible.
-- [ ] **M4-T098 — Conectar listado e historial de clientes** · 20 min · Depende de: M4-T089, M4-T044 · RF-13–RF-14, RF-17
+- [x] **M4-T098 — Conectar listado e historial de clientes** · 20 min · Depende de: M4-T089, M4-T044 · RF-13–RF-14, RF-17
       Hecho cuando: búsqueda y detalle muestran datos reales del negocio, incluidos teléfonos compartidos sin fusionarlos.
-- [ ] **M4-T099 — Conectar alta y corrección de ficha** · 25 min · Depende de: M4-T098 · RF-15, RF-18–RF-19, RF-43
+- [x] **M4-T099 — Conectar alta y corrección de ficha** · 25 min · Depende de: M4-T098 · RF-15, RF-18–RF-19, RF-43
       Hecho cuando: alta y edición envían versión, conservan los datos corregibles ante error y no alteran citas previas.
 - [ ] **M4-T100 — Actualizar agenda abierta y avisar obsolescencia** · 25 min · Depende de: M4-T090–M4-T092, M4-T096–M4-T097 · RF-10, RF-43, RF-46
       Hecho cuando: cambios de otra sesión aparecen sin acción manual y un formulario con versión anterior recibe aviso antes de guardarse.
