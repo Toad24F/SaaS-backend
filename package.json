@@ -22,6 +22,7 @@
     "test:cov": "npm test -- --coverage",
     "test:debug": "node --experimental-vm-modules --inspect-brk node_modules/jest/bin/jest.js --runInBand",
     "test:e2e": "npm test -- --config ./test/jest-e2e.json",
+    "test:browser": "npm run test:e2e -- --runInBand test/fase-5-t104-t109.e2e-spec.ts",
     "test:integration": "npm test -- --config ./test/jest-integration.json"
   },
   "dependencies": {

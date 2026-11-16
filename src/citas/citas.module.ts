@@ -2,14 +2,19 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventoCita } from './entities/evento-cita.entity';
 import { IntentoCitaManual } from './entities/intento-cita-manual.entity';
-import { LicenciasModule } from '../licencias/licencias.module';
-import { AutorizacionService } from '../auth/services/autorizacion.service';
-import { RELOJ, RelojSistema } from '../comun/reloj';
-import { AccesoOperativoService } from './acceso-operativo.service';
+import { AccesoOperativoModule } from './acceso-operativo.module';
+import { ConsultaAgendaService } from './consulta-agenda.service';
+import { DisponibilidadModule } from '../disponibilidad/disponibilidad.module';
+import { ClientesModule } from '../clientes/clientes.module';
+import { CupoTelefonicoService } from '../reservas-publicas/cupo-telefonico.service';
+import { IntentosCitaManualService } from './intentos-cita-manual.service';
+import { RegistroCitaManualService } from './registro-cita-manual.service';
+import { CambioEstadoCitaService } from './cambio-estado-cita.service';
 
-/** Persistencia compartida: carga el modelo en Nest sin habilitar rutas operativas. */
-// Se exporta la frontera de acceso para futuros casos de uso; aún no se registran controladores.
-@Module({ imports: [LicenciasModule, TypeOrmModule.forFeature([EventoCita, IntentoCitaManual])],
-  providers: [AccesoOperativoService, AutorizacionService, { provide: RELOJ, useClass: RelojSistema }],
-  exports: [TypeOrmModule, AccesoOperativoService] })
+import { CambioHorarioCitaService } from './cambio-horario-cita.service';
+
+/** Dominio compartido: reutiliza las causas sin importar controladores ni escritores públicos. */
+@Module({ imports: [AccesoOperativoModule, DisponibilidadModule, ClientesModule, TypeOrmModule.forFeature([EventoCita, IntentoCitaManual])],
+  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, CupoTelefonicoService],
+  exports: [TypeOrmModule, AccesoOperativoModule, ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService] })
 export class CitasModule {}

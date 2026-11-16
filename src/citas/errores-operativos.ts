@@ -1,6 +1,7 @@
 import { HttpException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { CupoTelefonicoExcedidoException, MENSAJE_CUPO_TELEFONICO } from '../reservas-publicas/cupo-telefonico.service';
+import { CODIGO_AGENDA_AMPLIA, ConsultaAgendaDemasiadoAmpliaException, MENSAJE_AGENDA_AMPLIA } from './limites-agenda';
 
 const MENSAJES: Readonly<Record<number, string>> = {
   400: 'Entrada operativa inválida.',
@@ -16,14 +17,17 @@ const TEMPORALES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'PROTOCOL
 
 /** Marca interna: una segunda frontera conserva solo errores ya construidos con texto seguro. */
 class ErrorOperativoSeguro extends HttpException {
-  constructor(estado: number, mensaje: string) {
-    super({ statusCode: estado, message: mensaje }, estado);
+  constructor(estado: number, mensaje: string, codigo?: string) {
+    super({ statusCode: estado, message: mensaje, ...(codigo ? { codigo } : {}) }, estado);
   }
 }
 
 /** No reenvía mensajes, causas, SQL, cuerpos ni trazas aportados por otro error. */
 export function normalizarErrorOperativo(error: unknown): HttpException {
   if (error instanceof ErrorOperativoSeguro) return error;
+  if (error instanceof ConsultaAgendaDemasiadoAmpliaException) {
+    return new ErrorOperativoSeguro(400, MENSAJE_AGENDA_AMPLIA, CODIGO_AGENDA_AMPLIA);
+  }
   if (error instanceof CupoTelefonicoExcedidoException) {
     return new ErrorOperativoSeguro(409, MENSAJE_CUPO_TELEFONICO);
   }

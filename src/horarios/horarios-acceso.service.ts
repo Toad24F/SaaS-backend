@@ -15,7 +15,8 @@ export class HorariosAccesoService {
     private readonly horarios: HorariosService,
     private readonly atencion: AtencionService) {}
 
-  private async negocioAutorizado(actorId: number, personalId: number): Promise<number> {
+  private async negocioAutorizado(actorId: number, personalId: number,
+    permiso: Permiso): Promise<number> {
     const actor = await this.perfiles.manager.getRepository(Usuario).findOneBy({ id: actorId });
     if (!actor || !actor.activo || !actor.activadoEn || actor.negocioId === null) {
       throw new ForbiddenException('Cuenta no disponible.');
@@ -24,24 +25,24 @@ export class HorariosAccesoService {
       negocioId: actor.negocioId });
     if (!perfil) throw new NotFoundException('Profesional no disponible.');
     this.autorizacion.exigirSobreRecurso({ id: actor.id, rol: actor.rol,
-      negocioId: actor.negocioId }, Permiso.GESTIONAR_HORARIO,
+      negocioId: actor.negocioId }, permiso,
     { negocioId: perfil.negocioId, usuarioId: perfil.id });
     return perfil.negocioId;
   }
 
   async consultarSemana(actorId: number, personalId: number) {
-    const negocioId = await this.negocioAutorizado(actorId, personalId);
+    const negocioId = await this.negocioAutorizado(actorId, personalId, Permiso.CONSULTAR_HORARIO);
     return this.horarios.consultarSemana(negocioId, personalId);
   }
 
   async consultarAtencion(actorId: number, personalId: number, desde: string, hasta: string) {
-    const negocioId = await this.negocioAutorizado(actorId, personalId);
+    const negocioId = await this.negocioAutorizado(actorId, personalId, Permiso.CONSULTAR_HORARIO);
     return this.atencion.consultar(actorId, negocioId, personalId, desde, hasta);
   }
 
   async guardarSemana(actorId: number, personalId: number,
     franjas: EntradaSemana[], desde: string) {
-    const negocioId = await this.negocioAutorizado(actorId, personalId);
+    const negocioId = await this.negocioAutorizado(actorId, personalId, Permiso.GESTIONAR_HORARIO);
     return this.horarios.guardarSemana(negocioId, personalId, franjas, desde, actorId);
   }
 

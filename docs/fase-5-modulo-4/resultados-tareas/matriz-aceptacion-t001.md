@@ -1,5 +1,7 @@
 # M4-T001 — Matriz de aceptación prevista
 
+Esta matriz conserva la planificación y los resultados parciales de sus lotes históricos. Para la revisión actual consultar la [matriz final T123](matriz-final-t123.md) y el [informe T116–T124](m4-t116-t124.md); sus filas explicitan aprobación o pendientes sin atribuir aceptación por arrastre a esta planificación.
+
 Fuentes: [constitución](../constitucion-modulo-4.md), [RF locales y diez criterios](../spec.md), [plan y grupos T01–T11](../plan.md), [tareas](../tareas.md) y [ajustes aprobados](../../ajustes-licencias-administracion-agenda/spec.md). Los identificadores RF son locales: el prefijo ALA distingue los ajustes.
 
 ## Flujo de uso
@@ -11,6 +13,8 @@ Fuentes: [constitución](../constitucion-modulo-4.md), [RF locales y diez criter
 
 ## RF locales
 
+Ajuste backend de RF-01–RF-06: [consulta de horario y atención por Recepción](ajuste-consulta-horarios-recepcion.md), autorizado el 2026-11-12. Su evidencia acredita las dos lecturas y la separación de permisos; no cierra los RF completos ni sus criterios de interfaz.
+
 | RF | Tareas previstas | Grupo | Resultado | Prueba de aceptación prevista |
 | --- | --- | --- | --- | --- |
 | RF-01 | M4-T020–M4-T022, M4-T105 | T01, T11 | Pendiente | Administración y Recepción gestionan su negocio. |
@@ -18,9 +22,9 @@ Fuentes: [constitución](../constitucion-modulo-4.md), [RF locales y diez criter
 | RF-03 | M4-T018, M4-T022, M4-T047 | T01, T09 | Pendiente | IDs cruzados no revelan ni modifican datos ajenos. |
 | RF-04 | M4-T023, M4-T065 | T01, T08 | Pendiente | Cuenta y licencia se releen incluso con sesión abierta. |
 | RF-05 | M4-T024, M4-T101, M4-T114 | T01, T09 | Pendiente | Denegación comprensible sin detalles privados. |
-| RF-06 | M4-T025–M4-T026, M4-T090 | T02, T11 | Pendiente | Día, semana y mes con consultas de hasta 31 fechas. |
+| RF-06 | M4-T025–M4-T026, M4-T090 | T02, T11 | Pendiente | Día, semana y cuadrícula mensual con periodos completos de hasta 42 fechas; exceso de volumen explícito. |
 | RF-07 | M4-T028, M4-T035, M4-T092 | T02 | Pendiente | Horario y combinación en zona de sucursal. |
-| RF-08 | M4-T029–M4-T030, M4-T091 | T02 | Pendiente | Filtros y búsqueda paginada, orden estable. |
+| RF-08 | M4-T029–M4-T030, M4-T091 | T02 | Pendiente | Filtros y búsqueda sobre el periodo completo autorizado, orden estable y rechazo del exceso sin truncamiento. |
 | RF-09 | M4-T026, M4-T035, M4-T090 | T02 | Pendiente | Cinco estados visibles, incluidas canceladas. |
 | RF-10 | M4-T100, M4-T103 | T02, T11 | Pendiente | Cambio remoto actualiza agenda y advierte obsolescencia. |
 | RF-11 | M4-T031, M4-T090 | T02 | Pendiente | Causas vigentes sin mutar las citas afectadas. |
@@ -122,3 +126,31 @@ Las migraciones aditivas, sus restricciones y la regresión de instalación tien
 Las entidades completas, instalación/actualización y el evento atómico de alta pública se verifican en [M4-T013–M4-T019](m4-t013-t019.md). Esta evidencia es parcial para RF-24/RF-37/RF-45: no acredita aún los escritores y permisos operativos del panel ni cierra sus aceptaciones completas.
 
 Los permisos cerrados, revalidación de sesión/rol/negocio/licencia, alcance y errores seguros tienen evidencia propia en [M4-T020–M4-T024](m4-t020-t024.md). No habilitan ni acreditan por sí solos las futuras rutas, consultas paginadas o escrituras del panel; sus RF completos permanecen pendientes.
+
+El servicio de consulta por periodo, alcance Profesional, proyección histórica por zona, filtros, búsqueda y páginas tiene evidencia propia en [M4-T025–M4-T030](m4-t025-t030.md). Ese lote acreditó la lectura interna sin causas, detalle, historial, rutas o agenda conectada, ni cerró los RF completos.
+
+Las causas vigentes, snapshot de detalle, historial ordenado y tres rutas privadas reales se verifican en [M4-T031–M4-T036](m4-t031-t036.md), incluyendo filtros/zonas y vacío frente a fallo sin resultado parcial. Esta evidencia habilita lecturas backend; no acredita frontend, directorio, escritores o aceptación completa de los RF de gestión.
+
+El [ajuste de periodo completo](ajuste-agenda-periodo-completo.md), solicitado después de revisar la demo visual, sustituye las páginas de citas por hasta 42 fechas completas y rechazo explícito al superar 1.000 citas tras alcance/filtros. Mantiene historial paginado, detalle completo y disponibilidad de 31 fechas. Las evidencias anteriores conservan los contratos y resultados históricos de sus revisiones; este ajuste rige el lector actual. La aceptación de frontend sigue pendiente.
+
+El dominio de directorio tiene evidencia propia en [M4-T037–M4-T042](m4-t037-t042.md): validación compartida de contacto, búsqueda paginada por negocio, ficha e historial por ID, alta independiente, corrección con versión y auditoría atómica sin duplicar contacto. Se prueban teléfonos compartidos, snapshots, rollback, concurrencia y revocación durante una espera real. Es evidencia parcial para RF-13–RF-19, RF-43 y RF-45; no acredita elección del cliente para el escritor manual, rutas HTTP de clientes, frontend ni aceptación completa de esos RF.
+
+La selección interna por ID explícito y las cinco rutas privadas del directorio tienen evidencia propia en [M4-T043–M4-T047](m4-t043-t047.md): dos tests transaccionales y siete HTTP nuevos comprueban teléfonos compartidos, aislamiento, permisos, páginas, snapshots, versión obsoleta, `no-store` y errores seguros. Amplía la evidencia backend de RF-03, RF-13–RF-19, RF-43 y RF-45–RF-47; la integración de esa selección con la cita manual, el frontend y los criterios completos siguen pendientes.
+
+La validación y preparación idempotente de intentos manuales, junto con la exclusión y revalidación previas a escribir, tienen evidencia propia en [M4-T048–M4-T052](m4-t048-t052.md): 35 tests unitarios y 20 de integración nuevos. Se observan esperas reales, orden de bloqueos, cambios de reglas/contacto/ocupación/cupo y límites de acceso/reloj con motor real. Es evidencia parcial de RF-03, RF-16–RF-17, RF-20–RF-23, RF-27–RF-28, RF-43–RF-44 y RF-47; no acredita todavía creación/registro de citas, resolución incierta, rutas manuales, frontend ni M2-I004/M3-I001/ALA-I001–ALA-I003.
+
+El escritor manual real tiene evidencia de servicio/persistencia en [M4-T053–M4-T058](m4-t053-t058.md): 17 tests nuevos aprobados verifican costo/nombres actuales, ficha explícita o nueva independiente, cita Confirmada con folio y snapshots, evento del actor real, commit íntegro y repetición de resultado. Incluye cinco fallos después de escrituras reales y doble envío en dos conexiones. Amplía parcialmente RF-16–RF-17, RF-24–RF-28 y RF-43–RF-45; no acredita resolutor, rutas manuales, frontend ni las carreras de M2-I004/M3-I001/ALA-I001–ALA-I003.
+
+La resolución durable y las tres rutas manuales tienen evidencia propia en [M4-T059–M4-T062](m4-t059-t062.md): seis tests nuevos de integración y cuatro HTTP, más la reejecución de los cinco puntos de rollback del escritor. Acreditan esperas reales en ambos órdenes, cierre terminal con/sin preparación, bloqueo de peticiones tardías, timeout SQL 503 sin falsa ausencia, recuperación histórica y permisos/errores HTTP seguros. Regresión relevante de integración 90/90 y HTTP 45/45, unitarias completas 580/580, build y lint aprobados. Amplía parcialmente RF-20, RF-24, RF-26–RF-27 y RF-43–RF-47, sin cerrar los RF completos, frontend ni las integraciones diferidas. M4-T063 y posteriores conservan su estado pendiente; el lote se detiene en T062.
+
+La aceptación del escritor real se amplía en [M4-T063–M4-T066](m4-t063-t066.md) con 26 casos nuevos: cinco HTTP de reserva válida/cupo sin fusionar fichas, doce de ocupaciones entre sucursales, seis de cambios confirmados durante la espera y tres HTTP de respuesta perdida/503 real. Se comprueban snapshots, filas finales, extremos protegidos contiguos y ausencia terminal o mismo folio después de perder el socket. Regresión relevante de integración 108/108 y HTTP 53/53, unitarias completas 580/580, build y lint aprobados. Amplía parcialmente RF-16–RF-17, RF-20–RF-28 y RF-43–RF-47; los RF completos, frontend y M2-I004/M3-I001/ALA-I001–ALA-I003 conservan sus pendientes. Se cierran solo estas cuatro tareas y el trabajo se detiene en T066; M4-T067 y posteriores siguen pendientes.
+
+El servicio interno de estados tiene evidencia propia en [M4-T067–M4-T072](m4-t067-t072.md): 36 unitarios y 29 casos de integración nuevos verifican entrada cerrada, versión, cambios/no-op, límite exacto de fin, cancelación atómica y reactivación histórica sin cupo telefónico de alta. Incluye rollback después de SQL real, orden/espera del Profesional, cambio de reloj/licencia durante la espera y dos actores cuya edición vieja recibe 409. Regresión relevante de integración 137/137 y HTTP 53/53, unitarias completas 616/616, build y lint aprobados. Amplía parcialmente RF-03, RF-29–RF-36 y RF-43–RF-47; no acredita la ruta HTTP de estado de T074, las aceptaciones posteriores de motivos/correcciones, movimientos, frontend ni las integraciones diferidas. Solo se cierran M4-T067–M4-T072 y el trabajo se detiene en T072; T073 y posteriores siguen pendientes.
+
+La ruta privada de estado, motivos/correcciones y aceptación concurrente se acreditan en [M4-T073–M4-T076](m4-t073-t076.md): cuatro tests de integración y 19 HTTP nuevos comprueban historial paginado con versiones y motivo solo aportado, permisos/errores seguros, cinco estados en el límite de fin y una reserva pública real que conserva Pendiente. Seis carreras HTTP observan dos conexiones y ambos órdenes de reserva manual contra cancelación/reactivación, incluidos conflictos solo de separación y eventos reales únicos. Unitarias completas 616/616, integración relevante 144/144 y HTTP relevante 72/72; build y lint aprobados. Amplía parcialmente RF-03–RF-05, RF-29–RF-37 y RF-43–RF-47 sin cerrar frontend, movimientos, las carreras públicas/manuales ni los RF/criterios completos. Solo se cierran M4-T073–M4-T076 y el trabajo se detiene en T076; T077 y posteriores siguen pendientes.
+
+
+El movimiento interno se acredita en [M4-T077–M4-T082](m4-t077-t082.md): 25 unitarios nuevos y 20 casos finales de integración real verifican entrada cerrada, pertenencia/exclusión de cita propia, duración y separación históricas, oferta/horario/bloqueos/licencia, ocupaciones entre sedes, zona/DST, versiones, rollback después de SQL y tres esperas con conexiones distintas. Unitarias completas 641/641, integración completa 608/608, HTTP completo 252/252, build y lint aprobados. Amplía parcialmente RF-03–RF-05 y RF-38–RF-47, ALA-RF-43–RF-45/54 y CF-07/CF-08 sin cerrar esos RF/criterios completos. Se marcan solo M4-T077–M4-T082; T083 y posteriores, frontend, carreras públicas/manuales e integraciones diferidas conservan sus pendientes. El trabajo se detiene en T082.
+
+
+La ruta privada de movimiento y su aceptación se acreditan en [M4-T083–M4-T087](m4-t083-t087.md): 21 tests HTTP nuevos cubren roles/contrato/errores, zona/DST, límites, snapshots, conflictos protegidos y contigüidad entre sedes, versiones e historial y rollback después de SQL real; cuatro carreras HTTP con dos conexiones enfrentan movimiento y apartado público en ambos órdenes, también ante invasión solo de separación. Unitarias completas 641/641, integración relevante 136/136 y HTTP completo 277/277; build, lint y comprobación TypeScript del lote aprobados. Amplía parcialmente RF-03–RF-05 y RF-38–RF-47, ALA-RF-43–RF-45/54 y CF-07/CF-08/CF-10 sin cerrar los RF ni criterios completos. Solo se marcan M4-T083–M4-T087; T088 y posteriores, frontend y M2-I004/M3-I001/ALA-I001–ALA-I003 conservan sus pendientes. El trabajo se detiene en T087.

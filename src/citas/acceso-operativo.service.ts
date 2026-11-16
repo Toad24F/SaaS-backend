@@ -40,16 +40,18 @@ export class AccesoOperativoService {
 
   /** La operación y su autorización usan el mismo manager; un error nunca se vuelve lista vacía. */
   async ejecutar<T>(identidad: IdentidadOperativa, permiso: Permiso,
-    operacion: (contexto: ContextoOperativo) => Promise<T>): Promise<T> {
+    operacion: (contexto: ContextoOperativo) => Promise<T>,
+    aislamiento: 'READ COMMITTED' | 'REPEATABLE READ' = 'READ COMMITTED'): Promise<T> {
     try {
-      return await this.db.transaction('READ COMMITTED', async (manager) =>
+      // Las lecturas de varias consultas pueden pedir fotografía estable; los escritores conservan RC.
+      return await this.db.transaction(aislamiento, async (manager) =>
         operacion(await this.resolverEnTransaccion(manager, identidad, permiso)));
     } catch (error) { throw normalizarErrorOperativo(error); }
   }
 
   /** Los futuros escritores deben llamarlo otra vez tras esperar sus bloqueos comunes. */
   async resolverEnTransaccion(manager: EntityManager, identidad: IdentidadOperativa,
-    permiso: Permiso): Promise<ContextoOperativo> {
+    permiso: Permiso, instante?: Date): Promise<ContextoOperativo> {
     try {
       if (!manager.queryRunner?.isTransactionActive) throw new Error('Se requiere una transacción operativa activa.');
       if (!identidad || !Number.isSafeInteger(identidad.sub) || identidad.sub <= 0
@@ -57,7 +59,8 @@ export class AccesoOperativoService {
         throw new UnauthorizedException();
       }
       if (!PERMISOS_OPERATIVOS.has(permiso)) throw new ForbiddenException();
-      const ahora = this.reloj.ahora();
+      // Un escritor interno puede compartir el instante capturado tras sus bloqueos con ficha y motor.
+      const ahora = instante ?? this.reloj.ahora();
       // Una sola lectura une sesión, cuenta, negocio y licencia actuales. No consulta claims
       // de rol/negocio del JWT, ni acepta un negocio del formulario como autoridad.
       const actor = await manager.getRepository(Usuario).createQueryBuilder('usuario')

@@ -7,7 +7,7 @@ import { RELOJ, type Reloj } from '../comun/reloj';
 import { Personal } from '../profesionales/entities/personal.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { Cita } from './entities/cita.entity';
-import { ContextoDisponibilidadService, type ContextoDisponibilidad } from './contexto-disponibilidad.service';
+import { ContextoDisponibilidadService, type ContextoDisponibilidad, type ContextoCalculoDisponibilidad } from './contexto-disponibilidad.service';
 import { OfertaEfectivaService } from './oferta-efectiva.service';
 import { AtencionInternaService } from './atencion-interna.service';
 import { BloqueosAplicablesService } from './bloqueos-aplicables.service';
@@ -94,54 +94,7 @@ export class CitasAfectadasService {
         if (fechaLocal < entrada.desde || fechaLocal > entrada.hasta) continue;
         const contexto: ContextoDisponibilidad = { ...acceso,
           personalId: cita.personalId };
-        const causas: CausaAfectacion[] = [];
-        if (cita.inicioUtc >= ahora) {
-          const estado = await this.oferta.consultar(contexto, cita.sucursalId,
-            cita.servicioId, 'publica');
-          // El lector histórico distingue inhabilitación de inactividad sin
-          // recalcular el intervalo comprometido de la cita.
-          for (const codigo of estado.motivosExclusion) {
-            const referenciaTipo = codigo === 'cuenta_inactiva' ||
-              codigo === 'cuenta_inhabilitada' ? 'personal' :
-              codigo === 'sucursal_inactiva' || codigo === 'sucursal_inhabilitada' ? 'sucursal' :
-              codigo === 'servicio_inactivo' || codigo === 'servicio_inhabilitado' ? 'servicio' : null;
-            const referenciaId = referenciaTipo === 'personal' ? cita.personalId :
-              referenciaTipo === 'sucursal' ? cita.sucursalId :
-              referenciaTipo === 'servicio' ? cita.servicioId : null;
-            causas.push(causa(codigo, referenciaTipo, referenciaId));
-          }
-        }
-        // El margen se toma de la cita histórica, nunca de la configuración
-        // vigente. Las citas previas sin extremo protegido usan fin de atención.
-        const finProtegidoUtc = cita.finOcupacionUtc ?? cita.finUtc;
-        const fechaFinLocal = fechaEnZona(new Date(finProtegidoUtc.getTime() - 1),
-          sede.zonaHoraria);
-        const proyeccion = await this.atencion.consultar(contexto, cita.sucursalId,
-          fechaLocal, fechaFinLocal);
-        const cobertura = proyeccion.bloques.map((bloque) => ({ bloque,
-          inicioUtc: bloque.inicioUtc, finUtc: bloque.finUtc }));
-        if (!cabeEnAtencion(cobertura, cita.sucursalId,
-          cita.inicioUtc, finProtegidoUtc)) {
-          causas.push(causa('horario_insuficiente', 'sucursal', cita.sucursalId));
-        }
-        for (const descanso of proyeccion.descansos) {
-          if (empalma(cita.inicioUtc, finProtegidoUtc,
-            { inicio: descanso.inicioUtc, fin: descanso.finUtc })) {
-            causas.push(causa('descanso', descanso.origen === 'semanal'
-              ? 'horario' : 'franja_excepcion', descanso.bloqueId));
-          }
-        }
-        const bloqueos = await this.bloqueos.consultar(contexto, cita.sucursalId,
-          fechaLocal, fechaFinLocal, sede.zonaHoraria);
-        for (const bloqueo of bloqueos) {
-          if (empalma(cita.inicioUtc, finProtegidoUtc, bloqueo)) {
-            causas.push(causa('bloqueo', 'bloqueo', bloqueo.id));
-          }
-        }
-        // Una causa desaparecida no borra otras: la respuesta se recompone desde
-        // esta instantánea y elimina solo duplicados exactos de código y referencia.
-        const unicas = [...new Map(causas.map((fila) =>
-          [`${fila.codigo}:${fila.referenciaTipo}:${fila.referenciaId}`, fila])).values()];
+        const unicas = await this.causasParaCita(contexto, cita);
         if (unicas.length) citas.push({ citaId: cita.id,
           personalId: cita.personalId, sucursalId: cita.sucursalId,
           servicioId: cita.servicioId, inicioUtc: cita.inicioUtc,
@@ -150,5 +103,66 @@ export class CitasAfectadasService {
       }
       return { desde: entrada.desde, hasta: entrada.hasta, citas };
     });
+  }
+
+  /** Evalúa una cita ya autorizada con el manager y reloj del llamador, sin abrir otra transacción. */
+  async causasParaCita(contexto: ContextoCalculoDisponibilidad, cita: Cita): Promise<CausaAfectacion[]> {
+    if (!contexto.manager.queryRunner?.isTransactionActive || contexto.negocioId !== cita.negocioId || contexto.personalId !== cita.personalId) {
+      throw new Error('Contexto de causas no válido.');
+    }
+    if (cita.estado === 'cancelada') return [];
+    const sede = await contexto.manager.getRepository(Sucursal).findOneBy({ negocioId: contexto.negocioId, id: cita.sucursalId });
+    if (!sede) throw new Error('Sucursal de cita no disponible.');
+    const fechaLocal = fechaEnZona(cita.inicioUtc, sede.zonaHoraria);
+    const ahora = contexto.ahora;
+    const causas: CausaAfectacion[] = [];
+    if (cita.inicioUtc >= ahora) {
+      const estado = await this.oferta.consultar(contexto, cita.sucursalId,
+        cita.servicioId, 'publica');
+      // El lector histórico distingue inhabilitación de inactividad sin
+      // recalcular el intervalo comprometido de la cita.
+      for (const codigo of estado.motivosExclusion) {
+        const referenciaTipo = codigo === 'cuenta_inactiva' ||
+          codigo === 'cuenta_inhabilitada' ? 'personal' :
+          codigo === 'sucursal_inactiva' || codigo === 'sucursal_inhabilitada' ? 'sucursal' :
+          codigo === 'servicio_inactivo' || codigo === 'servicio_inhabilitado' ? 'servicio' : null;
+        const referenciaId = referenciaTipo === 'personal' ? cita.personalId :
+          referenciaTipo === 'sucursal' ? cita.sucursalId :
+          referenciaTipo === 'servicio' ? cita.servicioId : null;
+        causas.push(causa(codigo, referenciaTipo, referenciaId));
+      }
+    }
+    // El margen se toma de la cita histórica, nunca de la configuración
+    // vigente. Las citas previas sin extremo protegido usan fin de atención.
+    const finProtegidoUtc = cita.finOcupacionUtc ?? cita.finUtc;
+    const fechaFinLocal = fechaEnZona(new Date(finProtegidoUtc.getTime() - 1),
+      sede.zonaHoraria);
+    const proyeccion = await this.atencion.consultar(contexto, cita.sucursalId,
+      fechaLocal, fechaFinLocal);
+    const cobertura = proyeccion.bloques.map((bloque) => ({ bloque,
+      inicioUtc: bloque.inicioUtc, finUtc: bloque.finUtc }));
+    if (!cabeEnAtencion(cobertura, cita.sucursalId,
+      cita.inicioUtc, finProtegidoUtc)) {
+      causas.push(causa('horario_insuficiente', 'sucursal', cita.sucursalId));
+    }
+    for (const descanso of proyeccion.descansos) {
+      if (empalma(cita.inicioUtc, finProtegidoUtc,
+        { inicio: descanso.inicioUtc, fin: descanso.finUtc })) {
+        causas.push(causa('descanso', descanso.origen === 'semanal'
+          ? 'horario' : 'franja_excepcion', descanso.bloqueId));
+      }
+    }
+    const bloqueos = await this.bloqueos.consultar(contexto, cita.sucursalId,
+      fechaLocal, fechaFinLocal, sede.zonaHoraria);
+    for (const bloqueo of bloqueos) {
+      if (empalma(cita.inicioUtc, finProtegidoUtc, bloqueo)) {
+        causas.push(causa('bloqueo', 'bloqueo', bloqueo.id));
+      }
+    }
+    // Una causa desaparecida no borra otras: la respuesta se recompone desde
+    // esta instantánea y elimina solo duplicados exactos de código y referencia.
+    const unicas = [...new Map(causas.map((fila) =>
+      [`${fila.codigo}:${fila.referenciaTipo}:${fila.referenciaId}`, fila])).values()];
+    return unicas;
   }
 }

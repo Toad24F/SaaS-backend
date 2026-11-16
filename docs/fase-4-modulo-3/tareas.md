@@ -493,6 +493,8 @@ Esta tarea conserva la obligación M2-I004 del [contrato de escritores](../fase-
 - [ ] **M3-I001 — Verificar apartado público contra reserva manual real** · 25 min · Depende de: M3-T134; externa: escritor manual real del módulo 4 integrado al protocolo común · RF-14, RF-20, RF-31–RF-35
       Hecho cuando: dos conexiones enfrentan el apartado público y la reserva manual del mismo Profesional, incluidos intervalos entre sucursales, y solo una ocupación incompatible queda confirmada; se adjunta evidencia a M2-I004 sin sustituirla por dobles.
 
+      Evidencia nueva vinculada también a M2-I004: [M4-T110–T112 y M4-I001–I003](../fase-5-modulo-4/resultados-tareas/m4-t104-t115.md). Las carreras usan ambos escritores reales, dos conexiones distintas, barreras, espera SQL y comprobación de filas finales; incluyen separación entre sucursales y extremos contiguos. Este anexo no marca otros casos ni cierra M3-T136.
+
 ## Referencia de ejecución
 
 Las tareas mantienen sus dependencias aunque se ejecuten en sesiones diferentes. Mantener una evidencia por lote pequeño con enlaces a las tareas realizadas; no marcar secciones completas por haber terminado únicamente su última tarea. Ante cambios de contrato, actualizar primero la trazabilidad al plan y la especificación, sin alterar RF de forma implícita.

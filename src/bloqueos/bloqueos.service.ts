@@ -110,6 +110,25 @@ export class BloqueosService {
     return this.filtrar(filas, filtro);
   }
 
+  /** Lectura interna para proyectar atención; no concede gestión ni expone motivos por HTTP. */
+  async listarParaAtencion(actorId: number, negocioId: number, personalId: number,
+    desde: string, hasta: string): Promise<BloqueoHorario[]> {
+    const manager = this.bloqueos.manager;
+    const actor = await this.actor(manager, actorId, Permiso.CONSULTAR_HORARIO);
+    this.autorizacion.exigirSobreRecurso(actor, Permiso.CONSULTAR_HORARIO,
+      { negocioId, usuarioId: personalId });
+    if (!await manager.getRepository(Personal).findOneBy({ id: personalId, negocioId })) {
+      throw new NotFoundException('Profesional no disponible.');
+    }
+    const filas = await this.bloqueos.createQueryBuilder('b')
+      .where('b.negocioId = :negocioId', { negocioId })
+      .andWhere('(b.personalId = :personalId OR b.personalId IS NULL)', { personalId })
+      .andWhere('b.fechaInicio <= :hasta AND b.fechaFin >= :desde', { desde, hasta })
+      .orderBy('b.id', 'ASC').getMany();
+    await this.fechasCiviles(manager, negocioId, filas);
+    return filas;
+  }
+
   async eliminar(actorId: number, id: number): Promise<void> {
     await transaccionIdentidad(this.bloqueos.manager, async (manager) => {
       const actor = await this.actor(manager, actorId);
@@ -148,7 +167,8 @@ export class BloqueosService {
     if (!fila) throw new NotFoundException('Bloqueo no disponible.');
   }
 
-  private async actor(manager: EntityManager, actorId: number): Promise<Usuario> {
+  private async actor(manager: EntityManager, actorId: number,
+    permiso = Permiso.GESTIONAR_BLOQUEOS): Promise<Usuario> {
     const consulta = manager.getRepository(Usuario).createQueryBuilder('actor')
       .where('actor.id = :actorId', { actorId });
     if (manager.queryRunner?.isTransactionActive) consulta.setLock('pessimistic_read');
@@ -157,7 +177,7 @@ export class BloqueosService {
     if (!actor || !actor.activo || actor.activadoEn === null) {
       throw new ForbiddenException('Cuenta no disponible.');
     }
-    this.autorizacion.exigir(actor.rol, Permiso.GESTIONAR_BLOQUEOS);
+    this.autorizacion.exigir(actor.rol, permiso);
     if (actor.negocioId === null) throw new ForbiddenException('Negocio no disponible.');
     return actor;
   }

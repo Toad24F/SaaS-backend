@@ -37,9 +37,8 @@ export class AtencionService {
         diaSemana: fila.diaSemana, inicioMinutos: fila.inicioMinutos!,
         finMinutos: fila.finMinutos!, descansoInicioMinutos: fila.descansoInicioMinutos,
         descansoFinMinutos: fila.descansoFinMinutos }));
-    const bloques = (await this.bloqueos.listar(actorId)).filter((fila) =>
-      (fila.personalId === null || fila.personalId === personalId) &&
-      fila.fechaInicio <= hasta && fila.fechaFin >= desde);
+    const bloques = await this.bloqueos.listarParaAtencion(actorId, negocioId,
+      personalId, desde, hasta);
     const intervalos: { fecha: string; sucursalId: number; inicioMinutos: number;
       finMinutos: number; inicioUtc: string; finUtc: string }[] = [];
     const omisiones: { fecha: string; sucursalId: number; motivo: string }[] = [];

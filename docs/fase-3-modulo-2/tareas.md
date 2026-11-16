@@ -355,6 +355,8 @@ Estas casillas corresponden a T18 del plan y **no son tareas de implementación 
 - [ ] **M2-I004 — Probar apartado público contra reserva manual** · 25 min · Depende de: M2-I001 · RF-29–RF-30, RF-33, RF-35–RF-37
   Hecho cuando: la carrera entre apartado público y cita manual respeta el mismo bloqueo de Profesional; omitir restricciones comerciales no permite dos ocupaciones incompatibles.
 
+  Evidencia nueva del escritor manual real: [M4-T110–T112 y M4-I001–I003](../fase-5-modulo-4/resultados-tareas/m4-t104-t115.md). Incluye dos conexiones, barrera tras adquirir personal, espera SQL observada, ambos órdenes, UTC entre sucursales, separación histórica, contigüidad y filas finales. Se anexa al identificador sin marcar otras integraciones ni sustituir el cierre pendiente de sus dependencias.
+
 - [ ] **M2-I005 — Probar expiración durante espera de bloqueo** · 20 min · Depende de: M2-I001 · RF-33–RF-37
   Hecho cuando: al avanzar el reloj hasta la expiración mientras espera el escritor, la confirmación relee la vigencia y rechaza el apartado; no lo revive ni consume como válido.
 
