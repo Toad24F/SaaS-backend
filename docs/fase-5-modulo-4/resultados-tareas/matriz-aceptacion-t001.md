@@ -1,5 +1,7 @@
 # M4-T001 — Matriz de aceptación prevista
 
+Esta matriz conserva la planificación y los resultados parciales de sus lotes históricos. Para la revisión actual consultar la [matriz final T123](matriz-final-t123.md) y el [informe T116–T124](m4-t116-t124.md); sus filas explicitan aprobación o pendientes sin atribuir aceptación por arrastre a esta planificación.
+
 Fuentes: [constitución](../constitucion-modulo-4.md), [RF locales y diez criterios](../spec.md), [plan y grupos T01–T11](../plan.md), [tareas](../tareas.md) y [ajustes aprobados](../../ajustes-licencias-administracion-agenda/spec.md). Los identificadores RF son locales: el prefijo ALA distingue los ajustes.
 
 ## Flujo de uso

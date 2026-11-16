@@ -308,23 +308,25 @@ Evidencia del lote M4-T104–M4-T115 y sus dependencias M4-I001–M4-I003: [arch
 
 ## 11. Verificación y cierre documental
 
-- [ ] **M4-T116 — Verificar build y lint backend** · 20 min · Depende de: M4-T113–M4-T115 · RF-01–RF-47
+Evidencia M4-T116–M4-T124: [archivos, flujos, tests primero, matriz final y resultados de la revisión](resultados-tareas/m4-t116-t124.md). Build backend/frontend y lint backend aprobados; unitarias 651/651, integración 621/621, HTTP 297/297, Node frontend 281/281, navegador M4 7/7 y navegador frontend 33/33, sin omisiones. La guía documenta migraciones, cierre de altas y recuperación; la matriz enlaza 47 RF, 24 ajustes y diez criterios. Se cierran solo estas nueve tareas y el trabajo se detiene en T124. M3-T136 y las casillas externas conservan su estado; no se habilita producción.
+
+- [x] **M4-T116 — Verificar build y lint backend** · 20 min · Depende de: M4-T113–M4-T115 · RF-01–RF-47
       Hecho cuando: `npm run build` y `npm run lint` pasan en la revisión a entregar y sus resultados quedan registrados.
-- [ ] **M4-T117 — Verificar suite unitaria backend** · 20 min · Depende de: M4-T116 · RF-01–RF-47
+- [x] **M4-T117 — Verificar suite unitaria backend** · 20 min · Depende de: M4-T116 · RF-01–RF-47
       Hecho cuando: `npm test -- --runInBand` pasa sin omitir casos relevantes y se registran conteos y revisión.
-- [ ] **M4-T118 — Verificar integración backend** · 25 min · Depende de: M4-T117, M4-T112 · RF-03–RF-04, RF-13–RF-19, RF-21–RF-28, RF-29–RF-45
+- [x] **M4-T118 — Verificar integración backend** · 25 min · Depende de: M4-T117, M4-T112 · RF-03–RF-04, RF-13–RF-19, RF-21–RF-28, RF-29–RF-45
       Hecho cuando: `npm run test:integration -- --runInBand` pasa en bases desechables con carreras y migraciones nuevas sin skips.
-- [ ] **M4-T119 — Verificar HTTP backend** · 25 min · Depende de: M4-T118 · RF-01–RF-05, RF-13–RF-19, RF-20–RF-47
+- [x] **M4-T119 — Verificar HTTP backend** · 25 min · Depende de: M4-T118 · RF-01–RF-05, RF-13–RF-19, RF-20–RF-47
       Hecho cuando: `npm run test:e2e -- --runInBand` pasa y cubre rutas nuevas y regresiones privadas y públicas afectadas.
-- [ ] **M4-T120 — Verificar build y Node frontend** · 20 min · Depende de: M4-T103, M4-T119 · RF-06–RF-12, RF-13–RF-20, RF-27, RF-29–RF-30, RF-38, RF-43, RF-46–RF-47
+- [x] **M4-T120 — Verificar build y Node frontend** · 20 min · Depende de: M4-T103, M4-T119 · RF-06–RF-12, RF-13–RF-20, RF-27, RF-29–RF-30, RF-38, RF-43, RF-46–RF-47
       Hecho cuando: `npm run build` y `npm test` pasan en `frontend-saas`; no se declara lint sin script real.
-- [ ] **M4-T121 — Consolidar navegador final** · 25 min · Depende de: M4-T105–M4-T109, M4-T120 · RF-01–RF-20, RF-24, RF-27, RF-29–RF-43, RF-46–RF-47
+- [x] **M4-T121 — Consolidar navegador final** · 25 min · Depende de: M4-T105–M4-T109, M4-T120 · RF-01–RF-20, RF-24, RF-27, RF-29–RF-43, RF-46–RF-47
       Hecho cuando: `npm run test:browser` pasa en la revisión final y se registran navegador, casos, conteos y límites observados.
-- [ ] **M4-T122 — Documentar operación y recuperación** · 20 min · Depende de: M4-T119–M4-T121 · RF-20–RF-28, RF-33–RF-35, RF-43–RF-47
+- [x] **M4-T122 — Documentar operación y recuperación** · 20 min · Depende de: M4-T119–M4-T121 · RF-20–RF-28, RF-33–RF-35, RF-43–RF-47
       Hecho cuando: la guía indica migraciones antes de escrituras, cierre de altas nuevas, recuperación de intentos y conservación de citas e historiales sin secretos.
-- [ ] **M4-T123 — Cerrar matriz RF y diez criterios** · 25 min · Depende de: M4-T112, M4-T116–M4-T122 · RF-01–RF-47
+- [x] **M4-T123 — Cerrar matriz RF y diez criterios** · 25 min · Depende de: M4-T112, M4-T116–M4-T122 · RF-01–RF-47
       Hecho cuando: cada RF y criterio enlaza pruebas aprobadas de la revisión actual o un pendiente explícito; la matriz incluye los ajustes RF-43–RF-45 y RF-56–RF-63 y las evidencias ALA-I001–ALA-I003. La demo y evidencia histórica no se cuentan como entrega real.
-- [ ] **M4-T124 — Revisar entrega y pendientes externos** · 20 min · Depende de: M4-T123 · RF-01–RF-47
+- [x] **M4-T124 — Revisar entrega y pendientes externos** · 20 min · Depende de: M4-T123 · RF-01–RF-47
       Hecho cuando: constitución, especificación, plan, tareas y evidencias son coherentes; M3-T136 y el alcance de WhatsApp/PDF/pagos conservan su estado real sin declarar producción habilitada sin pruebas.
 
 ## Referencia de ejecución
