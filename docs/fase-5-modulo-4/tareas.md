@@ -273,35 +273,37 @@ Evidencia M4-T077–M4-T082: [archivos, flujo interno, tests primero y resultado
 
 ## 10. Navegador, seguridad y carreras finales
 
-- [ ] **M4-T104 — Preparar navegador con API de prueba** · 25 min · Depende de: M4-T103, M4-T003 · RF-01–RF-03, RF-06, RF-20
+Evidencia del lote M4-T104–M4-T115 y sus dependencias M4-I001–M4-I003: [archivos, tests primero, flujo conectado, barreras, filas finales y resultados](resultados-tareas/m4-t104-t115.md). 30 tests propios finales aprobados; unitarias 648/648, integración completa 621/621 y HTTP completo 297/297; build y lint aprobados. Se enlaza evidencia propia de ALA-I001–ALA-I003 y se detiene en T115. No acredita T116–T124 ni cierra M3-T136.
+
+- [x] **M4-T104 — Preparar navegador con API de prueba** · 25 min · Depende de: M4-T103, M4-T003 · RF-01–RF-03, RF-06, RF-20
       Hecho cuando: Playwright usa backend y MariaDB desechable, dos roles y limpieza garantizada sin tocar la base cotidiana.
-- [ ] **M4-T105 — Probar roles en navegador** · 25 min · Depende de: M4-T104 · RF-01–RF-05, RF-13–RF-14, RF-29
+- [x] **M4-T105 — Probar roles en navegador** · 25 min · Depende de: M4-T104 · RF-01–RF-05, RF-13–RF-14, RF-29
       Hecho cuando: Administrador y Recepción gestionan sus datos; Profesional ve solo citas propias y no dispone de acciones de escritura.
-- [ ] **M4-T106 — Probar alta manual en navegador** · 25 min · Depende de: M4-T104, M4-T095 · RF-16–RF-17, RF-20–RF-25
+- [x] **M4-T106 — Probar alta manual en navegador** · 25 min · Depende de: M4-T104, M4-T095 · RF-16–RF-17, RF-20–RF-25
       Hecho cuando: cliente existente y nuevo producen citas Confirmadas reales, visibles en agenda con folio y costo guardados.
-- [ ] **M4-T107 — Probar envío incierto en navegador** · 25 min · Depende de: M4-T104, M4-T095 · RF-26–RF-27, RF-43, RF-46
+- [x] **M4-T107 — Probar envío incierto en navegador** · 25 min · Depende de: M4-T104, M4-T095 · RF-26–RF-27, RF-43, RF-46
       Hecho cuando: doble clic, respuesta perdida y recarga muestran un resultado único o incertidumbre sin duplicar cita.
-- [ ] **M4-T108 — Probar estados y movimiento en navegador** · 25 min · Depende de: M4-T104, M4-T096–M4-T097 · RF-29–RF-43
+- [x] **M4-T108 — Probar estados y movimiento en navegador** · 25 min · Depende de: M4-T104, M4-T096–M4-T097 · RF-29–RF-43
       Hecho cuando: cancelación, reactivación, corrección y movimiento actualizan agenda e historial bajo el mismo folio.
-- [ ] **M4-T109 — Probar móvil y teclado en navegador** · 25 min · Depende de: M4-T104, M4-T102 · RF-06–RF-12, RF-13–RF-14, RF-20, RF-47
+- [x] **M4-T109 — Probar móvil y teclado en navegador** · 25 min · Depende de: M4-T104, M4-T102 · RF-06–RF-12, RF-13–RF-14, RF-20, RF-47
       Hecho cuando: recorridos reales completan consultas y formularios con foco visible y sin desbordamiento horizontal.
-- [ ] **M4-T110 — Enfrentar manual y apartado del mismo intervalo** · 25 min · Depende de: M4-T064, M4-T006 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-44
+- [x] **M4-T110 — Enfrentar manual y apartado del mismo intervalo** · 25 min · Depende de: M4-T064, M4-T006 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-44
       Hecho cuando: dos conexiones y el escritor manual real dejan solo la cita o el apartado vigente, con respuesta y filas finales comprobadas.
-- [ ] **M4-T111 — Enfrentar manual y apartado entre sucursales** · 25 min · Depende de: M4-T110 · RF-23, RF-28, RF-33, RF-40, RF-44
+- [x] **M4-T111 — Enfrentar manual y apartado entre sucursales** · 25 min · Depende de: M4-T110 · RF-23, RF-28, RF-33, RF-40, RF-44
       Hecho cuando: solapamientos UTC parciales, incluida la separación histórica, entre sucursales producen una sola ocupación y los extremos protegidos contiguos siguen válidos.
-- [ ] **M4-I001 — Integrar cupo telefónico compartido** · 25 min · Depende de: M4-T063, M4-T006 · Ajustes RF-56–RF-59, RF-63
+- [x] **M4-I001 — Integrar cupo telefónico compartido** · 25 min · Depende de: M4-T063, M4-T006 · Ajustes RF-56–RF-59, RF-63
       Hecho cuando: dos citas futuras repartidas entre portal y escritor manual real impiden una tercera con el mismo teléfono normalizado en la misma sucursal; otra sucursal conserva su cupo. Registrar evidencia también en ALA-I001.
-- [ ] **M4-I002 — Correr carrera por el último lugar telefónico** · 25 min · Depende de: M4-I001, M4-T006 · Ajustes RF-59, RF-63, RF-65
+- [x] **M4-I002 — Correr carrera por el último lugar telefónico** · 25 min · Depende de: M4-I001, M4-T006 · Ajustes RF-59, RF-63, RF-65
       Hecho cuando: dos conexiones enfrentan ambos escritores reales en ambos órdenes y solo una reserva ocupa el último lugar; verificar clientes, citas e intentos finales. Registrar evidencia también en ALA-I002.
-- [ ] **M4-I003 — Correr carrera por separación protegida** · 25 min · Depende de: M4-I002, M4-T111 · Ajustes RF-43–RF-45, RF-63, RF-65
+- [x] **M4-I003 — Correr carrera por separación protegida** · 25 min · Depende de: M4-I002, M4-T111 · Ajustes RF-43–RF-45, RF-63, RF-65
       Hecho cuando: una carrera pública/manual entre sucursales respeta fin protegido y extremos contiguos sin empalmes; verificar filas finales y vincular ALA-I003, M3-I001 y M2-I004 sin cerrar sus demás criterios por anticipado.
-- [ ] **M4-T112 — Consolidar M2-I004 y M3-I001** · 20 min · Depende de: M4-T110–M4-T111, M4-I001–M4-I003 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
+- [x] **M4-T112 — Consolidar M2-I004 y M3-I001** · 20 min · Depende de: M4-T110–M4-T111, M4-I001–M4-I003 · RF-21–RF-23, RF-28, RF-33–RF-35, RF-40, RF-44
       Hecho cuando: se anexan revisión, comandos, barreras y filas finales a ambos identificadores sin usar dobles ni marcar otros casos ajenos; M4-I001–M4-I003 y ALA-I001–ALA-I003 tienen evidencia propia.
-- [ ] **M4-T113 — Repetir regresión pública y privada** · 25 min · Depende de: M4-T019, M4-T074, M4-T083, M4-T112 · RF-03–RF-04, RF-21–RF-28, RF-33–RF-44
+- [x] **M4-T113 — Repetir regresión pública y privada** · 25 min · Depende de: M4-T019, M4-T074, M4-T083, M4-T112 · RF-03–RF-04, RF-21–RF-28, RF-33–RF-44
       Hecho cuando: el portal conserva reserva pendiente, apartados, separación, cupo telefónico e idempotencia y las cinco rutas privadas del motor mantienen permisos y respuestas.
-- [ ] **M4-T114 — Probar superficie HTTP segura** · 25 min · Depende de: M4-T034, M4-T044, M4-T062, M4-T074, M4-T083 · RF-03–RF-05, RF-19, RF-26–RF-28, RF-43, RF-46–RF-47
+- [x] **M4-T114 — Probar superficie HTTP segura** · 25 min · Depende de: M4-T034, M4-T044, M4-T062, M4-T074, M4-T083 · RF-03–RF-05, RF-19, RF-26–RF-28, RF-43, RF-46–RF-47
       Hecho cuando: 400/401/403/404/409/500/503, `no-store`, límites y campos desconocidos no filtran SQL, trazas ni contacto ajeno.
-- [ ] **M4-T115 — Probar fallos sin resultados parciales** · 25 min · Depende de: M4-T061, M4-T086, M4-T114 · RF-19, RF-26–RF-28, RF-42–RF-47
+- [x] **M4-T115 — Probar fallos sin resultados parciales** · 25 min · Depende de: M4-T061, M4-T086, M4-T114 · RF-19, RF-26–RF-28, RF-42–RF-47
       Hecho cuando: fallos de lectura y escritura no parecen agendas vacías ni dejan cliente, cita, evento o intento incoherentes.
 
 ## 11. Verificación y cierre documental

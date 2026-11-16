@@ -23,6 +23,9 @@ async function preparar(db: DataSource, segunda: DataSource) {
     .overrideProvider(DataSource).useValue(db).overrideProvider(RELOJ).useValue(f.reloj).compile();
   const app = modulo.createNestApplication();
   try {
+    // Vite y la API efímera usan puertos distintos en las pruebas conectadas.
+    // Registrar CORS antes de init reproduce la configuración administrativa de main.ts.
+    app.enableCors({ credentials: false });
     await app.init();
     const jwt = modulo.get(JwtService);
     // Los claims incorrectos prueban que el servidor vuelve a leer rol y negocio persistidos.

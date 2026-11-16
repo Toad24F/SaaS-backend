@@ -1,6 +1,6 @@
 # Tareas — Ajustes de licencias, administración y agenda
 
-Estado: constitución, especificación y plan aprobados por el responsable del proyecto el 8 de noviembre de 2026. ALA-T001–ALA-T154 tienen evidencia de sus criterios específicos; ALA-I001–ALA-I003 permanecen diferidas hasta contar con el escritor manual real. La aprobación documental no sustituye las evidencias de ejecución.
+Estado: constitución, especificación y plan aprobados por el responsable del proyecto el 8 de noviembre de 2026. ALA-T001–ALA-T154 tienen evidencia de sus criterios específicos; ALA-I001–ALA-I003 tienen evidencia propia con los escritores reales del módulo 4 en el lote M4-T104–T115. La aprobación documental no sustituye las evidencias de ejecución.
 
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y la [especificación](spec.md). Los RF son locales a esta última; A01–A08 y T01–T16 remiten a las áreas y grupos de pruebas del plan. Alcance exclusivo de backend, sin implementación frontend, despliegue ni cambios de fase en este ajuste.
 
@@ -619,16 +619,18 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion.md) y l
   Hecho cuando: Cada criterio enlaza evidencia vigente o una limitación explícita; quedan pendientes manuales identificados y no se declara cerrada fase 4.
   Evidencia: [resultado T142–T154](resultados-tareas/resultado-t142-t154.md); [matriz final](resultados-tareas/matriz-final-t152.md).
 
-## 14. Integración manual diferida — fuera de la ejecución actual
+## 14. Integración manual — evidencia del módulo 4
+
+Evidencia nueva por integración del módulo 4: [M4-I001–I003 y M4-T110–T112](../fase-5-modulo-4/resultados-tareas/m4-t104-t115.md). El informe explica archivos, barreras, ambos órdenes, respuestas y filas finales de cada ALA-I001–ALA-I003; distingue el criterio observado de los demás casos de M2-I004/M3-I001.
 
 Estas tres tareas dependen además de que el módulo 4 entregue su escritor manual real y fixtures seguros. No incluyen construirlo. Sus RF no quedan acreditados con el escritor público ni con mocks. Si las carreras del contrato previo M3-I001/M2-I004 requieren más casos, se conservan sus listas originales y solo se cierran con toda su evidencia.
 
-- [ ] **ALA-I001 — Verificar cupo telefónico compartido con reserva manual real** · 25 min · Depende de: ALA-T121; escritor manual real disponible · RF-56–RF-59, RF-63.
+- [x] **ALA-I001 — Verificar cupo telefónico compartido con reserva manual real** · 25 min · Depende de: ALA-T121; escritor manual real disponible · RF-56–RF-59, RF-63.
   Hecho cuando: dos citas futuras repartidas entre ambos canales impiden una tercera en la misma sucursal y otra sucursal conserva su cupo independiente, usando el escritor real.
 
-- [ ] **ALA-I002 — Verificar carrera pública/manual por último lugar telefónico** · 25 min · Depende de: ALA-I001, ALA-T132; escritor manual real disponible · RF-59, RF-63, RF-65.
+- [x] **ALA-I002 — Verificar carrera pública/manual por último lugar telefónico** · 25 min · Depende de: ALA-I001, ALA-T132; escritor manual real disponible · RF-59, RF-63, RF-65.
   Hecho cuando: dos conexiones con barreras en ambos órdenes aceptan como máximo una reserva por el último lugar y se verifican clientes, citas e intentos finales.
 
-- [ ] **ALA-I003 — Verificar ocupación y separación entre escritores reales** · 25 min · Depende de: ALA-I002; escritor manual real disponible · RF-43–RF-45, RF-63, RF-65.
+- [x] **ALA-I003 — Verificar ocupación y separación entre escritores reales** · 25 min · Depende de: ALA-I002; escritor manual real disponible · RF-43–RF-45, RF-63, RF-65.
   Hecho cuando: una carrera pública/manual entre sucursales respeta fin protegido y contigüidad sin empalmes; su evidencia se vincula a M3-I001/M2-I004 sin atribuir cobertura a los casos todavía pendientes.
 
