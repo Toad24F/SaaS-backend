@@ -14,31 +14,33 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion-modulo-
 
 ## 1. Preparación y contratos
 
-- [ ] **M5-T001 — Revisar dependencias normativas y evidencias previas** (15 min).
+Evidencia del lote [M5-T001–M5-T007](resultados-tareas/m5-t001-t007.md).
+
+- [x] **M5-T001 — Revisar dependencias normativas y evidencias previas** (15 min).
   - **RF:** RF-01–RF-62. **Depende de:** ninguna.
   - **Hecho cuando:** Existe una nota que identifica contratos vigentes, tareas previas pendientes y restricciones aplicables.
 
-- [ ] **M5-T002 — Preparar matriz de aceptación** (20 min).
+- [x] **M5-T002 — Preparar matriz de aceptación** (20 min).
   - **RF:** RF-01–RF-62. **Depende de:** M5-T001.
   - **Hecho cuando:** La matriz contiene los 62 RF y los 15 criterios de spec, sin atribuir resultados todavía.
 
-- [ ] **M5-T003 — Preparar datos reutilizables de prueba** (25 min).
+- [x] **M5-T003 — Preparar datos reutilizables de prueba** (25 min).
   - **RF:** RF-02, RF-15, RF-61. **Depende de:** M5-T001.
   - **Hecho cuando:** Una base desechable identificada como test admite dos negocios, cuatro roles y dos profesionales sin utilizar datos reales.
 
-- [ ] **M5-T004 — Preparar reloj y barreras reutilizables** (25 min).
+- [x] **M5-T004 — Preparar reloj y barreras reutilizables** (25 min).
   - **RF:** RF-07, RF-45, RF-62. **Depende de:** M5-T003.
   - **Hecho cuando:** Un caso de prueba demuestra avance controlado del reloj y sincronización de dos conexiones.
 
-- [ ] **M5-T005 — Registrar contratos HTTP y errores del módulo** (25 min).
+- [x] **M5-T005 — Registrar contratos HTTP y errores del módulo** (25 min).
   - **RF:** RF-01–RF-62. **Depende de:** M5-T001.
   - **Hecho cuando:** La nota enumera entradas, salidas, permisos y errores de las rutas previstas sin presentarlas como implementadas.
 
-- [ ] **M5-T006 — Verificar contrato vigente del proveedor** (25 min).
+- [x] **M5-T006 — Verificar contrato vigente del proveedor** (25 min).
   - **RF:** RF-31–RF-38, RF-61. **Depende de:** M5-T005.
   - **Hecho cuando:** Se registran versión Graph elegida, fuentes oficiales, payload del botón, firma y requisitos de consentimiento; faltantes externos quedan explícitos.
 
-- [ ] **M5-T007 — Seleccionar dependencia de saneado raster** (25 min).
+- [x] **M5-T007 — Seleccionar dependencia de saneado raster** (25 min).
   - **RF:** RF-28, RF-30. **Depende de:** M5-T005.
   - **Hecho cuando:** Se documentan compatibilidad con Node, formatos admitidos y alternativa descartada, sin cambiar el stack del frontend.
 
@@ -649,4 +651,3 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion-modulo-
 Backend: `npm run build`, `npm run lint`, `npm test -- --runInBand`, `npm run test:integration -- --runInBand` y `npm run test:e2e -- --runInBand`. Frontend: `npm run build`, `npm test` y `npm run test:browser`; no hay lint de frontend declarado.
 
 La matriz de aceptación enlazará los grupos T01–T13 del plan con casos concretos y las tareas M5 de este documento. Los 62 RF y los 15 criterios de finalización de spec deben tener evidencia propia. Las tareas con RF-01–RF-62 representan comprobaciones transversales y no sustituyen las verificaciones particulares de cada bloque.
-
