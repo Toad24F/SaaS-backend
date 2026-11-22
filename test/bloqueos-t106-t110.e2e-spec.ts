@@ -112,12 +112,12 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
         .auth(auth('profesional').token, { type: 'bearer' })
         .send({ ...entrada(personalId, sucursalId), inicioMinutos: 630,
           finMinutos: 690 }).expect(201);
-      expect((await request(http).get('/bloqueos')
-        .auth(auth('profesional').token, { type: 'bearer' }).expect(200)).body).toHaveLength(2);
+      expect((await request(http).get('/bloqueos').query({ vigencia: 'todos' })
+        .auth(auth('profesional').token, { type: 'bearer' }).expect(200)).body.bloqueos).toHaveLength(2);
       await request(http).get('/bloqueos').query({ sucursalId: 999999 })
         .auth(tokens.admin, { type: 'bearer' }).expect(404);
-      expect((await request(http).get('/bloqueos').query({ personalId })
-        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body).toHaveLength(2);
+      expect((await request(http).get('/bloqueos').query({ personalId, vigencia: 'todos' })
+        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body.bloqueos).toHaveLength(2);
       const atencion = (await request(http).get(ruta)
         .auth(auth('profesional').token, { type: 'bearer' }).expect(200)).body;
       expect(atencion.intervalos.map((x: { inicioMinutos: number; finMinutos: number }) =>
@@ -144,8 +144,8 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
         .send({ finMinutos: null }).expect(400);
       await request(http).patch(`/bloqueos/${primero.body.id}`)
         .auth(tokens.profesional, { type: 'bearer' }).send({}).expect(400);
-      expect((await request(http).get('/bloqueos')
-        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body[0].finMinutos).toBe(660);
+      expect((await request(http).get('/bloqueos').query({ vigencia: 'todos' })
+        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body.bloqueos[0].finMinutos).toBe(660);
       await request(http).patch(`/bloqueos/${primero.body.id}`)
         .auth(auth('profesional').token, { type: 'bearer' })
         .send({ motivo: 'Nuevo viaje' }).expect(200);
@@ -184,12 +184,12 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
         .query({ desde: '2026-07-07', hasta: '2026-07-07' })
         .auth(tokens.profesional, { type: 'bearer' }).expect(200)).body;
       expect(martes.intervalos).toHaveLength(0);
-      const antes = (await request(http).get('/bloqueos')
+      const antes = (await request(http).get('/bloqueos').query({ vigencia: 'todos' })
         .auth(tokens.admin, { type: 'bearer' }).expect(200)).body;
       await request(http).post('/bloqueos').auth(tokens.admin, { type: 'bearer' })
         .send({ ...entrada(null, null), fechaInicio: '2026-03-08',
           fechaFin: '2026-03-08', inicioMinutos: 150, finMinutos: 180 }).expect(400);
-      expect((await request(http).get('/bloqueos')
+      expect((await request(http).get('/bloqueos').query({ vigencia: 'todos' })
         .auth(tokens.admin, { type: 'bearer' }).expect(200)).body).toEqual(antes);
       await request(http).patch(`/bloqueos/${colectivo.body.id}`)
         .auth(tokens.profesional, { type: 'bearer' })
@@ -201,6 +201,25 @@ describe('T106–T110 HTTP bloqueos y atención resultante', () => {
       expect((await request(http).get(`/profesionales/${personalId}/atencion`)
         .query({ desde: '2026-07-07', hasta: '2026-07-07' })
         .auth(tokens.admin, { type: 'bearer' }).expect(200)).body.intervalos).toHaveLength(2);
+    });
+  });
+
+  it('M5-T040: valida filtros HTTP y entrega sobre paginado con total real', async () => {
+    await conHttp(async (app, _db, { tokens }) => {
+      const http = app.getHttpServer();
+      const entradaBloqueo = { ...entrada(null, null), fechaInicio: '2090-01-01', fechaFin: '2090-01-01' };
+      const creado = await request(http).post('/bloqueos').auth(tokens.admin, { type: 'bearer' })
+        .send(entradaBloqueo).expect(201);
+      const pagina = (await request(http).get('/bloqueos').query({ pagina: 1, limite: 1 })
+        .auth(tokens.admin, { type: 'bearer' }).expect(200)).body;
+      expect(pagina).toMatchObject({ pagina: 1, limite: 1, total: 1,
+        bloqueos: [{ id: creado.body.id, vigencia: 'proximo' }] });
+      await request(http).get('/bloqueos').query({ pagina: '1.5' })
+        .auth(tokens.admin, { type: 'bearer' }).expect(400);
+      await request(http).get('/bloqueos').query({ desde: '2026-02-30' })
+        .auth(tokens.admin, { type: 'bearer' }).expect(400);
+      await request(http).get('/bloqueos').query({ desde: '2026-11-02', hasta: '2026-11-01' })
+        .auth(tokens.admin, { type: 'bearer' }).expect(400);
     });
   });
 

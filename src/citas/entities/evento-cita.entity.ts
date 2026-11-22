@@ -13,7 +13,12 @@ export type AccionEventoCita = 'alta' | 'cambio_estado' | 'cancelacion' | 'react
 @Index('idx_ec_cita_fecha', ['negocioId', 'citaId', 'ocurridoEn', 'id'])
 @Index('idx_ec_actor_fecha', ['negocioId', 'actorUsuarioId', 'ocurridoEn'])
 @Index('idx_ec_sesion', ['negocioId', 'sesionPublicaId'])
-@Check('chk_ec_actor', '(actor_usuario_id IS NOT NULL AND sesion_publica_id IS NULL) OR (actor_usuario_id IS NULL AND sesion_publica_id IS NOT NULL)')
+@Index('idx_ec_referencia_whatsapp', ['negocioId', 'referenciaWhatsapp'])
+@Check('chk_ec_actor', '(actor_usuario_id IS NOT NULL) + (sesion_publica_id IS NOT NULL) + (referencia_whatsapp IS NOT NULL) + (proceso_sistema IS NOT NULL) = 1')
+@Check('chk_ec_referencia_whatsapp', 'referencia_whatsapp IS NULL OR CHAR_LENGTH(TRIM(referencia_whatsapp)) > 0')
+@Check('chk_ec_proceso_sistema', 'proceso_sistema IS NULL OR CHAR_LENGTH(TRIM(proceso_sistema)) > 0')
+@Check('chk_ec_accion_whatsapp', "referencia_whatsapp IS NULL OR accion='cambio_estado'")
+@Check('chk_ec_accion_sistema', "proceso_sistema IS NULL OR accion='cancelacion'")
 @Check('chk_ec_origen_publico', "sesion_publica_id IS NULL OR accion='alta'")
 @Check('chk_ec_version', 'version_resultante >= 1')
 export class EventoCita {
@@ -26,12 +31,22 @@ export class EventoCita {
   @Column({ name: 'cita_id', type: 'int', unsigned: true })
   citaId: number;
 
-  // Exactamente una identidad: cuenta interna o sesión pública comprobada en servidor.
+  // Exactamente una identidad: cuenta, sesión, referencia externa o proceso conocido.
   @Column({ name: 'actor_usuario_id', type: 'int', unsigned: true, nullable: true })
   actorUsuarioId: number | null;
 
   @Column({ name: 'sesion_publica_id', type: 'int', unsigned: true, nullable: true })
   sesionPublicaId: number | null;
+
+  @Column({ name: 'referencia_whatsapp', type: 'varchar', length: 128, nullable: true })
+  referenciaWhatsapp: string | null;
+
+  @Column({ name: 'proceso_sistema', type: 'varchar', length: 80, nullable: true })
+  procesoSistema: string | null;
+
+  // El discriminador calculado también clasifica eventos históricos sin tocar sus triggers.
+  @Column({ name: 'actor_tipo', type: 'varchar', length: 20, asExpression: `CASE WHEN actor_usuario_id IS NOT NULL THEN 'usuario' WHEN sesion_publica_id IS NOT NULL THEN 'sesion_publica' WHEN referencia_whatsapp IS NOT NULL THEN 'cliente_whatsapp' WHEN proceso_sistema IS NOT NULL THEN 'sistema' ELSE NULL END`, generatedType: 'STORED', nullable: true, insert: false, update: false })
+  actorTipo: string | null;
 
   @ManyToOne(() => Negocio, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'negocio_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_ec_negocio' })

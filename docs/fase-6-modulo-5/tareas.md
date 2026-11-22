@@ -177,27 +177,27 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
   - **RF:** RF-08–RF-09, RF-14, RF-61. **Depende de:** M5-T036, M5-T003.
   - **Hecho cuando:** Más de una página, estado filtrado y página vacía mantienen contadores correctos y aislamiento.
 
-- [ ] **M5-T038 — Conectar filtros y paginador de correos** (25 min).
+- [x] **M5-T038 — Conectar filtros y paginador de correos** (25 min).
   - **RF:** RF-08–RF-09, RF-14. **Depende de:** M5-T037.
   - **Hecho cuando:** La pantalla reinicia página al filtrar y muestra total/error sin contar solo filas visibles.
 
-- [ ] **M5-T039 — Implementar clasificación temporal de bloqueos** (25 min).
+- [x] **M5-T039 — Implementar clasificación temporal de bloqueos** (25 min).
   - **RF:** RF-10–RF-12. **Depende de:** M5-T004, M5-T005.
   - **Hecho cuando:** Pruebas cubren fin exclusivo, día completo y bloqueos colectivos con zonas distintas.
 
-- [ ] **M5-T040 — Paginar bloqueos con filtros y totales** (25 min).
+- [x] **M5-T040 — Paginar bloqueos con filtros y totales** (25 min).
   - **RF:** RF-10–RF-12, RF-14. **Depende de:** M5-T039.
   - **Hecho cuando:** El endpoint devuelve por defecto vigentes/próximos y conserva filtros por solapamiento y alcance.
 
-- [ ] **M5-T041 — Separar listado paginado de cálculo del motor** (25 min).
+- [x] **M5-T041 — Separar listado paginado de cálculo del motor** (25 min).
   - **RF:** RF-13. **Depende de:** M5-T040.
   - **Hecho cuando:** El motor obtiene todos los bloqueos aplicables sin invocar el listado paginado.
 
-- [ ] **M5-T042 — Verificar bloqueos y regresión de disponibilidad** (25 min).
+- [x] **M5-T042 — Verificar bloqueos y regresión de disponibilidad** (25 min).
   - **RF:** RF-10–RF-14, RF-61. **Depende de:** M5-T041, M5-T003.
   - **Hecho cuando:** Cambiar páginas no cambia disponibilidad y bloques colectivos se cuentan una sola vez.
 
-- [ ] **M5-T043 — Adaptar consumidores del listado de bloqueos** (25 min).
+- [x] **M5-T043 — Adaptar consumidores del listado de bloqueos** (25 min).
   - **RF:** RF-10–RF-14. **Depende de:** M5-T042.
   - **Hecho cuando:** Administrador filtra anteriores/todos y el Profesional conserva su alcance con el nuevo sobre.
 
@@ -249,39 +249,39 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 ## 6. Persistencia de automatizaciones
 
-- [ ] **M5-T054 — Crear configuración de automatizaciones** (25 min).
+- [x] **M5-T054 — Crear configuración de automatizaciones** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T005.
   - **Hecho cuando:** Migración, entidad y esquema imponen rangos enteros y valores 12/24 sin modificar citas previas.
 
-- [ ] **M5-T055 — Crear generaciones de condiciones por cita** (25 min).
+- [x] **M5-T055 — Crear generaciones de condiciones por cita** (25 min).
   - **RF:** RF-40–RF-46, RF-59. **Depende de:** M5-T054.
   - **Hecho cuando:** La persistencia admite vencimiento nulo, generación histórica y motivo de seguimiento con FKs de negocio.
 
-- [ ] **M5-T056 — Añadir generación y causa vigente a cita** (25 min).
+- [x] **M5-T056 — Añadir generación y causa vigente a cita** (25 min).
   - **RF:** RF-43–RF-46, RF-49, RF-59. **Depende de:** M5-T055.
   - **Hecho cuando:** Entidad, esquema y migración conservan snapshots y referencian condiciones dentro del mismo negocio.
 
-- [ ] **M5-T057 — Ampliar actores de eventos de cita** (25 min).
+- [x] **M5-T057 — Ampliar actores de eventos de cita** (25 min).
   - **RF:** RF-33, RF-44, RF-60–RF-61. **Depende de:** M5-T056.
   - **Hecho cuando:** Restricciones admiten usuario/sesión/WhatsApp/sistema de forma excluyente sin usuarios ficticios.
 
-- [ ] **M5-T058 — Probar invariantes de eventos ampliados** (25 min).
+- [x] **M5-T058 — Probar invariantes de eventos ampliados** (25 min).
   - **RF:** RF-33, RF-44, RF-60–RF-62. **Depende de:** M5-T057.
   - **Hecho cuando:** Se rechazan actores incompatibles y cambios a eventos; sigue habiendo una versión única por cita.
 
-- [ ] **M5-T059 — Crear configuración de canales** (25 min).
+- [x] **M5-T059 — Crear configuración de canales** (25 min).
   - **RF:** RF-31–RF-38, RF-61. **Depende de:** M5-T006.
   - **Hecho cuando:** Persistencia admite un canal por negocio y referencia a secreto sin almacenar credenciales utilizables.
 
-- [ ] **M5-T060 — Crear bandeja durable de envíos** (25 min).
+- [x] **M5-T060 — Crear bandeja durable de envíos** (25 min).
   - **RF:** RF-31, RF-36, RF-47–RF-48, RF-62. **Depende de:** M5-T055, M5-T059.
   - **Hecho cuando:** Migración, entidad y esquema definen efecto único, generación, programación, lease e índices de trabajo.
 
-- [ ] **M5-T061 — Crear bandeja de eventos entrantes** (25 min).
+- [x] **M5-T061 — Crear bandeja de eventos entrantes** (25 min).
   - **RF:** RF-33–RF-38, RF-62. **Depende de:** M5-T059.
   - **Hecho cuando:** Duplicar el mismo evento no crea otra entrada y se conservan horas de recepción/proveedor separadas.
 
-- [ ] **M5-T062 — Crear persistencia de acciones de confirmación** (25 min).
+- [x] **M5-T062 — Crear persistencia de acciones de confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61–RF-62. **Depende de:** M5-T060.
   - **Hecho cuando:** Hash, consumo, vencimiento y pertenencia a generación quedan definidos sin token utilizable persistido.
 
