@@ -290,9 +290,10 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Solo Administrador modifica con versión y rango válido; trabajos anteriores permanecen iguales.
   - **Evidencia:** [M5-T063](resultados-tareas/m5-t063.md).
 
-- [ ] **M5-T064 — Conectar formulario de plazos y recordatorios** (25 min).
+- [x] **M5-T064 — Conectar formulario de plazos y recordatorios** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T063.
   - **Hecho cuando:** La pantalla muestra valores vigentes y errores de rango/conflicto sin cambios retroactivos.
+  - **Evidencia:** [M5-T064](resultados-tareas/m5-t064.md).
 
 ## 7. Política temporal y creación de trabajos
 
