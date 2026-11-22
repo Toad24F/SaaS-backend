@@ -77,7 +77,7 @@ describe('M5-T009–T013: persistencia y resolución de fichas', () => {
         await expect(uniones.insert({ ...ajena, ...invalida })).rejects.toThrow();
       }
       // Retirar la tabla con operaciones registradas descartaría el historial.
-      await db.undoLastMigration({ transaction: 'each' });
+      await retrocederHastaMigracion(db, 'UnionesCliente1760000050000');
       await expect(db.undoLastMigration({ transaction: 'each' })).rejects.toThrow('uniones');
       expect(await uniones.count()).toBe(3);
     }, 'citas_m5_test');

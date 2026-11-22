@@ -92,27 +92,29 @@ Evidencia del lote [M5-T014–M5-T017](resultados-tareas/m5-t014-t017.md).
 
 ## 3. Clientes: edición, unión y unicidad final
 
-- [ ] **M5-T018 — Detectar colisión al editar cliente** (25 min).
+Evidencia del lote [M5-T018–M5-T023](resultados-tareas/m5-t018-t023.md).
+
+- [x] **M5-T018 — Detectar colisión al editar cliente** (25 min).
   - **RF:** RF-20, RF-22, RF-61. **Depende de:** M5-T016, M5-T005.
   - **Hecho cuando:** Una edición coincidente devuelve 409 y destino mínimo solo a Administración/Recepción, sin guardar cambios.
 
-- [ ] **M5-T019 — Validar solicitud de unión** (25 min).
+- [x] **M5-T019 — Validar solicitud de unión** (25 min).
   - **RF:** RF-20–RF-22, RF-61. **Depende de:** M5-T018, M5-T011.
   - **Hecho cuando:** Pruebas rechazan auto-unión, otro negocio, versiones obsoletas, destino fusionado y ausencia de coincidencia.
 
-- [ ] **M5-T020 — Implementar traslado atómico de relaciones** (25 min).
+- [x] **M5-T020 — Implementar traslado atómico de relaciones** (25 min).
   - **RF:** RF-21–RF-23, RF-59. **Depende de:** M5-T019.
   - **Hecho cuando:** Una unión conserva destino, referencia histórica del origen y snapshots de todas las citas.
 
-- [ ] **M5-T021 — Añadir idempotencia y auditoría de unión** (25 min).
+- [x] **M5-T021 — Añadir idempotencia y auditoría de unión** (25 min).
   - **RF:** RF-21–RF-22, RF-60–RF-62. **Depende de:** M5-T020.
   - **Hecho cuando:** La misma clave recupera un resultado único; otra carga con igual clave produce conflicto sin repetir efectos.
 
-- [ ] **M5-T022 — Exponer operación autorizada de unión** (25 min).
+- [x] **M5-T022 — Exponer operación autorizada de unión** (25 min).
   - **RF:** RF-20–RF-22, RF-61. **Depende de:** M5-T021.
   - **Hecho cuando:** El endpoint admite Administrador/Recepción y rechaza Profesional y recursos ajenos.
 
-- [ ] **M5-T023 — Probar rollback y carreras de unión** (25 min).
+- [x] **M5-T023 — Probar rollback y carreras de unión** (25 min).
   - **RF:** RF-22–RF-23, RF-62. **Depende de:** M5-T022, M5-T004.
   - **Hecho cuando:** Un fallo intermedio y una edición simultánea dejan relaciones íntegras y ninguna unión parcial.
 

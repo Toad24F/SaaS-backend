@@ -12,6 +12,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 @Check('chk_uc_fichas', 'origen_id <> destino_id')
 @Check('chk_uc_versiones', 'version_origen >= 1 AND version_destino >= 1')
 @Check('chk_uc_clave', 'CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)')
+@Check('chk_uc_contenido_hash', "contenido_hash IS NULL OR contenido_hash REGEXP '^[0-9a-f]{64}$'")
 export class UnionCliente {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: string;
@@ -36,6 +37,10 @@ export class UnionCliente {
 
   @Column({ type: 'varchar', length: 64, charset: 'ascii', collation: 'ascii_bin' })
   clave: string;
+
+  // La huella permite recuperar una aceptación sin guardar los datos propuestos.
+  @Column({ name: 'contenido_hash', type: 'char', length: 64, charset: 'ascii', collation: 'ascii_bin', nullable: true })
+  contenidoHash: string | null;
 
   @Column({ name: 'ocurrido_en', type: 'datetime', precision: 6, default: () => 'CURRENT_TIMESTAMP(6)' })
   ocurridoEn: Date;

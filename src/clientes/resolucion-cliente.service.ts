@@ -5,6 +5,8 @@ import { Cliente } from '../disponibilidad/entities/cliente.entity';
 import type { DatosCliente } from './clientes.entrada';
 import { normalizarIdentidadCliente, normalizarNombreCliente } from './identidad-cliente';
 
+type IdentidadCliente = ReturnType<typeof normalizarIdentidadCliente>;
+
 /** Resuelve una ficha con el negocio autorizado y el reloj del llamador. */
 @Injectable()
 export class ResolucionClienteService {
@@ -17,24 +19,31 @@ export class ResolucionClienteService {
     // El negocio serializa altas. Si el llamador ya tomó recursos de agenda, debe mantener
     // esta misma barrera desde antes de esos recursos; aquí se reutiliza dentro de su transacción.
     await bloquearNegocioAgenda(manager, negocioId);
-    const fichas = manager.getRepository(Cliente);
-    // Acotar por el índice de negocio y teléfono. Releer la fuente mientras los escritores
-    // previos puedan dejar el dato derivado vacío o desactualizado.
-    const candidatas = await fichas.createQueryBuilder('cliente')
-      .where('cliente.negocioId = :negocioId AND cliente.telefono = :telefono', { negocioId, telefono })
-      .andWhere('cliente.fusionadoEnId IS NULL')
-      .orderBy('cliente.id', 'ASC').setLock('pessimistic_write').getMany();
-
-    // El filtro indexado puede incluir teléfonos heredados equivalentes por colación.
-    const coincidencias = candidatas.filter((ficha) =>
-      ficha.telefono === telefono && normalizarNombreCliente(ficha.nombreCompleto) === nombreNormalizado);
+    const coincidencias = await this.buscarCoincidencias(manager, negocioId, { nombreNormalizado, telefono }, { bloquear: true });
     if (coincidencias.length > 1) throw new ConflictException('No se pudo resolver la ficha del cliente.');
     if (coincidencias.length === 1) return { ficha: coincidencias[0], creada: false };
 
+    const fichas = manager.getRepository(Cliente);
     const ficha = await fichas.save(fichas.create({
       negocioId, nombreCompleto: datos.nombreCompleto.trim(), nombreNormalizado: Buffer.from(nombreNormalizado),
       telefono, version: 1, creadoEn: ahora,
     }));
     return { ficha, creada: true };
+  }
+
+  /** Lectura de identidad bajo la barrera de negocio mantenida por el llamador. */
+  async buscarCoincidencias(manager: EntityManager, negocioId: number,
+    { nombreNormalizado, telefono }: IdentidadCliente, opciones: { excluirId?: number; bloquear?: boolean } = {}): Promise<Cliente[]> {
+    // Acotar por el índice de negocio y teléfono. Releer la fuente mientras los escritores
+    // previos puedan dejar el dato derivado vacío o desactualizado.
+    const consulta = manager.getRepository(Cliente).createQueryBuilder('cliente')
+      .where('cliente.negocioId = :negocioId AND cliente.telefono = :telefono', { negocioId, telefono })
+      .andWhere('cliente.fusionadoEnId IS NULL');
+    if (opciones.excluirId !== undefined) consulta.andWhere('cliente.id <> :excluirId', { excluirId: opciones.excluirId });
+    if (opciones.bloquear) consulta.setLock('pessimistic_write');
+    const candidatas = await consulta.orderBy('cliente.id', 'ASC').getMany();
+    // El filtro indexado puede incluir teléfonos heredados equivalentes por colación.
+    return candidatas.filter((ficha) =>
+      ficha.telefono === telefono && normalizarNombreCliente(ficha.nombreCompleto) === nombreNormalizado);
   }
 }

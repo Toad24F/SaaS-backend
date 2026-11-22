@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Param, Patch, Post, Query, Res, UseFilters, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpCode, Param, Patch, Post, Query, Res, UseFilters, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -47,5 +47,13 @@ export class ClientesController {
   @Header('Cache-Control', 'no-store')
   corregir(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() body: unknown) {
     return this.clientes.corregir(actor, id, body);
+  }
+
+  // La aceptación explícita y su recuperación comparten la misma respuesta autorizada.
+  @Post(':id/uniones')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  unir(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() body: unknown) {
+    return this.clientes.unir(actor, id, body);
   }
 }

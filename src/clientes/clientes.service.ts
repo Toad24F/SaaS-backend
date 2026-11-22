@@ -11,8 +11,11 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { bloquearNegocioAgenda } from '../comun/bloqueos-coordinados';
 import { proyectarHorarioCita } from '../citas/horario-agenda';
 import { ResolucionClienteService } from './resolucion-cliente.service';
-import { validarAltaCliente, validarBusquedaClientes, validarConsultaFicha, validarCorreccionCliente,
-  validarIdCliente, validarPaginacionClientes, type DatosCliente } from './clientes.entrada';
+import { ClienteCoincidenteException } from './cliente-coincidente';
+import { UnionCliente } from './entities/union-cliente.entity';
+import { normalizarIdentidadCliente, normalizarNombreCliente } from './identidad-cliente';
+import { huellaUnionCliente, MAX_ENTERO_CLIENTE, validarAltaCliente, validarBusquedaClientes, validarConsultaFicha,
+  validarCorreccionCliente, validarIdCliente, validarPaginacionClientes, validarUnionCliente, type DatosCliente } from './clientes.entrada';
 
 type Identidad = Pick<JwtPayload, 'sub' | 'sesionId'>;
 const CAMPOS_FICHA = ['id', 'negocioId', 'version', 'nombreCompleto', 'telefono', 'creadoEn'] as const;
@@ -22,6 +25,13 @@ const CAMPOS_CITA = ['id', 'negocioId', 'clienteId', 'version', 'sucursalId', 'p
 const escaparLike = (valor: string) => valor.replace(/[!%_]/g, '!$&');
 function proyectarFicha(ficha: Cliente) {
   return Object.fromEntries(CAMPOS_FICHA.map((k) => [k, ficha[k]])) as Pick<Cliente, typeof CAMPOS_FICHA[number]>;
+}
+
+/** Las versiones resultantes se derivan de la decisión, aunque las fichas cambien después. */
+function proyectarUnion(operacion: UnionCliente) {
+  return { id: String(operacion.id), origenId: operacion.origenId, destinoId: operacion.destinoId,
+    versionOrigen: operacion.versionOrigen + 1, versionDestino: operacion.versionDestino + 1,
+    ocurridoEn: operacion.ocurridoEn.toISOString() };
 }
 
 /** Directorio privado: el buscador admite teléfonos compartidos y el alta usa la identidad completa. */
@@ -127,10 +137,17 @@ export class ClientesService {
       const telefono = datos.telefono ?? ficha.telefono;
       const campos = [...(nombreCompleto === ficha.nombreCompleto ? [] : ['nombreCompleto']), ...(telefono === ficha.telefono ? [] : ['telefono'])];
       if (!campos.length) return proyectarFicha(ficha);
-      if (ficha.version >= 4294967295) throw new ConflictException();
+      if (ficha.version >= MAX_ENTERO_CLIENTE) throw new ConflictException();
+      // La edición propone el destino bajo el bloqueo de negocio. Varias coincidencias
+      // heredadas requieren revisión y no producen una sugerencia arbitraria.
+      const identidadNueva = normalizarIdentidadCliente(nombreCompleto, telefono);
+      const candidatas = await this.resolucion.buscarCoincidencias(actual.manager, actual.negocioId,
+        identidadNueva, { excluirId: id });
+      if (candidatas.length > 1) throw new ConflictException();
+      if (candidatas.length === 1) throw new ClienteCoincidenteException(candidatas[0]);
       const versionAntes = ficha.version;
       const resultado = await actual.manager.getRepository(Cliente).update({ id, negocioId: actual.negocioId, version: versionAntes },
-        { nombreCompleto, telefono, version: versionAntes + 1 });
+        { nombreCompleto, telefono, nombreNormalizado: Buffer.from(identidadNueva.nombreNormalizado), version: versionAntes + 1 });
       if (resultado.affected !== 1) throw new ConflictException();
       Object.assign(ficha, { nombreCompleto, telefono, version: versionAntes + 1 });
       // No se escribe ninguna cita: su contacto y demás snapshots permanecen tal como se registraron.
@@ -139,11 +156,90 @@ export class ClientesService {
     });
   }
 
-  private async exigirFicha(ctx: ContextoOperativo, id: number, bloquear = false): Promise<Cliente> {
+  /** Confirma la unión y su evidencia dentro de una sola transacción del negocio. */
+  async unir(identidad: Identidad, entradaId: unknown, cuerpo: unknown) {
+    const origenId = validarIdCliente(entradaId);
+    const entrada = validarUnionCliente(cuerpo, origenId);
+    return this.acceso.ejecutar(identidad, Permiso.GESTIONAR_CLIENTES, async (inicial) => {
+      const ctx = await this.bloquearAcceso(inicial, identidad);
+      const operaciones = ctx.manager.getRepository(UnionCliente);
+      const contenidoHash = huellaUnionCliente(origenId, entrada);
+      const anterior = await operaciones.findOneBy({ negocioId: ctx.negocioId, actorUsuarioId: ctx.actorId, clave: entrada.clave });
+      if (anterior) {
+        // Recuperar antes de exigir que el origen esté activo: una unión confirmada lo absorbió.
+        await this.acceso.resolverEnTransaccion(ctx.manager, identidad, Permiso.GESTIONAR_CLIENTES);
+        if (anterior.contenidoHash !== contenidoHash) throw new ConflictException();
+        return proyectarUnion(anterior);
+      }
+
+      // Orden global: negocio, fichas en ID ascendente, después citas en ID ascendente.
+      const ids = [origenId, entrada.destinoId].sort((a, b) => a - b);
+      const primera = await this.exigirFicha(ctx, ids[0], true, true);
+      const segunda = await this.exigirFicha(ctx, ids[1], true, true);
+      const [origen, destino] = primera.id === origenId ? [primera, segunda] : [segunda, primera];
+      const actual = await this.acceso.resolverEnTransaccion(ctx.manager, identidad, Permiso.GESTIONAR_CLIENTES);
+      await this.exigirUnionVigente(actual, origen, destino, entrada);
+
+      const citaIds = await this.trasladarCitas(actual, origen.id, destino.id);
+      const fichas = actual.manager.getRepository(Cliente);
+      for (const ficha of [primera, segunda]) {
+        // Cambian el vínculo histórico y las versiones. El contacto del destino permanece intacto.
+        const cambio = await fichas.update({ id: ficha.id, negocioId: actual.negocioId, version: ficha.version },
+          { version: ficha.version + 1, ...(ficha.id === origenId ? { fusionadoEnId: destino.id } : {}) });
+        if (cambio.affected !== 1) throw new ConflictException();
+      }
+      const operacion = await operaciones.save(operaciones.create({
+        negocioId: actual.negocioId, actorUsuarioId: actual.actorId, origenId, destinoId: destino.id,
+        versionOrigen: origen.version, versionDestino: destino.version, clave: entrada.clave,
+        contenidoHash, ocurridoEn: actual.ahora,
+      }));
+      const resultado = proyectarUnion(operacion);
+      await this.auditoria.registrar(actual.manager, { operacionId: randomUUID(), actorUsuarioId: actual.actorId,
+        negocioId: actual.negocioId, usuarioId: null, licenciaId: null, recursoTipo: 'cliente', recursoId: origenId,
+        accion: 'cliente_unido', ocurridoEn: actual.ahora,
+        valoresAntes: { versionOrigen: origen.version, versionDestino: destino.version },
+        valoresDespues: { unionId: resultado.id, destinoId: destino.id, motivo: 'coincidencia_identidad', citaIds,
+          versionOrigen: resultado.versionOrigen, versionDestino: resultado.versionDestino },
+      });
+      return resultado;
+    });
+  }
+
+  private async exigirUnionVigente(ctx: ContextoOperativo, origen: Cliente, destino: Cliente,
+    entrada: ReturnType<typeof validarUnionCliente>) {
+    if (origen.fusionadoEnId !== null || destino.fusionadoEnId !== null ||
+      origen.version !== entrada.versionOrigen || destino.version !== entrada.versionDestino ||
+      origen.version >= MAX_ENTERO_CLIENTE || destino.version >= MAX_ENTERO_CLIENTE) throw new ConflictException();
+    const propuesta = normalizarIdentidadCliente(entrada.datosPropuestos?.nombreCompleto ?? origen.nombreCompleto,
+      entrada.datosPropuestos?.telefono ?? origen.telefono);
+    if (propuesta.telefono !== destino.telefono ||
+      propuesta.nombreNormalizado !== normalizarNombreCliente(destino.nombreCompleto)) throw new ConflictException();
+    if (entrada.datosPropuestos) {
+      // La advertencia de edición debe seguir señalando exactamente el mismo destino.
+      const candidatas = await this.resolucion.buscarCoincidencias(ctx.manager, ctx.negocioId, propuesta, { excluirId: origen.id });
+      if (candidatas.length !== 1 || candidatas[0].id !== destino.id) throw new ConflictException();
+    }
+  }
+
+  private async trasladarCitas(ctx: ContextoOperativo, origenId: number, destinoId: number): Promise<number[]> {
+    const repo = ctx.manager.getRepository(Cita);
+    const origen = { negocioId: ctx.negocioId, clienteId: origenId };
+    const citas = await repo.createQueryBuilder('cita').select('cita.id').where(origen)
+      .orderBy('cita.id', 'ASC').setLock('pessimistic_write').getMany();
+    if (citas.length) {
+      // Solo se mueve la FK. No se reescriben snapshots, folios, versiones ni eventos de cita.
+      const cambio = await repo.update(origen, { clienteId: destinoId });
+      if (cambio.affected !== citas.length) throw new ConflictException();
+    }
+    return citas.map(cita => cita.id);
+  }
+
+  private async exigirFicha(ctx: ContextoOperativo, id: number, bloquear = false, incluirFusionada = false): Promise<Cliente> {
     const consulta = ctx.manager.getRepository(Cliente).createQueryBuilder('cliente')
-      .select(CAMPOS_FICHA.map((k) => `cliente.${k}`)).where({ ...this.acceso.alcanceClientes(ctx), id })
-      // Al consultar o seleccionar por ID, un origen absorbido devuelve el mismo 404 que un ausente.
-      .andWhere('cliente.fusionadoEnId IS NULL');
+      .select(CAMPOS_FICHA.map((k) => `cliente.${k}`)).addSelect('cliente.fusionadoEnId')
+      .where({ ...this.acceso.alcanceClientes(ctx), id });
+    // La unión distingue una fila absorbida bajo bloqueo. El directorio solo selecciona activas.
+    if (!incluirFusionada) consulta.andWhere('cliente.fusionadoEnId IS NULL');
     if (bloquear) consulta.setLock('pessimistic_write');
     const ficha = await consulta.getOne();
     if (!ficha) throw new NotFoundException();

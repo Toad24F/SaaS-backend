@@ -10,7 +10,7 @@ import { esperarBloqueoManual } from './cita-manual';
  */
 export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
   primero: () => Promise<A>, segundo: (app: typeof f.app) => Promise<B>,
-  opciones: { tablaEspera?: string; comprobar?: (app: typeof f.app) => Promise<void> } = {}) {
+  opciones: { tablaPausa?: string; tablaEspera?: string; comprobar?: (app: typeof f.app) => Promise<void> } = {}) {
   const modulo = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(DataSource).useValue(f.segunda).overrideProvider(RELOJ).useValue(f.reloj).compile();
   const app = modulo.createNestApplication();
@@ -21,6 +21,9 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
   let conexionA = 0; let conexionB = 0;
   let a: Promise<PromiseSettledResult<A>> | undefined;
   let b: Promise<PromiseSettledResult<B>> | undefined;
+  // La unión y la edición no bloquean personal; pausan después de bloquear una ficha.
+  const tablaPausa = opciones.tablaPausa ?? 'personal';
+  const consultaDePausa = new RegExp('FROM [`]?' + tablaPausa + '[`]?\\s');
   const resultado = <T>(p: Promise<T>): Promise<PromiseSettledResult<T>> => p.then(value => ({ status: 'fulfilled', value }), reason => ({ status: 'rejected', reason }));
   try {
     await app.init();
@@ -34,7 +37,7 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
             if (esA) conexionA = id; else conexionB = id;
           }
           const filas = await ejecutar(...consulta);
-          if (esA && !pausa && /FROM [`]?personal[`]?\s/.test(consulta[0]) && consulta[0].includes('FOR UPDATE')) {
+          if (esA && !pausa && consultaDePausa.test(consulta[0]) && consulta[0].includes('FOR UPDATE')) {
             pausa = true; retenido(); await barrera;
           }
           return filas;
@@ -43,7 +46,7 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
       }));
     }
     a = resultado(primero());
-    await Promise.race([bloqueado, a.then(() => { throw new Error('El primer escritor no alcanzó la barrera de personal.'); })]);
+    await Promise.race([bloqueado, a.then(() => { throw new Error(`El primer escritor no alcanzó la barrera de ${tablaPausa}.`); })]);
     b = resultado(segundo(app));
     // Con profesionales distintos, el rival espera el negocio y no la cuenta del Profesional.
     await esperarBloqueoManual(f.db, () => conexionB, opciones.tablaEspera ?? 'usuarios');

@@ -1261,3 +1261,8 @@ CREATE TABLE uniones_cliente (
   CONSTRAINT fk_uc_actor FOREIGN KEY (negocio_id,actor_usuario_id)
     REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+
+-- M5-T021: huella de la aceptación. Los datos propuestos no se conservan en la operación.
+ALTER TABLE uniones_cliente
+  ADD contenido_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  ADD CONSTRAINT chk_uc_contenido_hash CHECK (contenido_hash IS NULL OR contenido_hash REGEXP '^[0-9a-f]{64}$');
