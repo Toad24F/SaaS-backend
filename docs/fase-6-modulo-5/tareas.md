@@ -145,23 +145,23 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
 
 ## 4. Profesional y consultas administrativas
 
-- [ ] **M5-T030 — Ampliar permisos explícitos del Profesional** (25 min).
+- [x] **M5-T030 — Ampliar permisos explícitos del Profesional** (25 min).
   - **RF:** RF-01–RF-03, RF-61. **Depende de:** M5-T014, M5-T005.
   - **Hecho cuando:** La matriz permite escrituras propias sin otorgar permisos de directorio.
 
-- [ ] **M5-T031 — Imponer alcance propio en escritores** (25 min).
+- [x] **M5-T031 — Imponer alcance propio en escritores** (25 min).
   - **RF:** RF-01–RF-04, RF-61. **Depende de:** M5-T030.
   - **Hecho cuando:** Crear, mover y cambiar estado resuelven el perfil servidor y rechazan citas/perfiles ajenos.
 
-- [ ] **M5-T032 — Verificar restricciones de estado y disponibilidad** (25 min).
+- [x] **M5-T032 — Verificar restricciones de estado y disponibilidad** (25 min).
   - **RF:** RF-04–RF-07. **Depende de:** M5-T031, M5-T004.
   - **Hecho cuando:** Casos focalizados rechazan falta de licencia, empalme y resultado antes de fin; no dejan cambios parciales.
 
-- [ ] **M5-T033 — Mostrar acciones propias en agenda conectada** (25 min).
+- [x] **M5-T033 — Mostrar acciones propias en agenda conectada** (25 min).
   - **RF:** RF-01–RF-03. **Depende de:** M5-T031.
   - **Hecho cuando:** El Profesional dispone de acciones para sus citas y formulario de contacto sin directorio.
 
-- [ ] **M5-T034 — Probar permisos del Profesional por HTTP** (25 min).
+- [x] **M5-T034 — Probar permisos del Profesional por HTTP** (25 min).
   - **RF:** RF-01–RF-05, RF-61. **Depende de:** M5-T032.
   - **Hecho cuando:** Casos de dos negocios y dos profesionales rechazan IDs manipulados, cliente arbitrario y sesión revocada.
 

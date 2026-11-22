@@ -10,8 +10,9 @@ describe('M4-T020: permisos operativos cerrados', () => {
   // Se ejercitan los valores públicos de los permisos, sin inferir herencia entre roles.
   it.each(Object.values(Rol).flatMap((rol) => permisos.map((permiso) => [rol, permiso] as const)))
    ('%s / %s', (rol, permiso) => {
+      // Fase 6 habilita escrituras propias al Profesional; las rutas de clientes permanecen cerradas.
       const permitido = rol === Rol.ADMIN_NEGOCIO || rol === Rol.RECEPCIONISTA
-        || (rol === Rol.PROFESIONAL && permiso === 'consultar_citas');
+        || (rol === Rol.PROFESIONAL && !['consultar_clientes', 'gestionar_clientes'].includes(permiso));
       const ejecutar = () => autorizacion.exigir(rol, permiso as Permiso);
       if (permitido) expect(ejecutar).not.toThrow();
       else expect(ejecutar).toThrow();

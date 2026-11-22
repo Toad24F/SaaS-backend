@@ -25,6 +25,7 @@ export class CambioEstadoCitaService {
       // La fila y su versión se releen bajo bloqueo después del Profesional.
       const referencia = await manager.getRepository(Cita).findOneBy({ id, negocioId: inicial.negocioId });
       if (!referencia) throw new NotFoundException();
+      if (inicial.personalId !== null && referencia.personalId !== inicial.personalId) throw new NotFoundException();
       for (const usuarioId of [...new Set([inicial.actorId, referencia.personalId])].sort((a, b) => a - b)) {
         const usuario = await manager.getRepository(Usuario).createQueryBuilder('usuario').setLock('pessimistic_write')
           .where({ id: usuarioId, negocioId: inicial.negocioId }).getOne();
@@ -42,12 +43,14 @@ export class CambioEstadoCitaService {
       if (!cita) throw new NotFoundException();
       // READ COMMITTED y este nuevo acceso comparten un reloj posterior a todas las esperas.
       const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CAMBIAR_ESTADO_CITA);
-      if (ctx.negocioId !== cita.negocioId) throw new NotFoundException();
+      // Releer propiedad con el perfil servidor después de todos los bloqueos.
+      if (ctx.negocioId !== cita.negocioId || (ctx.personalId !== null && cita.personalId !== ctx.personalId)) throw new NotFoundException();
       if (cita.version !== datos.version) throw new ConflictException();
       if (cita.estado === datos.estado) return this.proyectar(cita);
       if (cita.version === 4294967295) throw new ConflictException();
       if ((datos.estado === 'completada' || datos.estado === 'no_asistio') && ctx.ahora < cita.finUtc) throw new ConflictException();
       if (cita.estado === 'cancelada') {
+        if (datos.estado !== 'confirmada') throw new ConflictException();
         // No se consulta cupo telefónico al reactivar. El motor verifica el intervalo histórico
         // sin excluir ninguna cita activa ni aceptar duración/separación procedentes del formulario.
         if (cita.inicioUtc <= ctx.ahora) throw new ConflictException();
