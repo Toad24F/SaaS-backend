@@ -22,8 +22,8 @@ describe('ALA-T023–T027: origen y sucesión en base desechable', () => {
         .rejects.toBeDefined();
       await expect(db.query("UPDATE citas SET origen='portal_publico',apartado_origen_id=? WHERE id=?",
         [a.ocupaciones[1], b.ocupaciones[0]])).rejects.toBeDefined();
-      const cliente2 = Number((await db.query('INSERT INTO clientes (negocio_id,nombre_completo,telefono) VALUES (?,?,?)',
-        [a.id, 'Persona distinta', a.telefonoCliente])).insertId);
+      const cliente2 = Number((await db.query('INSERT INTO clientes (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,?,?,?)',
+        [a.id, 'Persona distinta', 'persona distinta', a.telefonoCliente])).insertId);
       await db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
          zona_horaria_reserva,folio,estado,origen)

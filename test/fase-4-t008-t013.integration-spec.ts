@@ -106,7 +106,7 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
         apartado.sesion_id, apartado.generacion, apartado.operacion_id])
         .toEqual(Array(5).fill(null));
       const duplicado = await db.query(`INSERT INTO clientes
-        (negocio_id,nombre_completo,telefono) VALUES (?,'Otra persona','6141234567')`,
+        (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,'Otra persona','otra persona','6141234567')`,
       [negocios[0].id]);
       expect(Number(duplicado.insertId)).toBeGreaterThan(0);
       // Los valores futuros se guardan como decimal exacto sin tocar el historial viejo.

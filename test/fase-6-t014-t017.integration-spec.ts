@@ -4,6 +4,7 @@ import { Rol } from '../src/auth/enums/rol.enum';
 import { conAgendaHttp } from './support/agenda-http';
 import { filasManuales, prepararManual, RUTA_MANUAL, type EscenarioManualHttp } from './support/cita-manual';
 import { enfrentarEscritores } from './support/carrera-escritores-m4';
+import { normalizarNombreCliente } from '../src/clientes/identidad-cliente';
 
 const origen = 'https://identidad-m5.example.test';
 const portal = '/publico/negocios/portal-prueba-1';
@@ -18,8 +19,8 @@ const entorno = {
 };
 
 function altaFicha(f: EscenarioManualHttp, negocioId: number, nombre = contacto.nombreCompleto) {
-  return f.db.query('INSERT INTO clientes(negocio_id,nombre_completo,telefono,email,version) VALUES (?,?,?,\'ficha@example.test\',3)',
-    [negocioId, nombre, contacto.telefono]);
+  return f.db.query('INSERT INTO clientes(negocio_id,nombre_completo,nombre_normalizado,telefono,email,version) VALUES (?,?,?,?,\'ficha@example.test\',3)',
+    [negocioId, nombre, Buffer.from(normalizarNombreCliente(nombre)), contacto.telefono]);
 }
 
 async function prepararPublica(f: EscenarioManualHttp, seleccion: {
@@ -144,6 +145,7 @@ describe('M5-T014–T017: identidad en los escritores reales y el directorio', (
   it('T014/T015 rechazan la identidad heredada ambigua sin seleccionar una ficha ni filtrar antecedentes', async () => {
     await conAgendaHttp(async f => {
       const m = await prepararManual(f);
+      await f.db.query('ALTER TABLE clientes DROP INDEX uq_clientes_identidad_activa');
       await altaFicha(f, f.negocios[0].id);
       await altaFicha(f, f.negocios[0].id, equivalente);
       const p = await prepararPublica(f, seleccionPublica(m));
@@ -168,6 +170,7 @@ describe('M5-T014–T017: identidad en los escritores reales y el directorio', (
       const otraAuth = `Bearer ${f.token(f.actor(Rol.ADMIN_NEGOCIO, 1).id)}`;
       expect((await alta(contacto, otraAuth).expect(201)).body.id).not.toBe(ficha.id);
       const { body: distinta } = await alta({ ...contacto, nombreCompleto: 'María Pena' }).expect(201);
+      await f.db.query('ALTER TABLE clientes DROP INDEX uq_clientes_identidad_activa');
       const { insertId: absorbida } = await altaFicha(f, f.negocios[0].id, equivalente);
       const clave = randomUUID();
       const seleccion = { ...m.seleccion, clienteId: absorbida };

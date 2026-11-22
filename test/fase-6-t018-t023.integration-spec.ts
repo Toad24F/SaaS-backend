@@ -55,7 +55,10 @@ describe('M5-T018–T023: edición y unión explícita de clientes', () => {
     await conAgendaHttp(async f => {
       const s = await escenario(f);
       const repo = f.db.getRepository(Cliente);
-      const duplicado = await repo.save({ negocioId: s.negocioId, nombreCompleto: 'MARÍA PEÑA', telefono: s.destino.telefono });
+      // Reproducir un grupo previo al índice final en esta base desechable.
+      await f.db.query('ALTER TABLE clientes DROP INDEX uq_clientes_identidad_activa');
+      const duplicado = await repo.save({ negocioId: s.negocioId, nombreCompleto: 'MARÍA PEÑA',
+        nombreNormalizado: Buffer.from('maría peña'), telefono: s.destino.telefono });
       const antes = await s.filas();
       const r = await s.editar({ version: s.origen.version, ...s.datosPropuestos }).expect(409);
       expect(r.body).not.toHaveProperty('destino');

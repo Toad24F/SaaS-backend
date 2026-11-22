@@ -202,7 +202,8 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
       const tablas = ['clientes', 'citas', 'intentos_cita_manual', 'eventos_cita'];
       const antes = await fotografiar(segunda, tablas);
       await expect(db.transaction('READ COMMITTED', async (manager) => {
-        const cliente = await manager.getRepository(Cliente).save({ negocioId: a.id, nombreCompleto: 'Revertir', telefono: '6141234567' });
+        const cliente = await manager.getRepository(Cliente).save({ negocioId: a.id, nombreCompleto: 'Revertir',
+          nombreNormalizado: Buffer.from('revertir'), telefono: '6141234567' });
         const base = await manager.getRepository(Cita).findOneByOrFail({ id: a.ocupaciones[0] });
         const cita = await manager.getRepository(Cita).save({ ...base, id: undefined, clienteId: cliente.id, folio: 'M4-ROLLBACK-018' });
         await manager.getRepository('intentos_cita_manual').insert({ negocioId: a.id, actorUsuarioId: a.profesionales[0],

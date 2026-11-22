@@ -1225,7 +1225,7 @@ ALTER TABLE eventos_cita
     REFERENCES sesiones_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
 
 -- M5-T009–T010: identidad UTF-8 binaria y referencia de fusión por negocio.
--- La unicidad de identidad se añadirá después de conciliar duplicados heredados.
+-- La unicidad de identidad se añade al final, después de conciliar duplicados heredados.
 ALTER TABLE clientes
   ADD nombre_normalizado VARBINARY(1800) NULL,
   ADD fusionado_en_id INT UNSIGNED NULL,
@@ -1266,3 +1266,11 @@ CREATE TABLE uniones_cliente (
 ALTER TABLE uniones_cliente
   ADD contenido_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
   ADD CONSTRAINT chk_uc_contenido_hash CHECK (contenido_hash IS NULL OR contenido_hash REGEXP '^[0-9a-f]{64}$');
+
+-- M5-T027: solo la ficha activa participa en la identidad única del negocio.
+-- La instalación de actualización comprueba antes las claves faltantes y duplicadas.
+ALTER TABLE clientes
+  ADD nombre_activo VARBINARY(1800)
+    GENERATED ALWAYS AS (IF(fusionado_en_id IS NULL, nombre_normalizado, NULL)) PERSISTENT,
+  ADD CONSTRAINT chk_clientes_clave_activa CHECK (fusionado_en_id IS NOT NULL OR nombre_normalizado IS NOT NULL),
+  ADD UNIQUE KEY uq_clientes_identidad_activa (negocio_id,nombre_activo,telefono);

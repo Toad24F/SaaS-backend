@@ -71,8 +71,8 @@ describe('M4-T007–T012: persistencia aditiva operativa', () => {
   it('T007–T008 conserva teléfono no único y exige versiones positivas en filas nuevas y existentes', async () => {
     await conBaseOperativa(async (db) => {
       const { a } = await escenario(db);
-      const alta = await db.query(`INSERT INTO clientes(negocio_id,nombre_completo,telefono)
-        VALUES(?,'Tercera persona',?)`, [a.id, a.telefonoCliente]);
+      const alta = await db.query(`INSERT INTO clientes(negocio_id,nombre_completo,nombre_normalizado,telefono)
+        VALUES(?,'Tercera persona','tercera persona',?)`, [a.id, a.telefonoCliente]);
       expect((await db.query('SELECT version FROM clientes WHERE id=?', [alta.insertId]))[0].version).toBe(1);
       const [cliente] = await db.query('SELECT id FROM clientes WHERE negocio_id=? LIMIT 1', [a.id]);
       for (const [tabla, id] of [['citas', a.ocupaciones[0]], ['clientes', cliente.id]] as const) {

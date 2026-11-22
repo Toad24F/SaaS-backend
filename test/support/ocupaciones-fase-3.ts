@@ -34,8 +34,8 @@ export async function crearDatosOcupaciones(db: DataSource, reloj: Reloj):
     await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
       [personalId, negocioId]);
     const cliente = await db.query(`INSERT INTO clientes
-      (negocio_id,nombre_completo,telefono) VALUES (?,?,'6141234567')`,
-    [negocioId, `Cliente ${indice}`]);
+      (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,?,?,'6141234567')`,
+    [negocioId, `Cliente ${indice}`, `cliente ${indice}`]);
     const sucursales: number[] = [];
     const servicios: number[] = [];
     const citas: number[] = [];

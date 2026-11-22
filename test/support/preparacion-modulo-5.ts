@@ -39,8 +39,8 @@ export async function crearDatosModulo5(db: DataSource, reloj: Reloj) {
       // Un teléfono ficticio compartido permite preparar casos de identidad sin datos de contacto reales.
       const clientes = [];
       for (const nombre of ['Persona de prueba A', 'Persona de prueba B']) {
-        const cliente = await manager.query(`INSERT INTO clientes (negocio_id,nombre_completo,telefono,creado_en)
-          VALUES (?,?,'0000000001',?)`, [id, nombre, ahora]);
+        const cliente = await manager.query(`INSERT INTO clientes (negocio_id,nombre_completo,nombre_normalizado,telefono,creado_en)
+          VALUES (?,?,?,'0000000001',?)`, [id, nombre, nombre.toLowerCase(), ahora]);
         clientes.push(Number(cliente.insertId));
       }
       negocios.push({ id, administradorId, recepcionistaId, profesionalId, clientes });

@@ -462,7 +462,7 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
       const reloj = new RelojPrueba(AHORA);
       const base = await sembrarBase(db, reloj);
       const cliente = await db.query(`INSERT INTO clientes
-        (negocio_id,nombre_completo,telefono) VALUES (?,'Ocupación','6140000000')`, [base.negocioId]);
+        (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,'Ocupación','ocupación','6140000000')`, [base.negocioId]);
       await db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
          zona_horaria_reserva,folio,estado,origen)

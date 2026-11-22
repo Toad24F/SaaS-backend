@@ -93,6 +93,7 @@ Evidencia del lote [M5-T014–M5-T017](resultados-tareas/m5-t014-t017.md).
 ## 3. Clientes: edición, unión y unicidad final
 
 Evidencia del lote [M5-T018–M5-T023](resultados-tareas/m5-t018-t023.md).
+Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con implementación de interfaz en el repositorio hermano.
 
 - [x] **M5-T018 — Detectar colisión al editar cliente** (25 min).
   - **RF:** RF-20, RF-22, RF-61. **Depende de:** M5-T016, M5-T005.
@@ -118,27 +119,27 @@ Evidencia del lote [M5-T018–M5-T023](resultados-tareas/m5-t018-t023.md).
   - **RF:** RF-22–RF-23, RF-62. **Depende de:** M5-T022, M5-T004.
   - **Hecho cuando:** Un fallo intermedio y una edición simultánea dejan relaciones íntegras y ninguna unión parcial.
 
-- [ ] **M5-T024 — Añadir advertencia de coincidencia al editor** (25 min).
+- [x] **M5-T024 — Añadir advertencia de coincidencia al editor** (25 min).
   - **RF:** RF-20, RF-22. **Depende de:** M5-T022.
   - **Hecho cuando:** La vista conectada muestra el destino y permite volver a editar sin modificar registros.
 
-- [ ] **M5-T025 — Conectar aceptación y recuperación de unión** (25 min).
+- [x] **M5-T025 — Conectar aceptación y recuperación de unión** (25 min).
   - **RF:** RF-21–RF-23, RF-62. **Depende de:** M5-T024.
   - **Hecho cuando:** Aceptar actualiza el historial; doble clic o respuesta perdida recupera la misma operación.
 
-- [ ] **M5-T026 — Permitir conciliación de grupos heredados** (25 min).
+- [x] **M5-T026 — Permitir conciliación de grupos heredados** (25 min).
   - **RF:** RF-20–RF-24, RF-61. **Depende de:** M5-T025, M5-T012.
   - **Hecho cuando:** Un grupo duplicado de test puede revisarse y resolverse expresamente sin elegir destino automáticamente.
 
-- [ ] **M5-T027 — Preparar migración de unicidad activa** (25 min).
+- [x] **M5-T027 — Preparar migración de unicidad activa** (25 min).
   - **RF:** RF-15, RF-24, RF-59. **Depende de:** M5-T026, M5-T017.
   - **Hecho cuando:** La migración rechaza grupos pendientes y crea el índice solo después de conciliarlos en test.
 
-- [ ] **M5-T028 — Probar índice, collation y fichas absorbidas** (25 min).
+- [x] **M5-T028 — Probar índice, collation y fichas absorbidas** (25 min).
   - **RF:** RF-15–RF-19, RF-23–RF-24. **Depende de:** M5-T027.
   - **Hecho cuando:** SQL de prueba rechaza duplicados activos, admite nombres distintos y mantiene filas históricas fusionadas.
 
-- [ ] **M5-T029 — Verificar unión desde navegador** (25 min).
+- [x] **M5-T029 — Verificar unión desde navegador** (25 min).
   - **RF:** RF-20–RF-25, RF-61–RF-62. **Depende de:** M5-T025, M5-T028.
   - **Hecho cuando:** Administrador y Recepción aceptan/rechazan con teclado; Profesional no accede y snapshots permanecen iguales.
 

@@ -7,14 +7,18 @@ import { conBaseMigrada, limitarMigracionesHasta, retrocederHastaMigracion } fro
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
 import { crearDatosModulo5 } from './support/preparacion-modulo-5';
 import { RelojPrueba } from './support/reloj';
+import { normalizarNombreCliente } from '../src/clientes/identidad-cliente';
 
 const ahora = new Date('2026-11-21T18:00:00.000Z');
 const contacto = { nombreCompleto: '  Ana\u00a0 María ', telefono: '+52 614-000-0001' };
 const resolver = new ResolucionClienteService();
 
-function insertarCliente(db: DataSource, negocioId: number, nombre: string, telefono: string) {
-  return db.query('INSERT INTO clientes(negocio_id,nombre_completo,telefono) VALUES (?,?,?)',
-    [negocioId, nombre, telefono]);
+async function insertarCliente(db: DataSource, negocioId: number, nombre: string, telefono: string) {
+  // La prueba de actualización inserta antes de la columna; las demás siembran el esquema final.
+  if (!(await db.query("SHOW COLUMNS FROM clientes LIKE 'nombre_normalizado'")).length)
+    return db.query('INSERT INTO clientes(negocio_id,nombre_completo,telefono) VALUES (?,?,?)', [negocioId, nombre, telefono]);
+  return db.query('INSERT INTO clientes(negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,?,?,?)',
+    [negocioId, nombre, Buffer.from(normalizarNombreCliente(nombre)), telefono]);
 }
 
 describe('M5-T009–T013: persistencia y resolución de fichas', () => {
@@ -52,6 +56,7 @@ describe('M5-T009–T013: persistencia y resolución de fichas', () => {
 
   it('persiste origen, destino, actor, versiones y clave exacta con referencias del negocio', async () => {
     await conBaseMigrada(async (db) => {
+      await retrocederHastaMigracion(db, 'HuellaUnionCliente1760000052000');
       const { negocios: [a, b] } = await crearDatosModulo5(db, new RelojPrueba(ahora));
       const [origenId, destinoId] = a.clientes;
       const fichas = db.getRepository(Cliente);
@@ -85,6 +90,7 @@ describe('M5-T009–T013: persistencia y resolución de fichas', () => {
 
   it('crea o reutiliza por identidad, incluso con datos heredados; ignora fichas absorbidas', async () => {
     await conBaseMigrada(async (db, segunda) => {
+      await db.query('ALTER TABLE clientes DROP INDEX uq_clientes_identidad_activa');
       const { negocios: [a, b] } = await crearDatosModulo5(db, new RelojPrueba(ahora));
       // Un valor heredado inválido puede comparar igual en la colación del teléfono,
       // pero no es el teléfono canónico devuelto por la validación mexicana.
