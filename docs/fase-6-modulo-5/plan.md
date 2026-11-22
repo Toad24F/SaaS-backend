@@ -72,10 +72,10 @@ Las rutas siguientes son contratos propuestos, no capacidades existentes. Manten
 
 ### 4.3 Personalización — RF-26–RF-30, RF-61–RF-62
 
-- Proponer GET/PUT `/negocio/personalizacion`, POST `/negocio/personalizacion/logos` y POST `/negocio/personalizacion/restaurar`, solo Administrador para mutaciones y con versión observada. El catálogo público incluye exclusivamente configuración publicada y URL del logo del negocio resuelto por slug.
+- El Administrador consulta y publica en `/negocio/personalizacion`, carga archivos en `/negocio/personalizacion/logos` y restaura en `/negocio/personalizacion/restaurar` con versión observada. La publicación recibe únicamente `{ version, acento, logoId }`. El catálogo público proyecta el acento y, cuando hay logo vigente, su URL bajo el slug del negocio.
 - Admitir PNG/JPEG/WebP estáticos, máximo 2 MiB de entrada y 2048 × 2048 píxeles; verificar contenido real, dimensiones y decodificación, rechazar animación y SVG. Recodificar con una biblioteca raster mantenida, eliminando metadatos y contenido adicional; la dependencia concreta se fijará al implementar tras validar compatibilidad Node. El saneado mantiene límite de salida de 2 MiB.
-- Permitir colores hex opacos para fondo, texto y acento; validar las parejas reales de texto/botón/enlace/foco en todos sus estados. Exigir 4.5:1 para texto común, 3:1 para texto grande y elementos de interfaz. Mantener colores semánticos del estado fuera de la personalización. La vista previa y publicación comparten reglas; servidor revalida.
-- Logo provisional caduca en 24 horas; publicar logo y colores atómicamente. Restaurar elimina la referencia personalizada y aplica valores predeterminados actuales, sin tocar otros negocios. El fallo conserva la configuración anterior. Recurso público se resuelve por slug e ID publicados, nunca por ruta de archivo proporcionada por el usuario.
+- El servidor valida `acento` como hexadecimal opaco `#RRGGBB`. El navegador aplica el fondo y el texto del tema activo, elige texto blanco o negro sobre el acento y deriva un tono con al menos 4.5:1 sobre las superficies del tema para enlaces, bordes y foco. La vista previa y el portal usan la misma lógica.
+- El logo provisional caduca en 24 horas. Logo, acento y versión se publican en una transacción. Restaurar retira la referencia de logo y recupera el acento predeterminado del negocio autenticado. El recurso público se resuelve por slug e ID publicados. Las columnas históricas de fondo y texto se conservan para compatibilidad de almacenamiento.
 
 ### 4.4 WhatsApp y política temporal — RF-06–RF-07, RF-31–RF-48, RF-60–RF-62
 

@@ -203,43 +203,47 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
 
 ## 5. Personalización del portal
 
-- [ ] **M5-T044 — Crear persistencia de personalización** (25 min).
+Evidencia del lote [M5-T044–M5-T047](resultados-tareas/m5-t044-t047.md).
+Evidencia del lote [M5-T048–M5-T050](resultados-tareas/m5-t048-t050.md).
+Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
+
+- [x] **M5-T044 — Crear persistencia de personalización** (25 min).
   - **RF:** RF-26–RF-27, RF-30, RF-61. **Depende de:** M5-T007.
   - **Hecho cuando:** Migración, entidades y esquema definen configuración versionada y recursos separados por negocio.
 
-- [ ] **M5-T045 — Validar contenido y límites de imágenes** (25 min).
+- [x] **M5-T045 — Validar contenido y límites de imágenes** (25 min).
   - **RF:** RF-28. **Depende de:** M5-T044.
   - **Hecho cuando:** Casos focalizados rechazan MIME falso, SVG, animación, tamaño/dimensiones excesivos y archivo truncado.
 
-- [ ] **M5-T046 — Sanear y guardar logo provisional** (25 min).
+- [x] **M5-T046 — Sanear y guardar logo provisional** (25 min).
   - **RF:** RF-28, RF-30. **Depende de:** M5-T045.
   - **Hecho cuando:** La recodificación elimina metadatos y respeta límite de salida sin sustituir el logo publicado.
 
-- [ ] **M5-T047 — Implementar validación de colores y contraste** (25 min).
+- [x] **M5-T047 — Implementar validación de colores y contraste** (25 min).
   - **RF:** RF-29–RF-30. **Depende de:** M5-T044.
   - **Hecho cuando:** Pruebas de límites 4.5:1 y 3:1 cubren texto, controles, enlaces y foco sin alterar colores semánticos.
 
-- [ ] **M5-T048 — Publicar configuración atómicamente** (25 min).
+- [x] **M5-T048 — Publicar configuración atómicamente** (25 min).
   - **RF:** RF-26, RF-28–RF-30, RF-62. **Depende de:** M5-T046, M5-T047.
   - **Hecho cuando:** Logo y colores se publican juntos con versión; error o versión obsoleta conserva configuración anterior.
 
-- [ ] **M5-T049 — Implementar restauración y limpieza provisional** (25 min).
+- [x] **M5-T049 — Implementar restauración y limpieza provisional** (25 min).
   - **RF:** RF-27–RF-28, RF-30. **Depende de:** M5-T048.
   - **Hecho cuando:** Restaurar afecta un solo negocio y limpiar provisionales vencidos no elimina recursos vigentes.
 
-- [ ] **M5-T050 — Exponer marca publicada por slug** (25 min).
+- [x] **M5-T050 — Exponer marca publicada por slug** (25 min).
   - **RF:** RF-26, RF-30, RF-61. **Depende de:** M5-T048.
   - **Hecho cuando:** El catálogo y recurso público solo permiten el logo publicado del negocio resuelto.
 
-- [ ] **M5-T051 — Construir vista previa y edición conectada** (25 min).
+- [x] **M5-T051 — Construir vista previa y edición conectada** (25 min).
   - **RF:** RF-26–RF-29. **Depende de:** M5-T050.
   - **Hecho cuando:** El Administrador previsualiza, descarta y guarda usando validaciones equivalentes al servidor.
 
-- [ ] **M5-T052 — Conectar restauración en vista previa** (25 min).
+- [x] **M5-T052 — Conectar restauración en vista previa** (25 min).
   - **RF:** RF-27. **Depende de:** M5-T051, M5-T049.
   - **Hecho cuando:** Restaurar puede previsualizarse y cancelarse sin cambios persistidos.
 
-- [ ] **M5-T053 — Probar marca en móvil y teclado** (25 min).
+- [x] **M5-T053 — Probar marca en móvil y teclado** (25 min).
   - **RF:** RF-26–RF-30, RF-61–RF-62. **Depende de:** M5-T052.
   - **Hecho cuando:** Dos negocios conservan marcas separadas; errores, foco, contraste y publicación pasan el recorrido.
 

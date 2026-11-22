@@ -1,10 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { ResolverNegocioPublicoService } from './resolver-negocio-publico.service';
 import type { FiltrosCatalogoPublico } from './entradas-publicas';
 import { proyectarPreciosPublicos } from './proyeccion-precios-publicos';
+import { PersonalizacionPortalService } from '../personalizacion-portal/personalizacion-portal.service';
+import { normalizarIdLogo } from '../personalizacion-portal/personalizacion-portal.entradas';
+import { RecursoPortal } from '../personalizacion-portal/entities/recurso-portal.entity';
 
 interface FilaOferta {
   servicioId: number; servicioNombre: string; costo: string; duracionMinutos: number;
@@ -18,7 +21,8 @@ interface FilaOferta {
 export class CatalogoPublicoService {
   constructor(@InjectDataSource() private readonly db: DataSource,
     @Inject(RELOJ) private readonly reloj: Reloj,
-    private readonly negocios: ResolverNegocioPublicoService) {}
+    private readonly negocios: ResolverNegocioPublicoService,
+    private readonly personalizacion: PersonalizacionPortalService) {}
 
   /** Autoriza y proyecta una instantánea de combinaciones activas del negocio. */
   async consultar(slug: string, filtros: FiltrosCatalogoPublico) {
@@ -69,13 +73,32 @@ export class CatalogoPublicoService {
       const profesionales = [...new Map(deSucursal.map((fila) => [fila.personalId,
         { id: fila.personalId, nombre: fila.personalNombre,
           ...(fila.especialidad ? { especialidad: fila.especialidad } : {}) }])).values()];
+      // La marca se lee en la misma instantánea que el slug, la licencia y la oferta.
+      const { acento, logoId } = await this.personalizacion.consultarMarca(manager, negocio.id);
       const resultado = { negocio: { slug: negocio.slug, nombre: negocio.nombre,
         ...(negocio.categoria ? { categoria: negocio.categoria } : {}),
         ...(negocio.mostrarContactoPublico && negocio.telefono ?
           { telefono: negocio.telefono } : {}) },
+        marca: { acento, ...(logoId ? { logoUrl: `/publico/negocios/${encodeURIComponent(negocio.slug)}/logos/${logoId}` } : {}) },
         servicios, sucursales, profesionales };
       // Oferta y visibilidad proceden de la misma instantánea del negocio.
       return proyectarPreciosPublicos(resultado, negocio.mostrarPreciosPublicos ?? true);
+    });
+  }
+
+  async consultarLogo(slug: string, id: string) {
+    const logoId = normalizarIdLogo(id);
+    if (!logoId) throw new NotFoundException('Logo no disponible.');
+    const ahora = this.reloj.ahora();
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      const negocio = await this.negocios.resolverEnContexto(manager, slug, ahora);
+      // La referencia publicada y el binario se leen bajo la misma instantánea.
+      const recurso = await manager.getRepository(RecursoPortal).createQueryBuilder('recurso')
+        .innerJoin('personalizacion_portal', 'marca', 'marca.negocio_id = recurso.negocio_id AND marca.logo_id = recurso.id')
+        .select(['recurso.contenido', 'recurso.mime'])
+        .where({ negocioId: negocio.id, id: logoId }).getOne();
+      if (!recurso) throw new NotFoundException('Logo no disponible.');
+      return { contenido: recurso.contenido, mime: recurso.mime };
     });
   }
 }

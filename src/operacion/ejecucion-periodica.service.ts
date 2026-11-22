@@ -5,6 +5,7 @@ import { RELOJ, type Reloj } from '../comun/reloj';
 import { verificarConfiguracionCorreo } from '../config/configuracion-correo';
 import { AvisosVencimientoService } from '../licencias/services/avisos-vencimiento.service';
 import { ConciliadorSuspensionesService } from '../licencias/services/conciliador-suspensiones.service';
+import { PersonalizacionPortalService } from '../personalizacion-portal/personalizacion-portal.service';
 
 export const EJECUTOR_AUTOMATICO = Symbol('EJECUTOR_AUTOMATICO');
 const INTERVALO_MS = 60_000;
@@ -22,7 +23,8 @@ export class EjecucionPeriodicaService implements OnApplicationBootstrap, OnModu
     private readonly correo: ProcesadorCorreoService,
     @Inject(RELOJ) private readonly reloj: Reloj,
     @Optional() @Inject(EJECUTOR_AUTOMATICO)
-    private readonly automatico = process.env.NODE_ENV !== 'test') {}
+    private readonly automatico = process.env.NODE_ENV !== 'test',
+    private readonly personalizacion?: PersonalizacionPortalService) {}
 
   async onApplicationBootstrap(): Promise<void> {
     if (!this.automatico) return;
@@ -48,6 +50,9 @@ export class EjecucionPeriodicaService implements OnApplicationBootstrap, OnModu
       for (let i = 0; i < MAX_ENVIOS_CICLO; i++) {
         if (!await this.correo.procesarUno()) break;
       }
+      // Un fallo de limpieza se reintenta en el próximo ciclo sin afectar la bandeja.
+      await this.personalizacion?.limpiarProvisionalesVencidos(ahora)
+        .catch(() => this.logger.error('Limpieza de logos provisionales no disponible.'));
     } finally { this.enCurso = false; }
   }
 

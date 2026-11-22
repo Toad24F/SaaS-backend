@@ -74,10 +74,10 @@ Estas convenciones forman parte de la propuesta; no se presentan como respuestas
 
 **Por qué:** identificar cada negocio sin perjudicar la lectura, la reserva ni el aislamiento de recursos.
 
-- **RF-26.** Cuando el Administrador personalice su portal, el sistema deberá permitirle configurar el logo y los colores del negocio, previsualizar el resultado y guardar o descartar los cambios.
+- **RF-26.** Cuando el Administrador personalice su portal, el sistema deberá permitirle configurar el logo y el color de acento, previsualizar el resultado y guardar o descartar los cambios. El fondo y el texto provienen del tema claro u oscuro.
 - **RF-27.** Cuando el Administrador solicite restaurar los valores predeterminados, el sistema deberá permitir previsualizarlos y aplicarlos únicamente a su negocio.
 - **RF-28.** Si una imagen no es válida, contiene contenido ejecutable o no puede utilizarse como logo, el sistema deberá rechazarla con un mensaje comprensible y conservar el logo anterior.
-- **RF-29.** Si los colores elegidos impiden la lectura del contenido o la identificación de controles y estados, el sistema deberá impedir su publicación e indicar las combinaciones que requieren corrección.
+- **RF-29.** El servidor deberá rechazar acentos que no sean hexadecimales opacos. La vista previa y el portal deberán ajustar el tono del acento para enlaces, bordes y foco si hace falta contraste en el tema activo. Las etiquetas de botones deben contrastar con su relleno y los estados semánticos conservan sus colores.
 - **RF-30.** Mientras se almacenen, consulten o sustituyan recursos de personalización, el sistema deberá mantenerlos separados por negocio y preservar el uso del portal en móvil y mediante teclado.
 
 ### E. WhatsApp y confirmación
