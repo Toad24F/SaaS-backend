@@ -203,19 +203,21 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
 
 ## 5. Personalización del portal
 
-- [ ] **M5-T044 — Crear persistencia de personalización** (25 min).
+Evidencia del lote [M5-T044–M5-T047](resultados-tareas/m5-t044-t047.md).
+
+- [x] **M5-T044 — Crear persistencia de personalización** (25 min).
   - **RF:** RF-26–RF-27, RF-30, RF-61. **Depende de:** M5-T007.
   - **Hecho cuando:** Migración, entidades y esquema definen configuración versionada y recursos separados por negocio.
 
-- [ ] **M5-T045 — Validar contenido y límites de imágenes** (25 min).
+- [x] **M5-T045 — Validar contenido y límites de imágenes** (25 min).
   - **RF:** RF-28. **Depende de:** M5-T044.
   - **Hecho cuando:** Casos focalizados rechazan MIME falso, SVG, animación, tamaño/dimensiones excesivos y archivo truncado.
 
-- [ ] **M5-T046 — Sanear y guardar logo provisional** (25 min).
+- [x] **M5-T046 — Sanear y guardar logo provisional** (25 min).
   - **RF:** RF-28, RF-30. **Depende de:** M5-T045.
   - **Hecho cuando:** La recodificación elimina metadatos y respeta límite de salida sin sustituir el logo publicado.
 
-- [ ] **M5-T047 — Implementar validación de colores y contraste** (25 min).
+- [x] **M5-T047 — Implementar validación de colores y contraste** (25 min).
   - **RF:** RF-29–RF-30. **Depende de:** M5-T044.
   - **Hecho cuando:** Pruebas de límites 4.5:1 y 3:1 cubren texto, controles, enlaces y foco sin alterar colores semánticos.
 

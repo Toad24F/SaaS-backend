@@ -47,7 +47,8 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
           'operaciones_apartado', 'intentos_reserva_publica',
           // M4 agrega tablas y amplía auditoría: también se contrasta su DDL canónico.
           'intentos_cita_manual', 'eventos_cita', 'eventos_auditoria',
-          'uniones_cliente']) {
+          // M5 comprueba también identidad compuesta y límites del raster persistido.
+          'uniones_cliente', 'recursos_portal', 'personalizacion_portal']) {
           expect(nombres).toContain(tabla);
           const fechas = `SELECT COLUMN_NAME columna,
             DATETIME_PRECISION precisionTemporal FROM information_schema.COLUMNS

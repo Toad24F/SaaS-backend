@@ -29,6 +29,7 @@ import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.m
 import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publicas-http.module';
 import { CitasHttpModule } from './citas/citas-http.module';
 import { ClientesHttpModule } from './clientes/clientes-http.module';
+import { PersonalizacionPortalModule } from './personalizacion-portal/personalizacion-portal.module';
 
 @Module({
   imports: [
@@ -75,6 +76,8 @@ import { ClientesHttpModule } from './clientes/clientes-http.module';
     CitasHttpModule,
     // Habilita lista, ficha, historial, alta y corrección bajo autenticación privada.
     ClientesHttpModule,
+    // Registra persistencia y saneado de la marca del portal.
+    PersonalizacionPortalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

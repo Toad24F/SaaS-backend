@@ -16,6 +16,7 @@ export enum Permiso {
   GESTIONAR_SERVICIOS_PROPIOS = 'gestionar_servicios_propios',
   VER_SUCURSALES_PROPIAS = 'ver_sucursales_propias',
   CONFIGURAR_AGENDA = 'configurar_agenda',
+  PERSONALIZAR_PORTAL = 'personalizar_portal',
   CONSULTAR_DISPONIBILIDAD = 'consultar_disponibilidad',
   VALIDAR_DISPONIBILIDAD_MANUAL = 'validar_disponibilidad_manual',
   CONSULTAR_CITAS = 'consultar_citas',
@@ -39,6 +40,8 @@ const PERMISOS_POR_ROL: Readonly<Record<Rol, ReadonlySet<Permiso>>> = {
     Permiso.CONSULTAR_CITAS, Permiso.CONSULTAR_CLIENTES, Permiso.GESTIONAR_CLIENTES,
     Permiso.CREAR_CITA_MANUAL, Permiso.CAMBIAR_ESTADO_CITA, Permiso.CAMBIAR_HORARIO_CITA,
     Permiso.CONFIGURAR_AGENDA,
+    // La marca del portal es una configuración exclusiva del Administrador.
+    Permiso.PERSONALIZAR_PORTAL,
     Permiso.CONSULTAR_DISPONIBILIDAD,
     Permiso.VALIDAR_DISPONIBILIDAD_MANUAL,
     Permiso.GESTIONAR_RECEPCIONISTAS,
