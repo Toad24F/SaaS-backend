@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
 import { RelojPrueba } from './support/reloj';
-import { retrocederHastaMigracion } from './support/mariadb';
+import { limitarMigracionesHasta, retrocederHastaMigracion } from './support/mariadb';
 
 const MIGRACIONES = [
   'VersionCitas1760000043000', 'VersionClientes1760000044000',
@@ -41,11 +41,8 @@ describe('M4-T007–T012: persistencia aditiva operativa', () => {
   it('T007–T008 actualiza el esquema previo sin cambiar ningún dato y admite down/up sin uso', async () => {
     await conBaseOperativa(async (db) => {
       // Reconstruye el límite exacto de fase 4; no depende de un número fijo de migraciones.
-      while (true) {
-        const [ultima] = await db.query('SELECT name FROM migrations ORDER BY timestamp DESC LIMIT 1');
-        if (ultima.name === 'SucesionIntentos1760000042000') break;
-        await db.undoLastMigration({ transaction: 'each' });
-      }
+      await retrocederHastaMigracion(db, 'SucesionIntentos1760000042000');
+      limitarMigracionesHasta(db, 'ReferenciasGestionOperativa1760000048000');
       await crearEscenarioOperativo(db, new RelojPrueba(AHORA));
       const antes = {
         citas: await db.query('SELECT * FROM citas ORDER BY id'),

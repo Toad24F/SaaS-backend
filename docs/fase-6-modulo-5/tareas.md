@@ -46,27 +46,29 @@ Evidencia del lote [M5-T001–M5-T007](resultados-tareas/m5-t001-t007.md).
 
 ## 2. Clientes: persistencia y resolución
 
-- [ ] **M5-T008 — Implementar normalización compartida de identidad** (25 min).
+Evidencia del lote [M5-T008–M5-T013](resultados-tareas/m5-t008-t013.md).
+
+- [x] **M5-T008 — Implementar normalización compartida de identidad** (25 min).
   - **RF:** RF-15–RF-16, RF-19. **Depende de:** M5-T003.
   - **Hecho cuando:** Casos focalizados demuestran NFC, espacios y mayúsculas equivalentes, y distinción de acentos, ñ y signos.
 
-- [ ] **M5-T009 — Preparar migración aditiva de clientes** (25 min).
+- [x] **M5-T009 — Preparar migración aditiva de clientes** (25 min).
   - **RF:** RF-15, RF-23–RF-24, RF-59. **Depende de:** M5-T008.
   - **Hecho cuando:** La migración añade normalización y referencia de fusión sin índice único prematuro, sin borrar filas.
 
-- [ ] **M5-T010 — Alinear entidad y esquema de clientes** (25 min).
+- [x] **M5-T010 — Alinear entidad y esquema de clientes** (25 min).
   - **RF:** RF-15, RF-23–RF-24, RF-59. **Depende de:** M5-T009.
   - **Hecho cuando:** Entidad y schema.sql reflejan los mismos campos, tipos binarios, versiones y referencias.
 
-- [ ] **M5-T011 — Preparar persistencia de operaciones de unión** (25 min).
+- [x] **M5-T011 — Preparar persistencia de operaciones de unión** (25 min).
   - **RF:** RF-20–RF-22, RF-60–RF-62. **Depende de:** M5-T010.
   - **Hecho cuando:** Migración, entidad y esquema contienen origen, destino, versiones, actor y unicidad de operación.
 
-- [ ] **M5-T012 — Preparar relleno normalizado y detección de duplicados** (25 min).
+- [x] **M5-T012 — Preparar relleno normalizado y detección de duplicados** (25 min).
   - **RF:** RF-15–RF-16, RF-24, RF-59. **Depende de:** M5-T010.
   - **Hecho cuando:** El ensayo en test normaliza sin fusionar y devuelve grupos duplicados sin alterar snapshots.
 
-- [ ] **M5-T013 — Crear resolución transaccional de ficha** (25 min).
+- [x] **M5-T013 — Crear resolución transaccional de ficha** (25 min).
   - **RF:** RF-15–RF-19, RF-24. **Depende de:** M5-T012.
   - **Hecho cuando:** La resolución devuelve ficha única, crea cuando no existe y rechaza ambigüedad sin selección arbitraria.
 

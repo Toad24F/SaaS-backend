@@ -8,7 +8,7 @@ import { ApartadosService } from '../src/reservas-publicas/apartados.service';
 import { IntentosReservaPublicaService } from '../src/reservas-publicas/intentos-reserva-publica.service';
 import { RegistroReservaPublicaService } from '../src/reservas-publicas/registro-reserva-publica.service';
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
-import { retrocederHastaMigracion } from './support/mariadb';
+import { limitarMigracionesHasta, retrocederHastaMigracion } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
 
@@ -151,6 +151,8 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
   it('T017 conserva una base de fase 4 con intento registrado, folio, snapshots y teléfono compartido', async () => {
     await conBaseOperativa(async (db) => {
       await retrocederHastaMigracion(db, 'SucesionIntentos1760000042000');
+      // Este ensayo compara exactamente el cambio M3 → M4. M5 tiene su propia prueba de actualización.
+      limitarMigracionesHasta(db, 'ReferenciasGestionOperativa1760000048000');
       // Semilla histórica por SQL: las entidades actuales no se usan sobre columnas aún ausentes.
       const { negocios: [a] } = await crearEscenarioPortal(db, new RelojPrueba(AHORA));
       const sesion = await db.query('INSERT INTO sesiones_reserva_publica(negocio_id,titular_hash,generacion) VALUES(?,?,1)', [a.id, 'c'.repeat(64)]);

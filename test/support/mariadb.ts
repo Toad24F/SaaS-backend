@@ -36,6 +36,18 @@ export async function retrocederHastaMigracion(db: DataSource, nombre: string): 
   return cantidad;
 }
 
+/** Fija el extremo de una prueba histórica sin modificar las migraciones del proyecto. */
+export function limitarMigracionesHasta(db: DataSource, nombre: string): void {
+  if (process.env.NODE_ENV !== 'test') throw new Error('El límite histórico requiere NODE_ENV=test.');
+  validarBaseTemporal(String(db.options.database));
+  const nombreDe = (migracion: DataSource['migrations'][number]) => migracion.name ?? migracion.constructor.name;
+  if (!db.migrations.some((migracion) => nombreDe(migracion) === nombre)) {
+    throw new Error(`No se encontró el límite histórico ${nombre}.`);
+  }
+  const hasta = nombre.slice(-13);
+  db.migrations = db.migrations.filter((migracion) => nombreDe(migracion).slice(-13) <= hasta);
+}
+
 export async function conDosConexiones<T>(
   ejecutar: (primera: DataSource, segunda: DataSource) => Promise<T>,
 ): Promise<T> {

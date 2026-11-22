@@ -46,7 +46,8 @@ describe('M1-T126–T127 instalación y SQL de licencias', () => {
           'bloqueos_temporales', 'sesiones_reserva_publica',
           'operaciones_apartado', 'intentos_reserva_publica',
           // M4 agrega tablas y amplía auditoría: también se contrasta su DDL canónico.
-          'intentos_cita_manual', 'eventos_cita', 'eventos_auditoria']) {
+          'intentos_cita_manual', 'eventos_cita', 'eventos_auditoria',
+          'uniones_cliente']) {
           expect(nombres).toContain(tabla);
           const fechas = `SELECT COLUMN_NAME columna,
             DATETIME_PRECISION precisionTemporal FROM information_schema.COLUMNS
