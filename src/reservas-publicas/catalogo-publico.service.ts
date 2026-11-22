@@ -74,12 +74,12 @@ export class CatalogoPublicoService {
         { id: fila.personalId, nombre: fila.personalNombre,
           ...(fila.especialidad ? { especialidad: fila.especialidad } : {}) }])).values()];
       // La marca se lee en la misma instantánea que el slug, la licencia y la oferta.
-      const { colores, logoId } = await this.personalizacion.consultarMarca(manager, negocio.id);
+      const { acento, logoId } = await this.personalizacion.consultarMarca(manager, negocio.id);
       const resultado = { negocio: { slug: negocio.slug, nombre: negocio.nombre,
         ...(negocio.categoria ? { categoria: negocio.categoria } : {}),
         ...(negocio.mostrarContactoPublico && negocio.telefono ?
           { telefono: negocio.telefono } : {}) },
-        marca: { colores, ...(logoId ? { logoUrl: `/publico/negocios/${encodeURIComponent(negocio.slug)}/logos/${logoId}` } : {}) },
+        marca: { acento, ...(logoId ? { logoUrl: `/publico/negocios/${encodeURIComponent(negocio.slug)}/logos/${logoId}` } : {}) },
         servicios, sucursales, profesionales };
       // Oferta y visibilidad proceden de la misma instantánea del negocio.
       return proyectarPreciosPublicos(resultado, negocio.mostrarPreciosPublicos ?? true);

@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { validarColoresPortal } from './colores-portal';
+import { normalizarAcentoPortal } from './colores-portal';
 
 export const MAX_VERSION_PORTAL = 0xffffffff;
 
@@ -24,12 +24,12 @@ export function normalizarIdLogo(id: unknown): string | null {
 }
 
 export function validarPublicacionPortal(entrada: unknown) {
-  const datos = datosExactos(entrada, ['version', 'colores', 'logoId']);
+  const datos = datosExactos(entrada, ['version', 'acento', 'logoId']);
   const version = validarVersionPortal(datos.version);
-  const colores = validarColoresPortal(datosExactos(datos.colores, ['fondo', 'texto', 'acento']));
+  const acento = normalizarAcentoPortal(datos.acento);
   const logoId = normalizarIdLogo(datos.logoId);
   if (datos.logoId !== null && logoId === null) throw new BadRequestException('El identificador del logo no es válido.');
-  return { version, colores, logoId };
+  return { version, acento, logoId };
 }
 
 /** Los campos de formulario llegan como texto y el JSON exige un número real. */

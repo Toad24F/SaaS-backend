@@ -12,7 +12,7 @@ import { conAgendaHttp } from './support/agenda-http';
 import { situarSesion } from './support/acceso-operativo';
 
 const PRIVADA = '/negocio/personalizacion';
-const COLORES = { fondo: '#ffffff', texto: '#000000', acento: '#636363' };
+const COLORES = { ...COLORES_PREDETERMINADOS_PORTAL, acento: '#686868' };
 type Escenario = Parameters<Parameters<typeof conAgendaHttp>[0]>[0];
 
 function auth(f: Escenario, indice = 0, rol = Rol.ADMIN_NEGOCIO) {
@@ -28,8 +28,8 @@ async function cargar(f: Escenario, version: number, indice = 0): Promise<string
   return respuesta.body.id;
 }
 
-function publicar(f: Escenario, version: number, logoId: string | null, indice = 0, colores = COLORES) {
-  return request(f.http).put(PRIVADA).set('Authorization', auth(f, indice)).send({ version, logoId, colores });
+function publicar(f: Escenario, version: number, logoId: string | null, indice = 0, acento = COLORES.acento) {
+  return request(f.http).put(PRIVADA).set('Authorization', auth(f, indice)).send({ version, logoId, acento });
 }
 
 async function rutaPublica(f: Escenario, indice = 0) {
@@ -43,25 +43,51 @@ describe('M5-T048–T050 · Marca publicada del portal', () => {
       await request(f.http).get(PRIVADA).expect(401);
       await request(f.http).put(PRIVADA).set('Authorization', auth(f, 0, Rol.RECEPCIONISTA)).send({}).expect(403);
       await request(f.http).get(PRIVADA).set('Authorization', auth(f)).expect(200, {
-        version: 0, colores: COLORES_PREDETERMINADOS_PORTAL, logoId: null,
-        predeterminados: COLORES_PREDETERMINADOS_PORTAL,
+        version: 0, acento: COLORES_PREDETERMINADOS_PORTAL.acento, logoId: null,
+        acentoPredeterminado: COLORES_PREDETERMINADOS_PORTAL.acento,
       });
       const logo = await cargar(f, 0);
       const ajeno = await cargar(f, 0, 1);
       const subir = () => request(f.http).post(`${PRIVADA}/logos`).set('Authorization', auth(f));
       await subir().field('version', '0').attach('archivo', Buffer.alloc(2 * 1024 * 1024 + 1), 'grande.png').expect(400);
       await subir().field('version', '00').attach('archivo', Buffer.from('falso'), 'falso.png').expect(400);
-      const publicado = { version: 1, colores: COLORES, logoId: logo };
+      const publicado = { version: 1, acento: COLORES.acento, logoId: logo };
       await publicar(f, 0, logo).expect(200, publicado);
       await publicar(f, 0, null).expect(409);
       await publicar(f, 1, ajeno).expect(404);
       await publicar(f, 1, randomUUID()).expect(404);
-      await publicar(f, 1, null, 0, { ...COLORES, texto: '#ffffff' }).expect(400);
+      await publicar(f, 1, null, 0, '#ffffff80').expect(400);
       await request(f.http).put(PRIVADA).set('Authorization', auth(f))
-        .send({ version: 1, colores: COLORES, logoId: logo, negocioId: f.negocios[1].id }).expect(400);
+        .send({ version: 1, acento: COLORES.acento, logoId: logo, negocioId: f.negocios[1].id }).expect(400);
       await request(f.http).get(PRIVADA).set('Authorization', auth(f)).expect(200, {
-        ...publicado, predeterminados: COLORES_PREDETERMINADOS_PORTAL,
+        ...publicado, acentoPredeterminado: COLORES_PREDETERMINADOS_PORTAL.acento,
       });
+    });
+  });
+
+  it('publica solo el acento, rechaza fondo y texto y conserva las columnas históricas', async () => {
+    await conAgendaHttp(async (f) => {
+      const marca = f.db.getRepository(PersonalizacionPortal);
+      const negocioId = f.negocios[0].id;
+      const historica = { ...COLORES, fondo: '#fff8ed', texto: '#000000' };
+      await marca.insert({ negocioId, version: 1, ...historica, logoId: null });
+      const ruta = await rutaPublica(f);
+
+      // El catálogo proyecta el acento antiguo, sin imponer su fondo histórico a ningún tema.
+      const antes = await request(f.http).get(`${ruta}/catalogo`).expect(200);
+      expect(antes.body.marca).toEqual({ acento: historica.acento });
+      for (const campo of [{ fondo: '#ffffff' }, { texto: '#000000' }, { colores: historica }]) {
+        await request(f.http).put(PRIVADA).set('Authorization', auth(f))
+          .send({ version: 1, logoId: null, acento: '#b3442c', ...campo }).expect(400);
+      }
+      expect(await marca.findOneByOrFail({ negocioId })).toMatchObject({ version: 1, ...historica });
+
+      await publicar(f, 1, null, 0, '#F0F0F0').expect(200, {
+        version: 2, acento: '#f0f0f0', logoId: null,
+      });
+      expect(await marca.findOneByOrFail({ negocioId })).toMatchObject({ ...historica, version: 2, acento: '#f0f0f0' });
+      const despues = await request(f.http).get(`${ruta}/catalogo`).expect(200);
+      expect(despues.body.marca).toEqual({ acento: '#f0f0f0' });
     });
   });
 
@@ -69,8 +95,8 @@ describe('M5-T048–T050 · Marca publicada del portal', () => {
     await conAgendaHttp(async (f) => {
       const uno = await cargar(f, 0);
       const dos = await cargar(f, 0);
-      const coloresDos = { ...COLORES, acento: '#686868' };
-      const respuestas = await Promise.all([publicar(f, 0, uno), publicar(f, 0, dos, 0, coloresDos)]);
+      const coloresDos = { ...COLORES, acento: '#717171' };
+      const respuestas = await Promise.all([publicar(f, 0, uno), publicar(f, 0, dos, 0, coloresDos.acento)]);
       expect(respuestas.map((r) => r.status).sort()).toEqual([200, 409]);
       const ganador = respuestas[0].status === 200 ? { logoId: uno, ...COLORES } : { logoId: dos, ...coloresDos };
       expect(await f.db.getRepository(PersonalizacionPortal).findOneByOrFail({ negocioId: f.negocios[0].id }))
@@ -86,7 +112,7 @@ describe('M5-T048–T050 · Marca publicada del portal', () => {
       // La auditoría falla después de escribir la marca. El rollback debe revertir ambos efectos.
       await f.db.query(`CREATE TRIGGER fallo_publicacion_test BEFORE INSERT ON eventos_auditoria
         FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Fallo de prueba'`);
-      const respuesta = await publicar(f, 1, nuevo, 0, { ...COLORES, acento: '#686868' }).expect(500);
+      const respuesta = await publicar(f, 1, nuevo, 0, '#717171').expect(500);
       expect(JSON.stringify(respuesta.body)).not.toContain('Fallo de prueba');
       expect(await f.db.getRepository(PersonalizacionPortal).findOneByOrFail({ negocioId: f.negocios[0].id }))
         .toMatchObject({ version: 1, logoId: anterior, ...COLORES });
@@ -106,7 +132,7 @@ describe('M5-T048–T050 · Marca publicada del portal', () => {
       const restaurar = (version: number) => request(f.http).post(`${PRIVADA}/restaurar`)
         .set('Authorization', auth(f)).send({ version });
       await restaurar(0).expect(409);
-      await restaurar(1).expect(200, { version: 2, colores: COLORES_PREDETERMINADOS_PORTAL, logoId: null });
+      await restaurar(1).expect(200, { version: 2, acento: COLORES_PREDETERMINADOS_PORTAL.acento, logoId: null });
       const ciclo = f.app.get(EjecucionPeriodicaService);
       f.reloj.avanzar(24 * 60 * 60 * 1000 - 1);
       // Mantiene sesiones válidas al simular el día transcurrido para los logos.
@@ -121,7 +147,7 @@ describe('M5-T048–T050 · Marca publicada del portal', () => {
       await ciclo.ciclo();
       expect((await recursos.find()).map((r) => r.id).sort()).toEqual([logoB, vigente].sort());
       await request(f.http).get(PRIVADA).set('Authorization', auth(f, 1)).expect(200, {
-        version: 1, colores: COLORES, logoId: logoB, predeterminados: COLORES_PREDETERMINADOS_PORTAL,
+        version: 1, acento: COLORES.acento, logoId: logoB, acentoPredeterminado: COLORES_PREDETERMINADOS_PORTAL.acento,
       });
       await publicar(f, 1, logoB, 1).expect(200); // El logo vigente se puede conservar tras su fecha provisional.
     });
@@ -135,13 +161,13 @@ describe('M5-T048–T050 · Marca publicada del portal', () => {
       const sustituto = await cargar(f, 0);
       const logoB = await cargar(f, 0, 1);
       const antes = await request(f.http).get(`${rutaA}/catalogo`).expect(200);
-      expect(antes.body.marca).toEqual({ colores: COLORES_PREDETERMINADOS_PORTAL });
+      expect(antes.body.marca).toEqual({ acento: COLORES_PREDETERMINADOS_PORTAL.acento });
       await request(f.http).get(`${rutaA}/logos/${logoA}`).expect(404);
       await publicar(f, 0, logoA).expect(200);
       await publicar(f, 0, logoB, 1).expect(200);
       const url = `${rutaA}/logos/${logoA}`;
       const catalogo = await request(f.http).get(`${rutaA}/catalogo`).expect(200);
-      expect(catalogo.body.marca).toEqual({ colores: COLORES, logoUrl: url });
+      expect(catalogo.body.marca).toEqual({ acento: COLORES.acento, logoUrl: url });
       // Consumir el archivo como bytes comprueba el tipo y la codificación reales.
       const raster = await request(f.http).get(url).buffer(true).parse((res, done) => {
         const partes: Buffer[] = [];

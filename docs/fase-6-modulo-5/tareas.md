@@ -205,6 +205,7 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
 
 Evidencia del lote [M5-T044–M5-T047](resultados-tareas/m5-t044-t047.md).
 Evidencia del lote [M5-T048–M5-T050](resultados-tareas/m5-t048-t050.md).
+Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 - [x] **M5-T044 — Crear persistencia de personalización** (25 min).
   - **RF:** RF-26–RF-27, RF-30, RF-61. **Depende de:** M5-T007.
@@ -234,15 +235,15 @@ Evidencia del lote [M5-T048–M5-T050](resultados-tareas/m5-t048-t050.md).
   - **RF:** RF-26, RF-30, RF-61. **Depende de:** M5-T048.
   - **Hecho cuando:** El catálogo y recurso público solo permiten el logo publicado del negocio resuelto.
 
-- [ ] **M5-T051 — Construir vista previa y edición conectada** (25 min).
+- [x] **M5-T051 — Construir vista previa y edición conectada** (25 min).
   - **RF:** RF-26–RF-29. **Depende de:** M5-T050.
   - **Hecho cuando:** El Administrador previsualiza, descarta y guarda usando validaciones equivalentes al servidor.
 
-- [ ] **M5-T052 — Conectar restauración en vista previa** (25 min).
+- [x] **M5-T052 — Conectar restauración en vista previa** (25 min).
   - **RF:** RF-27. **Depende de:** M5-T051, M5-T049.
   - **Hecho cuando:** Restaurar puede previsualizarse y cancelarse sin cambios persistidos.
 
-- [ ] **M5-T053 — Probar marca en móvil y teclado** (25 min).
+- [x] **M5-T053 — Probar marca en móvil y teclado** (25 min).
   - **RF:** RF-26–RF-30, RF-61–RF-62. **Depende de:** M5-T052.
   - **Hecho cuando:** Dos negocios conservan marcas separadas; errores, foco, contraste y publicación pasan el recorrido.
 

@@ -7,7 +7,7 @@ import { AutorizacionService, Permiso } from '../auth/services/autorizacion.serv
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { COLORES_PREDETERMINADOS_PORTAL, type ColoresPortal } from './colores-portal';
+import { COLORES_PREDETERMINADOS_PORTAL } from './colores-portal';
 import { PersonalizacionPortal } from './entities/personalizacion-portal.entity';
 import { RecursoPortal } from './entities/recurso-portal.entity';
 import { sanearLogoPortal } from './logo-portal';
@@ -17,8 +17,8 @@ const VIGENCIA_PROVISIONAL_MS = 24 * 60 * 60 * 1000;
 const MAX_NEGOCIOS_POR_LIMPIEZA = 100;
 
 function proyectarMarca(fila: PersonalizacionPortal | null) {
-  const colores = fila ? { fondo: fila.fondo, texto: fila.texto, acento: fila.acento } : COLORES_PREDETERMINADOS_PORTAL;
-  return { version: fila?.version ?? 0, colores, logoId: fila?.logoId ?? null };
+  return { version: fila?.version ?? 0, acento: fila?.acento ?? COLORES_PREDETERMINADOS_PORTAL.acento,
+    logoId: fila?.logoId ?? null };
 }
 
 @Injectable()
@@ -32,7 +32,8 @@ export class PersonalizacionPortalService {
 
   async consultar(actorId: number) {
     const negocioId = this.negocioDelAdministrador(await this.db.manager.findOneBy(Usuario, { id: actorId }));
-    return { ...await this.consultarMarca(this.db.manager, negocioId), predeterminados: COLORES_PREDETERMINADOS_PORTAL };
+    return { ...await this.consultarMarca(this.db.manager, negocioId),
+      acentoPredeterminado: COLORES_PREDETERMINADOS_PORTAL.acento };
   }
 
   async consultarMarca(manager: EntityManager, negocioId: number) {
@@ -60,13 +61,13 @@ export class PersonalizacionPortalService {
   }
 
   publicar(actorId: number, entrada: unknown) {
-    const { version, colores, logoId } = validarPublicacionPortal(entrada);
-    return this.guardarMarca(actorId, version, colores, logoId, 'personalizacion_portal_publicada');
+    const { version, acento, logoId } = validarPublicacionPortal(entrada);
+    return this.guardarMarca(actorId, version, acento, logoId, 'personalizacion_portal_publicada');
   }
 
   restaurar(actorId: number, entrada: unknown) {
     const version = leerVersionPortal(entrada);
-    return this.guardarMarca(actorId, version, COLORES_PREDETERMINADOS_PORTAL, null, 'personalizacion_portal_restaurada');
+    return this.guardarMarca(actorId, version, COLORES_PREDETERMINADOS_PORTAL.acento, null, 'personalizacion_portal_restaurada');
   }
 
   async limpiarProvisionalesVencidos(ahora: Date): Promise<void> {
@@ -86,7 +87,7 @@ export class PersonalizacionPortalService {
     }
   }
 
-  private guardarMarca(actorId: number, version: number, colores: ColoresPortal, logoId: string | null, accion: string) {
+  private guardarMarca(actorId: number, version: number, acento: string, logoId: string | null, accion: string) {
     return this.conVersion(actorId, version, async (manager, negocioId, anterior) => {
       const ahora = this.reloj.ahora();
       if (logoId !== null && logoId !== anterior?.logoId) {
@@ -96,16 +97,15 @@ export class PersonalizacionPortalService {
         if (!recurso || recurso.expiraEn <= ahora) throw new NotFoundException('Logo no disponible.');
       }
       if (version === MAX_VERSION_PORTAL) throw new ConflictException('La versión de personalización alcanzó su límite.');
-      const siguiente = { version: version + 1, ...colores, logoId };
+      const siguiente = { version: version + 1, acento, logoId };
       if (anterior) await manager.update(PersonalizacionPortal, { negocioId }, siguiente);
-      else await manager.insert(PersonalizacionPortal, { negocioId, ...siguiente });
+      else await manager.insert(PersonalizacionPortal, { negocioId, ...COLORES_PREDETERMINADOS_PORTAL, ...siguiente });
 
-      // El commit publica logo, colores, versión y auditoría juntos. La auditoría guarda solo la proyección.
-      const publicada = { version: siguiente.version, colores, logoId };
+      // El commit publica logo, acento, versión y auditoría juntos. Las columnas históricas de tema no se reescriben.
       await this.auditoria.registrar(manager, { operacionId: randomUUID(), actorUsuarioId: actorId, negocioId,
         usuarioId: null, licenciaId: null, accion, ocurridoEn: ahora,
-        valoresAntes: proyectarMarca(anterior), valoresDespues: publicada });
-      return publicada;
+        valoresAntes: proyectarMarca(anterior), valoresDespues: siguiente });
+      return siguiente;
     });
   }
 
