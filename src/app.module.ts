@@ -30,6 +30,7 @@ import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publica
 import { CitasHttpModule } from './citas/citas-http.module';
 import { ClientesHttpModule } from './clientes/clientes-http.module';
 import { PersonalizacionPortalHttpModule } from './personalizacion-portal/personalizacion-portal-http.module';
+import { ConfiguracionAutomatizacionesHttpModule } from './automatizaciones/configuracion-automatizaciones-http.module';
 
 @Module({
   imports: [
@@ -78,6 +79,8 @@ import { PersonalizacionPortalHttpModule } from './personalizacion-portal/person
     ClientesHttpModule,
     // Expone carga, publicación y restauración bajo autenticación administrativa.
     PersonalizacionPortalHttpModule,
+    // Expone la configuración versionada de plazos para administradores de negocio.
+    ConfiguracionAutomatizacionesHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

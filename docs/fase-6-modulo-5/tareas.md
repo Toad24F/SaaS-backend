@@ -285,9 +285,10 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **RF:** RF-32–RF-35, RF-61–RF-62. **Depende de:** M5-T060.
   - **Hecho cuando:** Hash, consumo, vencimiento y pertenencia a generación quedan definidos sin token utilizable persistido.
 
-- [ ] **M5-T063 — Exponer lectura/escritura de configuración** (25 min).
+- [x] **M5-T063 — Exponer lectura/escritura de configuración** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T054.
   - **Hecho cuando:** Solo Administrador modifica con versión y rango válido; trabajos anteriores permanecen iguales.
+  - **Evidencia:** [M5-T063](resultados-tareas/m5-t063.md).
 
 - [ ] **M5-T064 — Conectar formulario de plazos y recordatorios** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T063.
