@@ -177,27 +177,27 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
   - **RF:** RF-08–RF-09, RF-14, RF-61. **Depende de:** M5-T036, M5-T003.
   - **Hecho cuando:** Más de una página, estado filtrado y página vacía mantienen contadores correctos y aislamiento.
 
-- [ ] **M5-T038 — Conectar filtros y paginador de correos** (25 min).
+- [x] **M5-T038 — Conectar filtros y paginador de correos** (25 min).
   - **RF:** RF-08–RF-09, RF-14. **Depende de:** M5-T037.
   - **Hecho cuando:** La pantalla reinicia página al filtrar y muestra total/error sin contar solo filas visibles.
 
-- [ ] **M5-T039 — Implementar clasificación temporal de bloqueos** (25 min).
+- [x] **M5-T039 — Implementar clasificación temporal de bloqueos** (25 min).
   - **RF:** RF-10–RF-12. **Depende de:** M5-T004, M5-T005.
   - **Hecho cuando:** Pruebas cubren fin exclusivo, día completo y bloqueos colectivos con zonas distintas.
 
-- [ ] **M5-T040 — Paginar bloqueos con filtros y totales** (25 min).
+- [x] **M5-T040 — Paginar bloqueos con filtros y totales** (25 min).
   - **RF:** RF-10–RF-12, RF-14. **Depende de:** M5-T039.
   - **Hecho cuando:** El endpoint devuelve por defecto vigentes/próximos y conserva filtros por solapamiento y alcance.
 
-- [ ] **M5-T041 — Separar listado paginado de cálculo del motor** (25 min).
+- [x] **M5-T041 — Separar listado paginado de cálculo del motor** (25 min).
   - **RF:** RF-13. **Depende de:** M5-T040.
   - **Hecho cuando:** El motor obtiene todos los bloqueos aplicables sin invocar el listado paginado.
 
-- [ ] **M5-T042 — Verificar bloqueos y regresión de disponibilidad** (25 min).
+- [x] **M5-T042 — Verificar bloqueos y regresión de disponibilidad** (25 min).
   - **RF:** RF-10–RF-14, RF-61. **Depende de:** M5-T041, M5-T003.
   - **Hecho cuando:** Cambiar páginas no cambia disponibilidad y bloques colectivos se cuentan una sola vez.
 
-- [ ] **M5-T043 — Adaptar consumidores del listado de bloqueos** (25 min).
+- [x] **M5-T043 — Adaptar consumidores del listado de bloqueos** (25 min).
   - **RF:** RF-10–RF-14. **Depende de:** M5-T042.
   - **Hecho cuando:** Administrador filtra anteriores/todos y el Profesional conserva su alcance con el nuevo sobre.
 

@@ -146,8 +146,8 @@ describe('M1-T133: recorrido funcional conjunto sin citas', () => {
         expect((await request(http).get(`${ruta}/horario`)
           .auth(profVigente, { type: 'bearer' }).expect(200)).body).toEqual(semana);
         expect((await oferta()).map((item) => item.id)).toEqual([servicio.id]);
-        expect((await request(http).get('/bloqueos')
-          .auth(profVigente, { type: 'bearer' }).expect(200)).body)
+        expect((await request(http).get('/bloqueos').query({ vigencia: 'todos' })
+          .auth(profVigente, { type: 'bearer' }).expect(200)).body.bloqueos)
           .toEqual([expect.objectContaining({ id: bloqueo.id })]);
         // Fase 3 instala la fuente de ocupación, pero este recorrido no crea citas.
         expect(await db.query("SHOW TABLES LIKE 'citas'")).toHaveLength(1);
