@@ -265,19 +265,19 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
   - **RF:** RF-33, RF-44, RF-60–RF-62. **Depende de:** M5-T057.
   - **Hecho cuando:** Se rechazan actores incompatibles y cambios a eventos; sigue habiendo una versión única por cita.
 
-- [ ] **M5-T059 — Crear configuración de canales** (25 min).
+- [x] **M5-T059 — Crear configuración de canales** (25 min).
   - **RF:** RF-31–RF-38, RF-61. **Depende de:** M5-T006.
   - **Hecho cuando:** Persistencia admite un canal por negocio y referencia a secreto sin almacenar credenciales utilizables.
 
-- [ ] **M5-T060 — Crear bandeja durable de envíos** (25 min).
+- [x] **M5-T060 — Crear bandeja durable de envíos** (25 min).
   - **RF:** RF-31, RF-36, RF-47–RF-48, RF-62. **Depende de:** M5-T055, M5-T059.
   - **Hecho cuando:** Migración, entidad y esquema definen efecto único, generación, programación, lease e índices de trabajo.
 
-- [ ] **M5-T061 — Crear bandeja de eventos entrantes** (25 min).
+- [x] **M5-T061 — Crear bandeja de eventos entrantes** (25 min).
   - **RF:** RF-33–RF-38, RF-62. **Depende de:** M5-T059.
   - **Hecho cuando:** Duplicar el mismo evento no crea otra entrada y se conservan horas de recepción/proveedor separadas.
 
-- [ ] **M5-T062 — Crear persistencia de acciones de confirmación** (25 min).
+- [x] **M5-T062 — Crear persistencia de acciones de confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61–RF-62. **Depende de:** M5-T060.
   - **Hecho cuando:** Hash, consumo, vencimiento y pertenencia a generación quedan definidos sin token utilizable persistido.
 

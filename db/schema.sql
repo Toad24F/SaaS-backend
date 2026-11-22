@@ -1350,3 +1350,115 @@ ALTER TABLE eventos_cita
     proceso_sistema IS NULL OR CHAR_LENGTH(TRIM(proceso_sistema)) > 0),
   ADD CONSTRAINT chk_ec_accion_whatsapp CHECK (referencia_whatsapp IS NULL OR accion='cambio_estado'),
   ADD CONSTRAINT chk_ec_accion_sistema CHECK (proceso_sistema IS NULL OR accion='cancelacion');
+
+-- M5-T059: un remitente por negocio y solo una referencia a secreto externo.
+CREATE TABLE canales_whatsapp (
+  negocio_id INT UNSIGNED NOT NULL,
+  remitente_externo_id VARCHAR(100) NOT NULL,
+  secreto_ref VARCHAR(200) NOT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  habilitado TINYINT(1) NOT NULL DEFAULT 0,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (negocio_id),
+  UNIQUE KEY uq_cw_remitente (remitente_externo_id),
+  CONSTRAINT fk_cw_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_cw_remitente CHECK (CHAR_LENGTH(TRIM(remitente_externo_id)) > 0),
+  CONSTRAINT chk_cw_secreto_ref CHECK (secreto_ref REGEXP '^secret://[A-Za-z0-9/_-]+$'),
+  CONSTRAINT chk_cw_version CHECK (version >= 1),
+  CONSTRAINT chk_cw_habilitado CHECK (habilitado IN (0,1))
+) ENGINE=InnoDB;
+
+-- M5-T060: efecto durable con generación, programación, reintentos y lease.
+CREATE TABLE envios_whatsapp (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  generacion INT UNSIGNED NOT NULL,
+  tipo ENUM('inicial_pendiente','inicial_confirmada','recordatorio') NOT NULL,
+  clave_efecto VARCHAR(160) NOT NULL,
+  destino_e164 VARCHAR(16) NOT NULL,
+  parametros_plantilla JSON NOT NULL,
+  programado_en DATETIME(3) NOT NULL,
+  util_hasta DATETIME(3) NOT NULL,
+  estado ENUM('pendiente','en_proceso','aceptado','entregado','leido','fallido','incierto','descartado') NOT NULL DEFAULT 'pendiente',
+  intentos INT UNSIGNED NOT NULL DEFAULT 0,
+  proximo_intento_en DATETIME(3) NOT NULL,
+  arrendamiento_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  arrendado_hasta DATETIME(3) NULL,
+  referencia_externa VARCHAR(128) NULL,
+  aceptado_en DATETIME(3) NULL,
+  entregado_en DATETIME(3) NULL,
+  leido_en DATETIME(3) NULL,
+  ultimo_error VARCHAR(255) NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ew_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_ew_accion_referencia (negocio_id,cita_id,generacion,tipo,id),
+  UNIQUE KEY uq_ew_clave_efecto (negocio_id,clave_efecto),
+  UNIQUE KEY uq_ew_generacion_tipo (negocio_id,cita_id,generacion,tipo),
+  UNIQUE KEY uq_ew_referencia_externa (negocio_id,referencia_externa),
+  INDEX idx_ew_trabajo (estado,proximo_intento_en,arrendado_hasta),
+  INDEX idx_ew_cita (negocio_id,cita_id,generacion),
+  CONSTRAINT fk_ew_canal FOREIGN KEY (negocio_id) REFERENCES canales_whatsapp(negocio_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ew_condicion FOREIGN KEY (negocio_id,cita_id,generacion)
+    REFERENCES condiciones_confirmacion_cita(negocio_id,cita_id,generacion) ON DELETE RESTRICT,
+  CONSTRAINT chk_ew_clave CHECK (BINARY clave_efecto = BINARY TRIM(clave_efecto) AND CHAR_LENGTH(clave_efecto) > 0),
+  CONSTRAINT chk_ew_destino CHECK (destino_e164 REGEXP '^[+][1-9][0-9]{6,14}$'),
+  CONSTRAINT chk_ew_utilidad CHECK (util_hasta > programado_en),
+  CONSTRAINT chk_ew_arrendamiento CHECK (
+    (estado='en_proceso' AND arrendamiento_id IS NOT NULL AND arrendado_hasta IS NOT NULL)
+    OR (estado<>'en_proceso' AND arrendamiento_id IS NULL AND arrendado_hasta IS NULL))
+) ENGINE=InnoDB;
+
+-- M5-T061: el webhook conserva recibos mínimos y rechaza duplicados de la misma huella.
+CREATE TABLE eventos_whatsapp (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  huella_evento CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  evento_externo_id VARCHAR(128) NULL,
+  mensaje_externo_id VARCHAR(128) NULL,
+  tipo ENUM('enviado','entregado','leido','respuesta','fallo') NOT NULL,
+  recibido_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  proveedor_en DATETIME(6) NULL,
+  remitente_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  accion_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  estado_procesamiento ENUM('pendiente','en_proceso','procesado','fallido') NOT NULL DEFAULT 'pendiente',
+  procesado_en DATETIME(6) NULL,
+  ultimo_error VARCHAR(255) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_evw_huella (negocio_id,huella_evento),
+  INDEX idx_evw_trabajo (estado_procesamiento,recibido_en),
+  INDEX idx_evw_mensaje (negocio_id,mensaje_externo_id),
+  CONSTRAINT fk_evw_canal FOREIGN KEY (negocio_id) REFERENCES canales_whatsapp(negocio_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_evw_huella CHECK (huella_evento REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_evw_remitente CHECK (remitente_hash IS NULL OR remitente_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_evw_accion CHECK (accion_hash IS NULL OR accion_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_evw_procesado CHECK (estado_procesamiento='procesado' AND procesado_en IS NOT NULL
+    OR estado_procesamiento<>'procesado' AND procesado_en IS NULL)
+) ENGINE=InnoDB;
+
+-- M5-T062: solo el hash de la acción; la FK impide cruzar cita, negocio o generación.
+CREATE TABLE acciones_confirmacion (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  generacion INT UNSIGNED NOT NULL,
+  tipo_envio ENUM('inicial_pendiente','inicial_confirmada','recordatorio') NOT NULL DEFAULT 'inicial_pendiente',
+  envio_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  expira_en DATETIME(3) NOT NULL,
+  consumido_en DATETIME(3) NULL,
+  creado_en DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ac_hash (token_hash),
+  UNIQUE KEY uq_ac_envio (negocio_id,envio_id),
+  INDEX idx_ac_generacion (negocio_id,cita_id,generacion),
+  CONSTRAINT fk_ac_envio FOREIGN KEY (negocio_id,cita_id,generacion,tipo_envio,envio_id)
+    REFERENCES envios_whatsapp(negocio_id,cita_id,generacion,tipo,id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ac_tipo CHECK (tipo_envio='inicial_pendiente'),
+  CONSTRAINT chk_ac_hash CHECK (token_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_ac_vencimiento CHECK (expira_en > creado_en),
+  CONSTRAINT chk_ac_consumo CHECK (consumido_en IS NULL OR consumido_en >= creado_en)
+) ENGINE=InnoDB;
