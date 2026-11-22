@@ -1274,3 +1274,79 @@ ALTER TABLE clientes
     GENERATED ALWAYS AS (IF(fusionado_en_id IS NULL, nombre_normalizado, NULL)) PERSISTENT,
   ADD CONSTRAINT chk_clientes_clave_activa CHECK (fusionado_en_id IS NOT NULL OR nombre_normalizado IS NOT NULL),
   ADD UNIQUE KEY uq_clientes_identidad_activa (negocio_id,nombre_activo,telefono);
+
+-- M5-T054: plazos versionados por negocio. Los defaults solo aplican a filas nuevas.
+CREATE TABLE configuracion_automatizaciones (
+  negocio_id INT UNSIGNED NOT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  plazo_confirmacion_horas TINYINT UNSIGNED NOT NULL DEFAULT 12,
+  recordatorio_horas TINYINT UNSIGNED NOT NULL DEFAULT 24,
+  PRIMARY KEY (negocio_id),
+  CONSTRAINT fk_ca_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ca_version CHECK (version >= 1),
+  CONSTRAINT chk_ca_plazo CHECK (plazo_confirmacion_horas BETWEEN 6 AND 24),
+  CONSTRAINT chk_ca_recordatorio CHECK (recordatorio_horas BETWEEN 12 AND 48)
+) ENGINE=InnoDB;
+
+-- M5-T055: cada generación guarda la política aplicada; no se crean filas retroactivas.
+CREATE TABLE condiciones_confirmacion_cita (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  generacion INT UNSIGNED NOT NULL,
+  categoria ENUM('normal','proxima','manual_heredada') NOT NULL,
+  instante_base DATETIME(3) NOT NULL,
+  plazo_aplicado_minutos SMALLINT UNSIGNED NULL,
+  vencimiento_utc DATETIME(3) NULL,
+  motivo_seguimiento VARCHAR(500) NULL,
+  estado_politica ENUM('pendiente','confirmada','seguimiento_manual','cancelada','anulada') NOT NULL DEFAULT 'pendiente',
+  version_configuracion INT UNSIGNED NULL,
+  confirmado_en DATETIME(3) NULL,
+  origen_confirmacion ENUM('personal','whatsapp') NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ccc_negocio_cita_generacion (negocio_id,cita_id,generacion),
+  UNIQUE KEY uq_ccc_referencia_vigente (negocio_id,cita_id,generacion,id),
+  INDEX idx_ccc_vencimiento (estado_politica,vencimiento_utc),
+  CONSTRAINT fk_ccc_cita FOREIGN KEY (negocio_id,cita_id) REFERENCES citas(negocio_id,id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ccc_generacion CHECK (generacion >= 1),
+  CONSTRAINT chk_ccc_plazo CHECK (plazo_aplicado_minutos IS NULL OR plazo_aplicado_minutos > 0),
+  CONSTRAINT chk_ccc_vencimiento CHECK (vencimiento_utc IS NULL OR plazo_aplicado_minutos IS NOT NULL),
+  CONSTRAINT chk_ccc_confirmacion CHECK ((confirmado_en IS NULL AND origen_confirmacion IS NULL)
+    OR (confirmado_en IS NOT NULL AND origen_confirmacion IS NOT NULL))
+) ENGINE=InnoDB;
+
+-- M5-T056: la FK compuesta impide apuntar a otra cita, generación o negocio.
+ALTER TABLE citas
+  ADD generacion_automatizacion INT UNSIGNED NULL,
+  ADD condicion_vigente_id BIGINT UNSIGNED NULL,
+  ADD causa_cancelacion ENUM('falta_confirmacion_plazo') NULL,
+  ADD INDEX idx_citas_condicion_vigente (negocio_id,id,generacion_automatizacion,condicion_vigente_id),
+  ADD CONSTRAINT chk_citas_condicion_vigente CHECK (
+    (generacion_automatizacion IS NULL AND condicion_vigente_id IS NULL)
+    OR (generacion_automatizacion >= 1 AND condicion_vigente_id IS NOT NULL)),
+  ADD CONSTRAINT chk_citas_causa_cancelacion CHECK (causa_cancelacion IS NULL OR estado='cancelada'),
+  ADD CONSTRAINT fk_citas_condicion_vigente FOREIGN KEY
+    (negocio_id,id,generacion_automatizacion,condicion_vigente_id)
+    REFERENCES condiciones_confirmacion_cita(negocio_id,cita_id,generacion,id) ON DELETE RESTRICT;
+
+-- M5-T057: el actor derivado clasifica historia sin actualizar eventos inmutables.
+ALTER TABLE eventos_cita
+  DROP CONSTRAINT chk_ec_actor,
+  ADD referencia_whatsapp VARCHAR(128) NULL,
+  ADD proceso_sistema VARCHAR(80) NULL,
+  ADD actor_tipo VARCHAR(20) AS (CASE
+    WHEN actor_usuario_id IS NOT NULL THEN 'usuario'
+    WHEN sesion_publica_id IS NOT NULL THEN 'sesion_publica'
+    WHEN referencia_whatsapp IS NOT NULL THEN 'cliente_whatsapp'
+    WHEN proceso_sistema IS NOT NULL THEN 'sistema'
+    ELSE NULL END) PERSISTENT,
+  ADD INDEX idx_ec_referencia_whatsapp (negocio_id,referencia_whatsapp),
+  ADD CONSTRAINT chk_ec_actor CHECK (
+    (actor_usuario_id IS NOT NULL) + (sesion_publica_id IS NOT NULL)
+    + (referencia_whatsapp IS NOT NULL) + (proceso_sistema IS NOT NULL) = 1),
+  ADD CONSTRAINT chk_ec_referencia_whatsapp CHECK (
+    referencia_whatsapp IS NULL OR CHAR_LENGTH(TRIM(referencia_whatsapp)) > 0),
+  ADD CONSTRAINT chk_ec_proceso_sistema CHECK (
+    proceso_sistema IS NULL OR CHAR_LENGTH(TRIM(proceso_sistema)) > 0),
+  ADD CONSTRAINT chk_ec_accion_whatsapp CHECK (referencia_whatsapp IS NULL OR accion='cambio_estado'),
+  ADD CONSTRAINT chk_ec_accion_sistema CHECK (proceso_sistema IS NULL OR accion='cancelacion');

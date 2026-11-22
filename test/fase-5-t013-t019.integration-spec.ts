@@ -125,7 +125,8 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         expect(fk.onDelete).toBe('RESTRICT');
       }
       expect(meta!.foreignKeys).toHaveLength(tabla === 'eventos_cita' ? 4 : 3);
-      expect(meta!.indices).toHaveLength(tabla === 'eventos_cita' ? 5 : 4);
+      // M5 amplía el historial con la búsqueda por referencia externa no secreta.
+      expect(meta!.indices).toHaveLength(tabla === 'eventos_cita' ? 6 : 4);
     });
   });
 
@@ -191,8 +192,9 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         expect(despues[tabla]).toEqual(antes[tabla]);
       }
       expect(await db.getRepository('eventos_cita').count()).toBe(0);
-      expect(await db.getRepository(Cita).findOneByOrFail({ id: a.ocupaciones[0] }))
-        .toMatchObject({ version: 1, costoAceptado: '99.50', nombreContacto: 'Contacto histórico' });
+      // El corte histórico termina en M4; consultar SQL evita exigir columnas de M5.
+      expect((await db.query('SELECT version,costo_aceptado,nombre_contacto FROM citas WHERE id=?', [a.ocupaciones[0]]))[0])
+        .toMatchObject({ version: 1, costo_aceptado: '99.50', nombre_contacto: 'Contacto histórico' });
     });
   });
 

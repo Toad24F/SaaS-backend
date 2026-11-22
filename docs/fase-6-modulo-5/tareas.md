@@ -245,23 +245,23 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
 
 ## 6. Persistencia de automatizaciones
 
-- [ ] **M5-T054 — Crear configuración de automatizaciones** (25 min).
+- [x] **M5-T054 — Crear configuración de automatizaciones** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T005.
   - **Hecho cuando:** Migración, entidad y esquema imponen rangos enteros y valores 12/24 sin modificar citas previas.
 
-- [ ] **M5-T055 — Crear generaciones de condiciones por cita** (25 min).
+- [x] **M5-T055 — Crear generaciones de condiciones por cita** (25 min).
   - **RF:** RF-40–RF-46, RF-59. **Depende de:** M5-T054.
   - **Hecho cuando:** La persistencia admite vencimiento nulo, generación histórica y motivo de seguimiento con FKs de negocio.
 
-- [ ] **M5-T056 — Añadir generación y causa vigente a cita** (25 min).
+- [x] **M5-T056 — Añadir generación y causa vigente a cita** (25 min).
   - **RF:** RF-43–RF-46, RF-49, RF-59. **Depende de:** M5-T055.
   - **Hecho cuando:** Entidad, esquema y migración conservan snapshots y referencian condiciones dentro del mismo negocio.
 
-- [ ] **M5-T057 — Ampliar actores de eventos de cita** (25 min).
+- [x] **M5-T057 — Ampliar actores de eventos de cita** (25 min).
   - **RF:** RF-33, RF-44, RF-60–RF-61. **Depende de:** M5-T056.
   - **Hecho cuando:** Restricciones admiten usuario/sesión/WhatsApp/sistema de forma excluyente sin usuarios ficticios.
 
-- [ ] **M5-T058 — Probar invariantes de eventos ampliados** (25 min).
+- [x] **M5-T058 — Probar invariantes de eventos ampliados** (25 min).
   - **RF:** RF-33, RF-44, RF-60–RF-62. **Depende de:** M5-T057.
   - **Hecho cuando:** Se rechazan actores incompatibles y cambios a eventos; sigue habiendo una versión única por cita.
 
