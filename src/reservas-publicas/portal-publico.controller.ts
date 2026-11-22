@@ -1,5 +1,5 @@
 import { BadRequestException, Body, ConflictException, Controller, Get,
-  Param, Post, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
+  Param, Post, Query, Req, Res, StreamableFile, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { createHash } from 'node:crypto';
 import { ResolverNegocioPublicoService } from './resolver-negocio-publico.service';
@@ -139,6 +139,18 @@ export class PortalPublicoController {
     res.setHeader('Cache-Control', 'no-store');
     try { return await this.catalogo.consultar(slug, validarCatalogoPublico(query)); }
     catch (error) { throw this.errorSeguro(error); }
+  }
+
+  @Get('logos/:id')
+  async consultarLogo(@Param('slug') slug: string, @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response) {
+    // Un logo sustituido deja de estar disponible incluso si se reutiliza su URL anterior.
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    try {
+      const { contenido, mime } = await this.catalogo.consultarLogo(slug, id);
+      return new StreamableFile(contenido, { type: mime });
+    } catch (error) { throw this.errorSeguro(error); }
   }
 
   @Get('disponibilidad')

@@ -29,7 +29,7 @@ import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.m
 import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publicas-http.module';
 import { CitasHttpModule } from './citas/citas-http.module';
 import { ClientesHttpModule } from './clientes/clientes-http.module';
-import { PersonalizacionPortalModule } from './personalizacion-portal/personalizacion-portal.module';
+import { PersonalizacionPortalHttpModule } from './personalizacion-portal/personalizacion-portal-http.module';
 
 @Module({
   imports: [
@@ -76,8 +76,8 @@ import { PersonalizacionPortalModule } from './personalizacion-portal/personaliz
     CitasHttpModule,
     // Habilita lista, ficha, historial, alta y corrección bajo autenticación privada.
     ClientesHttpModule,
-    // Registra persistencia y saneado de la marca del portal.
-    PersonalizacionPortalModule,
+    // Expone carga, publicación y restauración bajo autenticación administrativa.
+    PersonalizacionPortalHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

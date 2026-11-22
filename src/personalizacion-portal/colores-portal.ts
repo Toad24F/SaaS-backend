@@ -34,7 +34,7 @@ function normalizarColor(valor: unknown, campo: keyof ColoresPortal): string {
   return valor.toLowerCase();
 }
 
-export function validarColoresPortal(entrada: ColoresPortal): ColoresPortal {
+export function validarColoresPortal(entrada: Partial<Record<keyof ColoresPortal, unknown>>): ColoresPortal {
   const fondo = normalizarColor(entrada?.fondo, 'fondo');
   const texto = normalizarColor(entrada.texto, 'texto');
   const acento = normalizarColor(entrada.acento, 'acento');

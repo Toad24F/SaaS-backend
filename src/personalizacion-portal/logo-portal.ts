@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import sharp from 'sharp';
 
-const MAX_BYTES_LOGO = 2 * 1024 * 1024;
+export const MAX_BYTES_LOGO = 2 * 1024 * 1024;
 const MAX_DIMENSION_LOGO = 2048;
 const FIRMA_PNG = Buffer.from('89504e470d0a1a0a', 'hex');
 

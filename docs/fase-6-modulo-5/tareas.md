@@ -204,6 +204,7 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
 ## 5. Personalización del portal
 
 Evidencia del lote [M5-T044–M5-T047](resultados-tareas/m5-t044-t047.md).
+Evidencia del lote [M5-T048–M5-T050](resultados-tareas/m5-t048-t050.md).
 
 - [x] **M5-T044 — Crear persistencia de personalización** (25 min).
   - **RF:** RF-26–RF-27, RF-30, RF-61. **Depende de:** M5-T007.
@@ -221,15 +222,15 @@ Evidencia del lote [M5-T044–M5-T047](resultados-tareas/m5-t044-t047.md).
   - **RF:** RF-29–RF-30. **Depende de:** M5-T044.
   - **Hecho cuando:** Pruebas de límites 4.5:1 y 3:1 cubren texto, controles, enlaces y foco sin alterar colores semánticos.
 
-- [ ] **M5-T048 — Publicar configuración atómicamente** (25 min).
+- [x] **M5-T048 — Publicar configuración atómicamente** (25 min).
   - **RF:** RF-26, RF-28–RF-30, RF-62. **Depende de:** M5-T046, M5-T047.
   - **Hecho cuando:** Logo y colores se publican juntos con versión; error o versión obsoleta conserva configuración anterior.
 
-- [ ] **M5-T049 — Implementar restauración y limpieza provisional** (25 min).
+- [x] **M5-T049 — Implementar restauración y limpieza provisional** (25 min).
   - **RF:** RF-27–RF-28, RF-30. **Depende de:** M5-T048.
   - **Hecho cuando:** Restaurar afecta un solo negocio y limpiar provisionales vencidos no elimina recursos vigentes.
 
-- [ ] **M5-T050 — Exponer marca publicada por slug** (25 min).
+- [x] **M5-T050 — Exponer marca publicada por slug** (25 min).
   - **RF:** RF-26, RF-30, RF-61. **Depende de:** M5-T048.
   - **Hecho cuando:** El catálogo y recurso público solo permiten el logo publicado del negocio resuelto.
 

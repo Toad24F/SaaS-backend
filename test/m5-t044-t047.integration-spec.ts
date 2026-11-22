@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
+import { AuditoriaService } from '../src/auditoria/auditoria.service';
 import { AutorizacionService } from '../src/auth/services/autorizacion.service';
 import { COLORES_PREDETERMINADOS_PORTAL } from '../src/personalizacion-portal/colores-portal';
 import { PersonalizacionPortal } from '../src/personalizacion-portal/entities/personalizacion-portal.entity';
@@ -20,7 +21,7 @@ describe('M5-T044–T047 · Persistencia de personalización del portal', () => 
   it('separa recursos por negocio y exige una sola configuración versionada por negocio', async () => {
     await conBaseMigrada(async (db) => {
       const { negocios: [a, b] } = await crearDatosModulo5(db, reloj);
-      const servicio = new PersonalizacionPortalService(db, reloj, new AutorizacionService());
+      const servicio = new PersonalizacionPortalService(db, reloj, new AutorizacionService(), new AuditoriaService());
       const logo = await servicio.guardarLogoProvisional(a.administradorId, 0, await crearPng(), 'image/png');
       const config = db.getRepository(PersonalizacionPortal);
       const configuracion = { version: 1, ...COLORES_PREDETERMINADOS_PORTAL, logoId: logo.id };
@@ -41,7 +42,7 @@ describe('M5-T044–T047 · Persistencia de personalización del portal', () => 
   it('guarda el raster provisional 24 horas y conserva el logo y versión publicados', async () => {
     await conBaseMigrada(async (db) => {
       const { negocios: [a] } = await crearDatosModulo5(db, reloj);
-      const servicio = new PersonalizacionPortalService(db, reloj, new AutorizacionService());
+      const servicio = new PersonalizacionPortalService(db, reloj, new AutorizacionService(), new AuditoriaService());
       const png = await crearPng();
       const anterior = await servicio.guardarLogoProvisional(a.administradorId, 0, png, 'image/png');
       const config = db.getRepository(PersonalizacionPortal);
@@ -66,7 +67,7 @@ describe('M5-T044–T047 · Persistencia de personalización del portal', () => 
   it('rechaza roles ajenos y verifica los límites persistidos del recurso', async () => {
     await conBaseMigrada(async (db) => {
       const { negocios: [a] } = await crearDatosModulo5(db, reloj);
-      const servicio = new PersonalizacionPortalService(db, reloj, new AutorizacionService());
+      const servicio = new PersonalizacionPortalService(db, reloj, new AutorizacionService(), new AuditoriaService());
       const png = await crearPng();
       await expect(servicio.guardarLogoProvisional(a.profesionalId, 0, png, 'image/png')).rejects.toThrow('privilegios');
       await expect(servicio.guardarLogoProvisional(a.recepcionistaId, 0, png, 'image/png')).rejects.toThrow('privilegios');
