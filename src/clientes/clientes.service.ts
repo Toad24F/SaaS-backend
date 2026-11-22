@@ -10,6 +10,7 @@ import { AccesoOperativoService, type ContextoOperativo } from '../citas/acceso-
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { bloquearNegocioAgenda } from '../comun/bloqueos-coordinados';
 import { proyectarHorarioCita } from '../citas/horario-agenda';
+import { ResolucionClienteService } from './resolucion-cliente.service';
 import { validarAltaCliente, validarBusquedaClientes, validarConsultaFicha, validarCorreccionCliente,
   validarIdCliente, validarPaginacionClientes, type DatosCliente } from './clientes.entrada';
 
@@ -23,10 +24,11 @@ function proyectarFicha(ficha: Cliente) {
   return Object.fromEntries(CAMPOS_FICHA.map((k) => [k, ficha[k]])) as Pick<Cliente, typeof CAMPOS_FICHA[number]>;
 }
 
-/** Directorio privado: el teléfono se busca como contacto y nunca decide la identidad de una ficha. */
+/** Directorio privado: el buscador admite teléfonos compartidos y el alta usa la identidad completa. */
 @Injectable()
 export class ClientesService {
-  constructor(private readonly acceso: AccesoOperativoService, private readonly auditoria: AuditoriaService) {}
+  constructor(private readonly acceso: AccesoOperativoService, private readonly auditoria: AuditoriaService,
+    private readonly resolucion: ResolucionClienteService) {}
 
   /** Selección interna para el escritor manual: releer después de sus bloqueos, en su propio commit.
    * El ID es obligatorio; ni un teléfono coincidente ni datos del navegador suplen una ficha ajena.
@@ -43,7 +45,9 @@ export class ClientesService {
     const filtro = validarBusquedaClientes(entrada);
     return this.acceso.ejecutar(identidad, Permiso.CONSULTAR_CLIENTES, async (ctx) => {
       const consulta = ctx.manager.getRepository(Cliente).createQueryBuilder('cliente')
-        .select(CAMPOS_FICHA.map((k) => `cliente.${k}`)).where(this.acceso.alcanceClientes(ctx));
+        .select(CAMPOS_FICHA.map((k) => `cliente.${k}`)).where(this.acceso.alcanceClientes(ctx))
+        // Excluir las fichas absorbidas antes de buscar o calcular si hay otra página.
+        .andWhere('cliente.fusionadoEnId IS NULL');
       if (filtro.busqueda) {
         const compacto = filtro.busqueda.replace(/[\s-]/g, '').replace(/^\+52/, '');
         // Búsqueda parcial por teléfono admite formato mexicano; nombres y símbolos se buscan literalmente.
@@ -82,29 +86,32 @@ export class ClientesService {
   }
 
   async crear(identidad: Identidad, entrada: unknown) {
+    return (await this.crearConMeta(identidad, entrada)).ficha;
+  }
+
+  /** El estado HTTP se decide con el mismo resultado transaccional que la auditoría. */
+  async crearConMeta(identidad: Identidad, entrada: unknown) {
     const datos = validarAltaCliente(entrada);
     return this.acceso.ejecutar(identidad, Permiso.GESTIONAR_CLIENTES, async (inicial) => {
       const ctx = await this.bloquearAcceso(inicial, identidad);
       const actual = await this.acceso.resolverEnTransaccion(ctx.manager, identidad, Permiso.GESTIONAR_CLIENTES);
-      return this.insertarFicha(actual, datos);
+      return this.resolverFicha(actual, datos);
     });
   }
 
-  /** Alta interna del escritor manual: el llamador ya mantiene los bloqueos comunes.
-   * Comparte manager, reloj y auditoría con la cita; nunca abre otro commit ni fusiona por contacto.
+  /** Resolución del contacto capturado por el escritor manual bajo los bloqueos de agenda.
+   * La ficha y, si es nueva, su auditoría comparten el commit de la cita.
    */
-  async crearParaCitaEnTransaccion(manager: EntityManager, identidad: Identidad, entrada: unknown, instante?: Date) {
-    const datos = validarAltaCliente(entrada);
+  async resolverContactoParaCitaEnTransaccion(manager: EntityManager, identidad: Identidad, datos: DatosCliente, instante: Date) {
     const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CREAR_CITA_MANUAL, instante);
-    return this.insertarFicha(ctx, datos);
+    return (await this.resolverFicha(ctx, datos)).ficha;
   }
 
-  private async insertarFicha(ctx: ContextoOperativo, datos: DatosCliente) {
-    // Siempre INSERT: ni teléfono ni nombre coincidentes sobrescriben otra persona.
-    const repositorio = ctx.manager.getRepository(Cliente);
-    const ficha = await repositorio.save(repositorio.create({ ...datos, negocioId: ctx.negocioId, version: 1, creadoEn: ctx.ahora }));
-    await this.registrar(ctx, ficha, null, ['nombreCompleto', 'telefono']);
-    return proyectarFicha(ficha);
+  private async resolverFicha(ctx: ContextoOperativo, datos: DatosCliente) {
+    const { ficha, creada } = await this.resolucion.resolverEnTransaccion(ctx.manager, ctx.negocioId, datos, ctx.ahora);
+    // Reutilizar una ficha conserva su versión, sus datos y su auditoría existente.
+    if (creada) await this.registrar(ctx, ficha, null, ['nombreCompleto', 'telefono']);
+    return { ficha: proyectarFicha(ficha), creada };
   }
 
   async corregir(identidad: Identidad, entradaId: unknown, entrada: unknown) {
@@ -134,7 +141,9 @@ export class ClientesService {
 
   private async exigirFicha(ctx: ContextoOperativo, id: number, bloquear = false): Promise<Cliente> {
     const consulta = ctx.manager.getRepository(Cliente).createQueryBuilder('cliente')
-      .select(CAMPOS_FICHA.map((k) => `cliente.${k}`)).where({ ...this.acceso.alcanceClientes(ctx), id });
+      .select(CAMPOS_FICHA.map((k) => `cliente.${k}`)).where({ ...this.acceso.alcanceClientes(ctx), id })
+      // Al consultar o seleccionar por ID, un origen absorbido devuelve el mismo 404 que un ausente.
+      .andWhere('cliente.fusionadoEnId IS NULL');
     if (bloquear) consulta.setLock('pessimistic_write');
     const ficha = await consulta.getOne();
     if (!ficha) throw new NotFoundException();

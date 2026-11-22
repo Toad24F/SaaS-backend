@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CitasModule } from '../citas/citas.module';
+import { ClientesModule } from '../clientes/clientes.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SesionReservaPublica } from './entities/sesion-reserva-publica.entity';
 import { OperacionApartado } from './entities/operacion-apartado.entity';
@@ -22,7 +23,7 @@ import { MetricasPortalService } from './metricas-portal.service';
  * registro y resolución para la capa HTTP con autorización pública propia. */
 // El forFeature local registra las tres entidades del portal; CitasModule agrega
 // historial e intentos manuales al DataSource sin publicar rutas nuevas.
-@Module({ imports: [CitasModule, DisponibilidadModule, LicenciasModule, TypeOrmModule.forFeature([
+@Module({ imports: [CitasModule, ClientesModule, DisponibilidadModule, LicenciasModule, TypeOrmModule.forFeature([
   SesionReservaPublica, OperacionApartado, IntentoReservaPublica,
 ])], providers: [ResolverNegocioPublicoService, SesionReservaPublicaService,
   ProteccionPortalService, CatalogoPublicoService,

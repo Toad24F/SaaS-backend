@@ -9,7 +9,8 @@ import { esperarBloqueoManual } from './cita-manual';
  * Ambos pools conservan sus transacciones y consultas; la espera rival se observa en MariaDB.
  */
 export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
-  primero: () => Promise<A>, segundo: (app: typeof f.app) => Promise<B>) {
+  primero: () => Promise<A>, segundo: (app: typeof f.app) => Promise<B>,
+  opciones: { tablaEspera?: string; comprobar?: (app: typeof f.app) => Promise<void> } = {}) {
   const modulo = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(DataSource).useValue(f.segunda).overrideProvider(RELOJ).useValue(f.reloj).compile();
   const app = modulo.createNestApplication();
@@ -44,9 +45,15 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
     a = resultado(primero());
     await Promise.race([bloqueado, a.then(() => { throw new Error('El primer escritor no alcanzó la barrera de personal.'); })]);
     b = resultado(segundo(app));
-    await esperarBloqueoManual(f.db, () => conexionB, 'usuarios');
+    // Con profesionales distintos, el rival espera el negocio y no la cuenta del Profesional.
+    await esperarBloqueoManual(f.db, () => conexionB, opciones.tablaEspera ?? 'usuarios');
     expect(conexionA).toBeGreaterThan(0); expect(conexionB).toBeGreaterThan(0); expect(conexionA).not.toBe(conexionB);
-    abrir(); return { primero: await a, segundo: await b };
+    abrir();
+    const resultados = { primero: await a, segundo: await b };
+    // Passport comparte la estrategia JWT entre aplicaciones. Los reintentos HTTP
+    // deben terminar antes de cerrar la segunda aplicación y su conexión.
+    await opciones.comprobar?.(app);
+    return resultados;
   } finally {
     abrir(); await Promise.allSettled([a, b].filter(p => p !== undefined));
     for (const espia of espias) espia.mockRestore();

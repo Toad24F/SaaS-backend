@@ -1,5 +1,6 @@
 import { validarAltaCliente, validarCorreccionCliente, validarBusquedaClientes, validarIdCliente } from '../src/clientes/clientes.entrada';
 import { ClientesService } from '../src/clientes/clientes.service';
+import { ResolucionClienteService } from '../src/clientes/resolucion-cliente.service';
 import type { AccesoOperativoService } from '../src/citas/acceso-operativo.service';
 import { AuditoriaService } from '../src/auditoria/auditoria.service';
 
@@ -7,7 +8,9 @@ const valido = { nombreCompleto: '  Ana Pérez  ', telefono: '+52 614-123-4567' 
 const identidad = { sub: 1, sesionId: 'sesion' };
 function sinDatos() {
   const acceso = { ejecutar: jest.fn() };
-  return { acceso, servicio: new ClientesService(acceso as unknown as AccesoOperativoService, new AuditoriaService()) };
+  // Se conserva el resolutor real. La entrada inválida falla antes de llegar a persistencia.
+  return { acceso, servicio: new ClientesService(acceso as unknown as AccesoOperativoService,
+    new AuditoriaService(), new ResolucionClienteService()) };
 }
 
 describe('M4-T037: entradas cerradas y contacto normalizado', () => {

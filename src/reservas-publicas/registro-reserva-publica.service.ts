@@ -6,7 +6,7 @@ import { RELOJ, type Reloj } from '../comun/reloj';
 import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
 import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.entity';
 import { Cita } from '../disponibilidad/entities/cita.entity';
-import { Cliente } from '../disponibilidad/entities/cliente.entity';
+import { ResolucionClienteService } from '../clientes/resolucion-cliente.service';
 import { EventoCita } from '../citas/entities/evento-cita.entity';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
@@ -37,6 +37,7 @@ export class RegistroReservaPublicaService {
     private readonly intentos: IntentosReservaPublicaService,
     private readonly cupo: CupoTelefonicoService,
     private readonly motor: MotorDisponibilidadService,
+    private readonly clientes: ResolucionClienteService,
     @Inject(RELOJ) private readonly reloj: Reloj) {}
 
   async registrar(negocioId: number, titularHash: string, clave: string,
@@ -173,9 +174,10 @@ export class RegistroReservaPublicaService {
     intento: IntentoReservaPublica, apartado: BloqueoTemporal,
     contacto: ContactoReservaPublica, huella: string, inicioUtc: Date,
     finUtc: Date, copia: CopiaHistorica, ahora: Date): Promise<ResultadoReservaPublica> {
-    const cliente = await manager.getRepository(Cliente).save({
-      negocioId: intento.negocioId, nombreCompleto: contacto.nombre,
-      telefono: contacto.telefono, email: null });
+    // El negocio ya está bloqueado. La ficha aporta solo el vínculo interno.
+    // El snapshot sigue copiando este formulario y el portal devuelve el resumen de su propia cita.
+    const { ficha: cliente } = await this.clientes.resolverEnTransaccion(manager, intento.negocioId,
+      { nombreCompleto: contacto.nombre, telefono: contacto.telefono }, ahora);
     // 18 caracteres aleatorios más prefijo caben en VARCHAR(20) y la unicidad
     // global de folio se mantiene en la base de datos.
     const folio = `P-${randomBytes(9).toString('hex').toUpperCase()}`;

@@ -72,19 +72,21 @@ Evidencia del lote [M5-T008–M5-T013](resultados-tareas/m5-t008-t013.md).
   - **RF:** RF-15–RF-19, RF-24. **Depende de:** M5-T012.
   - **Hecho cuando:** La resolución devuelve ficha única, crea cuando no existe y rechaza ambigüedad sin selección arbitraria.
 
-- [ ] **M5-T014 — Integrar resolución en registro manual** (25 min).
+Evidencia del lote [M5-T014–M5-T017](resultados-tareas/m5-t014-t017.md).
+
+- [x] **M5-T014 — Integrar resolución en registro manual** (25 min).
   - **RF:** RF-17–RF-19, RF-23, RF-62. **Depende de:** M5-T013.
   - **Hecho cuando:** El escritor manual reutiliza o crea dentro de su transacción y conserva selección explícita autorizada.
 
-- [ ] **M5-T015 — Integrar resolución en registro público** (25 min).
+- [x] **M5-T015 — Integrar resolución en registro público** (25 min).
   - **RF:** RF-17–RF-19, RF-23, RF-25, RF-62. **Depende de:** M5-T013.
   - **Hecho cuando:** La reserva pública reutiliza la ficha sin revelar antecedentes y revierte cliente/cita ante fallo.
 
-- [ ] **M5-T016 — Integrar alta independiente y fichas fusionadas** (25 min).
+- [x] **M5-T016 — Integrar alta independiente y fichas fusionadas** (25 min).
   - **RF:** RF-15, RF-17, RF-19, RF-25. **Depende de:** M5-T013, M5-T011.
   - **Hecho cuando:** El alta coincidente devuelve ficha existente; una ficha fusionada no aparece como seleccionable.
 
-- [ ] **M5-T017 — Probar carrera de identidad público/manual** (25 min).
+- [x] **M5-T017 — Probar carrera de identidad público/manual** (25 min).
   - **RF:** RF-15–RF-18, RF-62. **Depende de:** M5-T014, M5-T015, M5-T004.
   - **Hecho cuando:** Dos escritores reales simultáneos dejan una única ficha activa y resultados de cita coherentes.
 

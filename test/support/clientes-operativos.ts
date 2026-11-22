@@ -5,6 +5,7 @@ import { PoliticaAccesoLicenciaService } from '../../src/licencias/services/poli
 import { AccesoOperativoService } from '../../src/citas/acceso-operativo.service';
 import { AuditoriaService } from '../../src/auditoria/auditoria.service';
 import { ClientesService } from '../../src/clientes/clientes.service';
+import { ResolucionClienteService } from '../../src/clientes/resolucion-cliente.service';
 import { crearAccesoOperativo } from './acceso-operativo';
 
 /** Construye servicios reales para dos conexiones de la misma base test efímera. */
@@ -13,7 +14,8 @@ export async function crearClientesOperativos(db: DataSource, segunda: DataSourc
   const auditoria = new AuditoriaService();
   const crear = (conexion: DataSource, audit: AuditoriaService) => {
     const acceso = new AccesoOperativoService(conexion, new AutorizacionService(), new PoliticaAccesoLicenciaService(), f.reloj);
-    return { acceso, servicio: new ClientesService(acceso, audit) };
+    // Cada servicio resuelve identidades con el manager de su propia conexión.
+    return { acceso, servicio: new ClientesService(acceso, audit, new ResolucionClienteService()) };
   };
   const primera = crear(db, auditoria);
   const identidad = (rol: Rol, negocio = 0) => {

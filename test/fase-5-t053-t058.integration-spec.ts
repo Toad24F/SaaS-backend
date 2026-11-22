@@ -99,12 +99,14 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
     });
   });
 
-  it('T054/T056 cliente nuevo no fusiona teléfono ni nombre; su auditoría y cita se guardan juntos', async () => {
+  it('T054/T056 cliente nuevo con otro nombre comparte teléfono; su auditoría y cita se guardan juntos', async () => {
     await conBaseOperativa(async (db) => {
       const f = await escenario(db);
       try {
         const ficha = await db.getRepository(Cliente).findOneByOrFail({ id: f.entrada.clienteId });
-        const entrada = { ...f.nueva, clienteNuevo: { nombreCompleto: ficha.nombreCompleto, telefono: ficha.telefono } };
+        // El nombre distinto mantiene la cobertura de alta real y teléfono compartido.
+        const nombreCompleto = `${ficha.nombreCompleto} Segunda persona`;
+        const entrada = { ...f.nueva, clienteNuevo: { nombreCompleto, telefono: ficha.telefono } };
         const clave = randomUUID();
         await f.intentos.preparar(f.identidad(), clave, entrada);
         const antes = await db.getRepository(Cliente).find();
@@ -113,7 +115,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         expect(await db.getRepository(Cliente).count()).toBe(antes.length + 1);
         expect(await db.getRepository(Cliente).findBy({ id: ficha.id })).toEqual([ficha]);
         expect(await db.getRepository(Cliente).findOneByOrFail({ id: resultado.clienteId })).toMatchObject({
-          negocioId: f.negocios[0].id, version: 1, nombreCompleto: ficha.nombreCompleto, telefono: ficha.telefono, creadoEn: f.reloj.ahora() });
+          negocioId: f.negocios[0].id, version: 1, nombreCompleto, telefono: ficha.telefono, creadoEn: f.reloj.ahora() });
         const auditoria = await db.getRepository(EventoAuditoria).findBy({ recursoTipo: 'cliente', recursoId: resultado.clienteId });
         expect(auditoria).toHaveLength(1);
         expect(auditoria[0]).toMatchObject({ accion: 'cliente_creado', actorUsuarioId: f.identidad().sub, ocurridoEn: f.reloj.ahora() });

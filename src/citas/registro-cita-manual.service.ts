@@ -50,10 +50,10 @@ export class RegistroCitaManualService {
     // Los recursos y el Profesional permanecen bloqueados: solo se copian valores del servidor
     // leídos después de esperar. La duración y separación son las de la revalidación del motor.
     const copia = await this.copiaHistorica(ctx);
-    const clienteId = seleccion.clienteId !== undefined ? seleccion.clienteId
-      : (await this.clientes.crearParaCitaEnTransaccion(manager, identidad, contacto, ctx.ahora)).id;
-    // La ficha existente y su contacto ya se releían por ID/negocio dentro de esta transacción.
-    // Para una persona nueva la inserción y su auditoría comparten ahora el commit de la cita.
+    // El ID explícito ya fue revalidado. Para contacto capturado, la identidad decide el vínculo
+    // y la cita conserva lo escrito en su propio snapshot, incluso si reutiliza una ficha.
+    const clienteId = seleccion.clienteId ??
+      (await this.clientes.resolverContactoParaCitaEnTransaccion(manager, identidad, contacto, ctx.ahora)).id;
     const repositorio = manager.getRepository(Cita);
     const cita = await repositorio.save(repositorio.create({ negocioId: ctx.negocioId, clienteId,
       sucursalId: seleccion.sucursalId, personalId: seleccion.personalId, servicioId: seleccion.servicioId,
