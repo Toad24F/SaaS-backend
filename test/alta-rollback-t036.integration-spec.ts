@@ -161,7 +161,7 @@ describe('M1-T036: alta completa, identidad y rollback conjunto', () => {
         proximoIntentoEn: new Date(reloj.ahora().getTime() + 60000) });
       expect(await estado(segunda, false)).toEqual(dominioAntes);
       const consulta = await procesador.listar(resultado.negocioId, actor.id);
-      expect(consulta[0]).toMatchObject({ estado: 'fallido', ultimoError: expect.any(String), confirmadoEn: null });
+      expect(consulta.envios[0]).toMatchObject({ estado: 'fallido', ultimoError: expect.any(String), confirmadoEn: null });
       // Solo el envío cambia; negocio/licencia/invitación/código/auditoría permanecen intactos.
       const envio = (await estado(segunda)).envios_correo[0];
       expect(envio).toMatchObject({ arrendamiento_id: null, arrendado_hasta: null, estado: 'fallido' });

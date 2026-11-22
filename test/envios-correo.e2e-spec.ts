@@ -69,9 +69,10 @@ describe('M1-T034: consulta y reintento HTTP', () => {
         const post = (url: string, body: object) => request(app.getHttpServer()).post(url)
           .auth(token, { type: 'bearer' }).send(body);
         const consulta = await get(ruta).expect(200);
-        expect(consulta.body[0]).toMatchObject({ estado: 'pendiente', intentos: 0, confirmadoEn: null });
+        expect(consulta.body).toMatchObject({ pagina: 1, limite: 25, total: 1 });
+        expect(consulta.body.envios[0]).toMatchObject({ estado: 'pendiente', intentos: 0, confirmadoEn: null });
         expect(JSON.stringify(consulta.body)).not.toContain(codigoUtilizable);
-        expect(Object.keys(consulta.body[0])).not.toEqual(expect.arrayContaining(['codigoHash', 'nonce', 'arrendamientoId']));
+        expect(Object.keys(consulta.body.envios[0])).not.toEqual(expect.arrayContaining(['codigoHash', 'nonce', 'arrendamientoId']));
         await get('/negocios/4294967295/envios').expect(404);
         await post(`/negocios/${activo.negocioId}/reintentar-envio`, { envioId: envio.id }).expect(404);
         await post(retry, { envioId: envio.id, codigo: 'extra' }).expect(400);

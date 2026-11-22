@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, HttpCode, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, HttpCode, Query, UseGuards } from '@nestjs/common';
 import { ValidateBy } from 'class-validator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -8,6 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { NegocioIdDto } from '../negocios/dto/negocios-http.dto';
 import { ProcesadorCorreoService } from './procesador-correo.service';
+import { ConsultarEnviosDto } from './dto/consultar-envios.dto';
 
 export class ReintentarEnvioDto {
   // BIGINT se conserva como cadena; no pasa por Number ni pierde precisión.
@@ -28,9 +29,11 @@ export class ReintentarEnvioDto {
 export class EnviosCorreoController {
   constructor(private readonly procesador: ProcesadorCorreoService) { }
 
-  @Get(':id/envios')//muestra los envíos de correo pendientes y procesados para un negocio específico
-  listar(@Param() parametros: NegocioIdDto, @CurrentUser() actor: JwtPayload) {
-    return this.procesador.listar(parametros.id, actor.sub);
+  // La consulta validada produce una página y sus contadores del mismo filtro.
+  @Get(':id/envios')
+  listar(@Param() parametros: NegocioIdDto, @Query() filtros: ConsultarEnviosDto,
+    @CurrentUser() actor: JwtPayload) {
+    return this.procesador.listar(parametros.id, actor.sub, filtros);
   }
 
   @Post(':id/reintentar-envio')//reintenta un envío de correo específico para un negocio, solo si el actor es un superadministrador activo y el negocio existe

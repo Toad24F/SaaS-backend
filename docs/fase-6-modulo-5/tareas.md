@@ -165,15 +165,15 @@ Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con i
   - **RF:** RF-01–RF-05, RF-61. **Depende de:** M5-T032.
   - **Hecho cuando:** Casos de dos negocios y dos profesionales rechazan IDs manipulados, cliente arbitrario y sesión revocada.
 
-- [ ] **M5-T035 — Validar filtros y páginas de correos** (25 min).
+- [x] **M5-T035 — Validar filtros y páginas de correos** (25 min).
   - **RF:** RF-08, RF-14. **Depende de:** M5-T005.
   - **Hecho cuando:** Se aceptan filtros combinados y límites previstos y se rechazan tipos/fechas/rangos inválidos.
 
-- [ ] **M5-T036 — Implementar consulta y totales de correos** (25 min).
+- [x] **M5-T036 — Implementar consulta y totales de correos** (25 min).
   - **RF:** RF-08–RF-09. **Depende de:** M5-T035.
   - **Hecho cuando:** Filas, total y contadores aplican los mismos filtros en una lectura consistente.
 
-- [ ] **M5-T037 — Verificar paginación y contadores de correos** (25 min).
+- [x] **M5-T037 — Verificar paginación y contadores de correos** (25 min).
   - **RF:** RF-08–RF-09, RF-14, RF-61. **Depende de:** M5-T036, M5-T003.
   - **Hecho cuando:** Más de una página, estado filtrado y página vacía mantienen contadores correctos y aislamiento.
 
