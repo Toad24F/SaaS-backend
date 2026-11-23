@@ -3,7 +3,7 @@ import { Rol } from '../src/auth/enums/rol.enum';
 import { CambioHorarioCitaService } from '../src/citas/cambio-horario-cita.service';
 import { conAgendaHttp } from './support/agenda-http';
 import { prepararMovimiento, DESTINO_HORARIO } from './support/horario-cita';
-import { filasManuales } from './support/cita-manual';
+import { filasManuales, vinculoNuevaCondicion } from './support/cita-manual';
 import { situarSesion } from './support/acceso-operativo';
 
 /** La frontera HTTP usa JWT y MariaDB reales; las comparaciones completas detectan escrituras parciales. */
@@ -21,7 +21,8 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
       expect(r.body).toEqual({ id: m.cita.id, folio: m.cita.folio, estado: 'confirmada', version: 2, zonaHoraria: m.cita.zonaHoraria,
         inicioUtc: '2026-11-09T15:20:00.000Z', finUtc: '2026-11-09T15:50:00.000Z', finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
       const despues = await filasManuales(f.db);
-      expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, version: 2,
+      const condicion = await vinculoNuevaCondicion(f.db, original);
+      expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, ...condicion, version: 2,
         inicioUtc: new Date(r.body.inicioUtc), finUtc: new Date(r.body.finUtc), finOcupacionUtc: new Date(r.body.finOcupacionUtc) } : c));
       expect(despues.clientes).toEqual(antes.clientes); expect(despues.intentos).toEqual(antes.intentos); expect(despues.auditoria).toEqual(antes.auditoria);
       expect(despues.eventos.slice(0, -1)).toEqual(antes.eventos);
@@ -45,8 +46,11 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
     await conAgendaHttp(async f => {
       const m = await prepararMovimiento(f); const antes = await filasManuales(f.db);
       expect((await request(f.http).patch(m.ruta).send(DESTINO_HORARIO).expect(401)).headers['cache-control']).toBe('no-store');
-      for (const actor of f.actores.filter(a => [Rol.PROFESIONAL, Rol.SUPERADMIN].includes(a.rol))) {
-        expect((await request(f.http).patch(m.ruta).set('Authorization', `Bearer ${f.token(actor.id)}`).send(DESTINO_HORARIO).expect(403)).headers['cache-control']).toBe('no-store');
+      // El Profesional ajeno recibe la misma protección que cualquier otra cita fuera de su alcance.
+      for (const actor of f.actores.filter((a) => a.rol === Rol.SUPERADMIN || (a.rol === Rol.PROFESIONAL && a.id !== m.cita.personalId))) {
+        const denegada = await request(f.http).patch(m.ruta).set('Authorization', `Bearer ${f.token(actor.id)}`).send(DESTINO_HORARIO)
+          .expect(actor.rol === Rol.SUPERADMIN ? 403 : 404);
+        expect(denegada.headers['cache-control']).toBe('no-store');
       }
       const ajena = await request(f.http).patch(`/citas/${f.negocios[1].ocupaciones[0]}/horario`).set('Authorization', m.auth).send(DESTINO_HORARIO).expect(404);
       const ausente = await request(f.http).patch('/citas/4294967295/horario').set('Authorization', m.auth).send(DESTINO_HORARIO).expect(404);
@@ -142,7 +146,8 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
         else {
           expect(r.body).toMatchObject({ id: m.cita.id, folio: m.cita.folio, version: 2, finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
           const despues = await filasManuales(f.db);
-          expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, version: 2, inicioUtc: new Date(r.body.inicioUtc), finUtc: new Date(r.body.finUtc), finOcupacionUtc: new Date(r.body.finOcupacionUtc) } : c));
+          const condicion = await vinculoNuevaCondicion(f.db, antes.citas.find((c) => c.id === m.cita.id)!);
+          expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, ...condicion, version: 2, inicioUtc: new Date(r.body.inicioUtc), finUtc: new Date(r.body.finUtc), finOcupacionUtc: new Date(r.body.finOcupacionUtc) } : c));
           expect(despues.citas.filter(c => c.folio === m.cita.folio)).toHaveLength(1);
         }
         expect(await f.db.query('SELECT * FROM bloqueos_temporales ORDER BY id')).toEqual(apartados);

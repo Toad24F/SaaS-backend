@@ -69,9 +69,8 @@ export class AccionesWhatsappService {
       || (condicion.estadoPolitica !== 'pendiente' && condicion.estadoPolitica !== 'seguimiento_manual')
       || ahora >= limiteAccion(cita, condicion)) return 'no_aplicable';
 
-    const hashEsperado = hashWhatsapp(this.payload(envio, cita, condicion, canal, limiteAccion(cita, condicion)));
     const remitenteEsperado = huellaRemitenteWhatsapp(secretoApp, canal.remitenteExternoId, envio.destinoE164.slice(1));
-    if (!iguales(hashEsperado, accion.tokenHash) || !iguales(accion.tokenHash, accionHash)
+    if (!this.correspondeAlContexto(accion, envio, cita, condicion, canal) || !iguales(accion.tokenHash, accionHash)
       || !iguales(remitenteEsperado, remitenteHash)) return 'no_aplicable';
     if (!envio.referenciaExterna && (envio.estado === 'incierto'
       || (envio.estado === 'en_proceso' && envio.inicioTransporteEn))) return 'esperando_envio';
@@ -91,6 +90,14 @@ export class AccionesWhatsappService {
       versionResultante: version, valoresAntes: { estado: cita.estado, version: cita.version },
       valoresDespues: { estado: 'confirmada', version }, motivo: null });
     return 'aplicada';
+  }
+
+  /** El botón ofrecido también debe seguir siendo verificable para que su entrega habilite una cancelación. */
+  correspondeAlContexto(accion: AccionConfirmacion, envio: EnvioWhatsapp, cita: Cita,
+    condicion: CondicionConfirmacionCita, canal: CanalWhatsapp): boolean {
+    const limite = limiteAccion(cita, condicion);
+    return this.habilitada && accion.expiraEn.getTime() === limite.getTime()
+      && iguales(accion.tokenHash, hashWhatsapp(this.payload(envio, cita, condicion, canal, limite)));
   }
 
   private payload(envio: EnvioWhatsapp, cita: Cita, condicion: CondicionConfirmacionCita,

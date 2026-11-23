@@ -1,6 +1,7 @@
 import type { DataSource } from 'typeorm';
 import { Rol } from '../../src/auth/enums/rol.enum';
 import { Cita } from '../../src/disponibilidad/entities/cita.entity';
+import { CondicionConfirmacionCita } from '../../src/automatizaciones/entities/condicion-confirmacion-cita.entity';
 import { Cliente } from '../../src/disponibilidad/entities/cliente.entity';
 import { EventoCita } from '../../src/citas/entities/evento-cita.entity';
 import { IntentoCitaManual } from '../../src/citas/entities/intento-cita-manual.entity';
@@ -34,6 +35,13 @@ export async function filasManuales(db: DataSource) {
     eventos: await db.getRepository(EventoCita).find({ order: { id: 'ASC' } }),
     auditoria: await db.getRepository(EventoAuditoria).find({ order: { id: 'ASC' } }),
     intentos: await db.getRepository(IntentoCitaManual).find({ order: { id: 'ASC' } }) };
+}
+
+/** Obtiene el vínculo esperado sin leerlo de la cita que se compara en la regresión. */
+export async function vinculoNuevaCondicion(db: DataSource, cita: Cita) {
+  const generacion = (cita.generacionAutomatizacion ?? 0) + 1;
+  const condicion = await db.manager.findOneByOrFail(CondicionConfirmacionCita, { negocioId: cita.negocioId, citaId: cita.id, generacion });
+  return { generacionAutomatizacion: generacion, condicionVigenteId: condicion.id };
 }
 
 /** Observar la conexión exacta esperando evita atribuir una carrera a simples promesas simultáneas. */

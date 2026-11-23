@@ -4,6 +4,7 @@ import { RELOJ, RelojSistema } from '../comun/reloj';
 import { LicenciasModule } from '../licencias/licencias.module';
 import { AccionesWhatsappService, CLAVE_ACCIONES_WHATSAPP } from './acciones-whatsapp.service';
 import { ArrendamientoWhatsappService } from './arrendamiento-whatsapp.service';
+import { CancelacionAutomaticaCitasService } from './cancelacion-automatica-citas.service';
 import { AccionConfirmacion } from './entities/accion-confirmacion.entity';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
@@ -33,10 +34,11 @@ import { CONFIGURACION_WEBHOOK_WHATSAPP, type ConfiguracionWebhookWhatsapp, Webh
         acciones.habilitada && webhook.secretoApp ? acciones.preparar.bind(acciones) : undefined },
     AccionesWhatsappService,
     ArrendamientoWhatsappService,
+    CancelacionAutomaticaCitasService,
     ProcesadorWhatsappService,
     RecepcionWhatsappService,
   ],
-  exports: [ProcesadorWhatsappService],
+  exports: [ProcesadorWhatsappService, CancelacionAutomaticaCitasService],
 })
 export class EnviosWhatsappModule {}
 

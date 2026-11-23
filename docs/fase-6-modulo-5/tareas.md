@@ -416,29 +416,35 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 ## 9. Cancelador, cambios y recordatorios
 
-- [ ] **M5-T088 — Seleccionar condiciones vencidas** (25 min).
+- [x] **M5-T088 — Seleccionar condiciones vencidas** (25 min).
   - **RF:** RF-39–RF-44. **Depende de:** M5-T055, M5-T077.
   - **Hecho cuando:** Trabajos candidatos se toman por lotes y tiempo del servidor sin tratar consulta previa como autorización.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T089 — Aplicar cancelación automática segura** (25 min).
+- [x] **M5-T089 — Aplicar cancelación automática segura** (25 min).
   - **RF:** RF-37–RF-38, RF-44–RF-45, RF-60. **Depende de:** M5-T088, M5-T083, M5-T058.
   - **Hecho cuando:** Solo Pendiente futura con entrega válida se cancela una vez, con causa y liberación de su ocupación.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T090 — Derivar excepciones a seguimiento manual** (25 min).
+- [x] **M5-T090 — Derivar excepciones a seguimiento manual** (25 min).
   - **RF:** RF-37–RF-38, RF-42, RF-44. **Depende de:** M5-T089.
   - **Hecho cuando:** Sin entrega, entrega tardía o inicio alcanzado queda seguimiento terminal para esa generación.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T091 — Invalidar generación al reprogramar** (25 min).
+- [x] **M5-T091 — Invalidar generación al reprogramar** (25 min).
   - **RF:** RF-06–RF-07, RF-35, RF-43, RF-48. **Depende de:** M5-T085, M5-T066, M5-T031.
   - **Hecho cuando:** Mover deja Confirmada, invalida acción anterior y calcula nueva programación preservando origen/snapshots.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T092 — Integrar reactivación y limpieza de causa** (25 min).
+- [x] **M5-T092 — Integrar reactivación y limpieza de causa** (25 min).
   - **RF:** RF-06–RF-07, RF-44, RF-48, RF-49. **Depende de:** M5-T091, M5-T089.
   - **Hecho cuando:** Reactivar revalida disponibilidad, deja Confirmada y limpia causa vigente sin borrar historial.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T093 — Tratar vuelta de Confirmada a Pendiente** (25 min).
+- [x] **M5-T093 — Tratar vuelta de Confirmada a Pendiente** (25 min).
   - **RF:** RF-46, RF-48. **Depende de:** M5-T092.
   - **Hecho cuando:** La transición anula recordatorio y genera seguimiento manual sin reutilizar vencimiento.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
 - [ ] **M5-T094 — Programar recordatorio al confirmar** (25 min).
   - **RF:** RF-47–RF-48, RF-62. **Depende de:** M5-T085, M5-T069.

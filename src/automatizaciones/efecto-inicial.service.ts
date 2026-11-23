@@ -4,9 +4,8 @@ import { Cita } from '../disponibilidad/entities/cita.entity';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
 import { ConfiguracionAutomatizaciones } from './entities/configuracion-automatizaciones.entity';
-import { EnvioWhatsapp, type TipoEnvioWhatsapp } from './entities/envio-whatsapp.entity';
-import { calcularRecordatorio, calcularVencimientoConfirmacion } from './politica-temporal';
-import { resumenWhatsapp } from './plantillas-whatsapp';
+import { guardarEnvioCita, programarRecordatorioCita } from './envios-cita';
+import { calcularVencimientoConfirmacion } from './politica-temporal';
 
 /** Añade la política y los trabajos al mismo manager de la cita; nunca llama al proveedor. */
 @Injectable()
@@ -44,32 +43,11 @@ export class EfectoInicialService {
     await manager.update(Cita, { id: cita.id, negocioId: cita.negocioId },
       { generacionAutomatizacion: generacion, condicionVigenteId: condicion.id });
     if (!comunicable) return;
-    // El trabajo conserva únicamente el resumen histórico que necesita la plantilla.
-    const parametros = resumenWhatsapp(cita);
-    const destino = `+52${cita.telefonoContacto}`;
     // La unicidad por cita, generación y tipo es la última barrera ante reintentos concurrentes.
-    await this.guardarEnvio(manager, cita, generacion, manual ? 'inicial_confirmada' : 'inicial_pendiente',
-      destino, parametros, ahora, vencimientoUtc ?? cita.inicioUtc);
+    await guardarEnvioCita(manager, cita, generacion, manual ? 'inicial_confirmada' : 'inicial_pendiente', ahora, vencimientoUtc ?? cita.inicioUtc);
     if (manual) {
-      const recordatorio = calcularRecordatorio(ahora, cita.inicioUtc,
+      await programarRecordatorioCita(manager, cita, generacion, ahora,
         configuracion?.recordatorioHoras ?? 24, politica.categoria === 'proxima');
-      if (recordatorio) await this.guardarEnvio(manager, cita, generacion, 'recordatorio',
-        destino, parametros, recordatorio,
-        new Date(Math.min(cita.inicioUtc.getTime(), recordatorio.getTime() + 5 * 60_000)));
     }
-  }
-
-  private async guardarEnvio(manager: EntityManager, cita: Cita, generacion: number,
-    tipo: TipoEnvioWhatsapp, destinoE164: string, parametrosPlantilla: Record<string, unknown>,
-    programadoEn: Date, utilHasta: Date): Promise<void> {
-    if (utilHasta <= programadoEn) return;
-    const repositorio = manager.getRepository(EnvioWhatsapp);
-    await repositorio.save(repositorio.create({ negocioId: cita.negocioId,
-      citaId: cita.id, generacion, tipo,
-      claveEfecto: `cita:${cita.negocioId}:${cita.id}:${generacion}:${tipo}`,
-      destinoE164, parametrosPlantilla, programadoEn, utilHasta,
-      estado: 'pendiente', intentos: 0, proximoIntentoEn: programadoEn,
-      arrendamientoId: null, arrendadoHasta: null, referenciaExterna: null,
-      aceptadoEn: null, entregadoEn: null, leidoEn: null, ultimoError: null }));
   }
 }

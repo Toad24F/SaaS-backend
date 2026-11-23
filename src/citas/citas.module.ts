@@ -13,6 +13,7 @@ import { CambioEstadoCitaService } from './cambio-estado-cita.service';
 
 import { CambioHorarioCitaService } from './cambio-horario-cita.service';
 import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
+import { CambiosPoliticaCitaService } from '../automatizaciones/cambios-politica-cita.service';
 import { CondicionConfirmacionCita } from '../automatizaciones/entities/condicion-confirmacion-cita.entity';
 import { EnvioWhatsapp } from '../automatizaciones/entities/envio-whatsapp.entity';
 import { CanalWhatsapp } from '../automatizaciones/entities/canal-whatsapp.entity';
@@ -24,6 +25,6 @@ import { ConfiguracionAutomatizaciones } from '../automatizaciones/entities/conf
 @Module({ imports: [AccesoOperativoModule, DisponibilidadModule, ClientesModule, TypeOrmModule.forFeature([
   EventoCita, IntentoCitaManual, CondicionConfirmacionCita, EnvioWhatsapp,
   CanalWhatsapp, ConfiguracionAutomatizaciones])],
-  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, CupoTelefonicoService, EfectoInicialService],
+  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, CupoTelefonicoService, EfectoInicialService, CambiosPoliticaCitaService],
   exports: [TypeOrmModule, AccesoOperativoModule, ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, EfectoInicialService] })
 export class CitasModule {}

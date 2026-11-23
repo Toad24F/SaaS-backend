@@ -10,11 +10,13 @@ import { AccesoOperativoService } from './acceso-operativo.service';
 import { validarCambioEstado } from './cambio-estado.entrada';
 import { validarIdCita } from './consulta-cita.entrada';
 import { EventoCita } from './entities/evento-cita.entity';
+import { CambiosPoliticaCitaService } from '../automatizaciones/cambios-politica-cita.service';
 
 /** Escritor de estados: versión y evento comparten commit y el bloqueo común del Profesional. */
 @Injectable()
 export class CambioEstadoCitaService {
-  constructor(private readonly acceso: AccesoOperativoService, private readonly motor: MotorDisponibilidadService) {}
+  constructor(private readonly acceso: AccesoOperativoService, private readonly motor: MotorDisponibilidadService,
+    private readonly politica: CambiosPoliticaCitaService) {}
 
   async cambiar(identidad: Pick<JwtPayload, 'sub' | 'sesionId'>, entradaId: unknown, entrada: unknown) {
     const id = validarIdCita(entradaId);
@@ -58,14 +60,22 @@ export class CambioEstadoCitaService {
         if (!validacion.valido) throw new ConflictException();
       }
       const version = cita.version + 1;
+      const cambiaGeneracion = cita.estado === 'cancelada' || (cita.estado === 'confirmada' && datos.estado === 'pendiente');
+      // El motor dio luz verde antes de sustituir la generación de una reactivación.
+      const condicion = cambiaGeneracion ? await this.politica.sustituir(manager, cita, cita, ctx.ahora,
+        datos.estado === 'confirmada' ? 'confirmada' : 'seguimiento_manual') : {};
+      if (!cambiaGeneracion && (datos.estado === 'cancelada' || (cita.estado === 'pendiente' && datos.estado === 'confirmada'))) {
+        await this.politica.cerrarCondicion(manager, cita, ctx.ahora, datos.estado);
+      }
       const actualizada = await manager.getRepository(Cita).update({ id, negocioId: ctx.negocioId, version: cita.version },
-        { estado: datos.estado, version });
+        { estado: datos.estado, version, causaCancelacion: null, ...condicion });
       if (actualizada.affected !== 1) throw new ConflictException();
       // Se auditan solo los valores operativos que cambian; contacto y notas de atención permanecen en su snapshot.
-      await manager.getRepository(EventoCita).insert({ negocioId: ctx.negocioId, citaId: id, actorUsuarioId: ctx.actorId,
+      await manager.save(EventoCita, { negocioId: ctx.negocioId, citaId: id, actorUsuarioId: ctx.actorId,
         sesionPublicaId: null, accion: datos.estado === 'cancelada' ? 'cancelacion' : cita.estado === 'cancelada' ? 'reactivacion' : 'cambio_estado',
-        ocurridoEn: ctx.ahora, versionResultante: version, valoresAntes: { estado: cita.estado, version: cita.version },
-        valoresDespues: { estado: datos.estado, version }, motivo: datos.motivo });
+        ocurridoEn: ctx.ahora, versionResultante: version, valoresAntes: { estado: cita.estado, version: cita.version,
+          ...(cita.causaCancelacion ? { causaCancelacion: cita.causaCancelacion } : {}) },
+        valoresDespues: { estado: datos.estado, version, ...(cita.causaCancelacion ? { causaCancelacion: null } : {}) }, motivo: datos.motivo });
       return this.proyectar({ ...cita, estado: datos.estado, version });
     }, 'READ COMMITTED');
   }

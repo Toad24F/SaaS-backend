@@ -27,7 +27,7 @@ const CAMPOS_RESUMEN = ['id', 'version', 'negocioId', 'sucursalId', 'personalId'
 // Solo se publica el contrato operativo: una fila JSON antigua no puede introducir contacto o secretos.
 // Estado y versión anteriores/nuevos conservan la trazabilidad de las correcciones autorizadas.
 const CAMPOS_EVENTO = new Set(['estado', 'version', 'origen', 'folio', 'clienteId', 'sucursalId', 'servicioId',
-  'personalId', 'inicioUtc', 'finUtc', 'separacionMinutos', 'finOcupacionUtc', 'zonaHoraria', 'costoAceptado']);
+  'personalId', 'inicioUtc', 'finUtc', 'separacionMinutos', 'finOcupacionUtc', 'zonaHoraria', 'costoAceptado', 'causaCancelacion']);
 function valoresOperativos(valores: Record<string, unknown> | null) {
   if (valores === null) return null;
   return Object.fromEntries(Object.entries(valores).filter(([clave, valor]) => CAMPOS_EVENTO.has(clave) &&
@@ -117,9 +117,9 @@ export class ConsultaAgendaService {
         .orderBy('evento.ocurridoEn', 'ASC').addOrderBy('evento.versionResultante', 'ASC').addOrderBy('evento.id', 'ASC')
         .offset((pagina.pagina - 1) * pagina.limite).limit(pagina.limite + 1).getMany();
       return { eventos: filas.slice(0, pagina.limite).map((evento) => ({ id: evento.id,
-        // El discriminador identifica la confirmación externa sin publicar la referencia de WhatsApp.
-        actorUsuarioId: evento.actorUsuarioId, origenActor: evento.actorTipo === 'cliente_whatsapp'
-          ? 'cliente_whatsapp' : evento.actorUsuarioId === null ? 'portal_publico' : 'personal',
+        // Los procesos y las confirmaciones externas se identifican sin publicar referencias privadas.
+        actorUsuarioId: evento.actorUsuarioId, origenActor: evento.actorTipo === 'cliente_whatsapp' || evento.actorTipo === 'sistema'
+          ? evento.actorTipo : evento.actorUsuarioId === null ? 'portal_publico' : 'personal',
         accion: evento.accion, ocurridoEn: evento.ocurridoEn, versionResultante: evento.versionResultante,
         valoresAntes: valoresOperativos(evento.valoresAntes), valoresDespues: valoresOperativos(evento.valoresDespues),
         // La ausencia de motivo no se rellena con notas de atención ni con texto inventado.

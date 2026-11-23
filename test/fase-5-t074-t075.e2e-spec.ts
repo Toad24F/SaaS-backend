@@ -40,8 +40,10 @@ describe('M4-T074–T075: cambio privado de estado y cinco estados por HTTP', ()
       const datos = { estado: 'cancelada', version: 1 };
       const anonima = await request(f.http).patch(m.ruta).send(datos).expect(401);
       expect(anonima.headers['cache-control']).toBe('no-store');
-      for (const actor of f.actores.filter((a) => [Rol.PROFESIONAL, Rol.SUPERADMIN].includes(a.rol))) {
-        const r = await request(f.http).patch(m.ruta).set('Authorization', `Bearer ${f.token(actor.id)}`).send(datos).expect(403);
+      // Se verifica la denegación sobre una cita ajena con los permisos actuales.
+      for (const actor of f.actores.filter((a) => a.rol === Rol.SUPERADMIN || (a.rol === Rol.PROFESIONAL && a.id !== m.cita.personalId))) {
+        const r = await request(f.http).patch(m.ruta).set('Authorization', `Bearer ${f.token(actor.id)}`).send(datos)
+          .expect(actor.rol === Rol.SUPERADMIN ? 403 : 404);
         expect(r.headers['cache-control']).toBe('no-store');
       }
       const ajena = await request(f.http).patch(`/citas/${f.negocios[1].ocupaciones[0]}/estado`).set('Authorization', m.auth).send(datos).expect(404);

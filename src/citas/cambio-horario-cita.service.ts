@@ -10,11 +10,13 @@ import { AccesoOperativoService } from './acceso-operativo.service';
 import { validarCambioHorario } from './cambio-horario.entrada';
 import { validarIdCita } from './consulta-cita.entrada';
 import { EventoCita } from './entities/evento-cita.entity';
+import { CambiosPoliticaCitaService } from '../automatizaciones/cambios-politica-cita.service';
 
 /** Mueve una cita bajo el bloqueo común; horario, versión e historial se confirman juntos. */
 @Injectable()
 export class CambioHorarioCitaService {
-  constructor(private readonly acceso: AccesoOperativoService, private readonly motor: MotorDisponibilidadService) {}
+  constructor(private readonly acceso: AccesoOperativoService, private readonly motor: MotorDisponibilidadService,
+    private readonly politica: CambiosPoliticaCitaService) {}
 
   async cambiar(identidad: Pick<JwtPayload, 'sub' | 'sesionId'>, entradaId: unknown, entrada: unknown) {
     const id = validarIdCita(entradaId);
@@ -54,7 +56,11 @@ export class CambioHorarioCitaService {
         cita.finOcupacionUtc?.getTime() === horario.finOcupacionUtc.getTime() && cita.zonaHorariaReserva === horario.zonaHorariaReserva) return this.proyectar(cita);
       if (cita.version === 4294967295) throw new ConflictException();
       const version = cita.version + 1;
-      const actualizada = await manager.getRepository(Cita).update({ id, negocioId: ctx.negocioId, version: cita.version }, { ...horario, estado, version });
+      const movida = { ...cita, ...horario, estado, version };
+      // La reprogramación vuelve a evaluar el recordatorio con el nuevo horario y la configuración vigente.
+      const condicion = estado === 'confirmada' ? await this.politica.sustituir(manager, cita, movida, ctx.ahora, 'confirmada') : {};
+      const actualizada = await manager.getRepository(Cita).update({ id, negocioId: ctx.negocioId, version: cita.version },
+        { ...horario, estado, version, ...condicion });
       if (actualizada.affected !== 1) throw new ConflictException();
       // El evento contiene solo valores operativos anteriores/nuevos, sin copiar contacto o notas.
       const eventos = manager.getRepository(EventoCita);
@@ -62,7 +68,7 @@ export class CambioHorarioCitaService {
         sesionPublicaId: null, accion: 'cambio_horario', ocurridoEn: ctx.ahora, versionResultante: version,
         valoresAntes: { ...this.valoresHorario(cita), estado: cita.estado },
         valoresDespues: { ...this.valoresHorario({ ...cita, ...horario, version }), estado }, motivo: null }));
-      return this.proyectar({ ...cita, ...horario, estado, version });
+      return this.proyectar(movida);
     }, 'READ COMMITTED');
   }
 
