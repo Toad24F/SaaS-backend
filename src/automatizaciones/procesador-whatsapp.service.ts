@@ -12,6 +12,7 @@ import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cit
 import type { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import { construirPlantillaWhatsapp } from './plantillas-whatsapp';
 import { envioVigenteHasta } from './envios-cita';
+import { derivarSeguimientoWhatsapp } from './seguimiento-whatsapp';
 import { TRANSPORTE_WHATSAPP, type ResultadoWhatsapp, type SolicitudWhatsapp, type TransporteWhatsapp } from './transporte-whatsapp';
 
 export const PREPARAR_ACCION_WHATSAPP = Symbol('PREPARAR_ACCION_WHATSAPP');
@@ -68,9 +69,7 @@ export class ProcesadorWhatsappService {
       const negocio = await manager.findOneByOrFail(Negocio, { id: toma.negocioId });
       if (!licencia || !this.politicaLicencia.puedeAceptarReserva(Boolean(negocio.activadoEn), licencia, ahora)
         || canal?.habilitado !== 1) {
-        await this.arrendamientos.cerrar(manager, envio, 'fallido', 'canal_o_licencia_no_disponible');
-        if (condicion.estadoPolitica === 'pendiente') await manager.update(CondicionConfirmacionCita, condicion.id,
-          { estadoPolitica: 'seguimiento_manual', motivoSeguimiento: 'Canal WhatsApp o licencia no disponible.' });
+        await this.cerrarPorAcceso(manager, envio, cita);
         return null;
       }
 
@@ -89,9 +88,19 @@ export class ProcesadorWhatsappService {
         return null;
       }
       if (!envio.arrendadoHasta || envio.arrendadoHasta <= inicioTransporte) return null;
+      // Los locks mantienen la configuración estable, pero la licencia puede vencer mientras se prepara el botón.
+      if (!this.politicaLicencia.puedeAceptarReserva(Boolean(negocio.activadoEn), licencia, inicioTransporte)) {
+        await this.cerrarPorAcceso(manager, envio, cita);
+        return null;
+      }
       const correlacion = await this.arrendamientos.iniciarTransporte(manager, envio, inicioTransporte);
       return { canal, destinoE164: envio.destinoE164, tipo: envio.tipo, plantilla, correlacion };
     });
+  }
+
+  private async cerrarPorAcceso(manager: EntityManager, envio: EnvioWhatsapp, cita: Cita): Promise<void> {
+    await this.arrendamientos.cerrar(manager, envio, 'fallido', 'canal_o_licencia_no_disponible');
+    await derivarSeguimientoWhatsapp(manager, envio, cita, 'Canal WhatsApp o licencia no disponible.');
   }
 }
 

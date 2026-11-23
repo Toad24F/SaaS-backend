@@ -466,25 +466,30 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Personal autorizado distingue plazo activo, seguimiento y fallo sin confundir entrega con asistencia.
   - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T098 — Probar confirmación contra cancelador** (25 min).
+- [x] **M5-T098 — Probar confirmación contra cancelador** (25 min).
   - **RF:** RF-33, RF-35, RF-44–RF-45, RF-62. **Depende de:** M5-T096, M5-T087, M5-T004.
   - **Hecho cuando:** Ambos órdenes con dos conexiones dejan un único resultado y ninguna Confirmada cancelada por silencio.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T099 — Probar reprogramación contra cancelador** (25 min).
+- [x] **M5-T099 — Probar reprogramación contra cancelador** (25 min).
   - **RF:** RF-06–RF-07, RF-35, RF-45, RF-48. **Depende de:** M5-T098, M5-T091.
   - **Hecho cuando:** El horario nuevo no recibe efectos de la generación antigua y no queda una ocupación parcial.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T100 — Probar reactivación y liberación contra reservas** (25 min).
+- [x] **M5-T100 — Probar reactivación y liberación contra reservas** (25 min).
   - **RF:** RF-04, RF-07, RF-44–RF-45, RF-62. **Depende de:** M5-T092, M5-T098.
   - **Hecho cuando:** Dos escritores reales conservan como máximo una ocupación incompatible entre sucursales.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T101 — Probar reinicio e incertidumbre del procesador** (25 min).
+- [x] **M5-T101 — Probar reinicio e incertidumbre del procesador** (25 min).
   - **RF:** RF-36–RF-38, RF-62. **Depende de:** M5-T096, M5-T080.
   - **Hecho cuando:** Reiniciar antes/después de aceptación o commit no pierde trabajo ni reenvía ciegamente.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T102 — Verificar licencia, canal inhabilitado y acuses** (25 min).
+- [x] **M5-T102 — Verificar licencia, canal inhabilitado y acuses** (25 min).
   - **RF:** RF-04, RF-33–RF-38, RF-61. **Depende de:** M5-T101, M5-T086.
   - **Hecho cuando:** Nuevos envíos respetan acceso y fallos; recepción/recuperación no concede permisos administrativos.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
 ## 10. Reportes: persistencia, consultas y cálculos
 

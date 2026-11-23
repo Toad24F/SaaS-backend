@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { AccionesWhatsappService } from '../src/automatizaciones/acciones-whatsapp.service';
 import { CancelacionAutomaticaCitasService } from '../src/automatizaciones/cancelacion-automatica-citas.service';
 import { EfectoInicialService } from '../src/automatizaciones/efecto-inicial.service';
@@ -9,6 +10,8 @@ import { RecepcionWhatsappService } from '../src/automatizaciones/recepcion-what
 import { extraerRecibosWhatsapp } from '../src/automatizaciones/recibos-whatsapp';
 import { CambioEstadoCitaService } from '../src/citas/cambio-estado-cita.service';
 import { CambioHorarioCitaService } from '../src/citas/cambio-horario-cita.service';
+import { IntentosCitaManualService } from '../src/citas/intentos-cita-manual.service';
+import { RegistroCitaManualService } from '../src/citas/registro-cita-manual.service';
 import { EventoCita } from '../src/citas/entities/evento-cita.entity';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
 import { OcupacionesService } from '../src/disponibilidad/ocupaciones.service';
@@ -18,6 +21,7 @@ import { Rol } from '../src/auth/enums/rol.enum';
 import { situarSesion } from './support/acceso-operativo';
 import { conAgendaHttp } from './support/agenda-http';
 import { prepararManual, type EscenarioManualHttp } from './support/cita-manual';
+import { enfrentarEscritores } from './support/carrera-escritores-m4';
 
 const clave = 'clave-sintetica-de-confirmacion-m5-088-a-093';
 const secretoApp = 'secreto-sintetico-m5-088';
@@ -26,10 +30,16 @@ const mensaje = 'wamid.vence-m5';
 const inicio = new Date('2026-11-09T15:17:00.000Z');
 const destino = { fechaLocal: '2026-11-09', horaInicio: '10:20', version: 1 };
 const clavePrevia = process.env.WHATSAPP_CONFIRMACION_HMAC_SECRET;
-beforeAll(() => { process.env.WHATSAPP_CONFIRMACION_HMAC_SECRET = clave; });
+const claveManualPrevia = process.env.CITAS_MANUALES_HMAC_SECRET;
+beforeAll(() => {
+  process.env.WHATSAPP_CONFIRMACION_HMAC_SECRET = clave;
+  process.env.CITAS_MANUALES_HMAC_SECRET = 'clave-sintetica-cita-manual-m5-t100';
+});
 afterAll(() => {
   if (clavePrevia === undefined) delete process.env.WHATSAPP_CONFIRMACION_HMAC_SECRET;
   else process.env.WHATSAPP_CONFIRMACION_HMAC_SECRET = clavePrevia;
+  if (claveManualPrevia === undefined) delete process.env.CITAS_MANUALES_HMAC_SECRET;
+  else process.env.CITAS_MANUALES_HMAC_SECRET = claveManualPrevia;
 });
 
 async function preparar(f: EscenarioManualHttp, conAccion = true) {
@@ -50,7 +60,7 @@ async function preparar(f: EscenarioManualHttp, conAccion = true) {
   await f.db.manager.update(EnvioWhatsapp, envio.id, { estado: 'aceptado', referenciaExterna: mensaje,
     aceptadoEn: f.reloj.ahora(), intentos: 1 });
   const recepcion = new RecepcionWhatsappService(f.db, f.reloj, new AccionesWhatsappService(clave, f.reloj));
-  const recibir = (valor: object) => recepcion.recibir(extraerRecibosWhatsapp({
+  const recibir = (valor: object, servicio = recepcion) => servicio.recibir(extraerRecibosWhatsapp({
     object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'messages', value: {
       metadata: { phone_number_id: remitente }, ...valor,
     } }] }],
@@ -71,6 +81,152 @@ async function preparar(f: EscenarioManualHttp, conAccion = true) {
       timestamp: String(Math.floor(horaProveedor.getTime() / 1000)) }] }),
   };
 }
+
+type CitaDePrueba = Awaited<ReturnType<typeof preparar>>;
+const esperaNegocio = { tablaEspera: 'negocios', pausarEn: (sql: string) => /^UPDATE `citas` /i.test(sql) };
+
+async function acreditarLectura(f: EscenarioManualHttp, m: CitaDePrueba) {
+  f.reloj.fijar(new Date(m.plazo.getTime() - 1));
+  await m.acuse();
+}
+
+function pulsarBoton(app: EscenarioManualHttp['app'], m: CitaDePrueba) {
+  return m.recibir({ messages: [{ type: 'button', id: 'wamid.boton-carrera', from: '526141234567',
+    context: { id: mensaje }, button: { payload: m.payload },
+    timestamp: String(Math.floor(m.plazo.getTime() / 1000) - 1) }] }, app.get(RecepcionWhatsappService));
+}
+
+describe('M5-T098–T100 · Carreras de ocupación y confirmación', () => {
+  it.each([true, false])('T098 serializa el botón y el cancelador (botón primero: %s)', async (botonPrimero) => {
+    await conAgendaHttp(async (f) => {
+      const m = await preparar(f);
+      await acreditarLectura(f, m);
+      const confirmar = (app: typeof f.app) => pulsarBoton(app, m);
+      const cancelar = (app: typeof f.app) => app.get(CancelacionAutomaticaCitasService).ejecutarLote();
+      if (botonPrimero) {
+        const carrera = await enfrentarEscritores(f, () => confirmar(f.app), cancelar, {
+          ...esperaNegocio, antesSegundo: () => f.reloj.fijar(m.plazo),
+        });
+        expect(carrera.primero.status).toBe('fulfilled');
+        expect(carrera.segundo).toMatchObject({ status: 'fulfilled', value: { canceladas: 0, seguimiento: 0 } });
+      } else {
+        f.reloj.fijar(m.plazo);
+        // La bandeja del botón espera primero por la FK al canal bloqueado por el cancelador.
+        const carrera = await enfrentarEscritores(f, () => cancelar(f.app), confirmar, {
+          ...esperaNegocio, tablaEspera: 'eventos_whatsapp', patronEspera: 'INSERT INTO%',
+        });
+        expect(carrera.primero).toMatchObject({ status: 'fulfilled', value: { canceladas: 1 } });
+        expect(carrera.segundo.status).toBe('fulfilled');
+      }
+      const estado = botonPrimero ? 'confirmada' : 'cancelada';
+      expect(await m.leer()).toMatchObject({ estado, version: 2 });
+      expect(await m.condiciones()).toEqual([expect.objectContaining({ estadoPolitica: estado })]);
+      expect(await m.eventos()).toEqual([expect.objectContaining({
+        actorTipo: botonPrimero ? 'cliente_whatsapp' : 'sistema', versionResultante: 2,
+      })]);
+      const accion = await f.db.manager.findOneByOrFail(AccionConfirmacion, { envioId: m.envio.id });
+      expect(accion.consumidoEn).toEqual(botonPrimero ? new Date(m.plazo.getTime() - 1) : null);
+      expect((await m.ocupaciones()).some((o) => o.tipo === 'cita' && o.id === m.cita.id)).toBe(botonPrimero);
+    });
+  });
+
+  it.each([true, false])('T099 serializa la reprogramación y el cancelador (movimiento primero: %s)', async (moverPrimero) => {
+    await conAgendaHttp(async (f) => {
+      const m = await preparar(f);
+      await situarSesion(f.db, m.actor, m.plazo);
+      await f.db.query(`INSERT INTO configuracion_automatizaciones (negocio_id,version,plazo_confirmacion_horas,recordatorio_horas)
+        VALUES (?,1,12,12)`, [m.cita.negocioId]);
+      await acreditarLectura(f, m);
+      const mover = (app: typeof f.app) => app.get(CambioHorarioCitaService).cambiar(m.identidad, String(m.cita.id), destino);
+      const cancelar = (app: typeof f.app) => app.get(CancelacionAutomaticaCitasService).ejecutarLote();
+      if (moverPrimero) {
+        const carrera = await enfrentarEscritores(f, () => mover(f.app), cancelar, {
+          ...esperaNegocio, antesSegundo: () => f.reloj.fijar(m.plazo),
+        });
+        expect(carrera.primero).toMatchObject({ status: 'fulfilled', value: { version: 2 } });
+        expect(carrera.segundo).toMatchObject({ status: 'fulfilled', value: { canceladas: 0, seguimiento: 0 } });
+      } else {
+        f.reloj.fijar(m.plazo);
+        const carrera = await enfrentarEscritores(f, () => cancelar(f.app), mover, esperaNegocio);
+        expect(carrera.primero).toMatchObject({ status: 'fulfilled', value: { canceladas: 1 } });
+        expect(carrera.segundo).toMatchObject({ status: 'rejected', reason: { status: 409 } });
+      }
+      const nuevoInicio = new Date('2026-11-09T16:20:00Z');
+      expect(await m.leer()).toMatchObject({ estado: moverPrimero ? 'confirmada' : 'cancelada', version: 2,
+        inicioUtc: moverPrimero ? nuevoInicio : inicio, generacionAutomatizacion: moverPrimero ? 2 : 1 });
+      expect(await m.eventos()).toEqual([expect.objectContaining({ accion: moverPrimero ? 'cambio_horario' : 'cancelacion' })]);
+      expect((await m.condiciones())[0].estadoPolitica).toBe(moverPrimero ? 'anulada' : 'cancelada');
+      expect(await m.envios()).toEqual(moverPrimero ? [
+        expect.objectContaining({ generacion: 1, estado: 'leido' }),
+        expect.objectContaining({ generacion: 2, tipo: 'recordatorio', programadoEn: new Date('2026-11-09T04:20:00Z') }),
+      ] : [expect.objectContaining({ generacion: 1, estado: 'leido' })]);
+      // Reintentar la acción anterior deja intactas la generación y la ocupación que ganaron.
+      await pulsarBoton(f.app, m);
+      expect((await f.db.manager.findOneByOrFail(AccionConfirmacion, { envioId: m.envio.id })).consumidoEn).toBeNull();
+      expect(await m.eventos()).toHaveLength(1);
+      expect((await m.ocupaciones()).some((o) => o.tipo === 'cita' && o.id === m.cita.id)).toBe(false);
+      const destinoOcupado = await f.db.transaction((manager) => f.app.get(OcupacionesService).consultar({
+        manager, negocioId: m.cita.negocioId, personalId: m.cita.personalId, ahora: f.reloj.ahora(),
+      }, nuevoInicio, new Date('2026-11-09T17:00:00Z')));
+      expect(destinoOcupado.some((o) => o.tipo === 'cita' && o.id === m.cita.id)).toBe(moverPrimero);
+    });
+  });
+
+  it.each([
+    { reactivar: true, gestionPrimero: true }, { reactivar: true, gestionPrimero: false },
+    { reactivar: false, gestionPrimero: true }, { reactivar: false, gestionPrimero: false },
+  ])('T100 serializa reservas entre sucursales (reactivación: $reactivar, gestión primero: $gestionPrimero)',
+    async ({ reactivar, gestionPrimero }) => {
+      await conAgendaHttp(async (f) => {
+        const m = await preparar(f);
+        await acreditarLectura(f, m);
+        f.reloj.fijar(m.plazo);
+        await situarSesion(f.db, m.actor, m.plazo);
+        const segundaSucursal = f.negocios[0].sucursales[1].id;
+        // Un horario heredado coincidente fuerza la colisión en las dos sucursales.
+        await f.db.query(`INSERT INTO horarios_personal
+          (negocio_id,personal_id,dia_semana,orden,sucursal_id,inicio_minutos,fin_minutos,activo)
+          VALUES(?,?,1,1,?,480,720,1)`, [m.cita.negocioId, m.cita.personalId, segundaSucursal]);
+        if (reactivar) expect(await m.cancelar.ejecutarLote()).toMatchObject({ canceladas: 1 });
+        const gestion = async (app: typeof f.app) => reactivar
+          ? app.get(CambioEstadoCitaService).cambiar(m.identidad, String(m.cita.id), { estado: 'confirmada', version: 2 })
+          : app.get(CancelacionAutomaticaCitasService).ejecutarLote();
+        const seleccion = { ...m.seleccion, sucursalId: segundaSucursal };
+        const prepararIntento = async () => {
+          const llave = randomUUID();
+          await f.app.get(IntentosCitaManualService).preparar(m.identidad, llave, seleccion);
+          return llave;
+        };
+        const registrar = (app: typeof f.app, llave: string) =>
+          app.get(RegistroCitaManualService).registrar(m.identidad, llave, seleccion);
+        const llave = await prepararIntento();
+        const reservar = (app: typeof f.app) => registrar(app, llave);
+        const opciones = { tablaEspera: reactivar ? 'usuarios' : 'negocios' };
+        const carrera = gestionPrimero
+          ? await enfrentarEscritores(f, () => gestion(f.app), reservar, opciones)
+          : await enfrentarEscritores(f, () => reservar(f.app), gestion, opciones);
+        const resultadoGestion = gestionPrimero ? carrera.primero : carrera.segundo;
+        const resultadoReserva = gestionPrimero ? carrera.segundo : carrera.primero;
+        if (reactivar === gestionPrimero) {
+          expect(resultadoGestion.status).toBe('fulfilled');
+          expect(resultadoReserva).toMatchObject({ status: 'rejected', reason: { status: 409 } });
+        } else {
+          expect(resultadoReserva.status).toBe('fulfilled');
+          if (reactivar) expect(resultadoGestion).toMatchObject({ status: 'rejected', reason: { status: 409 } });
+          else expect(resultadoGestion).toMatchObject({ status: 'fulfilled', value: { canceladas: 1 } });
+        }
+        if (!reactivar && !gestionPrimero) {
+          expect((await m.ocupaciones()).filter((o) => o.tipo === 'cita')).toHaveLength(0);
+          await registrar(f.app, await prepararIntento());
+        }
+        const ocupadas = (await m.ocupaciones()).filter((o) => o.tipo === 'cita');
+        expect(ocupadas).toHaveLength(1);
+        const ganadora = await f.db.manager.findOneByOrFail(Cita, { id: ocupadas[0].id });
+        expect(ganadora).toMatchObject({ inicioUtc: inicio,
+          sucursalId: reactivar && gestionPrimero ? m.cita.sucursalId : segundaSucursal });
+      });
+    });
+});
 
 describe('M5-T088–T090 · Cancelación automática y seguimiento', () => {
   it('con lectura antes del límite, dos procesos cancelan una sola vez y liberan solo esa cita', async () => {

@@ -59,6 +59,15 @@ describe('M5-T068: reserva pública y efecto inicial', () => {
         if (autorizaWhatsapp) expect(envios[0]).toMatchObject({ tipo: 'inicial_pendiente', estado: 'pendiente' });
         expect(await registro.registrar(negocio.id, titular, clave, contacto)).toEqual(primero);
         expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id])).toHaveLength(autorizaWhatsapp ? 1 : 0);
+        // T102 · Con la operación comercial bloqueada, la sesión titular aún recupera su resultado durable.
+        await db.query('UPDATE licencias SET vence_en=? WHERE negocio_id=?', [reloj.ahora(), negocio.id]);
+        await db.query('UPDATE canales_whatsapp SET habilitado=0 WHERE negocio_id=?', [negocio.id]);
+        const intentos = modulo.get(IntentosReservaPublicaService);
+        expect(await intentos.reconocerResultado(negocio.id, titular, clave, contacto)).toEqual(primero);
+        const otraSesion = 'c'.repeat(64);
+        await db.query('INSERT INTO sesiones_reserva_publica(negocio_id,titular_hash) VALUES(?,?)', [negocio.id, otraSesion]);
+        await expect(intentos.reconocerResultado(negocio.id, otraSesion, clave, contacto)).rejects.toMatchObject({ status: 404 });
+        expect(await db.query('SELECT id FROM citas WHERE folio=?', [primero.folio])).toHaveLength(1);
       } finally {
         await modulo.close();
         if (secretoPrevio === undefined) delete process.env.PORTAL_FORMULARIO_HMAC_SECRET;

@@ -45,12 +45,13 @@ export async function vinculoNuevaCondicion(db: DataSource, cita: Cita) {
 }
 
 /** Observar la conexión exacta esperando evita atribuir una carrera a simples promesas simultáneas. */
-export async function esperarBloqueoManual(db: DataSource, conexion: () => number, tabla: string) {
+export async function esperarBloqueoManual(db: DataSource, conexion: () => number, tabla: string,
+  patronSentencia = '%FOR UPDATE') {
   const limite = Date.now() + 6000;
   while (Date.now() < limite) {
     const filas = await db.query(`SELECT ID FROM information_schema.PROCESSLIST
-      WHERE ID=? AND COMMAND='Query' AND TIME>=1 AND INFO LIKE ? AND INFO LIKE '%FOR UPDATE'`,
-    [conexion(), `%${tabla}%`]);
+      WHERE ID=? AND COMMAND='Query' AND TIME>=1 AND INFO LIKE ? AND INFO LIKE ?`,
+    [conexion(), `%${tabla}%`, patronSentencia]);
     if (filas.length) return;
     await new Promise((r) => setTimeout(r, 20));
   }

@@ -1,4 +1,5 @@
 import { createHash, createHmac } from 'node:crypto';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import request from 'supertest';
@@ -18,7 +19,7 @@ import { RecepcionWhatsappService } from '../src/automatizaciones/recepcion-what
 import { TRANSPORTE_WHATSAPP, TransporteWhatsappControlado } from '../src/automatizaciones/transporte-whatsapp';
 import { CONFIGURACION_WEBHOOK_WHATSAPP, instalarCuerpoWebhookWhatsapp } from '../src/automatizaciones/webhook-whatsapp.http';
 import { EventoCita } from '../src/citas/entities/evento-cita.entity';
-import { CitasModule } from '../src/citas/citas.module';
+import { CitasHttpModule } from '../src/citas/citas-http.module';
 import { ConsultaAgendaService } from '../src/citas/consulta-agenda.service';
 import { RELOJ } from '../src/comun/reloj';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
@@ -61,7 +62,7 @@ async function escenario(db: DataSource, opciones: { sinPlazo?: boolean; reinten
     ? new TransporteWhatsappControlado({ estado: 'rechazado', transitorio: true }, aceptado)
     : new TransporteWhatsappControlado(aceptado, { estado: 'aceptado', referencia: 'wamid.recordatorio' });
   const modulo = await Test.createTestingModule({ imports: [
-    TypeOrmModule.forRoot({ ...db.options, autoLoadEntities: true }), EnviosWhatsappModule, CitasModule,
+    TypeOrmModule.forRoot({ ...db.options, autoLoadEntities: true }), EnviosWhatsappModule, CitasHttpModule,
   ] }).overrideProvider(RELOJ).useValue(reloj).overrideProvider(TRANSPORTE_WHATSAPP).useValue(transporte)
     .overrideProvider(CLAVE_ACCIONES_WHATSAPP).useValue(clave)
     .overrideProvider(CONFIGURACION_WEBHOOK_WHATSAPP).useValue({ secretoApp }).compile();
@@ -85,21 +86,53 @@ async function escenario(db: DataSource, opciones: { sinPlazo?: boolean; reinten
       const firma = createHmac('sha256', secretoApp).update(firmado ? cuerpo : 'otro cuerpo').digest('hex');
       return http.post('/webhooks/whatsapp').type('application/json').set('X-Hub-Signature-256', `sha256=${firma}`).send(cuerpo);
     };
-    return { cita, reloj, condicion, enviar, transporte, proceso, recepcion: modulo.get(RecepcionWhatsappService), cerrar: () => app.close(),
+    const identidadAgenda = async () => {
+      const [actor] = await db.query("SELECT id FROM usuarios WHERE negocio_id=? AND rol='admin_negocio'", [cita.negocioId]);
+      const sesion = await new SesionesService(db.getRepository(Sesion)).crear(actor.id, reloj.ahora());
+      return { sub: Number(actor.id), sesionId: sesion.id };
+    };
+    return { cita, reloj, condicion, http, enviar, transporte, proceso, recepcion: modulo.get(RecepcionWhatsappService), cerrar: () => app.close(),
       leerCita: () => citas.findOneByOrFail({ id: cita.id }),
       leerCondicion: () => db.manager.findOneByOrFail(CondicionConfirmacionCita, { id: condicion.id }),
       acciones: () => db.manager.findBy(AccionConfirmacion, { citaId: cita.id }),
       eventos: () => db.manager.findBy(EventoCita, { citaId: cita.id }), payload,
-      historial: async () => {
-        const [actor] = await db.query("SELECT id FROM usuarios WHERE negocio_id=? AND rol='admin_negocio'", [cita.negocioId]);
-        const sesion = await new SesionesService(db.getRepository(Sesion)).crear(actor.id, reloj.ahora());
-        return modulo.get(ConsultaAgendaService).historial({ sub: Number(actor.id), sesionId: sesion.id }, String(cita.id), {});
-      } };
+      tokenAgenda: async () => modulo.get(JwtService).sign(await identidadAgenda()),
+      historial: async () => modulo.get(ConsultaAgendaService).historial(await identidadAgenda(), String(cita.id), {}) };
   } catch (error) {
     await app.close();
     throw error;
   }
 }
+
+describe('M5-T102 · Acuses con acceso comercial bloqueado', () => {
+  it('procesa el acuse firmado del canal original sin abrir la agenda privada', async () => {
+    await conBaseOperativa(async (db) => {
+      const f = await escenario(db);
+      try {
+        const rutaAgenda = `/citas/${f.cita.id}/historial`;
+        const sesionAgenda = `Bearer ${await f.tokenAgenda()}`;
+        await f.http.get(rutaAgenda).set('Authorization', sesionAgenda).expect(200);
+        f.reloj.avanzar(1_000);
+        await db.query('UPDATE licencias SET vence_en=? WHERE negocio_id=?', [f.reloj.ahora(), f.cita.negocioId]);
+        await db.query('UPDATE canales_whatsapp SET habilitado=0 WHERE negocio_id=?', [f.cita.negocioId]);
+        const acuse = { statuses: [{ id: mensaje, status: 'read', timestamp: String(f.reloj.ahora().getTime() / 1000) }] };
+        const envio = () => db.manager.findOneByOrFail(EnvioWhatsapp, { citaId: f.cita.id });
+        // La firma autentica el callback; la correlación sigue limitada al negocio emisor.
+        await f.enviar(acuse, canal, false).expect(403);
+        await f.enviar(acuse, otroCanal).expect(200);
+        expect(await envio()).toMatchObject({ estado: 'aceptado', leidoEn: null });
+        await f.enviar(acuse).expect(200);
+        await f.enviar(acuse).expect(200);
+        expect(await envio()).toMatchObject({ estado: 'leido', leidoEn: f.reloj.ahora() });
+        expect(await db.manager.countBy(EventoWhatsapp, { negocioId: f.cita.negocioId, tipo: 'leido' })).toBe(1);
+        expect(await f.leerCita()).toMatchObject({ estado: 'pendiente', version: f.cita.version });
+        expect(await f.eventos()).toHaveLength(0);
+        await f.http.get(rutaAgenda).expect(401);
+        await f.http.get(rutaAgenda).set('Authorization', sesionAgenda).expect(401);
+      } finally { await f.cerrar(); }
+    });
+  });
+});
 
 describe('M5-T084–T087 · Acción de confirmación desde el webhook', () => {
   it('reproduce el botón al reintentar y persiste solo la huella; rechaza payload, remitente, canal y contexto ajenos', async () => {
