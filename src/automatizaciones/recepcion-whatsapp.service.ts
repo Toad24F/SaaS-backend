@@ -5,6 +5,7 @@ import { AccionesWhatsappService } from './acciones-whatsapp.service';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import { EventoWhatsapp } from './entities/evento-whatsapp.entity';
+import { AccionConfirmacion } from './entities/accion-confirmacion.entity';
 import type { ReciboWhatsapp } from './recibos-whatsapp';
 import { bloquearCitaDeEnvio, derivarSeguimientoWhatsapp } from './seguimiento-whatsapp';
 
@@ -27,6 +28,20 @@ export class RecepcionWhatsappService {
     } catch {
       throw new ServiceUnavailableException('No se pudo completar la recepción de WhatsApp.');
     }
+  }
+
+  async procesarLote(secretoApp: string, limite: number): Promise<void> {
+    // Se retoman recibos durables tras reiniciar. Un botón que aún espera ID no ocupa el lote.
+    const filas = await this.db.getRepository(EventoWhatsapp).createQueryBuilder('r').select(['r.id'])
+      .leftJoin(AccionConfirmacion, 'a', "r.tipo = 'respuesta' AND a.negocioId = r.negocioId AND a.tokenHash = r.accionHash")
+      .leftJoin(EnvioWhatsapp, 'e', 'e.negocioId = a.negocioId AND e.id = a.envioId')
+      .where("r.estadoProcesamiento = 'pendiente'")
+      .andWhere(`(e.id IS NULL OR a.expiraEn <= :ahora OR e.referenciaExterna IS NOT NULL
+        OR e.estado NOT IN ('incierto', 'en_proceso') OR (e.estado = 'en_proceso' AND e.inicioTransporteEn IS NULL))`,
+      { ahora: this.reloj.ahora() })
+      .orderBy("CASE WHEN r.tipo = 'respuesta' THEN 1 ELSE 0 END").addOrderBy('r.recibidoEn', 'ASC').addOrderBy('r.id', 'ASC')
+      .limit(limite).getMany();
+    for (const fila of filas) await this.procesarEvento(fila.id, secretoApp);
   }
 
   private async persistir(manager: EntityManager, recibos: ReciboWhatsapp[], recibidoEn: Date) {

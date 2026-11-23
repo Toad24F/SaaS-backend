@@ -5,6 +5,7 @@ import { RELOJ, type Reloj } from '../comun/reloj';
 import { EnvioWhatsapp, type EstadoEnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import type { ResultadoWhatsapp } from './transporte-whatsapp';
 import { bloquearCitaDeEnvio, derivarSeguimientoWhatsapp } from './seguimiento-whatsapp';
+import { envioVigenteHasta } from './envios-cita';
 
 const DURACION_TOMA_MS = 30_000;
 const ESPERAS_REINTENTO_MS = [60_000, 300_000] as const;
@@ -58,10 +59,14 @@ export class ArrendamientoWhatsappService {
       if (resultado.estado === 'aceptado') {
         await this.cerrar(manager, envio, 'aceptado', null, { referenciaExterna: resultado.referencia, aceptadoEn: ahora });
       } else if (resultado.estado === 'rechazado') {
+        if (envio.tipo === 'recordatorio' && (cita?.estado !== 'confirmada' || cita.generacionAutomatizacion !== envio.generacion)) {
+          await this.cerrar(manager, envio, 'descartado', 'envio_fuera_de_vigencia', { correlacionProveedor: null });
+          return true;
+        }
         const espera = ESPERAS_REINTENTO_MS[envio.intentos - 1];
         const siguiente = ahora.getTime() + Math.max(espera ?? 0, resultado.reintentarEnMs ?? 0);
-        // El instante justo en utilHasta ya no sirve. Cada rechazo conocido retira la correlación del intento.
-        if (resultado.transitorio && espera !== undefined && siguiente < envio.utilHasta.getTime()) {
+        // El reintento usa los mismos límites que el envío y retira la correlación del rechazo conocido.
+        if (resultado.transitorio && espera !== undefined && cita && envioVigenteHasta(envio, cita, siguiente)) {
           await manager.update(EnvioWhatsapp, envio.id, { estado: 'pendiente', proximoIntentoEn: new Date(siguiente),
             ultimoError: 'rechazo_transitorio', arrendamientoId: null, arrendadoHasta: null,
             inicioTransporteEn: null, correlacionProveedor: null });

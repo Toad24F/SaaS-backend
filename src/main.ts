@@ -8,6 +8,8 @@ import { instalarCuerpoWebhookWhatsapp } from './automatizaciones/webhook-whatsa
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Las señales de proceso disparan el cierre ordenado de los ciclos durables.
+  app.enableShutdownHooks();
 
   // Protege los 32 KiB originales del portal, incluso con JSON espaciado.
   instalarLimiteCuerpoPublico(app);

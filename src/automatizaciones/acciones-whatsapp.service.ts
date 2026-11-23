@@ -11,6 +11,7 @@ import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cit
 import { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import type { EventoWhatsapp } from './entities/evento-whatsapp.entity';
 import { hashWhatsapp, huellaRemitenteWhatsapp } from './recibos-whatsapp';
+import { programarAlConfirmar } from './envios-cita';
 
 export const CLAVE_ACCIONES_WHATSAPP = Symbol('CLAVE_ACCIONES_WHATSAPP');
 type ResultadoAccion = 'aplicada' | 'no_aplicable' | 'esperando_envio';
@@ -84,6 +85,8 @@ export class AccionesWhatsappService {
     if (consumo.affected !== 1 || cambio.affected !== 1) throw new Error('No se pudo aplicar la confirmación.');
     await manager.update(CondicionConfirmacionCita, { id: condicion.id, negocioId },
       { estadoPolitica: 'confirmada', confirmadoEn: ahora, origenConfirmacion: 'whatsapp' });
+    // La programación se fija al confirmar y se revierte si falla el historial o el consumo.
+    await programarAlConfirmar(manager, cita, condicion, ahora);
     // El actor de auditoría es el ID de la respuesta y los valores registran solo estado y versión.
     await manager.insert(EventoCita, { negocioId, citaId: cita.id, accion: 'cambio_estado', ocurridoEn: ahora,
       referenciaWhatsapp: eventoExternoId, actorUsuarioId: null, sesionPublicaId: null, procesoSistema: null,

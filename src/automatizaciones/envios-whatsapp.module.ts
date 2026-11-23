@@ -5,6 +5,7 @@ import { LicenciasModule } from '../licencias/licencias.module';
 import { AccionesWhatsappService, CLAVE_ACCIONES_WHATSAPP } from './acciones-whatsapp.service';
 import { ArrendamientoWhatsappService } from './arrendamiento-whatsapp.service';
 import { CancelacionAutomaticaCitasService } from './cancelacion-automatica-citas.service';
+import { CicloWhatsappService, CONFIGURACION_CICLO_WHATSAPP } from './ciclo-whatsapp.service';
 import { AccionConfirmacion } from './entities/accion-confirmacion.entity';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
@@ -15,7 +16,7 @@ import { RecepcionWhatsappService } from './recepcion-whatsapp.service';
 import { MetaWhatsapp, TRANSPORTE_WHATSAPP } from './transporte-whatsapp';
 import { CONFIGURACION_WEBHOOK_WHATSAPP, type ConfiguracionWebhookWhatsapp, WebhookWhatsappController } from './webhook-whatsapp.http';
 
-/** Registra el procesador invocable. El ciclo periódico se integra en M5-T096. */
+/** Registra bandejas y ciclo. Cada escritura automática se habilita de forma explícita. */
 @Module({
   imports: [LicenciasModule, TypeOrmModule.forFeature([AccionConfirmacion, CanalWhatsapp, CondicionConfirmacionCita,
     EnvioWhatsapp, EventoWhatsapp])],
@@ -27,6 +28,12 @@ import { CONFIGURACION_WEBHOOK_WHATSAPP, type ConfiguracionWebhookWhatsapp, Webh
       secretoApp: process.env.WHATSAPP_WEBHOOK_APP_SECRET,
       tokenVerificacion: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN,
     }) },
+    { provide: CONFIGURACION_CICLO_WHATSAPP, inject: [CONFIGURACION_WEBHOOK_WHATSAPP],
+      useFactory: (webhook: ConfiguracionWebhookWhatsapp) => {
+        if (process.env.NODE_ENV === 'test') return { envios: false, cancelaciones: false };
+        return { envios: process.env.WHATSAPP_PROCESAR_ENVIOS === 'habilitado',
+          cancelaciones: process.env.WHATSAPP_CANCELAR_POR_PLAZO === 'habilitado', secretoApp: webhook.secretoApp };
+      } },
     { provide: CLAVE_ACCIONES_WHATSAPP, useFactory: () => process.env.WHATSAPP_CONFIRMACION_HMAC_SECRET ?? '' },
     { provide: PREPARAR_ACCION_WHATSAPP, inject: [AccionesWhatsappService, CONFIGURACION_WEBHOOK_WHATSAPP],
       // El botón se ofrece cuando el entorno puede generar y verificar la respuesta.
@@ -35,6 +42,7 @@ import { CONFIGURACION_WEBHOOK_WHATSAPP, type ConfiguracionWebhookWhatsapp, Webh
     AccionesWhatsappService,
     ArrendamientoWhatsappService,
     CancelacionAutomaticaCitasService,
+    CicloWhatsappService,
     ProcesadorWhatsappService,
     RecepcionWhatsappService,
   ],

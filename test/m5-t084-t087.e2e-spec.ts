@@ -9,10 +9,12 @@ import { CLAVE_ACCIONES_WHATSAPP } from '../src/automatizaciones/acciones-whatsa
 import { EfectoInicialService } from '../src/automatizaciones/efecto-inicial.service';
 import { AccionConfirmacion } from '../src/automatizaciones/entities/accion-confirmacion.entity';
 import { CondicionConfirmacionCita } from '../src/automatizaciones/entities/condicion-confirmacion-cita.entity';
+import { ConfiguracionAutomatizaciones } from '../src/automatizaciones/entities/configuracion-automatizaciones.entity';
 import { EnvioWhatsapp } from '../src/automatizaciones/entities/envio-whatsapp.entity';
 import { EventoWhatsapp } from '../src/automatizaciones/entities/evento-whatsapp.entity';
 import { EnviosWhatsappModule } from '../src/automatizaciones/envios-whatsapp.module';
 import { ProcesadorWhatsappService } from '../src/automatizaciones/procesador-whatsapp.service';
+import { RecepcionWhatsappService } from '../src/automatizaciones/recepcion-whatsapp.service';
 import { TRANSPORTE_WHATSAPP, TransporteWhatsappControlado } from '../src/automatizaciones/transporte-whatsapp';
 import { CONFIGURACION_WEBHOOK_WHATSAPP, instalarCuerpoWebhookWhatsapp } from '../src/automatizaciones/webhook-whatsapp.http';
 import { EventoCita } from '../src/citas/entities/evento-cita.entity';
@@ -57,7 +59,7 @@ async function escenario(db: DataSource, opciones: { sinPlazo?: boolean; reinten
   const aceptado = { estado: 'aceptado', referencia: mensaje } as const;
   const transporte = opciones.reintento
     ? new TransporteWhatsappControlado({ estado: 'rechazado', transitorio: true }, aceptado)
-    : new TransporteWhatsappControlado(aceptado);
+    : new TransporteWhatsappControlado(aceptado, { estado: 'aceptado', referencia: 'wamid.recordatorio' });
   const modulo = await Test.createTestingModule({ imports: [
     TypeOrmModule.forRoot({ ...db.options, autoLoadEntities: true }), EnviosWhatsappModule, CitasModule,
   ] }).overrideProvider(RELOJ).useValue(reloj).overrideProvider(TRANSPORTE_WHATSAPP).useValue(transporte)
@@ -83,7 +85,7 @@ async function escenario(db: DataSource, opciones: { sinPlazo?: boolean; reinten
       const firma = createHmac('sha256', secretoApp).update(firmado ? cuerpo : 'otro cuerpo').digest('hex');
       return http.post('/webhooks/whatsapp').type('application/json').set('X-Hub-Signature-256', `sha256=${firma}`).send(cuerpo);
     };
-    return { cita, reloj, condicion, enviar, transporte, cerrar: () => app.close(),
+    return { cita, reloj, condicion, enviar, transporte, proceso, recepcion: modulo.get(RecepcionWhatsappService), cerrar: () => app.close(),
       leerCita: () => citas.findOneByOrFail({ id: cita.id }),
       leerCondicion: () => db.manager.findOneByOrFail(CondicionConfirmacionCita, { id: condicion.id }),
       acciones: () => db.manager.findBy(AccionConfirmacion, { citaId: cita.id }),
@@ -264,5 +266,61 @@ describe('M5-T084–T087 · Acción de confirmación desde el webhook', () => {
         await f.cerrar();
       }
     });
+  });
+});
+
+describe('M5-T094–T095 · Recordatorio al confirmar', () => {
+  it.each([300_000, 300_001, 'inicio alcanzado'] as const)('al confirmar programa una vez y revalida %s', async (retraso) => {
+    await conBaseOperativa(async (db) => {
+      const f = await escenario(db);
+      try {
+        await db.manager.save(ConfiguracionAutomatizaciones, { negocioId: f.cita.negocioId,
+          version: 1, plazoConfirmacionHoras: 12, recordatorioHoras: 12 });
+        await f.enviar({ messages: [boton(f.payload)] }).expect(200);
+        await f.enviar({ messages: [boton(f.payload, 'wamid.repetido')] }).expect(200);
+        const programadoEn = new Date(f.cita.inicioUtc.getTime() - 12 * 3_600_000);
+        const lector = () => db.manager.findBy(EnvioWhatsapp, { citaId: f.cita.id, tipo: 'recordatorio' });
+        expect(await lector()).toEqual([expect.objectContaining({ generacion: 1, programadoEn, estado: 'pendiente' })]);
+        await db.manager.update(ConfiguracionAutomatizaciones, f.cita.negocioId, { recordatorioHoras: 48, version: 2 });
+        expect((await lector())[0].programadoEn).toEqual(programadoEn);
+        f.reloj.fijar(typeof retraso === 'number' ? new Date(programadoEn.getTime() + retraso) : f.cita.inicioUtc);
+        await f.proceso.ejecutarUna();
+        expect((await lector())[0].estado).toBe(retraso === 300_000 ? 'aceptado' : 'descartado');
+        f.reloj.fijar(f.cita.inicioUtc);
+        expect(await f.proceso.ejecutarUna()).toBe(false);
+        expect(await f.leerCita()).toMatchObject({ estado: 'confirmada', version: 2 });
+      } finally { await f.cerrar(); }
+    });
+  });
+
+  it('omite recordatorio próximo sin plazo automático y cuando la hora programable ya llegó', async () => {
+    for (const sinPlazo of [true, false]) {
+      await conBaseOperativa(async (db) => {
+        const f = await escenario(db, { sinPlazo });
+        try {
+          await db.manager.save(ConfiguracionAutomatizaciones, { negocioId: f.cita.negocioId,
+            version: 1, plazoConfirmacionHoras: 12, recordatorioHoras: 48 });
+          await f.enviar({ messages: [boton(f.payload)] }).expect(200);
+          expect(await db.manager.countBy(EnvioWhatsapp, { citaId: f.cita.id, tipo: 'recordatorio' })).toBe(0);
+        } finally { await f.cerrar(); }
+      });
+    }
+  });
+});
+
+it('M5-T096 retoma el botón durable tras llegar el acuse por separado', async () => {
+  await conBaseOperativa(async (db) => {
+    const f = await escenario(db);
+    try {
+      await db.manager.update(EnvioWhatsapp, { citaId: f.cita.id }, { estado: 'incierto', aceptadoEn: null, referenciaExterna: null });
+      await f.enviar({ messages: [boton(f.payload)] }).expect(503);
+      await f.recepcion.procesarLote(secretoApp, 50);
+      expect(await f.leerCita()).toMatchObject({ estado: 'pendiente' });
+      await f.enviar({ statuses: [{ id: mensaje, status: 'delivered', timestamp: '1795435190',
+        biz_opaque_callback_data: f.transporte.solicitudes[0].correlacion }] }).expect(200);
+      await Promise.all([f.recepcion.procesarLote(secretoApp, 50), f.recepcion.procesarLote(secretoApp, 50)]);
+      expect(await f.leerCita()).toMatchObject({ estado: 'confirmada', version: 2 });
+      expect(await f.eventos()).toHaveLength(1);
+    } finally { await f.cerrar(); }
   });
 });

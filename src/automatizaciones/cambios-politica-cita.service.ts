@@ -1,11 +1,10 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { IsNull, type EntityManager } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 import type { Cita } from '../disponibilidad/entities/cita.entity';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
 import { ConfiguracionAutomatizaciones } from './entities/configuracion-automatizaciones.entity';
-import { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
-import { programarRecordatorioCita } from './envios-cita';
+import { descartarEnviosSinTransporte, programarAlConfirmar, programarRecordatorioCita } from './envios-cita';
 import { calcularVencimientoConfirmacion } from './politica-temporal';
 
 /** Las transiciones reutilizan el manager del escritor, con negocio, Profesional y cita ya bloqueados. */
@@ -19,10 +18,7 @@ export class CambiosPoliticaCitaService {
     if (generacion > 4_294_967_295) throw new ConflictException('La cita alcanzó su generación máxima.');
     if (anterior) {
       const alcance = { negocioId, citaId, generacion: anterior.generacion };
-      // Los intentos con HTTP iniciado conservan estado y correlación para su posterior conciliación.
-      await manager.getRepository(EnvioWhatsapp).createQueryBuilder().update().set({ estado: 'descartado',
-        arrendamientoId: null, arrendadoHasta: null, ultimoError: 'generacion_sustituida' })
-        .where([{ ...alcance, estado: 'pendiente' }, { ...alcance, estado: 'en_proceso', inicioTransporteEn: IsNull() }]).execute();
+      await descartarEnviosSinTransporte(manager, alcance, 'generacion_sustituida');
       if (anterior.estadoPolitica !== 'cancelada') {
         await manager.update(CondicionConfirmacionCita, anterior.id,
           { estadoPolitica: cita.estado === 'cancelada' ? 'cancelada' : 'anulada' });
@@ -51,9 +47,13 @@ export class CambiosPoliticaCitaService {
   async cerrarCondicion(manager: EntityManager, cita: Cita, ahora: Date, estado: 'cancelada' | 'confirmada'): Promise<void> {
     const condicion = await this.condicionVigente(manager, cita);
     if (!condicion) return;
+    if (estado === 'cancelada') await descartarEnviosSinTransporte(manager, {
+      negocioId: cita.negocioId, citaId: cita.id, generacion: condicion.generacion, tipo: 'recordatorio',
+    }, 'cita_cancelada');
     // El cambio de estado ordinario conserva la generación y el plazo histórico de la cita.
     await manager.update(CondicionConfirmacionCita, condicion.id, estado === 'cancelada' ? { estadoPolitica: 'cancelada' }
       : { estadoPolitica: 'confirmada', confirmadoEn: ahora, origenConfirmacion: 'personal' });
+    if (estado === 'confirmada') await programarAlConfirmar(manager, cita, condicion, ahora);
   }
 
   private condicionVigente(manager: EntityManager, cita: Cita) {

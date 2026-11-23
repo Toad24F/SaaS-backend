@@ -11,6 +11,7 @@ import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
 import type { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import { construirPlantillaWhatsapp } from './plantillas-whatsapp';
+import { envioVigenteHasta } from './envios-cita';
 import { TRANSPORTE_WHATSAPP, type ResultadoWhatsapp, type SolicitudWhatsapp, type TransporteWhatsapp } from './transporte-whatsapp';
 
 export const PREPARAR_ACCION_WHATSAPP = Symbol('PREPARAR_ACCION_WHATSAPP');
@@ -97,7 +98,7 @@ export class ProcesadorWhatsappService {
 function esUtil(envio: EnvioWhatsapp, cita: Cita, condicion: CondicionConfirmacionCita, ahora: Date): boolean {
   // El inicio congelado detecta movimientos incluso mientras las gestiones previas aún conservan la generación.
   if (cita.generacionAutomatizacion !== envio.generacion || condicion.contactoAutorizado !== 1
-    || cita.inicioUtc <= ahora || envio.utilHasta <= ahora || envio.programadoEn > ahora
+    || !envioVigenteHasta(envio, cita, ahora.getTime()) || envio.programadoEn > ahora
     || envio.parametrosPlantilla.inicioUtc !== cita.inicioUtc.toISOString()) return false;
   if (envio.tipo === 'inicial_pendiente') {
     return cita.estado === 'pendiente' && (condicion.estadoPolitica === 'pendiente'
@@ -105,6 +106,5 @@ function esUtil(envio: EnvioWhatsapp, cita: Cita, condicion: CondicionConfirmaci
       && (!condicion.vencimientoUtc || ahora < condicion.vencimientoUtc);
   }
   return cita.estado === 'confirmada' && condicion.estadoPolitica === 'confirmada'
-    && (envio.tipo !== 'recordatorio' || (condicion.categoria === 'normal'
-      && ahora.getTime() < envio.programadoEn.getTime() + 5 * 60_000));
+    && (envio.tipo !== 'recordatorio' || condicion.categoria === 'normal');
 }

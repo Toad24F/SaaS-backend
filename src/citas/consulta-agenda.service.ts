@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Brackets } from 'typeorm';
+import { Brackets, In } from 'typeorm';
+import { CondicionConfirmacionCita } from '../automatizaciones/entities/condicion-confirmacion-cita.entity';
+import { EnvioWhatsapp } from '../automatizaciones/entities/envio-whatsapp.entity';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Permiso } from '../auth/services/autorizacion.service';
 import { Cita } from '../disponibilidad/entities/cita.entity';
@@ -32,6 +34,13 @@ function valoresOperativos(valores: Record<string, unknown> | null) {
   if (valores === null) return null;
   return Object.fromEntries(Object.entries(valores).filter(([clave, valor]) => CAMPOS_EVENTO.has(clave) &&
     (valor === null || typeof valor === 'string' || typeof valor === 'number' || typeof valor === 'boolean')));
+}
+
+function estadoSeguimiento(cita: Cita, condicion: CondicionConfirmacionCita, ahora: Date) {
+  // El plazo depende del reloj y la política. Los acuses solo describen la comunicación.
+  if (condicion.estadoPolitica !== 'pendiente') return condicion.estadoPolitica;
+  if (cita.estado !== 'pendiente' || !condicion.vencimientoUtc) return 'sin_plazo';
+  return ahora < condicion.vencimientoUtc ? 'plazo_activo' : 'plazo_vencido';
 }
 
 /** Lecturas operativas con snapshot, causas e historial; nunca modifican citas. */
@@ -75,17 +84,25 @@ export class ConsultaAgendaService {
             [`zona${clave}`]: zona, [`desde${clave}`]: tramo.inicio, [`hasta${clave}`]: tramo.fin });
         }));
       }));
-      const filas = await consulta.select([...CAMPOS_RESUMEN, 'finOcupacionUtc'].map((campo) => `cita.${campo}`))
+      const filas = await consulta.select([...CAMPOS_RESUMEN, 'finOcupacionUtc', 'condicionVigenteId'].map((campo) => `cita.${campo}`))
         .orderBy('cita.inicioUtc', 'ASC').addOrderBy('cita.id', 'ASC')
         .limit(MAX_CITAS_AGENDA + 1).getMany();
       // La fila centinela detecta exceso tras alcance/fechas/filtros. Nunca truncar ni calcular causas antes del control.
       if (filas.length > MAX_CITAS_AGENDA) throw new ConsultaAgendaDemasiadoAmpliaException();
+      // Una sola lectura de políticas para todo el periodo autorizado, sin cargar envíos ni razones en el calendario.
+      const ids = filas.flatMap((cita) => cita.condicionVigenteId ? [cita.condicionVigenteId] : []);
+      const condiciones = ids.length ? await ctx.manager.find(CondicionConfirmacionCita, {
+        where: { negocioId: ctx.negocioId, id: In(ids) }, select: { id: true, estadoPolitica: true, vencimientoUtc: true },
+      }) : [];
+      const politicaPorId = new Map(condiciones.map((condicion) => [condicion.id, condicion]));
       const citas = [];
       // Un fallo en cualquier cita aborta el periodo entero; solo una respuesta completa puede ser 200.
       for (const cita of filas) {
         const causas = await this.afectadas.causasParaCita({ ...ctx, personalId: cita.personalId }, cita);
         const resumen = Object.fromEntries(CAMPOS_RESUMEN.map((campo) => [campo, cita[campo]])) as Pick<Cita, typeof CAMPOS_RESUMEN[number]>;
-        citas.push({ ...resumen, ...proyectarHorarioCita(cita), causas });
+        const politica = cita.condicionVigenteId ? politicaPorId.get(cita.condicionVigenteId) : undefined;
+        citas.push({ ...resumen, ...proyectarHorarioCita(cita), causas,
+          ...(politica ? { seguimientoEstado: estadoSeguimiento(cita, politica, ctx.ahora) } : {}) });
       }
       return { desde: filtro.desde, hasta: filtro.hasta, citas };
     }, 'REPEATABLE READ');
@@ -96,7 +113,8 @@ export class ConsultaAgendaService {
     validarDetalleCita(query);
     return this.acceso.ejecutar(identidad, Permiso.CONSULTAR_CITAS, async (ctx) => {
       const cita = await ctx.manager.getRepository(Cita).createQueryBuilder('cita')
-        .select(CAMPOS.map((campo) => `cita.${campo}`)).where({ ...this.acceso.alcanceCitas(ctx), id }).getOne();
+        .select([...CAMPOS, 'condicionVigenteId', 'generacionAutomatizacion'].map((campo) => `cita.${campo}`))
+        .where({ ...this.acceso.alcanceCitas(ctx), id }).getOne();
       if (!cita) throw new NotFoundException();
       return this.proyectarCita(ctx, cita);
     }, 'REPEATABLE READ');
@@ -132,6 +150,17 @@ export class ConsultaAgendaService {
     const causas = await this.afectadas.causasParaCita({ ...ctx, personalId: cita.personalId }, cita);
     // TypeORM puede inicializar propiedades no seleccionadas con undefined: no propagar la entidad.
     const snapshot = Object.fromEntries(CAMPOS.map((campo) => [campo, cita[campo]])) as Pick<Cita, typeof CAMPOS[number]>;
-    return { ...snapshot, ...proyectarHorarioCita(cita), causas };
+    const condicion = cita.condicionVigenteId && cita.generacionAutomatizacion
+      ? await ctx.manager.findOneBy(CondicionConfirmacionCita, { negocioId: ctx.negocioId, citaId: cita.id,
+        id: cita.condicionVigenteId, generacion: cita.generacionAutomatizacion }) : null;
+    if (!condicion) return { ...snapshot, ...proyectarHorarioCita(cita), causas };
+    // El detalle publica estados de la generación actual, sin destinatario, secretos ni respuesta del proveedor.
+    const envios = await ctx.manager.find(EnvioWhatsapp, { where: { negocioId: ctx.negocioId, citaId: cita.id,
+      generacion: condicion.generacion }, select: { tipo: true, estado: true }, order: { id: 'ASC' } });
+    return { ...snapshot, ...proyectarHorarioCita(cita), causas, seguimiento: {
+      estado: estadoSeguimiento(cita, condicion, ctx.ahora), vencimientoUtc: condicion.vencimientoUtc,
+      motivoSeguimiento: condicion.estadoPolitica === 'seguimiento_manual' ? condicion.motivoSeguimiento : null,
+      envios: envios.map(({ tipo, estado }) => ({ tipo, estado })),
+    } };
   }
 }

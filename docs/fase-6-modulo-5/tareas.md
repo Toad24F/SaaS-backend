@@ -446,21 +446,25 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** La transición anula recordatorio y genera seguimiento manual sin reutilizar vencimiento.
   - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T094 — Programar recordatorio al confirmar** (25 min).
+- [x] **M5-T094 — Programar recordatorio al confirmar** (25 min).
   - **RF:** RF-47–RF-48, RF-62. **Depende de:** M5-T085, M5-T069.
   - **Hecho cuando:** Confirmación elegible crea un único trabajo por generación; configuración posterior no lo mueve.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T095 — Descartar recordatorios obsoletos** (25 min).
+- [x] **M5-T095 — Descartar recordatorios obsoletos** (25 min).
   - **RF:** RF-47–RF-48. **Depende de:** M5-T094, M5-T093, M5-T078.
   - **Hecho cuando:** Cancelar, mover, inicio alcanzado y retraso mayor a cinco minutos descartan; silencio no altera estado.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T096 — Registrar ciclos de procesadores** (25 min).
+- [x] **M5-T096 — Registrar ciclos de procesadores** (25 min).
   - **RF:** RF-36–RF-38, RF-44, RF-47–RF-48. **Depende de:** M5-T090, M5-T095.
   - **Hecho cuando:** Inicio/parada y ciclo de 15 segundos con lotes de 50 usan trabajo durable y no duplican ejecuciones.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T097 — Mostrar seguimiento y estado de comunicación** (25 min).
+- [x] **M5-T097 — Mostrar seguimiento y estado de comunicación** (25 min).
   - **RF:** RF-34, RF-37–RF-38, RF-43. **Depende de:** M5-T090, M5-T083.
   - **Hecho cuando:** Personal autorizado distingue plazo activo, seguimiento y fallo sin confundir entrega con asistencia.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
 - [ ] **M5-T098 — Probar confirmación contra cancelador** (25 min).
   - **RF:** RF-33, RF-35, RF-44–RF-45, RF-62. **Depende de:** M5-T096, M5-T087, M5-T004.

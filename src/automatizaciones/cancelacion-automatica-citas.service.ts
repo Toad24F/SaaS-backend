@@ -9,6 +9,7 @@ import { AccionConfirmacion } from './entities/accion-confirmacion.entity';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
 import { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
+import { descartarEnviosSinTransporte } from './envios-cita';
 
 const LIMITE_LOTE = 50;
 const CAUSA = 'falta_confirmacion_plazo' as const;
@@ -69,6 +70,7 @@ export class CancelacionAutomaticaCitasService {
 
     const version = cita.version + 1;
     await manager.update(Cita, { negocioId, id: citaId }, { estado: 'cancelada', causaCancelacion: CAUSA, version });
+    await descartarEnviosSinTransporte(manager, { negocioId, citaId, generacion, tipo: 'recordatorio' }, 'cita_cancelada');
     await manager.update(CondicionConfirmacionCita, condicion.id, { estadoPolitica: 'cancelada' });
     // El cambio de estado libera la ocupación existente. La auditoría y la política comparten ese commit.
     await manager.insert(EventoCita, { negocioId, citaId, accion: 'cancelacion', procesoSistema: 'cancelacion_automatica',

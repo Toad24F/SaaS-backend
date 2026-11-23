@@ -13,6 +13,8 @@ import { EventoCita } from '../src/citas/entities/evento-cita.entity';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
 import { OcupacionesService } from '../src/disponibilidad/ocupaciones.service';
 import { Not } from 'typeorm';
+import request from 'supertest';
+import { Rol } from '../src/auth/enums/rol.enum';
 import { situarSesion } from './support/acceso-operativo';
 import { conAgendaHttp } from './support/agenda-http';
 import { prepararManual, type EscenarioManualHttp } from './support/cita-manual';
@@ -273,6 +275,50 @@ describe('M5-T091–T093 · Nuevas generaciones al gestionar citas', () => {
       f.reloj.fijar(m.plazo);
       expect(await m.cancelar.ejecutarLote()).toEqual({ canceladas: 0, seguimiento: 0 });
       expect(await m.eventos()).toHaveLength(2);
+    });
+  });
+});
+
+describe('M5-T094–T097 · Recordatorio, recuperación y proyección privada', () => {
+  it('programa al confirmar manualmente y descarta al mover y al cancelar', async () => {
+    await conAgendaHttp(async (f) => {
+      const m = await preparar(f);
+      await m.cambiar('confirmada', 1);
+      const [, recordatorio] = await m.envios();
+      expect(recordatorio).toMatchObject({ tipo: 'recordatorio', estado: 'pendiente', generacion: 1,
+        programadoEn: new Date(inicio.getTime() - 24 * 3_600_000) });
+      await f.app.get(CambioHorarioCitaService).cambiar(m.identidad, String(m.cita.id), { ...destino, version: 2 });
+      expect((await m.envios()).find(({ id }) => id === recordatorio.id)).toMatchObject({ estado: 'descartado', intentos: 0 });
+      const [, , nuevo] = await m.envios();
+      expect(nuevo).toMatchObject({ tipo: 'recordatorio', estado: 'pendiente', generacion: 2 });
+      await m.cambiar('cancelada', 3);
+      expect((await m.envios()).find(({ id }) => id === nuevo.id)).toMatchObject({ estado: 'descartado', intentos: 0 });
+      expect((await m.leer()).estado).toBe('cancelada');
+    });
+  });
+
+  it('muestra plazo, seguimiento y comunicación solo a personal con alcance', async () => {
+    await conAgendaHttp(async (f) => {
+      const m = await preparar(f);
+      const ruta = `/citas/${m.cita.id}`;
+      const leer = () => request(f.http).get(ruta).set('Authorization', m.auth).expect(200);
+      await m.acuse();
+      const activa = await leer();
+      expect(activa.body).toMatchObject({ estado: 'pendiente', seguimiento: { estado: 'plazo_activo',
+        vencimientoUtc: m.plazo.toISOString(), envios: [{ tipo: 'inicial_pendiente', estado: 'leido' }] } });
+      expect(JSON.stringify(activa.body.seguimiento)).not.toMatch(/wamid|52\d{10}|tokenHash|correlacion|parametros/);
+      const calendario = await request(f.http).get('/citas').query({ desde: '2026-11-09', hasta: '2026-11-09' })
+        .set('Authorization', m.auth).expect(200);
+      expect(calendario.body.citas.find((cita: { id: number }) => cita.id === m.cita.id))
+        .toMatchObject({ seguimientoEstado: 'plazo_activo' });
+      const ajeno = f.actores.find((actor) => actor.rol === Rol.PROFESIONAL && actor.negocioId === m.cita.negocioId
+        && actor.id !== m.cita.personalId)!;
+      await request(f.http).get(ruta).set('Authorization', `Bearer ${f.token(ajeno.id)}`).expect(404);
+      await f.db.manager.update(CondicionConfirmacionCita, m.condicion.id, { estadoPolitica: 'seguimiento_manual',
+        motivoSeguimiento: 'WhatsApp informó un fallo de entrega.' });
+      await f.db.manager.update(EnvioWhatsapp, m.envio.id, { estado: 'fallido' });
+      expect((await leer()).body).toMatchObject({ estado: 'pendiente', seguimiento: { estado: 'seguimiento_manual',
+        motivoSeguimiento: 'WhatsApp informó un fallo de entrega.', envios: [{ tipo: 'inicial_pendiente', estado: 'fallido' }] } });
     });
   });
 });
