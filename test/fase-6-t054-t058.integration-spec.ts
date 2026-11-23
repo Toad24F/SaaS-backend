@@ -1,6 +1,6 @@
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
 import { RelojPrueba } from './support/reloj';
-import { retrocederHastaMigracion } from './support/mariadb';
+import { retrocederHastaMigracion, limitarMigracionesHasta } from './support/mariadb';
 import { ConfiguracionAutomatizaciones } from '../src/automatizaciones/entities/configuracion-automatizaciones.entity';
 import { CondicionConfirmacionCita } from '../src/automatizaciones/entities/condicion-confirmacion-cita.entity';
 
@@ -26,6 +26,8 @@ describe('M5-T054–T058: persistencia de automatizaciones y actores', () => {
   it('actualiza citas y eventos previos sin reconstruir snapshots ni inventar condiciones', async () => {
     await conBaseOperativa(async db => {
       await retrocederHastaMigracion(db, 'IdentidadActivaClientes1760000053000');
+      // Esta prueba histórica termina en T058; las migraciones posteriores se prueban aparte.
+      limitarMigracionesHasta(db, 'ActoresEventosCita1760000057000');
       const { negocios: [a] } = await crearEscenarioOperativo(db, new RelojPrueba(ahora));
       const cita = a.ocupaciones[0];
       const anterior = (await db.query('SELECT * FROM citas WHERE id=?', [cita]))[0];
@@ -33,7 +35,8 @@ describe('M5-T054–T058: persistencia de automatizaciones y actores', () => {
         (negocio_id,cita_id,actor_usuario_id,accion,version_resultante,valores_despues)
         VALUES (?,?,?,'alta',1,'{}')`, [a.id, cita, a.profesionales[0]]);
       expect((await db.runMigrations({ transaction: 'each' })).map(migracion => migracion.name))
-        .toEqual(['ConfiguracionAutomatizaciones1760000054000', 'CondicionesConfirmacionCita1760000055000',
+        .toEqual(['ConfiguracionAutomatizaciones1760000054000', 'PersonalizacionPortal1760000054500',
+          'CondicionesConfirmacionCita1760000055000',
           'ReferenciaCondicionCita1760000056000', 'ActoresEventosCita1760000057000']);
       const nueva = (await db.query('SELECT * FROM citas WHERE id=?', [cita]))[0];
       for (const [campo, valor] of Object.entries(anterior)) expect(nueva[campo]).toEqual(valor);

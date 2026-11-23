@@ -14,6 +14,7 @@ export type OrigenConfirmacion = 'personal' | 'whatsapp';
 @Check('chk_ccc_plazo', 'plazo_aplicado_minutos IS NULL OR plazo_aplicado_minutos > 0')
 @Check('chk_ccc_vencimiento', 'vencimiento_utc IS NULL OR plazo_aplicado_minutos IS NOT NULL')
 @Check('chk_ccc_confirmacion', '(confirmado_en IS NULL AND origen_confirmacion IS NULL) OR (confirmado_en IS NOT NULL AND origen_confirmacion IS NOT NULL)')
+@Check('chk_ccc_contacto_autorizado', 'contacto_autorizado IN (0,1)')
 export class CondicionConfirmacionCita {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true }) id: string;
   @Column({ name: 'negocio_id', type: 'int', unsigned: true }) negocioId: number;
@@ -27,6 +28,8 @@ export class CondicionConfirmacionCita {
   @Column({ name: 'plazo_aplicado_minutos', type: 'smallint', unsigned: true, nullable: true }) plazoAplicadoMinutos: number | null;
   @Column({ name: 'vencimiento_utc', type: 'datetime', precision: 3, nullable: true }) vencimientoUtc: Date | null;
   @Column({ name: 'motivo_seguimiento', type: 'varchar', length: 500, nullable: true }) motivoSeguimiento: string | null;
+  // La decisión se guarda por generación, separada de la ficha reutilizable del cliente.
+  @Column({ name: 'contacto_autorizado', type: 'tinyint', default: 0 }) contactoAutorizado: number;
   @Column({ name: 'estado_politica', type: 'enum', enum: ['pendiente', 'confirmada', 'seguimiento_manual', 'cancelada', 'anulada'], default: 'pendiente' }) estadoPolitica: EstadoPolitica;
   @Column({ name: 'version_configuracion', type: 'int', unsigned: true, nullable: true }) versionConfiguracion: number | null;
   @Column({ name: 'confirmado_en', type: 'datetime', precision: 3, nullable: true }) confirmadoEn: Date | null;

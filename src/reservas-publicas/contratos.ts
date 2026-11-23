@@ -20,6 +20,9 @@ export interface ResultadoReservaPublica {
   nombreServicio: string;
   nombreSucursal: string;
   nombreProfesional: string;
+  /** Hora exacta de la política de esta cita; null siempre exige seguimiento humano. */
+  vencimientoConfirmacionUtc: string | null;
+  seguimientoManual: boolean;
 }
 
 /** El importe HTTP es opcional y nunca afirma aceptación de un precio oculto. */

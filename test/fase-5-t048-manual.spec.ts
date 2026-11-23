@@ -15,9 +15,9 @@ describe('M4-T048: contrato cerrado de selección manual', () => {
   });
   it('normaliza cliente nuevo y notas, conserva minutos manuales sin estrategia pública', () => {
     expect(validarSeleccionManual({ ...base, notas: ' Nota ' })).toEqual({ ...base,
-      clienteNuevo: { nombreCompleto: 'Ana', telefono: '6141234567' }, notas: 'Nota' });
+      clienteNuevo: { nombreCompleto: 'Ana', telefono: '6141234567' }, notas: 'Nota', autorizaWhatsapp: false });
     const { clienteNuevo: _, ...seleccion } = base;
-    expect(validarSeleccionManual({ ...seleccion, clienteId: 4 })).toEqual({ ...seleccion, clienteId: 4, notas: null });
+    expect(validarSeleccionManual({ ...seleccion, clienteId: 4 })).toEqual({ ...seleccion, clienteId: 4, notas: null, autorizaWhatsapp: false });
   });
   it.each(['negocioId', 'costo', 'precio', 'finUtc', 'zonaHoraria', 'modalidad', 'apartadoPropio', 'estado', 'excluirCitaId'])
     ('rechaza autoridad del navegador en %s', (campo) => {

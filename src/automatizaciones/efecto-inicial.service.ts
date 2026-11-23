@@ -10,7 +10,8 @@ import { calcularRecordatorio, calcularVencimientoConfirmacion } from './politic
 /** Añade la política y los trabajos al mismo manager de la cita; nunca llama al proveedor. */
 @Injectable()
 export class EfectoInicialService {
-  async preparar(manager: EntityManager, cita: Cita, ahora: Date): Promise<void> {
+  async preparar(manager: EntityManager, cita: Cita, ahora: Date,
+    autorizaWhatsapp = false): Promise<void> {
     const generacion = 1;
     // El intento registrado se recupera sin repetir escrituras ni reemplazar su política histórica.
     if (await manager.findOneBy(CondicionConfirmacionCita,
@@ -21,18 +22,20 @@ export class EfectoInicialService {
     ]);
     const politica = calcularVencimientoConfirmacion(ahora, cita.inicioUtc,
       configuracion?.plazoConfirmacionHoras ?? 12);
-    const comunicable = canal?.habilitado === 1 && /^\d{10}$/.test(cita.telefonoContacto ?? '');
+    const comunicable = autorizaWhatsapp && canal?.habilitado === 1 && /^\d{10}$/.test(cita.telefonoContacto ?? '');
     const manual = cita.origen === 'manual';
     const vencimientoUtc = manual || !comunicable ? null : politica.vencimientoUtc;
-    const seguimiento = !manual && (!comunicable || !vencimientoUtc);
+    const seguimiento = !comunicable || (!manual && !vencimientoUtc);
     const condicion = await manager.getRepository(CondicionConfirmacionCita).save({
       negocioId: cita.negocioId, citaId: cita.id, generacion,
       categoria: politica.categoria, instanteBase: ahora,
       plazoAplicadoMinutos: vencimientoUtc ? politica.plazoAplicadoMinutos : null,
       vencimientoUtc,
+      contactoAutorizado: autorizaWhatsapp ? 1 : 0,
       motivoSeguimiento: seguimiento
-        ? (!comunicable ? 'Canal de contacto no disponible.' : politica.motivoSeguimiento) : null,
-      estadoPolitica: manual ? 'confirmada' : seguimiento ? 'seguimiento_manual' : 'pendiente',
+        ? (!autorizaWhatsapp ? 'Contacto WhatsApp no autorizado.'
+          : !comunicable ? 'Canal de contacto no disponible.' : politica.motivoSeguimiento) : null,
+      estadoPolitica: seguimiento ? 'seguimiento_manual' : manual ? 'confirmada' : 'pendiente',
       versionConfiguracion: configuracion?.version ?? 0,
       confirmadoEn: manual ? ahora : null, origenConfirmacion: manual ? 'personal' : null,
     });

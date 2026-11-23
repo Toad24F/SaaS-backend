@@ -30,18 +30,18 @@ describe('M5-T067: efecto durable en el manager del escritor', () => {
       await db.getRepository(Cita).save(cita);
       const efecto = new EfectoInicialService();
       await expect(db.transaction(async (manager) => {
-        await efecto.preparar(manager, cita, ahora);
+        await efecto.preparar(manager, cita, ahora, true);
         throw new Error('fallo controlado');
       })).rejects.toThrow('fallo controlado');
       expect(await db.query('SELECT id FROM condiciones_confirmacion_cita WHERE cita_id=?', [cita.id])).toHaveLength(0);
       expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id])).toHaveLength(0);
-      await db.transaction((manager) => efecto.preparar(manager, cita, ahora));
+      await db.transaction((manager) => efecto.preparar(manager, cita, ahora, true));
       const condiciones = await db.query('SELECT * FROM condiciones_confirmacion_cita WHERE cita_id=?', [cita.id]);
       const envios = await db.query('SELECT * FROM envios_whatsapp WHERE cita_id=?', [cita.id]);
       expect(condiciones).toHaveLength(1);
       expect(envios).toHaveLength(1);
       expect(envios[0]).toMatchObject({ tipo: 'inicial_pendiente', estado: 'pendiente' });
-      await db.transaction((manager) => efecto.preparar(manager, cita, ahora));
+      await db.transaction((manager) => efecto.preparar(manager, cita, ahora, true));
       expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id])).toHaveLength(1);
     });
   });
@@ -71,7 +71,7 @@ describe('M5-T069: alta manual real', () => {
     if (secretoPrevio === undefined) delete process.env.CITAS_MANUALES_HMAC_SECRET;
     else process.env.CITAS_MANUALES_HMAC_SECRET = secretoPrevio;
   });
-  it('crea inicial confirmado y recordatorio futuro sin vencimiento de cancelación', async () => {
+  it.each([true, false])('crea alta manual sin plazo con autorización %s', async (autorizaWhatsapp) => {
     await conBaseOperativa(async (db) => {
       const f = await crearAccesoOperativo(db);
       const referencia = await db.getRepository(Cita).findOneByOrFail({ id: f.negocios[0].ocupaciones[0] });
@@ -85,7 +85,7 @@ describe('M5-T069: alta manual real', () => {
       const identidad = { sub: actor.id, sesionId: actor.sesionId };
       const seleccion = { clienteId: referencia.clienteId, sucursalId: referencia.sucursalId,
         personalId: referencia.personalId, servicioId: referencia.servicioId,
-        fechaLocal: '2026-11-09', horaInicio: '09:17', notas: 'Nota de aceptación manual' };
+        fechaLocal: '2026-11-09', horaInicio: '09:17', notas: 'Nota de aceptación manual', autorizaWhatsapp };
       await db.query(`INSERT INTO canales_whatsapp
         (negocio_id,remitente_externo_id,secreto_ref,habilitado) VALUES (?,?,?,1)`,
       [f.negocios[0].id, 'phone-t069', 'secret://whatsapp/test']);
@@ -101,11 +101,14 @@ describe('M5-T069: alta manual real', () => {
       const cita = await registro.registrar(identidad, clave, seleccion);
       expect(cita.estado).toBe('confirmada');
       const [condicion] = await db.query('SELECT * FROM condiciones_confirmacion_cita WHERE cita_id=?', [cita.id]);
-      expect(condicion).toMatchObject({ estado_politica: 'confirmada', vencimiento_utc: null, origen_confirmacion: 'personal' });
+      expect(condicion).toMatchObject({ estado_politica: autorizaWhatsapp ? 'confirmada' : 'seguimiento_manual',
+        vencimiento_utc: null, origen_confirmacion: 'personal', contacto_autorizado: autorizaWhatsapp ? 1 : 0 });
       const envios = await db.query('SELECT tipo FROM envios_whatsapp WHERE cita_id=? ORDER BY tipo', [cita.id]);
-      expect(envios.map((envio: { tipo: string }) => envio.tipo).sort()).toEqual(['inicial_confirmada', 'recordatorio']);
+      expect(envios.map((envio: { tipo: string }) => envio.tipo).sort())
+        .toEqual(autorizaWhatsapp ? ['inicial_confirmada', 'recordatorio'] : []);
       expect(await registro.registrar(identidad, clave, seleccion)).toEqual(cita);
-      expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id])).toHaveLength(2);
+      expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id]))
+        .toHaveLength(autorizaWhatsapp ? 2 : 0);
       } finally { await modulo.close(); }
     });
   });

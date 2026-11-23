@@ -1328,7 +1328,8 @@ CREATE TABLE configuracion_automatizaciones (
   CONSTRAINT chk_ca_recordatorio CHECK (recordatorio_horas BETWEEN 12 AND 48)
 ) ENGINE=InnoDB;
 
--- M5-T055: cada generación guarda la política aplicada; no se crean filas retroactivas.
+-- M5-T055/T072: el DDL inicia vacío; la migración T072 clasifica citas ya existentes
+-- como manual_heredada sin plazos ni trabajos retroactivos.
 CREATE TABLE condiciones_confirmacion_cita (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   negocio_id INT UNSIGNED NOT NULL,
@@ -1339,6 +1340,7 @@ CREATE TABLE condiciones_confirmacion_cita (
   plazo_aplicado_minutos SMALLINT UNSIGNED NULL,
   vencimiento_utc DATETIME(3) NULL,
   motivo_seguimiento VARCHAR(500) NULL,
+  contacto_autorizado TINYINT NOT NULL DEFAULT 0,
   estado_politica ENUM('pendiente','confirmada','seguimiento_manual','cancelada','anulada') NOT NULL DEFAULT 'pendiente',
   version_configuracion INT UNSIGNED NULL,
   confirmado_en DATETIME(3) NULL,
@@ -1351,6 +1353,7 @@ CREATE TABLE condiciones_confirmacion_cita (
   CONSTRAINT chk_ccc_generacion CHECK (generacion >= 1),
   CONSTRAINT chk_ccc_plazo CHECK (plazo_aplicado_minutos IS NULL OR plazo_aplicado_minutos > 0),
   CONSTRAINT chk_ccc_vencimiento CHECK (vencimiento_utc IS NULL OR plazo_aplicado_minutos IS NOT NULL),
+  CONSTRAINT chk_ccc_contacto_autorizado CHECK (contacto_autorizado IN (0,1)),
   CONSTRAINT chk_ccc_confirmacion CHECK ((confirmado_en IS NULL AND origen_confirmacion IS NULL)
     OR (confirmado_en IS NOT NULL AND origen_confirmacion IS NOT NULL))
 ) ENGINE=InnoDB;

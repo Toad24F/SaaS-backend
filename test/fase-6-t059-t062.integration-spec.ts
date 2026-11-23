@@ -1,6 +1,6 @@
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
 import { RelojPrueba } from './support/reloj';
-import { retrocederHastaMigracion } from './support/mariadb';
+import { retrocederHastaMigracion, limitarMigracionesHasta } from './support/mariadb';
 import { CanalWhatsapp } from '../src/automatizaciones/entities/canal-whatsapp.entity';
 import { EnvioWhatsapp } from '../src/automatizaciones/entities/envio-whatsapp.entity';
 import { EventoWhatsapp } from '../src/automatizaciones/entities/evento-whatsapp.entity';
@@ -19,6 +19,8 @@ describe('M5-T059–T062: persistencia durable de WhatsApp', () => {
           .toEqual(columnas.map((columna: { Field: string }) => columna.Field).sort());
       }
       await retrocederHastaMigracion(db, 'ActoresEventosCita1760000057000');
+      // Este caso comprueba el corte histórico T059–T062, previo a las políticas T070–T072.
+      limitarMigracionesHasta(db, 'AccionesConfirmacion1760000061000');
       const { negocios: [a] } = await crearEscenarioOperativo(db, new RelojPrueba(ahora));
       const cita = (await db.query('SELECT * FROM citas WHERE id=?', [a.ocupaciones[0]]))[0];
       expect((await db.runMigrations({ transaction: 'each' })).map(migracion => migracion.name))

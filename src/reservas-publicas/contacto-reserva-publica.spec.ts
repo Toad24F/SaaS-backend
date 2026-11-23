@@ -6,7 +6,7 @@ describe('M3-T069–T071: contacto y huella del envío', () => {
 
   it('normaliza nombre, teléfono y notas sin interpretar HTML', () => {
     expect(validarContactoReservaPublica(valido)).toEqual({ nombre: 'María José',
-      telefono: '6141234567', notas: 'Consulta' });
+      telefono: '6141234567', notas: 'Consulta', autorizaWhatsapp: false });
     expect(validarContactoReservaPublica({ nombre: 'Á'.repeat(150),
       telefono: '614 123 4567', notas: '<b>x</b>' + 'a'.repeat(1992) }))
       .toMatchObject({ nombre: 'Á'.repeat(150), telefono: '6141234567' });

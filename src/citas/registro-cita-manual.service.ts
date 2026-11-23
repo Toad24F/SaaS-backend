@@ -77,7 +77,7 @@ export class RegistroCitaManualService {
         zonaHoraria: cita.zonaHorariaReserva, costoAceptado: copia.costoAceptado,
       } });
     // Condición, mensaje y recordatorio se confirman con la cita; repetir el intento no reentra aquí.
-    await this.efectoInicial.preparar(manager, cita, ctx.ahora);
+    await this.efectoInicial.preparar(manager, cita, ctx.ahora, seleccion.autorizaWhatsapp);
     // El resultado durable se confirma al final con su huella intacta. Un fallo en cualquiera
     // de estas escrituras revierte también el cliente nuevo, su auditoría, la cita y su evento.
     const cambio = await manager.getRepository(IntentoCitaManual).update({ id: ctx.intento.id,

@@ -13,7 +13,7 @@ import { RelojPrueba } from './support/reloj';
 jest.mock('sharp', () => ({ __esModule: true, default: () => ({}) }), { virtual: true });
 
 describe('M5-T068: reserva pública y efecto inicial', () => {
-  it('comparte commit y recupera el mismo resultado sin segundo trabajo', async () => {
+  it.each([true, false])('comparte commit y recupera el resultado con autorización %s', async (autorizaWhatsapp) => {
     await conBaseOperativa(async (db) => {
       const reloj = new RelojPrueba(new Date('2026-10-20T12:00:00.000Z'));
       const { negocios: [negocio] } = await crearEscenarioPortal(db, reloj);
@@ -42,17 +42,23 @@ describe('M5-T068: reserva pública y efecto inicial', () => {
         await modulo.get(IntentosReservaPublicaService).preparar(negocio.id, titular,
           { clave, apartadoId: apartado.apartadoId! });
         const registro = modulo.get(RegistroReservaPublicaService);
-        const contacto = { nombre: 'Persona pública', telefono: '6147778899', notas: 'Nota privada' };
+        const contacto = { nombre: 'Persona pública', telefono: '6147778899', notas: 'Nota privada', autorizaWhatsapp };
         const primero = await registro.registrar(negocio.id, titular, clave, contacto);
         expect(primero.estado).toBe('pendiente');
+        expect(primero).toMatchObject({ seguimientoManual: !autorizaWhatsapp });
+        if (autorizaWhatsapp) expect(primero.vencimientoConfirmacionUtc).toMatch(/Z$/);
+        else expect(primero.vencimientoConfirmacionUtc).toBeNull();
         const [cita] = await db.query('SELECT * FROM citas WHERE folio=?', [primero.folio]);
         const [condicion] = await db.query('SELECT * FROM condiciones_confirmacion_cita WHERE cita_id=?', [cita.id]);
-        expect(condicion).toMatchObject({ estado_politica: 'pendiente', categoria: 'proxima' });
-        expect(condicion.vencimiento_utc).toBeInstanceOf(Date);
-        const [envio] = await db.query('SELECT * FROM envios_whatsapp WHERE cita_id=?', [cita.id]);
-        expect(envio).toMatchObject({ tipo: 'inicial_pendiente', estado: 'pendiente' });
+        expect(condicion).toMatchObject({ estado_politica: autorizaWhatsapp ? 'pendiente' : 'seguimiento_manual', categoria: 'proxima' });
+        expect(condicion.contacto_autorizado).toBe(autorizaWhatsapp ? 1 : 0);
+        if (autorizaWhatsapp) expect(condicion.vencimiento_utc).toBeInstanceOf(Date);
+        else expect(condicion.vencimiento_utc).toBeNull();
+        const envios = await db.query('SELECT * FROM envios_whatsapp WHERE cita_id=?', [cita.id]);
+        expect(envios).toHaveLength(autorizaWhatsapp ? 1 : 0);
+        if (autorizaWhatsapp) expect(envios[0]).toMatchObject({ tipo: 'inicial_pendiente', estado: 'pendiente' });
         expect(await registro.registrar(negocio.id, titular, clave, contacto)).toEqual(primero);
-        expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id])).toHaveLength(1);
+        expect(await db.query('SELECT id FROM envios_whatsapp WHERE cita_id=?', [cita.id])).toHaveLength(autorizaWhatsapp ? 1 : 0);
       } finally {
         await modulo.close();
         if (secretoPrevio === undefined) delete process.env.PORTAL_FORMULARIO_HMAC_SECRET;

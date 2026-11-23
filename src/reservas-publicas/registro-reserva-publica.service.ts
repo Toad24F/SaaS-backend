@@ -9,6 +9,7 @@ import { Cita } from '../disponibilidad/entities/cita.entity';
 import { ResolucionClienteService } from '../clientes/resolucion-cliente.service';
 import { EventoCita } from '../citas/entities/evento-cita.entity';
 import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
+import { condicionResultadoPublico } from './condicion-resultado-publico';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -211,7 +212,7 @@ export class RegistroReservaPublicaService {
         zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
       } });
     // El efecto durable comparte la transacción de consumo e intento; nunca envía HTTP aquí.
-    await this.efectoInicial.preparar(manager, cita, ahora);
+    await this.efectoInicial.preparar(manager, cita, ahora, contacto.autorizaWhatsapp);
     await manager.getRepository(BloqueoTemporal).update({ id: apartado.id,
       negocioId: intento.negocioId }, { liberadoEn: ahora });
     await manager.getRepository(SesionReservaPublica).update({ id: sesion.id,
@@ -219,9 +220,11 @@ export class RegistroReservaPublicaService {
     await manager.getRepository(IntentoReservaPublica).update({ id: intento.id,
       negocioId: intento.negocioId }, { estado: 'registrado',
       formularioHash: huella, citaId: cita.id });
+    // El resultado usa la condición ya persistida en esta transacción, no un cálculo paralelo.
+    const condicion = await condicionResultadoPublico(manager, intento.negocioId, cita.id);
     return { folio, estado: 'pendiente', inicioUtc: inicioUtc.toISOString(),
       finUtc: finUtc.toISOString(), zonaHoraria: copia.zona, costoAceptado: copia.costo,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
-      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional };
+      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, ...condicion };
   }
 }

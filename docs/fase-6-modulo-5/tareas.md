@@ -322,21 +322,25 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Cita Confirmada crea mensaje correcto y recordatorio elegible sin plazo de cancelación.
   - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T070 — Integrar autorización de contacto WhatsApp** (25 min).
+- [x] **M5-T070 — Integrar autorización de contacto WhatsApp** (25 min).
   - **RF:** RF-31, RF-37–RF-38. **Depende de:** M5-T068, M5-T069.
   - **Hecho cuando:** Ambos canales guardan autorización sin impedir cita si falta; ausencia deriva a seguimiento.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
-- [ ] **M5-T071 — Probar fallo durante creación de efectos** (25 min).
+- [x] **M5-T071 — Probar fallo durante creación de efectos** (25 min).
   - **RF:** RF-18, RF-31, RF-36, RF-62. **Depende de:** M5-T070, M5-T004.
   - **Hecho cuando:** Fallo tras cada escritura crítica revierte cita/cliente/efectos y repetir intento no los duplica.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
-- [ ] **M5-T072 — Preparar condiciones manuales heredadas** (25 min).
+- [x] **M5-T072 — Preparar condiciones manuales heredadas** (25 min).
   - **RF:** RF-42–RF-43, RF-59. **Depende de:** M5-T055.
   - **Hecho cuando:** La migración de test no asigna plazos ni envíos retroactivos a citas existentes.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
-- [ ] **M5-T073 — Mostrar condiciones en resultado público** (25 min).
+- [x] **M5-T073 — Mostrar condiciones en resultado público** (25 min).
   - **RF:** RF-32, RF-42–RF-43. **Depende de:** M5-T068.
   - **Hecho cuando:** El resultado muestra hora exacta con zona o seguimiento manual sin fecha inventada.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
 ## 8. Transporte, reintentos y recepción WhatsApp
 
