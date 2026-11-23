@@ -4,12 +4,15 @@ import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 import { instalarLimiteCuerpoPublico } from './reservas-publicas/limite-cuerpo-publico';
 import { exigirCompatibilidadAla } from './operacion/compatibilidad-ala';
+import { instalarCuerpoWebhookWhatsapp } from './automatizaciones/webhook-whatsapp.http';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Protege los 32 KiB originales del portal, incluso con JSON espaciado.
   instalarLimiteCuerpoPublico(app);
+  // Preserva los bytes que Meta firmó antes de activar el parser JSON general.
+  instalarCuerpoWebhookWhatsapp(app);
 
   // El portal se sirve en el mismo origen; CORS administrativo no admite cookies.
   app.enableCors({ credentials: false });

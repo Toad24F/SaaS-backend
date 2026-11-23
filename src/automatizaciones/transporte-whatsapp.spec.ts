@@ -55,12 +55,13 @@ describe('M5-T074–T076, transporte y plantillas de WhatsApp', () => {
     const http = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(
       async () => Response.json({ messages: [{ id: 'wamid.prueba' }] }));
     const meta = new MetaWhatsapp(configuracion, secreto, http);
-    expect(await meta.enviar(solicitud)).toEqual({ estado: 'aceptado', referencia: 'wamid.prueba' });
+    const correlacion = '9cf44878-45e5-468f-9289-b29508853d9a';
+    expect(await meta.enviar({ ...solicitud, correlacion })).toEqual({ estado: 'aceptado', referencia: 'wamid.prueba' });
     expect(secreto).toHaveBeenCalledWith(canal.secretoRef);
     const [url, opciones] = http.mock.calls[0];
     expect(url).toBe('https://graph.facebook.com/v26.0/123456/messages');
     expect(new Headers(opciones?.headers).get('authorization')).toBe('Bearer token-sintetico');
-    expect(JSON.parse(String(opciones?.body))).toEqual({ messaging_product: 'whatsapp',
+    expect(JSON.parse(String(opciones?.body))).toEqual({ messaging_product: 'whatsapp', biz_opaque_callback_data: correlacion,
       to: '526141234567', type: 'template', template: { name: 'cita_pendiente', language: { code: 'es_MX' },
         components: [{ type: 'body', parameters: [{ type: 'text', text: 'Turno histórico' }] },
           { type: 'button', sub_type: 'quick_reply', index: '0',

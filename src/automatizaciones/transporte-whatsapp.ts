@@ -9,6 +9,7 @@ export interface SolicitudWhatsapp {
   destinoE164: string;
   tipo: TipoEnvioWhatsapp;
   plantilla: PlantillaWhatsapp;
+  correlacion?: string;
 }
 
 export type ResultadoWhatsapp =
@@ -50,7 +51,7 @@ export class MetaWhatsapp implements TransporteWhatsapp {
     private readonly http: typeof fetch = fetch) {}
 
   async enviar(solicitud: SolicitudWhatsapp): Promise<ResultadoWhatsapp> {
-    const { canal, destinoE164, tipo, plantilla } = solicitud;
+    const { canal, destinoE164, tipo, plantilla, correlacion } = solicitud;
     const { versionGraph, idioma, plantillas } = this.configuracion;
     const nombre = plantillas[tipo];
     if (!/^v[1-9]\d*\.\d+$/.test(versionGraph) || !/^\d+$/.test(canal.remitenteExternoId)
@@ -74,7 +75,9 @@ export class MetaWhatsapp implements TransporteWhatsapp {
       const respuesta = await this.http(`https://graph.facebook.com/${versionGraph}/${canal.remitenteExternoId}/messages`, {
         method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10_000),
         headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        // Meta devuelve este UUID en los acuses incluso cuando el POST pierde su respuesta.
         body: JSON.stringify({ messaging_product: 'whatsapp', to: destinoE164.slice(1), type: 'template',
+          biz_opaque_callback_data: correlacion,
           template: { name: nombre, language: { code: idioma }, components: componentes } }),
       });
       if (respuesta.status === 429) {

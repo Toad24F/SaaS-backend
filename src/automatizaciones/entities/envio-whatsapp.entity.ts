@@ -10,6 +10,7 @@ export type EstadoEnvioWhatsapp = 'pendiente' | 'en_proceso' | 'aceptado' | 'ent
 @Index('uq_ew_clave_efecto', ['negocioId', 'claveEfecto'], { unique: true })
 @Index('uq_ew_generacion_tipo', ['negocioId', 'citaId', 'generacion', 'tipo'], { unique: true })
 @Index('uq_ew_referencia_externa', ['negocioId', 'referenciaExterna'], { unique: true })
+@Index('uq_ew_correlacion', ['negocioId', 'correlacionProveedor'], { unique: true })
 @Index('idx_ew_trabajo', ['estado', 'proximoIntentoEn', 'arrendadoHasta'])
 @Index('idx_ew_cita', ['negocioId', 'citaId', 'generacion'])
 @Check('chk_ew_clave', 'BINARY clave_efecto = BINARY TRIM(clave_efecto) AND CHAR_LENGTH(clave_efecto) > 0')
@@ -36,6 +37,8 @@ export class EnvioWhatsapp {
   @Column({ name: 'arrendado_hasta', type: 'datetime', precision: 3, nullable: true }) arrendadoHasta: Date | null;
   // Se confirma antes del HTTP. Una toma vencida con esta marca no vuelve a la cola de envío.
   @Column({ name: 'inicio_transporte_en', type: 'datetime', precision: 3, nullable: true }) inicioTransporteEn: Date | null;
+  // UUID del intento para acuses. Es independiente del token privado del arrendamiento.
+  @Column({ name: 'correlacion_proveedor', type: 'char', length: 36, charset: 'ascii', collation: 'ascii_bin', nullable: true }) correlacionProveedor: string | null;
   @Column({ name: 'referencia_externa', type: 'varchar', length: 128, nullable: true }) referenciaExterna: string | null;
   @Column({ name: 'aceptado_en', type: 'datetime', precision: 3, nullable: true }) aceptadoEn: Date | null;
   @Column({ name: 'entregado_en', type: 'datetime', precision: 3, nullable: true }) entregadoEn: Date | null;

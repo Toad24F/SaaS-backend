@@ -18,6 +18,8 @@ export class EventoWhatsapp {
   @Column({ name: 'huella_evento', type: 'char', length: 64, charset: 'ascii', collation: 'ascii_bin' }) huellaEvento: string;
   @Column({ name: 'evento_externo_id', type: 'varchar', length: 128, nullable: true }) eventoExternoId: string | null;
   @Column({ name: 'mensaje_externo_id', type: 'varchar', length: 128, nullable: true }) mensajeExternoId: string | null;
+  // Une un estado firmado con el intento cuando todavía no se conoce el ID del mensaje.
+  @Column({ name: 'correlacion_proveedor', type: 'char', length: 36, charset: 'ascii', collation: 'ascii_bin', nullable: true }) correlacionProveedor: string | null;
   @Column({ type: 'enum', enum: ['enviado', 'entregado', 'leido', 'respuesta', 'fallo'] }) tipo: TipoEventoWhatsapp;
   @Column({ name: 'recibido_en', type: 'datetime', precision: 6, default: () => 'CURRENT_TIMESTAMP(6)' }) recibidoEn: Date;
   @Column({ name: 'proveedor_en', type: 'datetime', precision: 6, nullable: true }) proveedorEn: Date | null;

@@ -28,6 +28,7 @@ export class ProcesadorWhatsappService {
     @Optional() @Inject(PREPARAR_ACCION_WHATSAPP) private readonly prepararAccion?: PrepararAccionWhatsapp) {}
 
   async ejecutarUna(): Promise<boolean> {
+    if (await this.arrendamientos.recuperarIncierto()) return true;
     const toma = await this.arrendamientos.tomar(Boolean(this.prepararAccion));
     if (!toma) return false;
     const solicitud = await this.preparar(toma);
@@ -84,8 +85,8 @@ export class ProcesadorWhatsappService {
         return null;
       }
       if (!envio.arrendadoHasta || envio.arrendadoHasta <= inicioTransporte) return null;
-      await this.arrendamientos.iniciarTransporte(manager, envio, inicioTransporte);
-      return { canal, destinoE164: envio.destinoE164, tipo: envio.tipo, plantilla };
+      const correlacion = await this.arrendamientos.iniciarTransporte(manager, envio, inicioTransporte);
+      return { canal, destinoE164: envio.destinoE164, tipo: envio.tipo, plantilla, correlacion };
     });
   }
 }

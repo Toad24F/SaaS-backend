@@ -369,25 +369,30 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Antes del envío se revalida generación/utilidad y HTTP no mantiene la transacción del registro.
   - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T079 — Implementar política de reintentos conocidos** (25 min).
+- [x] **M5-T079 — Implementar política de reintentos conocidos** (25 min).
   - **RF:** RF-36–RF-38. **Depende de:** M5-T078.
   - **Hecho cuando:** Tres intentos máximos y esperas 1/5 minutos respetan utilidad y espera del proveedor; permanentes no se repiten.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T080 — Gestionar timeout y lease vencido tras HTTP** (25 min).
+- [x] **M5-T080 — Gestionar timeout y lease vencido tras HTTP** (25 min).
   - **RF:** RF-36–RF-38, RF-62. **Depende de:** M5-T079.
   - **Hecho cuando:** El posible envío queda incierto sin reenvío automático; un acuse posterior puede conciliarlo.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T081 — Implementar verificación y firma de webhook** (25 min).
+- [x] **M5-T081 — Implementar verificación y firma de webhook** (25 min).
   - **RF:** RF-33–RF-38, RF-61. **Depende de:** M5-T006, M5-T061.
   - **Hecho cuando:** Firma inválida se rechaza antes de procesar; canal se resuelve desde datos autenticados.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T082 — Persistir eventos antes del acuse** (25 min).
+- [x] **M5-T082 — Persistir eventos antes del acuse** (25 min).
   - **RF:** RF-34–RF-36, RF-62. **Depende de:** M5-T081.
   - **Hecho cuando:** Duplicados se reconocen sin repetir entrada y fallo de persistencia no devuelve éxito.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T083 — Procesar estados de entrega** (25 min).
+- [x] **M5-T083 — Procesar estados de entrega** (25 min).
   - **RF:** RF-34, RF-36–RF-38. **Depende de:** M5-T082, M5-T060.
   - **Hecho cuando:** Entregado/leído actualiza comunicación sin confirmar asistencia ni degradarse por evento atrasado.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
 - [ ] **M5-T084 — Generar y verificar payload de confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61. **Depende de:** M5-T062, M5-T075.
