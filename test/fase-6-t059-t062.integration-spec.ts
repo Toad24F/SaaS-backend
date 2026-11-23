@@ -112,18 +112,17 @@ describe('M5-T059–T062: persistencia durable de WhatsApp', () => {
          proximo_intento_en,destino_e164,parametros_plantilla)
         VALUES (?,?,1,'inicial_pendiente','efecto-001',?,?,?,'+526141234567','{}')`,
       [a.id, a.ocupaciones[0], ahora, despues, ahora]);
-      const guardar = (negocio: number, cita: number, generacion: number, hash: string) => db.query(`INSERT INTO acciones_confirmacion
-        (negocio_id,cita_id,generacion,envio_id,token_hash,expira_en)
-        VALUES (?,?,?,?,?,?)`, [negocio, cita, generacion, envio.insertId, hash, despues]);
+      // Creación y expiración comparten el reloj del escenario para aislar las restricciones de referencia.
+      const guardar = (negocio: number, cita: number, generacion: number, hash: string, envioId = envio.insertId) =>
+        db.query(`INSERT INTO acciones_confirmacion (negocio_id,cita_id,generacion,envio_id,token_hash,creado_en,expira_en)
+          VALUES (?,?,?,?,?,?,?)`, [negocio, cita, generacion, envioId, hash, ahora, despues]);
       const accion = await guardar(a.id, a.ocupaciones[0], 1, 'b'.repeat(64));
       const recordatorio = await db.query(`INSERT INTO envios_whatsapp
         (negocio_id,cita_id,generacion,tipo,clave_efecto,programado_en,util_hasta,
          proximo_intento_en,destino_e164,parametros_plantilla)
         VALUES (?,?,1,'recordatorio','efecto-002',?,?,?,'+526141234567','{}')`,
       [a.id, a.ocupaciones[0], ahora, despues, ahora]);
-      await expect(db.query(`INSERT INTO acciones_confirmacion
-        (negocio_id,cita_id,generacion,envio_id,token_hash,expira_en)
-        VALUES (?,?,?,?,?,?)`, [a.id, a.ocupaciones[0], 1, recordatorio.insertId, 'e'.repeat(64), despues])).rejects.toThrow();
+      await expect(guardar(a.id, a.ocupaciones[0], 1, 'e'.repeat(64), recordatorio.insertId)).rejects.toThrow();
       expect((await db.query('SELECT consumido_en FROM acciones_confirmacion WHERE id=?', [accion.insertId]))[0].consumido_en).toBeNull();
       await expect(guardar(a.id, a.ocupaciones[0], 1, 'b'.repeat(64))).rejects.toThrow();
       await expect(guardar(a.id, a.ocupaciones[0], 2, 'c'.repeat(64))).rejects.toThrow();

@@ -6,6 +6,7 @@ import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cit
 import { ConfiguracionAutomatizaciones } from './entities/configuracion-automatizaciones.entity';
 import { EnvioWhatsapp, type TipoEnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import { calcularRecordatorio, calcularVencimientoConfirmacion } from './politica-temporal';
+import { resumenWhatsapp } from './plantillas-whatsapp';
 
 /** Añade la política y los trabajos al mismo manager de la cita; nunca llama al proveedor. */
 @Injectable()
@@ -43,8 +44,8 @@ export class EfectoInicialService {
     await manager.update(Cita, { id: cita.id, negocioId: cita.negocioId },
       { generacionAutomatizacion: generacion, condicionVigenteId: condicion.id });
     if (!comunicable) return;
-    const parametros = { folio: cita.folio, nombre: cita.nombreContacto,
-      inicioUtc: cita.inicioUtc.toISOString(), zonaHoraria: cita.zonaHorariaReserva };
+    // El trabajo conserva únicamente el resumen histórico que necesita la plantilla.
+    const parametros = resumenWhatsapp(cita);
     const destino = `+52${cita.telefonoContacto}`;
     // La unicidad por cita, generación y tipo es la última barrera ante reintentos concurrentes.
     await this.guardarEnvio(manager, cita, generacion, manual ? 'inicial_confirmada' : 'inicial_pendiente',

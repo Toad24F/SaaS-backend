@@ -31,6 +31,7 @@ import { CitasHttpModule } from './citas/citas-http.module';
 import { ClientesHttpModule } from './clientes/clientes-http.module';
 import { PersonalizacionPortalHttpModule } from './personalizacion-portal/personalizacion-portal-http.module';
 import { ConfiguracionAutomatizacionesHttpModule } from './automatizaciones/configuracion-automatizaciones-http.module';
+import { EnviosWhatsappModule } from './automatizaciones/envios-whatsapp.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ConfiguracionAutomatizacionesHttpModule } from './automatizaciones/conf
     PersonalizacionPortalHttpModule,
     // Expone la configuración versionada de plazos para administradores de negocio.
     ConfiguracionAutomatizacionesHttpModule,
+    EnviosWhatsappModule,
   ],
   controllers: [AppController],
   providers: [AppService],

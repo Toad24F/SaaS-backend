@@ -16,6 +16,7 @@ export type EstadoEnvioWhatsapp = 'pendiente' | 'en_proceso' | 'aceptado' | 'ent
 @Check('chk_ew_destino', "destino_e164 REGEXP '^[+][1-9][0-9]{6,14}$'")
 @Check('chk_ew_utilidad', 'util_hasta > programado_en')
 @Check('chk_ew_arrendamiento', "(estado='en_proceso' AND arrendamiento_id IS NOT NULL AND arrendado_hasta IS NOT NULL) OR (estado<>'en_proceso' AND arrendamiento_id IS NULL AND arrendado_hasta IS NULL)")
+@Check('chk_ew_inicio_transporte', "inicio_transporte_en IS NULL OR (estado='en_proceso' AND intentos > 0)")
 export class EnvioWhatsapp {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true }) id: string;
   @Column({ name: 'negocio_id', type: 'int', unsigned: true }) negocioId: number;
@@ -33,6 +34,8 @@ export class EnvioWhatsapp {
   @Column({ name: 'proximo_intento_en', type: 'datetime', precision: 3 }) proximoIntentoEn: Date;
   @Column({ name: 'arrendamiento_id', type: 'char', length: 36, charset: 'ascii', collation: 'ascii_bin', nullable: true }) arrendamientoId: string | null;
   @Column({ name: 'arrendado_hasta', type: 'datetime', precision: 3, nullable: true }) arrendadoHasta: Date | null;
+  // Se confirma antes del HTTP. Una toma vencida con esta marca no vuelve a la cola de envío.
+  @Column({ name: 'inicio_transporte_en', type: 'datetime', precision: 3, nullable: true }) inicioTransporteEn: Date | null;
   @Column({ name: 'referencia_externa', type: 'varchar', length: 128, nullable: true }) referenciaExterna: string | null;
   @Column({ name: 'aceptado_en', type: 'datetime', precision: 3, nullable: true }) aceptadoEn: Date | null;
   @Column({ name: 'entregado_en', type: 'datetime', precision: 3, nullable: true }) entregadoEn: Date | null;

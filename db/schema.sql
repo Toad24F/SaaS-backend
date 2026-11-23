@@ -1429,6 +1429,7 @@ CREATE TABLE envios_whatsapp (
   proximo_intento_en DATETIME(3) NOT NULL,
   arrendamiento_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
   arrendado_hasta DATETIME(3) NULL,
+  inicio_transporte_en DATETIME(3) NULL,
   referencia_externa VARCHAR(128) NULL,
   aceptado_en DATETIME(3) NULL,
   entregado_en DATETIME(3) NULL,
@@ -1450,6 +1451,7 @@ CREATE TABLE envios_whatsapp (
   CONSTRAINT chk_ew_clave CHECK (BINARY clave_efecto = BINARY TRIM(clave_efecto) AND CHAR_LENGTH(clave_efecto) > 0),
   CONSTRAINT chk_ew_destino CHECK (destino_e164 REGEXP '^[+][1-9][0-9]{6,14}$'),
   CONSTRAINT chk_ew_utilidad CHECK (util_hasta > programado_en),
+  CONSTRAINT chk_ew_inicio_transporte CHECK (inicio_transporte_en IS NULL OR (estado='en_proceso' AND intentos > 0)),
   CONSTRAINT chk_ew_arrendamiento CHECK (
     (estado='en_proceso' AND arrendamiento_id IS NOT NULL AND arrendado_hasta IS NOT NULL)
     OR (estado<>'en_proceso' AND arrendamiento_id IS NULL AND arrendado_hasta IS NULL))

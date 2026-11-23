@@ -344,25 +344,30 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 ## 8. Transporte, reintentos y recepción WhatsApp
 
-- [ ] **M5-T074 — Definir adaptador y transporte controlado** (25 min).
+- [x] **M5-T074 — Definir adaptador y transporte controlado** (25 min).
   - **RF:** RF-31, RF-36. **Depende de:** M5-T006, M5-T059.
   - **Hecho cuando:** El contrato distingue aceptación, rechazo e incertidumbre y permite pruebas sin envíos reales.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T075 — Preparar parámetros de las tres plantillas** (25 min).
+- [x] **M5-T075 — Preparar parámetros de las tres plantillas** (25 min).
   - **RF:** RF-31–RF-32, RF-47. **Depende de:** M5-T074, M5-T067.
   - **Hecho cuando:** Pendiente, Confirmada y recordatorio usan resumen histórico, sin folio ni notas sensibles.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T076 — Implementar envío mediante adaptador Meta** (25 min).
+- [x] **M5-T076 — Implementar envío mediante adaptador Meta** (25 min).
   - **RF:** RF-31, RF-36, RF-61. **Depende de:** M5-T075.
   - **Hecho cuando:** Pruebas del adaptador verifican remitente, versión, secreto externo y clasificación de respuestas.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T077 — Implementar toma y renovación de trabajo** (25 min).
+- [x] **M5-T077 — Implementar toma y renovación de trabajo** (25 min).
   - **RF:** RF-36, RF-62. **Depende de:** M5-T060, M5-T004.
   - **Hecho cuando:** Dos trabajadores no poseen simultáneamente el mismo lease válido y su token protege finalización.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T078 — Conectar procesador de envíos** (25 min).
+- [x] **M5-T078 — Conectar procesador de envíos** (25 min).
   - **RF:** RF-31, RF-36, RF-47–RF-48. **Depende de:** M5-T076, M5-T077, M5-T070.
   - **Hecho cuando:** Antes del envío se revalida generación/utilidad y HTTP no mantiene la transacción del registro.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
 - [ ] **M5-T079 — Implementar política de reintentos conocidos** (25 min).
   - **RF:** RF-36–RF-38. **Depende de:** M5-T078.
