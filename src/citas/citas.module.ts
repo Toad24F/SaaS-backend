@@ -12,9 +12,18 @@ import { RegistroCitaManualService } from './registro-cita-manual.service';
 import { CambioEstadoCitaService } from './cambio-estado-cita.service';
 
 import { CambioHorarioCitaService } from './cambio-horario-cita.service';
+import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
+import { CondicionConfirmacionCita } from '../automatizaciones/entities/condicion-confirmacion-cita.entity';
+import { EnvioWhatsapp } from '../automatizaciones/entities/envio-whatsapp.entity';
+import { CanalWhatsapp } from '../automatizaciones/entities/canal-whatsapp.entity';
+import { ConfiguracionAutomatizaciones } from '../automatizaciones/entities/configuracion-automatizaciones.entity';
 
 /** Dominio compartido: reutiliza las causas sin importar controladores ni escritores públicos. */
-@Module({ imports: [AccesoOperativoModule, DisponibilidadModule, ClientesModule, TypeOrmModule.forFeature([EventoCita, IntentoCitaManual])],
-  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, CupoTelefonicoService],
-  exports: [TypeOrmModule, AccesoOperativoModule, ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService] })
+// El escritor manual y el público comparten el mismo servicio; registrar estas entidades
+// permite que autoLoadEntities las incluya en la aplicación y en los módulos de prueba.
+@Module({ imports: [AccesoOperativoModule, DisponibilidadModule, ClientesModule, TypeOrmModule.forFeature([
+  EventoCita, IntentoCitaManual, CondicionConfirmacionCita, EnvioWhatsapp,
+  CanalWhatsapp, ConfiguracionAutomatizaciones])],
+  providers: [ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, CupoTelefonicoService, EfectoInicialService],
+  exports: [TypeOrmModule, AccesoOperativoModule, ConsultaAgendaService, IntentosCitaManualService, RegistroCitaManualService, CambioEstadoCitaService, CambioHorarioCitaService, EfectoInicialService] })
 export class CitasModule {}

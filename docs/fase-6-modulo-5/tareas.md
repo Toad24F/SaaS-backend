@@ -297,25 +297,30 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 ## 7. Política temporal y creación de trabajos
 
-- [ ] **M5-T065 — Implementar cálculo puro de vencimiento** (25 min).
+- [x] **M5-T065 — Implementar cálculo puro de vencimiento** (25 min).
   - **RF:** RF-39–RF-43. **Depende de:** M5-T004, M5-T055.
   - **Hecho cuando:** Pruebas cubren seis horas ±1 ms, plazo normal y corte de una hora, y 15 minutos que terminan al inicio.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T066 — Implementar elegibilidad del recordatorio** (25 min).
+- [x] **M5-T066 — Implementar elegibilidad del recordatorio** (25 min).
   - **RF:** RF-47–RF-48. **Depende de:** M5-T065.
   - **Hecho cuando:** Pruebas omiten próximas y momento igual/pasado y admiten límites 12/24/48.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T067 — Preparar efecto inicial transaccional** (25 min).
+- [x] **M5-T067 — Preparar efecto inicial transaccional** (25 min).
   - **RF:** RF-31–RF-32, RF-36, RF-62. **Depende de:** M5-T060, M5-T062, M5-T065.
   - **Hecho cuando:** El servicio crea condiciones y envío único con el manager recibido, sin HTTP externo.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T068 — Integrar condiciones y efecto en reserva pública** (25 min).
+- [x] **M5-T068 — Integrar condiciones y efecto en reserva pública** (25 min).
   - **RF:** RF-31–RF-32, RF-40–RF-43, RF-62. **Depende de:** M5-T067, M5-T015, M5-T058.
   - **Hecho cuando:** Cita Pendiente, plazo y trabajo comparten commit y resultado recuperable.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T069 — Integrar efecto en cita manual** (25 min).
+- [x] **M5-T069 — Integrar efecto en cita manual** (25 min).
   - **RF:** RF-31, RF-47, RF-62. **Depende de:** M5-T067, M5-T014, M5-T066.
   - **Hecho cuando:** Cita Confirmada crea mensaje correcto y recordatorio elegible sin plazo de cancelación.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
 - [ ] **M5-T070 — Integrar autorización de contacto WhatsApp** (25 min).
   - **RF:** RF-31, RF-37–RF-38. **Depende de:** M5-T068, M5-T069.

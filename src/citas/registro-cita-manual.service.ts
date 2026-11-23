@@ -11,6 +11,7 @@ import type { ContextoOperativo } from './acceso-operativo.service';
 import { EventoCita } from './entities/evento-cita.entity';
 import { IntentoCitaManual } from './entities/intento-cita-manual.entity';
 import { IntentosCitaManualService, type SeleccionManualRevalidada } from './intentos-cita-manual.service';
+import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
 
 type Identidad = Pick<JwtPayload, 'sub' | 'sesionId'>;
 export interface ResultadoCitaManual {
@@ -25,7 +26,8 @@ interface RegistroConMeta { resultado: ResultadoCitaManual; repetida: boolean }
 /** Escritor privado real: confirma cliente, cita, evento e intento juntos, sin efectos externos. */
 @Injectable()
 export class RegistroCitaManualService {
-  constructor(private readonly intentos: IntentosCitaManualService, private readonly clientes: ClientesService) {}
+  constructor(private readonly intentos: IntentosCitaManualService, private readonly clientes: ClientesService,
+    private readonly efectoInicial: EfectoInicialService) {}
 
   async registrar(identidad: Identidad, clave: unknown, entrada: unknown): Promise<ResultadoCitaManual> {
     return (await this.registrarConMeta(identidad, clave, entrada)).resultado;
@@ -74,6 +76,8 @@ export class RegistroCitaManualService {
         finOcupacionUtc: ctx.finOcupacionUtc.toISOString(), separacionMinutos: cita.separacionMinutos,
         zonaHoraria: cita.zonaHorariaReserva, costoAceptado: copia.costoAceptado,
       } });
+    // Condición, mensaje y recordatorio se confirman con la cita; repetir el intento no reentra aquí.
+    await this.efectoInicial.preparar(manager, cita, ctx.ahora);
     // El resultado durable se confirma al final con su huella intacta. Un fallo en cualquiera
     // de estas escrituras revierte también el cliente nuevo, su auditoría, la cita y su evento.
     const cambio = await manager.getRepository(IntentoCitaManual).update({ id: ctx.intento.id,

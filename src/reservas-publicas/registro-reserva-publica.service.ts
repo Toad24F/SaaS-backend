@@ -8,6 +8,7 @@ import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.ent
 import { Cita } from '../disponibilidad/entities/cita.entity';
 import { ResolucionClienteService } from '../clientes/resolucion-cliente.service';
 import { EventoCita } from '../citas/entities/evento-cita.entity';
+import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -38,7 +39,8 @@ export class RegistroReservaPublicaService {
     private readonly cupo: CupoTelefonicoService,
     private readonly motor: MotorDisponibilidadService,
     private readonly clientes: ResolucionClienteService,
-    @Inject(RELOJ) private readonly reloj: Reloj) {}
+    @Inject(RELOJ) private readonly reloj: Reloj,
+    private readonly efectoInicial: EfectoInicialService) {}
 
   async registrar(negocioId: number, titularHash: string, clave: string,
     entrada: unknown): Promise<ResultadoReservaPublica> {
@@ -208,6 +210,8 @@ export class RegistroReservaPublicaService {
         finOcupacionUtc: cita.finOcupacionUtc!.toISOString(),
         zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
       } });
+    // El efecto durable comparte la transacción de consumo e intento; nunca envía HTTP aquí.
+    await this.efectoInicial.preparar(manager, cita, ahora);
     await manager.getRepository(BloqueoTemporal).update({ id: apartado.id,
       negocioId: intento.negocioId }, { liberadoEn: ahora });
     await manager.getRepository(SesionReservaPublica).update({ id: sesion.id,
