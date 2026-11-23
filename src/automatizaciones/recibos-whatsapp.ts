@@ -31,7 +31,7 @@ export function extraerRecibosWhatsapp(datos: unknown, secretoApp: string): Reci
         const uuid = typeof correlacion === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(correlacion)
           ? correlacion : null;
         recibos.push({ remitenteExternoId: numero, tipo, proveedorEn, mensajeExternoId: mensaje,
-          eventoExternoId: null, huellaEvento: huella(JSON.stringify([tipo, mensaje, proveedorEn.getTime()])),
+          eventoExternoId: null, huellaEvento: hashWhatsapp(JSON.stringify([tipo, mensaje, proveedorEn.getTime()])),
           correlacionProveedor: uuid, remitenteHash: null, accionHash: null });
       }
       for (const entrada of lista(valor.messages ?? [])) {
@@ -44,16 +44,21 @@ export function extraerRecibosWhatsapp(datos: unknown, secretoApp: string): Reci
           || typeof mensaje.from !== 'string' || !/^\d{7,15}$/.test(mensaje.from)) throw contratoInvalido();
         recibos.push({ remitenteExternoId: numero, tipo: 'respuesta', eventoExternoId: evento,
           mensajeExternoId: original, proveedorEn: fechaProveedor(mensaje.timestamp), correlacionProveedor: null,
-          huellaEvento: huella(JSON.stringify(['respuesta', evento])), accionHash: huella(payload),
-          remitenteHash: createHmac('sha256', secretoApp).update(`remitente-whatsapp:${mensaje.from}`).digest('hex') });
+          huellaEvento: hashWhatsapp(JSON.stringify(['respuesta', evento])), accionHash: hashWhatsapp(payload),
+          remitenteHash: huellaRemitenteWhatsapp(secretoApp, numero, mensaje.from) });
       }
     }
   }
   return recibos;
 }
 
-function huella(texto: string): string {
+export function hashWhatsapp(texto: string): string {
   return createHash('sha256').update(texto).digest('hex');
+}
+
+/** La huella conserva la asociación autenticada del canal y el remitente en la bandeja durable. */
+export function huellaRemitenteWhatsapp(secretoApp: string, canal: string, remitente: string): string {
+  return createHmac('sha256', secretoApp).update(JSON.stringify(['remitente-whatsapp', canal, remitente])).digest('hex');
 }
 
 function identificador(valor: unknown): string {

@@ -394,21 +394,25 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Entregado/leído actualiza comunicación sin confirmar asistencia ni degradarse por evento atrasado.
   - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T084 — Generar y verificar payload de confirmación** (25 min).
+- [x] **M5-T084 — Generar y verificar payload de confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61. **Depende de:** M5-T062, M5-T075.
   - **Hecho cuando:** Payload alterado, destinatario/canal ajeno o generación incorrecta se rechaza; secretos no se persisten.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
-- [ ] **M5-T085 — Aplicar confirmación transaccional** (25 min).
+- [x] **M5-T085 — Aplicar confirmación transaccional** (25 min).
   - **RF:** RF-33, RF-35, RF-45, RF-62. **Depende de:** M5-T084, M5-T083, M5-T058, M5-T066.
   - **Hecho cuando:** Bajo bloqueo, acción válida futura confirma una vez y guarda evento con actor correcto.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
-- [ ] **M5-T086 — Conectar respuesta rápida con confirmación** (25 min).
+- [x] **M5-T086 — Conectar respuesta rápida con confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61–RF-62. **Depende de:** M5-T085, M5-T082.
   - **Hecho cuando:** Evento autenticado llega al servicio; texto libre y acuses no cambian la cita.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
-- [ ] **M5-T087 — Probar límites y repetición de confirmación** (25 min).
+- [x] **M5-T087 — Probar límites y repetición de confirmación** (25 min).
   - **RF:** RF-33–RF-35, RF-42, RF-45. **Depende de:** M5-T086, M5-T004.
   - **Hecho cuando:** Acción al vencimiento, antigua o repetida no reactiva ni duplica; manual sin plazo solo confirma antes del inicio.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
 ## 9. Cancelador, cambios y recordatorios
 

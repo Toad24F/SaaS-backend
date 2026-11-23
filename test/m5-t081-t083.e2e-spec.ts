@@ -133,7 +133,8 @@ describe('M5-T081–T083, webhook y acuses reales en HTTP/MariaDB', () => {
         await f.enviar(notificacion(numeroA, { messages: [{ id: 'wamid.boton', from: '526141234567',
           timestamp: '1795435190', type: 'button', context: { id: wamid }, button: { payload } }] })).expect(200);
         const recibo = await db.manager.findOneByOrFail(EventoWhatsapp, { tipo: 'respuesta' });
-        expect(recibo).toMatchObject({ estadoProcesamiento: 'pendiente', eventoExternoId: 'wamid.boton',
+        // Una respuesta sin acción registrada se acusa y se cierra sin tocar la cita.
+        expect(recibo).toMatchObject({ estadoProcesamiento: 'procesado', ultimoError: 'accion_no_aplicable', eventoExternoId: 'wamid.boton',
           mensajeExternoId: wamid, accionHash: expect.any(String), remitenteHash: expect.any(String) });
         expect(JSON.stringify(recibo)).not.toMatch(/accion-sintetica-privada|526141234567/);
         expect(await db.manager.findOneByOrFail(Cita, { id: f.citaId })).toEqual(antes);

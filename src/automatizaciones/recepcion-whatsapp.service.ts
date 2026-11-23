@@ -1,6 +1,7 @@
 import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { DataSource, In, QueryFailedError, type EntityManager } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
+import { AccionesWhatsappService } from './acciones-whatsapp.service';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
 import { EventoWhatsapp } from './entities/evento-whatsapp.entity';
@@ -9,25 +10,31 @@ import { bloquearCitaDeEnvio, derivarSeguimientoWhatsapp } from './seguimiento-w
 
 @Injectable()
 export class RecepcionWhatsappService {
-  constructor(private readonly db: DataSource, @Inject(RELOJ) private readonly reloj: Reloj) {}
+  constructor(private readonly db: DataSource, @Inject(RELOJ) private readonly reloj: Reloj,
+    private readonly acciones: AccionesWhatsappService) {}
 
-  async recibir(recibos: ReciboWhatsapp[]): Promise<void> {
+  async recibir(recibos: ReciboWhatsapp[], secretoApp: string): Promise<void> {
     if (!recibos.length) return;
     const recibidoEn = this.reloj.ahora();
     try {
-      const ids = await this.db.transaction('READ COMMITTED', (manager) => this.persistir(manager, recibos, recibidoEn));
-      // Cada aplicación de estado ocurre después del commit de la bandeja. Una repetición retoma el pendiente.
-      for (const id of ids) await this.procesarEstado(id);
+      const { estados, botones } = await this.db.transaction('READ COMMITTED', (manager) => this.persistir(manager, recibos, recibidoEn));
+      // Los acuses pueden fijar el contexto de un botón importado en el mismo lote.
+      let esperandoEnvio = false;
+      for (const id of [...estados, ...botones]) {
+        if (!await this.procesarEvento(id, secretoApp)) esperandoEnvio = true;
+      }
+      if (esperandoEnvio) throw new Error('Un botón sigue pendiente de correlación.');
     } catch {
       throw new ServiceUnavailableException('No se pudo completar la recepción de WhatsApp.');
     }
   }
 
-  private async persistir(manager: EntityManager, recibos: ReciboWhatsapp[], recibidoEn: Date): Promise<Set<string>> {
+  private async persistir(manager: EntityManager, recibos: ReciboWhatsapp[], recibidoEn: Date) {
     const remitentes = [...new Set(recibos.map((recibo) => recibo.remitenteExternoId))];
     const canales = await manager.findBy(CanalWhatsapp, { remitenteExternoId: In(remitentes) });
     const negocios = new Map(canales.map((canal) => [canal.remitenteExternoId, canal.negocioId]));
-    const ids = new Set<string>();
+    const estados = new Set<string>();
+    const botones = new Set<string>();
     // Orden estable para que lotes simultáneos adquieran las claves únicas en el mismo orden.
     const ordenados = [...recibos].sort((a, b) => a.remitenteExternoId.localeCompare(b.remitenteExternoId)
       || a.huellaEvento.localeCompare(b.huellaEvento));
@@ -40,20 +47,30 @@ export class RecepcionWhatsappService {
         // Únicamente una colisión comprobada cuenta como deduplicación. Los demás fallos revierten el lote.
         if (!(error instanceof QueryFailedError) || error.driverError?.code !== 'ER_DUP_ENTRY') throw error;
       }
-      if (datos.tipo === 'respuesta') continue;
       const recibido = await manager.findOneByOrFail(EventoWhatsapp, { negocioId, huellaEvento: datos.huellaEvento });
-      if (recibido.estadoProcesamiento === 'pendiente') ids.add(recibido.id);
+      if (recibido.estadoProcesamiento === 'pendiente') {
+        (recibido.tipo === 'respuesta' ? botones : estados).add(recibido.id);
+      }
     }
-    return ids;
+    return { estados, botones };
   }
 
-  private procesarEstado(id: string): Promise<void> {
+  private procesarEvento(id: string, secretoApp: string): Promise<boolean> {
     return this.db.transaction('READ COMMITTED', async (manager) => {
       const evento = await manager.getRepository(EventoWhatsapp).findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
-      if (evento?.estadoProcesamiento !== 'pendiente' || evento.tipo === 'respuesta') return;
-      const aplicado = await this.aplicarEstado(manager, evento);
+      if (evento?.estadoProcesamiento !== 'pendiente') return true;
+      let ultimoError: string | null;
+      if (evento.tipo === 'respuesta') {
+        const resultado = await this.acciones.aplicar(manager, evento, secretoApp);
+        // El recibo queda recuperable cuando la respuesta de envío aún no tiene un ID de Meta.
+        if (resultado === 'esperando_envio') return false;
+        ultimoError = resultado === 'aplicada' ? null : 'accion_no_aplicable';
+      } else {
+        ultimoError = await this.aplicarEstado(manager, evento) ? null : 'envio_no_correlacionado';
+      }
       await manager.update(EventoWhatsapp, id, { estadoProcesamiento: 'procesado', procesadoEn: this.reloj.ahora(),
-        ultimoError: aplicado ? null : 'envio_no_correlacionado' });
+        ultimoError });
+      return true;
     });
   }
 

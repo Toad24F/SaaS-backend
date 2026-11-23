@@ -58,7 +58,7 @@ export class WebhookWhatsappController {
     } catch {
       throw new BadRequestException('JSON de webhook inválido.');
     }
-    await this.recepcion.recibir(extraerRecibosWhatsapp(datos, secreto));
+    await this.recepcion.recibir(extraerRecibosWhatsapp(datos, secreto), secreto);
     return { recibido: true };
   }
 }

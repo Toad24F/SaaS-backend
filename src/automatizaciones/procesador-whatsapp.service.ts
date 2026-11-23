@@ -14,9 +14,9 @@ import { construirPlantillaWhatsapp } from './plantillas-whatsapp';
 import { TRANSPORTE_WHATSAPP, type ResultadoWhatsapp, type SolicitudWhatsapp, type TransporteWhatsapp } from './transporte-whatsapp';
 
 export const PREPARAR_ACCION_WHATSAPP = Symbol('PREPARAR_ACCION_WHATSAPP');
-// La implementación de acciones podrá guardar su hash en la misma preparación, sin E/S externa.
+// La acción guarda su hash en la misma preparación, sin E/S externa.
 type PrepararAccionWhatsapp = (manager: EntityManager, envio: EnvioWhatsapp,
-  cita: Cita, condicion: CondicionConfirmacionCita) => Promise<string>;
+  cita: Cita, condicion: CondicionConfirmacionCita, canal: CanalWhatsapp, ahora: Date) => Promise<string | null>;
 
 /** Ejecuta un trabajo por llamada; el planificador operativo puede invocarlo en otro ciclo. */
 @Injectable()
@@ -75,8 +75,11 @@ export class ProcesadorWhatsappService {
 
       const plantilla = construirPlantillaWhatsapp(envio.tipo, cita, condicion.vencimientoUtc);
       if (envio.tipo === 'inicial_pendiente') {
-        const accion = await this.prepararAccion?.(manager, envio, cita, condicion);
-        if (!accion) throw new Error('La plantilla pendiente requiere una acción de confirmación.');
+        const accion = await this.prepararAccion?.(manager, envio, cita, condicion, canal, ahora);
+        if (!accion) {
+          await this.arrendamientos.cerrar(manager, envio, 'descartado', 'accion_fuera_de_vigencia');
+          return null;
+        }
         plantilla.respuestaRapida = accion;
       }
       const inicioTransporte = this.reloj.ahora();

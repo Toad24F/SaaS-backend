@@ -111,13 +111,15 @@ export class ConsultaAgendaService {
         .where({ ...this.acceso.alcanceCitas(ctx), id }).getOne();
       if (!cita) throw new NotFoundException();
       const filas = await ctx.manager.getRepository(EventoCita).createQueryBuilder('evento')
-        .select(['evento.id', 'evento.actorUsuarioId', 'evento.accion', 'evento.ocurridoEn',
+        .select(['evento.id', 'evento.actorUsuarioId', 'evento.actorTipo', 'evento.accion', 'evento.ocurridoEn',
           'evento.versionResultante', 'evento.valoresAntes', 'evento.valoresDespues', 'evento.motivo'])
         .where({ negocioId: ctx.negocioId, citaId: id })
         .orderBy('evento.ocurridoEn', 'ASC').addOrderBy('evento.versionResultante', 'ASC').addOrderBy('evento.id', 'ASC')
         .offset((pagina.pagina - 1) * pagina.limite).limit(pagina.limite + 1).getMany();
       return { eventos: filas.slice(0, pagina.limite).map((evento) => ({ id: evento.id,
-        actorUsuarioId: evento.actorUsuarioId, origenActor: evento.actorUsuarioId === null ? 'portal_publico' : 'personal',
+        // El discriminador identifica la confirmación externa sin publicar la referencia de WhatsApp.
+        actorUsuarioId: evento.actorUsuarioId, origenActor: evento.actorTipo === 'cliente_whatsapp'
+          ? 'cliente_whatsapp' : evento.actorUsuarioId === null ? 'portal_publico' : 'personal',
         accion: evento.accion, ocurridoEn: evento.ocurridoEn, versionResultante: evento.versionResultante,
         valoresAntes: valoresOperativos(evento.valoresAntes), valoresDespues: valoresOperativos(evento.valoresDespues),
         // La ausencia de motivo no se rellena con notas de atención ni con texto inventado.
