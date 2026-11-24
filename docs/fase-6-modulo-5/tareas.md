@@ -533,21 +533,25 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Canceladas por falta de confirmación forman subconjunto y una reactivada deja de contarse.
   - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T111 — Exponer resumen y páginas del corte** (25 min).
+- [x] **M5-T111 — Exponer resumen y páginas del corte** (25 min).
   - **RF:** RF-49–RF-54, RF-61. **Depende de:** M5-T108, M5-T109, M5-T110.
   - **Hecho cuando:** Páginas estables y resumen usan el mismo corte y revalidan actor/negocio en cada petición.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
-- [ ] **M5-T112 — Gestionar caducidad y limpieza de cortes** (25 min).
+- [x] **M5-T112 — Gestionar caducidad y limpieza de cortes** (25 min).
   - **RF:** RF-54, RF-57, RF-61. **Depende de:** M5-T111.
   - **Hecho cuando:** Un corte a 24 horas ya no es accesible y su limpieza no afecta cortes vigentes.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
-- [ ] **M5-T113 — Probar fallos, volumen y límites de consulta** (25 min).
+- [x] **M5-T113 — Probar fallos, volumen y límites de consulta** (25 min).
   - **RF:** RF-54, RF-57. **Depende de:** M5-T111, M5-T003.
   - **Hecho cuando:** Un conjunto representativo deja tiempos registrados; fallo no devuelve ceros ni tablas truncadas como completas.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
-- [ ] **M5-T114 — Probar corte ante cambios concurrentes** (25 min).
+- [x] **M5-T114 — Probar corte ante cambios concurrentes** (25 min).
   - **RF:** RF-51–RF-53, RF-57. **Depende de:** M5-T111, M5-T004.
   - **Hecho cuando:** Editar citas, precios o nombres entre páginas no altera el corte existente.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
 ## 11. Pantalla de reportes e impresión
 

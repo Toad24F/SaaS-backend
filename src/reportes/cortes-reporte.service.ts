@@ -14,6 +14,7 @@ import { CorteReporte } from './entities/corte-reporte.entity';
 import { FilaCorteReporte } from './entities/fila-corte-reporte.entity';
 import { type FiltrosCorte, validarFiltrosCorte } from './filtros-corte';
 import { calcularIndicadores } from './indicadores-corte';
+import { validarPaginacionCorte } from './paginacion-corte';
 
 const DIA_MS = 86_400_000;
 const TAMANO_LOTE = 500;
@@ -27,7 +28,15 @@ const CAMPOS_CITA = ['id', 'sucursalId', 'personalId', 'servicioId', 'nombreSucu
   'estado', 'origen', 'costoAceptado', 'causaCancelacion'] satisfies (keyof Cita)[];
 const CAMPOS_INDICADORES = ['citaId', 'finUtc', 'estado', 'origen', 'servicioId', 'nombreServicio',
   'sucursalId', 'nombreSucursal', 'costoAceptado', 'causaCancelacion'] as const satisfies readonly (keyof FilaCorteReporte)[];
+const CAMPOS_PAGINA = [...CAMPOS_INDICADORES, 'inicioUtc', 'personalId',
+  'nombreProfesional'] as const satisfies readonly (keyof FilaCorteReporte)[];
 type FilaResumen = Pick<FilaCorteReporte, typeof CAMPOS_INDICADORES[number] | 'fechaCivil'>;
+type FilaPagina = Pick<FilaCorteReporte, typeof CAMPOS_PAGINA[number] | 'fechaCivil'>;
+
+function metadatos({ id, filtros, fechaCorte, expiraEn }: CorteReporte) {
+  // Ambas lecturas exponen la misma cabecera pública que la creación.
+  return { id, filtros, fechaCorte, expiraEn };
+}
 
 @Injectable()
 export class CortesReporteService {
@@ -62,8 +71,28 @@ export class CortesReporteService {
     // La cabecera autorizada y todas sus filas se leen en la misma fotografía, incluso entre lotes.
     return this.db.transaction('REPEATABLE READ', async (manager) => {
       const corte = await this.buscarCorte(manager, actorUsuarioId, id);
-      return calcularIndicadores(corte, this.leerFilas(manager, corte.id));
+      const indicadores = await calcularIndicadores(corte, this.leerFilas(manager, corte.id));
+      return { ...indicadores, ...metadatos(corte) };
     });
+  }
+
+  async obtenerPagina(actorUsuarioId: number, id: string, query: unknown) {
+    const { pagina, limite } = validarPaginacionCorte(query);
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      const corte = await this.buscarCorte(manager, actorUsuarioId, id);
+      const total = await manager.countBy(FilaCorteReporte, { corteId: corte.id });
+      const desplazamiento = (pagina - 1) * limite;
+      // El total y la página comparten la fotografía. El ID desempata fechas e inicios iguales.
+      const filas = desplazamiento >= total ? [] : await this.consultaFilas(manager, corte.id, CAMPOS_PAGINA)
+        .orderBy('fila.fechaCivil', 'ASC').addOrderBy('fila.inicioUtc', 'ASC').addOrderBy('fila.citaId', 'ASC')
+        .offset(desplazamiento).limit(limite).getRawMany<FilaPagina>();
+      return { ...metadatos(corte), filas, total, pagina, limite, hayMas: desplazamiento + filas.length < total };
+    });
+  }
+
+  async limpiarCortesVencidos(ahora: Date): Promise<void> {
+    // Acotar cada ciclo y borrar por caducidad, con la FK en cascada para retirar sus filas juntas.
+    await this.db.query('DELETE FROM cortes_reporte WHERE expira_en <= ? ORDER BY expira_en, id LIMIT 100', [ahora]);
   }
 
   private async buscarCorte(manager: EntityManager, actorUsuarioId: number, id: string): Promise<CorteReporte> {
@@ -75,15 +104,20 @@ export class CortesReporteService {
     return corte;
   }
 
-  private async *leerFilas(manager: EntityManager, corteId: string) {
+  private consultaFilas(manager: EntityManager, corteId: string, campos: readonly (keyof FilaCorteReporte)[]) {
     const consulta = manager.createQueryBuilder(FilaCorteReporte, 'fila')
-      // Leer DATE como texto civil evita que el huso local del proceso desplace el día al hidratarlo.
+      // Mantener DATE como texto civil tanto en el resumen como en las páginas.
       .select('CAST(fila.fechaCivil AS CHAR)', 'fechaCivil')
-      .where('fila.corteId = :corteId', { corteId })
+      .where('fila.corteId = :corteId', { corteId });
+    for (const campo of campos) consulta.addSelect(`fila.${campo}`, campo);
+    return consulta;
+  }
+
+  private async *leerFilas(manager: EntityManager, corteId: string) {
+    const consulta = this.consultaFilas(manager, corteId, CAMPOS_INDICADORES)
       .andWhere('fila.citaId > :cursor')
       .orderBy('fila.citaId', 'ASC')
       .limit(TAMANO_LOTE);
-    for (const campo of CAMPOS_INDICADORES) consulta.addSelect(`fila.${campo}`, campo);
 
     let cursor = 0;
     for (;;) {

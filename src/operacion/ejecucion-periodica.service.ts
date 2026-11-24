@@ -6,6 +6,7 @@ import { verificarConfiguracionCorreo } from '../config/configuracion-correo';
 import { AvisosVencimientoService } from '../licencias/services/avisos-vencimiento.service';
 import { ConciliadorSuspensionesService } from '../licencias/services/conciliador-suspensiones.service';
 import { PersonalizacionPortalService } from '../personalizacion-portal/personalizacion-portal.service';
+import { CortesReporteService } from '../reportes/cortes-reporte.service';
 
 export const EJECUTOR_AUTOMATICO = Symbol('EJECUTOR_AUTOMATICO');
 const INTERVALO_MS = 60_000;
@@ -24,7 +25,8 @@ export class EjecucionPeriodicaService implements OnApplicationBootstrap, OnModu
     @Inject(RELOJ) private readonly reloj: Reloj,
     @Optional() @Inject(EJECUTOR_AUTOMATICO)
     private readonly automatico = process.env.NODE_ENV !== 'test',
-    private readonly personalizacion?: PersonalizacionPortalService) {}
+    private readonly personalizacion?: PersonalizacionPortalService,
+    private readonly reportes?: CortesReporteService) {}
 
   async onApplicationBootstrap(): Promise<void> {
     if (!this.automatico) return;
@@ -53,6 +55,9 @@ export class EjecucionPeriodicaService implements OnApplicationBootstrap, OnModu
       // Un fallo de limpieza se reintenta en el próximo ciclo sin afectar la bandeja.
       await this.personalizacion?.limpiarProvisionalesVencidos(ahora)
         .catch(() => this.logger.error('Limpieza de logos provisionales no disponible.'));
+      // La lectura aplica la caducidad aunque la eliminación física se retrase o deba reintentarse.
+      await this.reportes?.limpiarCortesVencidos(ahora)
+        .catch(() => this.logger.error('Limpieza de cortes de reportes no disponible.'));
     } finally { this.enCurso = false; }
   }
 

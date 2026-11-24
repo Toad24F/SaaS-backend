@@ -1,4 +1,4 @@
-import { Body, Controller, Header, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpException, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Rol } from '../auth/enums/rol.enum';
@@ -15,12 +15,34 @@ export class CortesReporteController {
 
   @Post()
   @Header('Cache-Control', 'no-store')
-  async crear(@CurrentUser('sub') actorId: number, @Body() entrada: unknown) {
+  crear(@CurrentUser('sub') actorId: number, @Body() entrada: unknown) {
+    return this.responder(() => this.cortes.crear(actorId, entrada));
+  }
+
+  @Get(':id')
+  @Header('Cache-Control', 'no-store')
+  resumen(@CurrentUser('sub') actorId: number, @Param('id') id: string) {
+    return this.responder(() => this.cortes.obtenerResumen(actorId, id));
+  }
+
+  @Get(':id/filas')
+  @Header('Cache-Control', 'no-store')
+  filas(@CurrentUser('sub') actorId: number, @Param('id') id: string, @Query() query: unknown) {
+    return this.responder(() => this.cortes.obtenerPagina(actorId, id, query));
+  }
+
+  private async responder<T>(operacion: () => Promise<T>): Promise<T> {
     try {
-      // Esperar el commit antes de devolver la referencia y sanitizar fallos de persistencia.
-      return await this.cortes.crear(actorId, entrada);
+      // Esperar la transacción completa antes de entregar el corte, el resumen o una página.
+      return await operacion();
     } catch (error) {
-      throw normalizarErrorOperativo(error);
+      const seguro = normalizarErrorOperativo(error);
+      const estado = seguro.getStatus();
+      if (estado >= 500) {
+        // El fallo se comunica sin cifras parciales, trazas ni detalles de persistencia.
+        throw new HttpException('No se pudo completar el reporte. Reintente o acote el periodo.', estado);
+      }
+      throw seguro;
     }
   }
 }
