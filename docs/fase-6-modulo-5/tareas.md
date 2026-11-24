@@ -493,17 +493,20 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 ## 10. Reportes: persistencia, consultas y cálculos
 
-- [ ] **M5-T103 — Crear cabecera de corte y filas inmutables** (25 min).
+- [x] **M5-T103 — Crear cabecera de corte y filas inmutables** (25 min).
   - **RF:** RF-49–RF-57, RF-61. **Depende de:** M5-T056, M5-T005.
   - **Hecho cuando:** Migración, entidades y esquema contienen actor/negocio, filtros, expiración y datos mínimos sin contacto/notas.
+  - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
-- [ ] **M5-T104 — Validar filtros y acceso a reportes** (25 min).
+- [x] **M5-T104 — Validar filtros y acceso a reportes** (25 min).
   - **RF:** RF-49–RF-50, RF-54, RF-61. **Depende de:** M5-T103.
   - **Hecho cuando:** Solo Administrador consulta recursos propios; rangos inválidos y filtros ajenos se rechazan.
+  - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
-- [ ] **M5-T105 — Materializar corte consistente** (25 min).
+- [x] **M5-T105 — Materializar corte consistente** (25 min).
   - **RF:** RF-49–RF-53. **Depende de:** M5-T104.
   - **Hecho cuando:** Cabecera/filas se publican completas desde una sola fotografía; fallo intermedio deja cero cortes utilizables.
+  - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
 - [ ] **M5-T106 — Resolver fechas civiles y agrupaciones** (25 min).
   - **RF:** RF-49–RF-50. **Depende de:** M5-T105, M5-T004.

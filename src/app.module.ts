@@ -32,6 +32,7 @@ import { ClientesHttpModule } from './clientes/clientes-http.module';
 import { PersonalizacionPortalHttpModule } from './personalizacion-portal/personalizacion-portal-http.module';
 import { ConfiguracionAutomatizacionesHttpModule } from './automatizaciones/configuracion-automatizaciones-http.module';
 import { EnviosWhatsappModule } from './automatizaciones/envios-whatsapp.module';
+import { ReportesHttpModule } from './reportes/reportes-http.module';
 
 @Module({
   imports: [
@@ -83,6 +84,8 @@ import { EnviosWhatsappModule } from './automatizaciones/envios-whatsapp.module'
     // Expone la configuración versionada de plazos para administradores de negocio.
     ConfiguracionAutomatizacionesHttpModule,
     EnviosWhatsappModule,
+    // Materializa cortes históricos bajo la sesión administrativa.
+    ReportesHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
