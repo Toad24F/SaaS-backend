@@ -9,11 +9,11 @@ type Escenario = Parameters<Parameters<typeof conAgendaHttp>[0]>[0];
 /** Volumen sintético en la base efímera: canceladas evita confundir esta prueba con un benchmark de causas. */
 async function agregarCitas(f: Escenario, cantidad: number) {
   const base = await f.db.getRepository(Cita).findOneByOrFail({ id: f.negocios[0].ocupaciones[0] });
-  await f.db.getRepository(Cita).insert(Array.from({ length: cantidad }, (_, i) => ({
+  await f.db.getRepository(Cita).insert(Array.from({ length: cantidad }, () => ({
     negocioId: base.negocioId, sucursalId: base.sucursalId, personalId: f.negocios[0].profesionales[1],
     servicioId: base.servicioId, clienteId: base.clienteId, estado: 'cancelada' as const, origen: 'manual' as const,
     inicioUtc: new Date('2026-01-15T12:00:00Z'), finUtc: new Date('2026-01-15T12:30:00Z'),
-    zonaHorariaReserva: base.zonaHorariaReserva, nombreContacto: 'Paciente del periodo', folio: `COMPLETO-${i}`,
+    zonaHorariaReserva: base.zonaHorariaReserva, nombreContacto: 'Paciente del periodo',
   })));
 }
 const autenticacion = (f: Escenario) => `Bearer ${f.token(f.actor(Rol.ADMIN_NEGOCIO).id)}`;
@@ -31,7 +31,7 @@ describe('Agenda completa: contrato HTTP y límites sin truncamiento', () => {
       const base = filas[0];
       await f.db.getRepository(Cita).insert({ negocioId: base.negocioId, sucursalId: base.sucursalId,
         personalId: base.personalId, servicioId: base.servicioId, clienteId: base.clienteId, estado: 'cancelada',
-        inicioUtc: new Date('2026-02-09T00:00:00Z'), finUtc: new Date('2026-02-09T00:30:00Z'), zonaHorariaReserva: 'UTC', folio: 'FUERA-DE-42' });
+        inicioUtc: new Date('2026-02-09T00:00:00Z'), finUtc: new Date('2026-02-09T00:30:00Z'), zonaHorariaReserva: 'UTC' });
       const auth = autenticacion(f);
       const r = await request(f.http).get('/citas').query(periodo).set('Authorization', auth).expect(200);
       expect(r.body).toMatchObject(periodo);

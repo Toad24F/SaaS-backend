@@ -228,7 +228,7 @@ export class ClientesService {
     const citas = await repo.createQueryBuilder('cita').select('cita.id').where(origen)
       .orderBy('cita.id', 'ASC').setLock('pessimistic_write').getMany();
     if (citas.length) {
-      // Solo se mueve la FK. No se reescriben snapshots, folios, versiones ni eventos de cita.
+      // Solo se mueve la FK. No se reescriben snapshots, versiones ni eventos de cita.
       const cambio = await repo.update(origen, { clienteId: destinoId });
       if (cambio.affected !== citas.length) throw new ConflictException();
     }

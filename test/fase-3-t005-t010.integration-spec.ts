@@ -76,7 +76,7 @@ describe('M2-T005–T010: persistencia mínima en MariaDB temporal', () => {
       const finUtc = new Date('2026-10-20T15:30:00.789Z');
       const cita = await citas.save(citas.create({ ...a, clienteId: cliente.id,
         inicioUtc, finUtc, zonaHorariaReserva: 'America/Chihuahua',
-        estado: 'pendiente', folio: 'F3-A-001', origen: 'manual', motivoConsulta: null }));
+        estado: 'pendiente', origen: 'manual', motivoConsulta: null }));
       const leida = await citas.findOneByOrFail({ id: cita.id });
       expect(leida.inicioUtc.toISOString()).toBe(inicioUtc.toISOString());
       expect(leida.finUtc.toISOString()).toBe(finUtc.toISOString());
@@ -91,15 +91,15 @@ describe('M2-T005–T010: persistencia mínima en MariaDB temporal', () => {
         conRelaciones.cliente.negocioId]).toEqual(Array(5).fill(a.negocioId));
       await expect(db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,
-          inicio_utc,fin_utc,zona_horaria_reserva,folio)
-        VALUES (?,?,?,?,?,?,?,?,?)`, [a.negocioId, b.sucursalId, a.personalId,
-        a.servicioId, cliente.id, inicioUtc, finUtc, 'America/Chihuahua', 'F3-CRUCE']))
+          inicio_utc,fin_utc,zona_horaria_reserva)
+        VALUES (?,?,?,?,?,?,?,?)`, [a.negocioId, b.sucursalId, a.personalId,
+        a.servicioId, cliente.id, inicioUtc, finUtc, 'America/Chihuahua']))
         .rejects.toThrow();
       await expect(db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,
-          inicio_utc,fin_utc,zona_horaria_reserva,folio)
-        VALUES (?,?,?,?,?,?,?,?,?)`, [a.negocioId, a.sucursalId, a.personalId,
-        a.servicioId, cliente.id, inicioUtc, inicioUtc, 'America/Chihuahua', 'F3-IGUAL']))
+          inicio_utc,fin_utc,zona_horaria_reserva)
+        VALUES (?,?,?,?,?,?,?,?)`, [a.negocioId, a.sucursalId, a.personalId,
+        a.servicioId, cliente.id, inicioUtc, inicioUtc, 'America/Chihuahua']))
         .rejects.toThrow();
     });
   });

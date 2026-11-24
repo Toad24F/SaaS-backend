@@ -465,9 +465,9 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
         (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,'Ocupación','ocupación','6140000000')`, [base.negocioId]);
       await db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
-         zona_horaria_reserva,folio,estado,origen)
+         zona_horaria_reserva,estado,origen)
         VALUES (?,?,?,?,?,'2026-10-20 15:00:00','2026-10-20 15:30:00',
-          'America/Chihuahua','COMPACTA-1','pendiente','manual')`,
+          'America/Chihuahua','pendiente','manual')`,
       [base.negocioId, base.sucursales[0], base.profesionalId,
         base.servicioId, Number(cliente.insertId)]);
       const [moduloA, moduloB] = await Promise.all([

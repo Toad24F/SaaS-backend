@@ -77,8 +77,8 @@ describe('M4-T077–T082: movimiento interno real', () => {
           VALUES(?,?,?,?,'emergencia','2026-11-09','2026-11-09',550,600,'Prueba')`, [f.negocios[0].id, s.personalId, s.sucursalId, m.actor.id]);
         // El rival en otra sede invade únicamente la separación del destino, después de la atención.
         if (caso === 'cita') await f.db.query(`INSERT INTO citas
-          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-          VALUES(?,?,?,?,?,'2026-11-09 15:55:00','2026-11-09 16:20:00','America/Mexico_City','RIVAL-MOV')`,
+          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+          VALUES(?,?,?,?,?,'2026-11-09 15:55:00','2026-11-09 16:20:00','America/Mexico_City')`,
           [f.negocios[0].id, f.negocios[0].sucursales[1].id, s.personalId, s.servicioId, s.clienteId]);
         if (caso === 'apartado') await f.db.query(`INSERT INTO bloqueos_temporales
           (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)

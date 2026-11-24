@@ -1,5 +1,4 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ClientesService } from '../clientes/clientes.service';
 import { Cita, type EstadoCita } from '../disponibilidad/entities/cita.entity';
@@ -59,9 +58,8 @@ export class RegistroCitaManualService {
     const repositorio = manager.getRepository(Cita);
     const cita = await repositorio.save(repositorio.create({ negocioId: ctx.negocioId, clienteId,
       sucursalId: seleccion.sucursalId, personalId: seleccion.personalId, servicioId: seleccion.servicioId,
-      // Dieciocho dígitos hexadecimales más prefijo caben en VARCHAR(20).
-      // La restricción global del esquema impide cualquier folio duplicado, también ante concurrencia.
-      folio: `M-${randomBytes(9).toString('hex').toUpperCase()}`, estado: 'confirmada', origen: 'manual', version: 1,
+      // La identidad durable queda en el ID de cita y la clave del intento.
+      estado: 'confirmada', origen: 'manual', version: 1,
       apartadoOrigenId: null, inicioUtc: validacion.inicioUtc, finUtc: validacion.finUtc,
       zonaHorariaReserva: validacion.zonaHoraria, separacionMinutos: validacion.reglasAplicadas.tiempoEntreCitasMinutos,
       finOcupacionUtc: ctx.finOcupacionUtc, nombreContacto: contacto.nombreCompleto, telefonoContacto: contacto.telefono,
@@ -70,7 +68,7 @@ export class RegistroCitaManualService {
     await manager.getRepository(EventoCita).insert({ negocioId: ctx.negocioId, citaId: cita.id,
       actorUsuarioId: ctx.actorId, sesionPublicaId: null, accion: 'alta', versionResultante: 1,
       ocurridoEn: ctx.ahora, valoresAntes: null, motivo: null, valoresDespues: {
-        estado: cita.estado, origen: cita.origen, folio: cita.folio, clienteId,
+        estado: cita.estado, origen: cita.origen, clienteId,
         sucursalId: cita.sucursalId, personalId: cita.personalId, servicioId: cita.servicioId,
         inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
         finOcupacionUtc: ctx.finOcupacionUtc.toISOString(), separacionMinutos: cita.separacionMinutos,

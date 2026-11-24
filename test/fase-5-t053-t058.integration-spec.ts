@@ -81,7 +81,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
           nombreProfesional: 'Profesional vigente', nombreContacto: 'Contacto vigente', telefonoContacto: '6140009999',
           motivoConsulta: f.entrada.notas });
         const cita = await db.getRepository(Cita).findOneByOrFail({ id: resultado.id });
-        expect(cita.folio).toMatch(/^M-[A-F0-9]{18}$/);
+        expect(cita).not.toHaveProperty('folio');
         expect(cita).toMatchObject({ negocioId: f.negocios[0].id, clienteId: f.entrada.clienteId,
           creadoEn: f.reloj.ahora(), apartadoOrigenId: null, costoAceptado: '145.75', estado: 'confirmada' });
         expect(await db.getRepository(Cliente).count()).toBe(clientesAntes.length);
@@ -89,8 +89,9 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         expect(eventos).toHaveLength(1);
         expect(eventos[0]).toMatchObject({ negocioId: cita.negocioId, actorUsuarioId: actor.sub, sesionPublicaId: null,
           accion: 'alta', versionResultante: 1, ocurridoEn: f.reloj.ahora(), valoresAntes: null, motivo: null,
-          valoresDespues: { estado: 'confirmada', origen: 'manual', folio: cita.folio,
+          valoresDespues: { estado: 'confirmada', origen: 'manual',
             inicioUtc: resultado.inicioUtc, finUtc: resultado.finUtc, finOcupacionUtc: resultado.finOcupacionUtc, costoAceptado: '145.75' } });
+        expect(eventos[0].valoresDespues).not.toHaveProperty('folio');
         expect(JSON.stringify(eventos)).not.toMatch(/Contacto vigente|6140009999|Nota privada|contenidoHash|sesionId|password/);
         const intento = await db.getRepository(IntentoCitaManual).findOneByOrFail({ clave });
         expect(intento).toMatchObject({ estado: 'registrado', citaId: cita.id, resueltoEn: f.reloj.ahora() });

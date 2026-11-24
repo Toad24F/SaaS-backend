@@ -1,6 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { randomBytes } from 'node:crypto';
 import { DataSource, EntityManager } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
@@ -181,9 +180,7 @@ export class RegistroReservaPublicaService {
     // El snapshot sigue copiando este formulario y el portal devuelve el resumen de su propia cita.
     const { ficha: cliente } = await this.clientes.resolverEnTransaccion(manager, intento.negocioId,
       { nombreCompleto: contacto.nombre, telefono: contacto.telefono }, ahora);
-    // 18 caracteres aleatorios más prefijo caben en VARCHAR(20) y la unicidad
-    // global de folio se mantiene en la base de datos.
-    const folio = `P-${randomBytes(9).toString('hex').toUpperCase()}`;
+    // El intento conserva la identidad idempotente; la cita usa su ID interno.
     const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId, version: 1,
       sucursalId: apartado.sucursalId, personalId: apartado.personalId,
       servicioId: apartado.servicioId, clienteId: cliente.id, inicioUtc, finUtc,
@@ -195,7 +192,7 @@ export class RegistroReservaPublicaService {
       motivoConsulta: contacto.notas, costoAceptado: copia.costo,
       nombreContacto: contacto.nombre, telefonoContacto: contacto.telefono,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
-      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, folio });
+      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional });
     // La sesión ya fue comprobada y bloqueada por el escritor. El evento comparte
     // su manager y commit: un fallo revierte también cliente, cita y consumo.
     // Se eligen valores operativos explícitos; contacto, notas, hashes y credenciales no se auditan.
@@ -203,7 +200,7 @@ export class RegistroReservaPublicaService {
       citaId: cita.id, actorUsuarioId: null, sesionPublicaId: sesion.id,
       accion: 'alta', ocurridoEn: ahora, versionResultante: cita.version,
       valoresAntes: null, motivo: null, valoresDespues: {
-        estado: cita.estado, origen: cita.origen, folio: cita.folio,
+        estado: cita.estado, origen: cita.origen,
         clienteId: cita.clienteId, sucursalId: cita.sucursalId,
         servicioId: cita.servicioId, personalId: cita.personalId,
         inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),

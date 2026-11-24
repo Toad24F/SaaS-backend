@@ -22,20 +22,21 @@ function api(f: Escenario, actor = f.actor(Rol.ADMIN_NEGOCIO).id) {
 async function sembrar(f: Escenario, cantidad: number, intervalo = 0) {
   const propio = f.negocios[0];
   // Son citas sintéticas en una base desechable. Repetir el inicio prueba el desempate por ID.
+  const [{ ultimo }] = await f.db.query('SELECT COALESCE(MAX(id),0) ultimo FROM citas');
   await f.db.query(`INSERT INTO citas (
     negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
-    zona_horaria_reserva,folio,estado,origen,costo_aceptado,nombre_servicio,nombre_sucursal,
+    zona_horaria_reserva,estado,origen,costo_aceptado,nombre_servicio,nombre_sucursal,
     nombre_profesional,nombre_contacto,telefono_contacto,motivo_consulta)
     SELECT c.negocio_id,IF(MOD(s.seq,2)=0,?,c.sucursal_id),c.personal_id,
       IF(MOD(s.seq,3)=0,?,c.servicio_id),c.cliente_id,
       TIMESTAMPADD(MINUTE,s.seq*?,'2026-08-01 04:00:00'),
       TIMESTAMPADD(MINUTE,s.seq*?+15,'2026-08-01 04:00:00'),
-      'America/New_York',CONCAT('RPT-',s.seq),
+      'America/New_York',
       IF(MOD(s.seq,5)=0,'cancelada','completada'),IF(MOD(s.seq,2)=0,'manual','portal_publico'),
       25.40,'Servicio histórico','Sede histórica','Profesional histórico','Contacto privado','6145550100','Nota privada'
     FROM citas c CROSS JOIN seq_1_to_2507 s WHERE c.id=? AND s.seq<=?`,
   [propio.sucursales[1].id, propio.servicioInactivoId, intervalo, intervalo, propio.ocupaciones[0], cantidad]);
-  const filas: { id: number }[] = await f.db.query("SELECT id FROM citas WHERE folio LIKE 'RPT-%' ORDER BY id");
+  const filas: { id: number }[] = await f.db.query('SELECT id FROM citas WHERE id>? ORDER BY id', [ultimo]);
   return filas.map(({ id }) => id);
 }
 

@@ -26,7 +26,7 @@ const CAMPOS_RESUMEN = ['id', 'version', 'negocioId', 'sucursalId', 'personalId'
   'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen', 'nombreContacto',
   'nombreSucursal', 'nombreServicio', 'nombreProfesional'] as const satisfies readonly (keyof Cita)[];
 
-// La lista de campos se aplica a ambos lados del evento, incluso si el JSON guardado contiene folio.
+// La lista de campos se aplica a ambos lados del evento, incluso con JSON histórico previo.
 // Estado y versión anteriores/nuevos conservan la trazabilidad de las correcciones autorizadas.
 const CAMPOS_EVENTO = new Set(['estado', 'version', 'origen', 'clienteId', 'sucursalId', 'servicioId',
   'personalId', 'inicioUtc', 'finUtc', 'separacionMinutos', 'finOcupacionUtc', 'zonaHoraria', 'costoAceptado', 'causaCancelacion']);

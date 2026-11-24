@@ -40,8 +40,9 @@ describe('M4-T021–T023: acceso operativo actual y aislado', () => {
             expect(filas[0]).toMatchObject({ nombreContacto: 'Paciente propio', telefonoContacto: '6141234567', motivoConsulta: 'Nota propia' });
             expect(JSON.stringify(filas)).not.toContain('Nota ajena');
           }
-          await expect(acceso.ejecutar(identidad(u), ESCRIBIR, async () => { throw new Error('No debe ejecutarse'); }))
-            .rejects.toMatchObject({ status: 403 });
+          // M5 habilita el alta de citas propias sin abrir el directorio completo.
+          await expect(acceso.ejecutar(identidad(u), ESCRIBIR, async (ctx) => ctx.actorId))
+            .resolves.toBe(u.id);
           await expect(acceso.ejecutar(identidad(u), LEER, async (ctx) => ctx.manager.getRepository(Cliente).findBy(acceso.alcanceClientes(ctx))))
             .rejects.toMatchObject({ status: 403 });
         } else {
@@ -62,7 +63,7 @@ describe('M4-T021–T023: acceso operativo actual y aislado', () => {
       const f = await crearAccesoOperativo(db);
       const acceso = servicio(db, f.reloj);
       const u = f.actores.find((u) => u.rol === Rol.PROFESIONAL)!;
-      await expect(acceso.ejecutar(identidad(u), ESCRIBIR, async () => true)).rejects.toMatchObject({ status: 403 });
+      await expect(acceso.ejecutar(identidad(u), ESCRIBIR, async () => true)).resolves.toBe(true);
       await segunda.getRepository(Usuario).update({ id: u.id }, { rol: Rol.RECEPCIONISTA });
       await expect(acceso.ejecutar({ ...identidad(u), rol: Rol.PROFESIONAL } as never, ESCRIBIR, async (ctx) => ctx.rol)).resolves.toBe(Rol.RECEPCIONISTA);
       const recepcion = f.actores.find((u) => u.rol === Rol.RECEPCIONISTA)!;

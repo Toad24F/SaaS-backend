@@ -43,7 +43,8 @@ describe('M5-T030–T034: escrituras propias del Profesional', () => {
     await conAgendaHttp(async f => {
       const m = await prepararManual(f, Rol.PROFESIONAL);
       const propia = f.negocios[0].ocupaciones[0];
-      const ajena = await f.db.getRepository(Cita).findOneByOrFail({ folio: 'M4-OTRO-PROF' });
+      const [{ id: ajenaId }] = await f.db.query("SELECT id FROM citas WHERE negocio_id=? AND nombre_contacto='Paciente ajeno'", [f.negocios[0].id]);
+      const ajena = await f.db.getRepository(Cita).findOneByOrFail({ id: ajenaId });
       const antes = await filasManuales(f.db);
       await request(f.http).patch(`/citas/${ajena.id}/estado`).set('Authorization', m.auth)
         .send({ estado: 'cancelada', version: ajena.version }).expect(404);

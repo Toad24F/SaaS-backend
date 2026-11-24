@@ -86,6 +86,7 @@ export async function conDosConexiones<T>(
 export async function conBaseMigrada<T>(
   ejecutar: (primera: DataSource, segunda: DataSource) => Promise<T>,
   prefijo: PrefijoBaseTemporal = 'citas_persistencia',
+  hastaMigracion?: string,
 ): Promise<T> {
   if (process.env.NODE_ENV !== 'test') {
     throw new Error('El ejecutor migrado requiere NODE_ENV=test.');
@@ -119,7 +120,11 @@ export async function conBaseMigrada<T>(
     primera = crearDataSource(entorno);
     segunda = crearDataSource(entorno);
     await primera.initialize();
+    // Un caso de actualización puede sembrar el corte histórico antes de aplicar las migraciones nuevas.
+    const migraciones = primera.migrations;
+    if (hastaMigracion) limitarMigracionesHasta(primera, hastaMigracion);
     await primera.runMigrations({ transaction: 'each' });
+    primera.migrations = migraciones;
     await segunda.initialize();
     resultado = await ejecutar(primera, segunda);
   } catch (error) {

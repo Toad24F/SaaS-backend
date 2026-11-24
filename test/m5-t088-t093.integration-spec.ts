@@ -402,7 +402,7 @@ describe('M5-T091–T093 · Nuevas generaciones al gestionar citas', () => {
         personalId: m.cita.personalId, sucursalId: m.cita.sucursalId };
       const corteCancelada = await reportes.crear(admin, filtros);
       const { id: _id, ...cita } = await m.leer();
-      const rival = await f.db.manager.save(Cita, { ...cita, folio: 'RIVAL-M5-092',
+      const rival = await f.db.manager.save(Cita, { ...cita,
         sucursalId: f.negocios[0].sucursales[1].id, estado: 'confirmada', causaCancelacion: null,
         generacionAutomatizacion: null, condicionVigenteId: null });
       await expect(m.cambiar('confirmada', 2)).rejects.toMatchObject({ status: 409 });

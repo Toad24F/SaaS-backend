@@ -12,11 +12,11 @@ async function sembrar(f: Escenario, entradas: Array<Partial<DatosCita> & { inic
   const { negocioId, sucursalId, personalId, servicioId, clienteId } = original;
   // El catálogo actual usa UTC. La fecha de las citas debe usar su zona histórica.
   await f.db.query("UPDATE sucursales SET zona_horaria='UTC' WHERE negocio_id=?", [negocioId]);
-  await f.db.manager.insert(Cita, entradas.map(({ inicio, ...datos }, indice) => {
+  await f.db.manager.insert(Cita, entradas.map(({ inicio, ...datos }) => {
     const inicioUtc = new Date(inicio);
     return { negocioId, sucursalId, personalId, servicioId, clienteId, inicioUtc,
       finUtc: new Date(inicioUtc.getTime() + 900_000), zonaHorariaReserva: 'America/New_York',
-      folio: `M5-106-110-${indice}`, estado: 'pendiente', origen: 'manual',
+      estado: 'pendiente', origen: 'manual',
       nombreServicio: 'Servicio histórico', nombreSucursal: 'Sucursal histórica', ...datos };
   }));
   return original;

@@ -211,11 +211,11 @@ describe('M4-T049–T052: intentos y selección bajo exclusión real', () => {
         [f.negocios[0].id, e.personalId, e.sucursalId, f.identidad().sub]);
         if (cambio === 'ocupacion' || cambio === 'cupo') {
           for (let i = 0; i < (cambio === 'cupo' ? 2 : 1); i++) await holder.query(`INSERT INTO citas
-            (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio,telefono_contacto)
-            VALUES(?,?,?,?,?, ?,?,'America/Chihuahua',?,?)`, [f.negocios[0].id, e.sucursalId,
+            (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,telefono_contacto)
+            VALUES(?,?,?,?,?, ?,?,'America/Chihuahua',?)`, [f.negocios[0].id, e.sucursalId,
             cambio === 'cupo' ? f.negocios[0].profesionales[1] : e.personalId, e.servicioId, e.clienteId,
             cambio === 'cupo' ? `2026-11-09 ${18 + i}:00:00` : '2026-11-09 15:20:00',
-            cambio === 'cupo' ? `2026-11-09 ${18 + i}:30:00` : '2026-11-09 15:50:00', `M4-CAMBIO-${i}`, f.clientes[0].telefono]);
+            cambio === 'cupo' ? `2026-11-09 ${18 + i}:30:00` : '2026-11-09 15:50:00', f.clientes[0].telefono]);
         }
         await holder.commitTransaction();
         const resultado = await pendiente;

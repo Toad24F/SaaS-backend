@@ -207,7 +207,7 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         const cliente = await manager.getRepository(Cliente).save({ negocioId: a.id, nombreCompleto: 'Revertir',
           nombreNormalizado: Buffer.from('revertir'), telefono: '6141234567' });
         const base = await manager.getRepository(Cita).findOneByOrFail({ id: a.ocupaciones[0] });
-        const cita = await manager.getRepository(Cita).save({ ...base, id: undefined, clienteId: cliente.id, folio: 'M4-ROLLBACK-018' });
+        const cita = await manager.getRepository(Cita).save({ ...base, id: undefined, clienteId: cliente.id });
         await manager.getRepository('intentos_cita_manual').insert({ negocioId: a.id, actorUsuarioId: a.profesionales[0],
           clave: 'intento_rollback_018', contenidoHash: 'f'.repeat(64) });
         await manager.getRepository('eventos_cita').insert({ negocioId: a.id,
@@ -246,7 +246,7 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
       expect(eventos[0]).toMatchObject({ actor_usuario_id: null, sesion_publica_id: f.sesionId,
         accion: 'alta', version_resultante: 1, valores_antes: null, motivo: null, ocurrido_en: AHORA });
       expect(json(eventos[0].valores_despues)).toEqual({ estado: 'pendiente', origen: 'portal_publico',
-        folio: cita.folio, clienteId: cita.cliente_id, sucursalId: cita.sucursal_id,
+        clienteId: cita.cliente_id, sucursalId: cita.sucursal_id,
         servicioId: cita.servicio_id, personalId: cita.personal_id, inicioUtc: uno.inicioUtc,
         finUtc: uno.finUtc, zonaHoraria: uno.zonaHoraria, costoAceptado: uno.costoAceptado,
         separacionMinutos: cita.separacion_minutos, finOcupacionUtc: cita.fin_ocupacion_utc.toISOString() });

@@ -21,23 +21,23 @@ describe('M4-T104–T109: navegador con API y MariaDB desechable', () => {
       expect(bases).toEqual([]);
     } finally { await admin.end(); }
   }, 120000);
-  it.each([Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA])('T105/T106 %s registra ficha existente y nueva con costo y folio reales', async rol => {
+  it.each([Rol.ADMIN_NEGOCIO, Rol.RECEPCIONISTA])('T105/T106 %s registra ficha existente y nueva con costo real', async rol => {
     await conNavegadorOperativo(rol, async f => {
       const antes = await filasManuales(f.db);
       for (const nuevo of [false, true]) {
         const dialog = await completarManual(f, nuevo);
         await dialog.getByRole('button', { name: 'Confirmar cita', exact: true }).click();
-        await f.ver(dialog).toContainText(/M-[A-F0-9]{18}/);
+        await f.ver(dialog).toContainText('Cita registrada');
         await f.ver(dialog).toContainText('100.00');
         await dialog.getByRole('button', { name: 'Volver a la agenda', exact: true }).click();
       }
       const despues = await filasManuales(f.db);
       const nuevas = despues.citas.filter(c => !antes.citas.some(a => a.id === c.id));
       expect(nuevas).toHaveLength(2);
-      expect(new Set(nuevas.map(c => c.folio)).size).toBe(2);
+      expect(new Set(nuevas.map(c => c.id)).size).toBe(2);
       for (const c of nuevas) {
         expect(c).toMatchObject({ estado: 'confirmada', costoAceptado: '100.00' });
-        await f.ver(f.page.locator(`[data-m4-appointment="${c.id}"]`)).toBeVisible();
+        await f.ver(f.page.locator(`[data-agenda-cita="${c.id}"]`)).toBeVisible();
       }
       expect(despues.clientes).toHaveLength(antes.clientes.length + 1);
       await f.page.goto(`${f.url}/admin/clientes`);
@@ -57,15 +57,16 @@ describe('M4-T104–T109: navegador con API y MariaDB desechable', () => {
     });
   }, 120000);
 
-  it('T105 Profesional consulta solo lo propio y carece de escritura y directorio', async () => {
+  it('T105 Profesional consulta solo lo propio, gestiona su cita y carece de directorio', async () => {
     await conNavegadorOperativo(Rol.PROFESIONAL, async f => {
-      await f.ver(f.page.getByRole('button', { name: 'Nueva cita', exact: true })).toHaveCount(0);
-      await f.ver(f.page.locator(`[data-m4-appointment="${f.negocios[0].ocupaciones[0]}"]`)).toBeVisible();
-      await f.ver(f.page.locator('[data-m4-appointment]')).toHaveCount(1);
-      await f.page.locator('[data-m4-appointment]').click();
+      // M5 amplía permisos sobre citas propias, manteniendo vedado el directorio completo.
+      await f.ver(f.page.getByRole('button', { name: 'Nueva cita', exact: true })).toBeVisible();
+      await f.ver(f.page.locator(`[data-agenda-cita="${f.negocios[0].ocupaciones[0]}"]`)).toBeVisible();
+      await f.ver(f.page.locator('[data-agenda-cita]')).toHaveCount(1);
+      await f.page.locator('[data-agenda-cita]').click();
       await f.ver(f.page.getByRole('dialog')).toContainText('Nota propia');
-      await f.ver(f.page.getByLabel('Estado de la cita', { exact: true })).toHaveCount(0);
-      await f.ver(f.page.getByRole('button', { name: 'Guardar horario', exact: true })).toHaveCount(0);
+      await f.ver(f.page.getByLabel('Estado de la cita', { exact: true })).toBeVisible();
+      await f.ver(f.page.getByRole('button', { name: 'Guardar horario', exact: true })).toBeVisible();
       await f.page.goto(`${f.url}/admin/clientes`);
       await f.ver(f.page).toHaveURL(/\/admin\/agenda/);
       expect(f.errores).toEqual([]);
@@ -89,7 +90,7 @@ describe('M4-T104–T109: navegador con API y MariaDB desechable', () => {
       await f.page.getByRole('button', { name: 'Comprobar envío pendiente', exact: true }).click();
       const despues = await filasManuales(f.db);
       const cita = despues.citas.find(c => !antes.citas.some(a => a.id === c.id))!;
-      await f.ver(f.page.getByRole('dialog')).toContainText(cita.folio!);
+      await f.ver(f.page.getByRole('dialog')).toContainText('Cita registrada');
       expect(registros).toBe(1);
       expect(despues.citas).toHaveLength(antes.citas.length + 1);
       expect(despues.eventos).toHaveLength(antes.eventos.length + 1);
@@ -97,20 +98,20 @@ describe('M4-T104–T109: navegador con API y MariaDB desechable', () => {
     });
   }, 120000);
 
-  it.each([390, 1366])('T108/T109 %ipx: teclado, cancelación, reactivación y movimiento conservan folio e historial', async ancho => {
+  it.each([390, 1366])('T108/T109 %ipx: teclado, cancelación, reactivación y movimiento conservan la cita e historial', async ancho => {
     await conNavegadorOperativo(Rol.ADMIN_NEGOCIO, async f => {
       await f.page.setViewportSize({ width: ancho, height: 900 });
       const dialog = await completarManual(f, true);
       await dialog.getByRole('button', { name: 'Confirmar cita', exact: true }).focus();
       await f.page.keyboard.press('Enter');
-      await f.ver(dialog).toContainText(/M-[A-F0-9]{18}/);
+      await f.ver(dialog).toContainText('Cita registrada');
       const cita = (await filasManuales(f.db)).citas.at(-1)!;
       await dialog.getByRole('button', { name: 'Volver a la agenda', exact: true }).click();
-      const card = f.page.locator(`[data-m4-appointment="${cita.id}"]`);
+      const card = f.page.locator(`[data-agenda-cita="${cita.id}"]`);
       await card.focus(); await f.page.keyboard.press('Enter');
-      const detalle = f.page.locator('#app-dialog');
+      const detalle = f.page.locator('#dialogo-app');
       for (const estado of ['cancelada', 'confirmada', 'pendiente', 'confirmada']) {
-        const anterior = await detalle.locator('.m4-state-editor').first().elementHandle();
+        const anterior = await detalle.locator('.agenda-editor-estado').first().elementHandle();
         await detalle.getByLabel('Estado de la cita', { exact: true }).selectOption(estado);
         await detalle.getByRole('button', { name: 'Guardar estado', exact: true }).click();
         if (estado === 'cancelada') await f.page.getByRole('button', { name: 'Sí, cancelar cita', exact: true }).click();
@@ -122,22 +123,22 @@ describe('M4-T104–T109: navegador con API y MariaDB desechable', () => {
       await detalle.getByLabel('Nueva hora', { exact: true }).fill('11:00');
       await detalle.getByRole('button', { name: 'Guardar horario', exact: true }).click();
       await f.ver(detalle).toContainText('11:00');
-      await f.ver(detalle).toContainText(cita.folio!);
+      await f.ver(detalle).toContainText('11:00');
       const despues = await filasManuales(f.db);
-      expect(despues.citas.find(c => c.id === cita.id)).toMatchObject({ folio: cita.folio, version: 6, inicioUtc: new Date('2026-11-09T17:00:00Z') });
+      expect(despues.citas.find(c => c.id === cita.id)).toMatchObject({ id: cita.id, version: 6, inicioUtc: new Date('2026-11-09T17:00:00Z') });
       expect(despues.eventos.filter(e => e.citaId === cita.id).map(e => e.accion)).toEqual(['alta', 'cancelacion', 'reactivacion', 'cambio_estado', 'cambio_estado', 'cambio_horario']);
       // El reloj inyectado llega al fin exacto para corregir estados finales desde la UI real.
       const fin = new Date('2026-11-09T17:30:00Z');
       await situarSesion(f.db, f.manual.actor, fin); f.reloj.fijar(fin);
       await f.page.clock.setFixedTime(fin);
       for (const estado of ['completada', 'no_asistio']) {
-        const anterior = await detalle.locator('.m4-state-editor').first().elementHandle();
+        const anterior = await detalle.locator('.agenda-editor-estado').first().elementHandle();
         await detalle.getByLabel('Estado de la cita', { exact: true }).selectOption(estado);
         await detalle.getByRole('button', { name: 'Guardar estado', exact: true }).click();
         await f.ver.poll(() => anterior!.evaluate(n => n.isConnected)).toBe(false);
       }
       const corregida = await filasManuales(f.db);
-      expect(corregida.citas.find(c => c.id === cita.id)).toMatchObject({ folio: cita.folio, version: 8, estado: 'no_asistio' });
+      expect(corregida.citas.find(c => c.id === cita.id)).toMatchObject({ id: cita.id, version: 8, estado: 'no_asistio' });
       expect(corregida.eventos.filter(e => e.citaId === cita.id)).toHaveLength(8);
       expect(await f.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await f.page.keyboard.press('Escape'); await f.ver(card).toBeFocused();

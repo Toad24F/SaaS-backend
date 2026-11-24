@@ -11,12 +11,12 @@ Fuentes vigentes: [constitución](../constitucion-modulo-4.md), [especificación
 | RF-03 | [Aislamiento HTTP](../../../test/fase-5-t044-t047.e2e-spec.ts), [superficie segura](../../../test/fase-5-t114-t115.e2e-spec.ts): IDs ajenos equivalen a inexistentes. | Aprobado. |
 | RF-04 | [Acceso y licencia](../../../test/fase-5-t021-t023.integration-spec.ts), [relectura tras espera](../../../test/fase-5-t064-t065.integration-spec.ts): sesión abierta no evita revocación o vencimiento. | Aprobado. |
 | RF-05 | [Errores operativos](../../../test/fase-5-t024.e2e-spec.ts), [frontera segura](../../../test/fase-5-t114-t115.e2e-spec.ts): denegación sin datos privados. | Aprobado. |
-| RF-06 | [Periodo completo](../../../test/agenda-periodo-completo.e2e-spec.ts), [vistas conectadas](../../../../frontend-saas/tests/m4-agenda.test.js): hasta 42 fechas, exceso rechazado íntegro. | Aprobado. |
+| RF-06 | [Periodo completo](../../../test/agenda-periodo-completo.e2e-spec.ts), [vistas conectadas](../../../../frontend-saas/tests/agenda.consulta-conectada.test.js): hasta 42 fechas, exceso rechazado íntegro. | Aprobado. |
 | RF-07 | [Zona y proyección](../../../test/fase-5-t026-t030.integration-spec.ts), [detalle](../../../test/fase-5-t034-t036.e2e-spec.ts): combinación y horario de sucursal. | Aprobado. |
-| RF-08 | [Filtros del periodo](../../../test/agenda-periodo-completo.e2e-spec.ts), [filtros y respuestas fuera de orden](../../../../frontend-saas/tests/m4-agenda.test.js). | Aprobado. |
-| RF-09 | [Lectura de estados](../../../test/fase-5-t026-t030.integration-spec.ts), [presentación](../../../../frontend-saas/tests/m4-agenda-presentation.test.js): canceladas y cinco estados visibles. | Aprobado. |
-| RF-10 | [Coordinador de actualización y versión](../../../../frontend-saas/tests/m4-live-errors.test.js): actualización automática y aviso de versión anterior. | Aprobado. |
-| RF-11 | [Causas vigentes](../../../test/fase-5-t031-t033.integration-spec.ts), [presentación de agenda](../../../../frontend-saas/tests/m4-agenda-presentation.test.js): afectaciones sin mutar citas. | Aprobado. |
+| RF-08 | [Filtros del periodo](../../../test/agenda-periodo-completo.e2e-spec.ts), [filtros y respuestas fuera de orden](../../../../frontend-saas/tests/agenda.consulta-conectada.test.js). | Aprobado. |
+| RF-09 | [Lectura de estados](../../../test/fase-5-t026-t030.integration-spec.ts), [presentación](../../../../frontend-saas/tests/agenda.presentacion-conectada.test.js): canceladas y cinco estados visibles. | Aprobado. |
+| RF-10 | [Coordinador de actualización y versión](../../../../frontend-saas/tests/agenda.refresco-errores.test.js): actualización automática y aviso de versión anterior. | Aprobado. |
+| RF-11 | [Causas vigentes](../../../test/fase-5-t031-t033.integration-spec.ts), [presentación de agenda](../../../../frontend-saas/tests/agenda.presentacion-conectada.test.js): afectaciones sin mutar citas. | Aprobado. |
 | RF-12 | [Móvil y teclado reales](../../../test/fase-5-t104-t109.e2e-spec.ts): foco, formularios y ausencia de desbordamiento. | Aprobado. |
 | RF-13 | [Directorio HTTP](../../../test/fase-5-t044-t047.e2e-spec.ts): búsqueda por nombre/teléfono y negocio; Profesional denegado. | Aprobado. |
 | RF-14 | [Ficha e historial](../../../test/fase-5-t038-t042.integration-spec.ts), [directorio conectado](../../../test/fase-5-t104-t109.e2e-spec.ts). | Aprobado. |
@@ -51,7 +51,7 @@ Fuentes vigentes: [constitución](../constitucion-modulo-4.md), [especificación
 | RF-43 | [Dos actores y versión](../../../test/fase-5-t068-t072.integration-spec.ts), [edición obsoleta](../../../test/fase-5-t083-t086.e2e-spec.ts), [estado frontend](../../../../frontend-saas/tests/m4-clientes-horario.test.js). | Aprobado. |
 | RF-44 | [Cambios durante espera](../../../test/fase-5-t064-t065.integration-spec.ts), [estados](../../../test/fase-5-t076.e2e-spec.ts), [movimiento](../../../test/fase-5-t087.e2e-spec.ts), [escritores](../../../test/fase-5-t110-t112.integration-spec.ts). | Aprobado. |
 | RF-45 | [Evento público](../../../test/fase-5-t013-t019.integration-spec.ts), [auditoría de clientes](../../../test/fase-5-t038-t042.integration-spec.ts), [evento manual](../../../test/fase-5-t053-t058.integration-spec.ts), [movimiento](../../../test/fase-5-t077-t082.integration-spec.ts). | Aprobado. |
-| RF-46 | [Vacío frente a fallo](../../../test/fase-5-t034-t036.e2e-spec.ts), [fallos sin parciales](../../../test/fase-5-t114-t115.e2e-spec.ts), [frontend](../../../../frontend-saas/tests/m4-agenda.test.js). | Aprobado. |
+| RF-46 | [Vacío frente a fallo](../../../test/fase-5-t034-t036.e2e-spec.ts), [fallos sin parciales](../../../test/fase-5-t114-t115.e2e-spec.ts), [frontend](../../../../frontend-saas/tests/agenda.consulta-conectada.test.js). | Aprobado. |
 | RF-47 | [400/401/403/404/409/500/503 y no-store](../../../test/fase-5-t114-t115.e2e-spec.ts), [incertidumbre real](../../../test/fase-5-t066.e2e-spec.ts). | Aprobado. |
 
 ## Ajustes e integraciones
@@ -93,7 +93,7 @@ Los demás ajustes aplicables conservan regresión completa en las suites ALA, p
 | --- | --- | --- |
 | CF-01 | Las 47 filas anteriores y [control de trazabilidad](../../../test/fase-5-t122-t124.spec.ts) enlazan aceptación propia y resultados actuales. | Aprobado. |
 | CF-02 | [Acceso/licencia](../../../test/fase-5-t021-t023.integration-spec.ts), [roles reales](../../../test/fase-5-t104-t109.e2e-spec.ts). | Aprobado. |
-| CF-03 | [Periodo completo](../../../test/agenda-periodo-completo.e2e-spec.ts), [agenda conectada](../../../../frontend-saas/tests/m4-agenda.test.js), [móvil/teclado](../../../test/fase-5-t104-t109.e2e-spec.ts), [causas](../../../test/fase-5-t031-t033.integration-spec.ts). | Aprobado. |
+| CF-03 | [Periodo completo](../../../test/agenda-periodo-completo.e2e-spec.ts), [agenda conectada](../../../../frontend-saas/tests/agenda.consulta-conectada.test.js), [móvil/teclado](../../../test/fase-5-t104-t109.e2e-spec.ts), [causas](../../../test/fase-5-t031-t033.integration-spec.ts). | Aprobado. |
 | CF-04 | [Directorio real](../../../test/fase-5-t044-t047.e2e-spec.ts), [selección](../../../test/fase-5-t043.integration-spec.ts), [corrección conectada](../../../test/fase-5-t104-t109.e2e-spec.ts). | Aprobado. |
 | CF-05 | [Registro atómico](../../../test/fase-5-t053-t058.integration-spec.ts), [reglas durante espera](../../../test/fase-5-t064-t065.integration-spec.ts), [formulario real](../../../test/fase-5-t104-t109.e2e-spec.ts). | Aprobado. |
 | CF-06 | [Cinco estados y fin exacto](../../../test/fase-5-t074-t075.e2e-spec.ts), [carreras](../../../test/fase-5-t076.e2e-spec.ts), [historial](../../../test/fase-5-t073.integration-spec.ts). | Aprobado. |

@@ -90,7 +90,9 @@ describe('M3-T014–T019: relaciones y entidades públicas', () => {
         telefonoContacto: null, nombreNegocio: null, nombreServicio: null,
         nombreSucursal: null, nombreProfesional: null, estado: 'pendiente' });
       const cliente = await db.getRepository(Cliente).save({ negocioId: a.id,
-        nombreCompleto: 'Familiar', telefono: a.telefonoCliente, email: null });
+        // La identidad activa añadida en M5 exige la clave normalizada incluso para esta semilla heredada.
+        nombreCompleto: 'Familiar', nombreNormalizado: Buffer.from('familiar'),
+        telefono: a.telefonoCliente, email: null });
       expect(cliente.id).toBeGreaterThan(0);
       expect((await db.getRepository(Cliente).find({
         where: { negocioId: a.id, telefono: a.telefonoCliente },

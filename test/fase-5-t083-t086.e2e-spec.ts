@@ -30,9 +30,9 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
         valoresAntes: { inicioUtc: original.inicioUtc.toISOString(), finUtc: original.finUtc.toISOString(), finOcupacionUtc: original.finOcupacionUtc!.toISOString(), zonaHoraria: original.zonaHorariaReserva, version: 1 },
         valoresDespues: { inicioUtc: r.body.inicioUtc, finUtc: r.body.finUtc, finOcupacionUtc: r.body.finOcupacionUtc, zonaHoraria: original.zonaHorariaReserva, version: 2 } });
       const h = await request(f.http).get(`/citas/${m.cita.id}/historial`).set('Authorization', m.auth).expect(200);
-      // El evento de alta sigue guardado, pero su proyección excluye el folio histórico.
+      // La migración conservó el evento de alta y retiró solo el dato de presentación.
       expect(antes.eventos.find(evento => evento.citaId === original.id)?.valoresDespues)
-        .toHaveProperty('folio', original.folio);
+        .not.toHaveProperty('folio');
       const alta = h.body.eventos.find((evento: { versionResultante: number }) => evento.versionResultante === 1);
       expect(alta.valoresDespues).toMatchObject({ estado: 'confirmada', clienteId: original.clienteId });
       expect(alta.valoresDespues).not.toHaveProperty('folio');
@@ -132,7 +132,7 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
       });
     });
 
-  it('T084 interpreta la zona vigente, guarda la anterior/nueva y conserva el folio', async () => {
+  it('T084 interpreta la zona vigente y guarda la anterior y nueva', async () => {
     await conAgendaHttp(async f => {
       const m = await prepararMovimiento(f);
       await f.db.query("UPDATE sucursales SET zona_horaria='America/Tijuana' WHERE id=?", [m.seleccion.sucursalId]);
@@ -150,8 +150,8 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
         const inicio = relacion === 'parcial' ? '2026-11-09 15:55:00' : '2026-11-09 16:00:00';
         // El rival invade solo la separación del destino o empieza exactamente en su fin protegido.
         if (tipo === 'cita') await f.db.query(`INSERT INTO citas
-          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-          VALUES(?,?,?,?,?,?,'2026-11-09 16:30:00','America/Mexico_City','RIVAL-T085')`,
+          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+          VALUES(?,?,?,?,?,?,'2026-11-09 16:30:00','America/Mexico_City')`,
           [f.negocios[0].id, f.negocios[0].sucursales[1].id, s.personalId, s.servicioId, s.clienteId, inicio]);
         else await f.db.query(`INSERT INTO bloqueos_temporales
           (negocio_id,sucursal_id,personal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)

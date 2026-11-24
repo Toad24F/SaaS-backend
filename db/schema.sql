@@ -568,7 +568,6 @@ CREATE TABLE citas (
   estado ENUM('pendiente','confirmada','completada','cancelada','no_asistio')
     NOT NULL DEFAULT 'pendiente',
   motivo_consulta TEXT NULL,
-  folio VARCHAR(20) NOT NULL,
   origen ENUM('portal_publico','manual') NOT NULL DEFAULT 'portal_publico',
   creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   -- La copia de lo aceptado se llena solo en reservas nuevas; el legado queda NULL.
@@ -581,7 +580,6 @@ CREATE TABLE citas (
   nombre_profesional VARCHAR(150) NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_citas_negocio_id (negocio_id, id),
-  UNIQUE KEY uq_citas_folio (folio),
   INDEX idx_citas_personal_inicio (negocio_id, personal_id, inicio_utc),
   INDEX idx_citas_sucursal_inicio (negocio_id, sucursal_id, inicio_utc),
   INDEX idx_citas_cliente (negocio_id, cliente_id),
@@ -695,7 +693,7 @@ CREATE TABLE operaciones_apartado (
 ) ENGINE=InnoDB;
 
 -- El intento conserva el resultado de registro y permite recuperar un
--- envío incierto con su clave, sin usar teléfono o folio como identidad.
+-- envío incierto con su clave, sin usar teléfono como identidad.
 CREATE TABLE intentos_reserva_publica (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   negocio_id INT UNSIGNED NOT NULL,
@@ -1315,6 +1313,8 @@ CREATE TABLE personalizacion_portal (
     REFERENCES negocios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_personalizacion_portal_logo FOREIGN KEY (negocio_id,logo_id)
     REFERENCES recursos_portal(negocio_id,id) ON DELETE RESTRICT
+-- Esta tabla termina antes de declarar los plazos de automatización.
+) ENGINE=InnoDB;
 -- M5-T054: plazos versionados por negocio. Los defaults solo aplican a filas nuevas.
 CREATE TABLE configuracion_automatizaciones (
   negocio_id INT UNSIGNED NOT NULL,

@@ -13,7 +13,6 @@ export type OrigenCita = 'portal_publico' | 'manual';
 /** Compromiso con extremos UTC persistidos: la duración del catálogo no los recalcula. */
 @Entity({ name: 'citas' })
 @Index('uq_citas_negocio_id', ['negocioId', 'id'], { unique: true })
-@Index('uq_citas_folio', ['folio'], { unique: true })
 @Index('idx_citas_personal_inicio', ['negocioId', 'personalId', 'inicioUtc'])
 @Index('idx_citas_sucursal_inicio', ['negocioId', 'sucursalId', 'inicioUtc'])
 @Index('idx_citas_cliente', ['negocioId', 'clienteId'])
@@ -147,9 +146,6 @@ export class Cita {
 
   @Column({ name: 'nombre_profesional', type: 'varchar', length: 150, nullable: true })
   nombreProfesional: string | null;
-
-  @Column({ type: 'varchar', length: 20 })
-  folio: string;
 
   @Column({ type: 'enum', enum: ['portal_publico', 'manual'], default: 'portal_publico' })
   origen: OrigenCita;

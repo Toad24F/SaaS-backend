@@ -119,9 +119,9 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
         }
         if (caso === 'cupo') {
           for (const hora of [18, 19]) await f.db.query(`INSERT INTO citas
-            (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio,telefono_contacto)
-            VALUES(?,?,?,?,?,?,?,'America/Chihuahua',?,'6141234567')`, [f.negocios[0].id, s.sucursalId, f.negocios[0].profesionales[1], s.servicioId,
-            s.clienteId, `2026-11-09 ${hora}:00:00`, `2026-11-09 ${hora}:30:00`, `CUPO-${hora}`]);
+            (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,telefono_contacto)
+            VALUES(?,?,?,?,?,?,?,'America/Chihuahua','6141234567')`, [f.negocios[0].id, s.sucursalId, f.negocios[0].profesionales[1], s.servicioId,
+            s.clienteId, `2026-11-09 ${hora}:00:00`, `2026-11-09 ${hora}:30:00`]);
         }
         if (caso === 'oferta') await f.db.query('UPDATE personal_servicios_sucursales SET activo=0 WHERE negocio_id=?', [f.negocios[0].id]);
         if (caso === 'horario') await f.db.query('UPDATE horarios_personal SET fin_minutos=580 WHERE negocio_id=?', [f.negocios[0].id]);
@@ -129,8 +129,8 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
           (negocio_id,personal_id,sucursal_id,creador_usuario_id,tipo,fecha_inicio,fecha_fin,inicio_minutos,fin_minutos,motivo)
           VALUES(?,?,?,?,'emergencia','2026-11-09','2026-11-09',540,600,'Prueba')`, [f.negocios[0].id, s.personalId, s.sucursalId, m.actor.id]);
         if (caso === 'cita_otra_sucursal') await f.db.query(`INSERT INTO citas
-          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-          VALUES(?,?,?,?,?,'2026-11-09 15:50:00','2026-11-09 16:20:00','America/Mexico_City','RIVAL')`,
+          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+          VALUES(?,?,?,?,?,'2026-11-09 15:50:00','2026-11-09 16:20:00','America/Mexico_City')`,
         [f.negocios[0].id, f.negocios[0].sucursales[1].id, s.personalId, s.servicioId, s.clienteId]);
         if (caso === 'apartado_otra_sucursal') await f.db.query(`INSERT INTO bloqueos_temporales
           (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)

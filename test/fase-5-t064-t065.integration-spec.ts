@@ -34,10 +34,10 @@ describe('M4-T064–T065: escritor manual real entre sucursales y tras esperas',
         if (tipo === 'cita') {
           await f.db.query(`INSERT INTO citas
             (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
-             folio,estado,origen,separacion_minutos,fin_ocupacion_utc,telefono_contacto)
-            VALUES(?,?,?,?,?,?,?,'America/Tijuana',?,'no_asistio','manual',?,?,'6149990000')`,
+             estado,origen,separacion_minutos,fin_ocupacion_utc,telefono_contacto)
+            VALUES(?,?,?,?,?,?,?,'America/Tijuana','no_asistio','manual',?,?,'6149990000')`,
           [f.negocios[0].id, otra.id, s.personalId, f.negocios[0].servicioInactivoId, s.clienteId,
-            inicioUtc, finUtc, `T064-${randomUUID().slice(0, 8)}`, separacion, finProtegido]);
+            inicioUtc, finUtc, separacion, finProtegido]);
         } else {
           await f.db.query(`INSERT INTO bloqueos_temporales
             (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash,separacion_minutos,fin_ocupacion_utc,modo_concesion,version_reglas)

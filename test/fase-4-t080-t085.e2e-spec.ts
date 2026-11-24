@@ -122,10 +122,10 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
         expect(repetida).toEqual(registrada);
         expect(recuperada).toEqual(registrada);
         // El vínculo durable usa la clave original y el ID interno de la cita.
-        const [intento] = await f.db.query(`SELECT i.cita_id, c.folio
+        const [intento] = await f.db.query(`SELECT i.cita_id
           FROM intentos_reserva_publica i JOIN citas c ON c.id=i.cita_id AND c.negocio_id=i.negocio_id
           WHERE i.negocio_id=? AND i.clave=?`, [f.negocioId, f.clave]);
-        expect(intento).toMatchObject({ cita_id: expect.any(Number), folio: expect.any(String) });
+        expect(intento).toMatchObject({ cita_id: expect.any(Number) });
         for (const respuesta of [registrada, repetida, recuperada]) {
           expect(respuesta).not.toHaveProperty('folio');
           expect(respuesta).not.toHaveProperty('id');
@@ -308,9 +308,6 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       expect((await f.resolver(f.clave, f.apartado.apartadoId, f.ajena).expect(404)).body)
         .not.toHaveProperty('resultado');
       await f.resolver('clave_inexistente_123456', f.apartado.apartadoId, f.ajena).expect(404);
-      const [cita] = await f.db.query('SELECT folio FROM citas WHERE negocio_id=? AND apartado_origen_id=?',
-        [f.negocioId, f.apartado.apartadoId]);
-      await request(f.http).get(`${RUTA}/intentos/${cita.folio}`).expect(404);
       expect((await f.resolver().expect(200)).body.resultado).toEqual(r.body);
     });
   }, 120000);

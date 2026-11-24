@@ -600,29 +600,35 @@ Evidencia del lote [M5-T115–M5-T118](resultados-tareas/m5-t115-t118.md).
   - **Hecho cuando:** Respuestas públicas/privadas y recuperación dejan de exponer folio sin alterar IDs ni claves.
   - **Evidencia:** [M5-T122–T123](resultados-tareas/m5-t122-t123.md).
 
-- [ ] **M5-T124 — Retirar folio de vistas y estado frontend** (25 min).
+- [x] **M5-T124 — Retirar folio de vistas y estado frontend** (25 min).
   - **RF:** RF-58. **Depende de:** M5-T123, M5-T121, M5-T033.
   - **Hecho cuando:** Portal, agenda, clientes, reportes y demo no dependen ni muestran folio.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T125 — Retirar folio de nuevos eventos y mensajes** (25 min).
+- [x] **M5-T125 — Retirar folio de nuevos eventos y mensajes** (25 min).
   - **RF:** RF-58, RF-60. **Depende de:** M5-T123, M5-T075, M5-T058.
   - **Hecho cuando:** Los nuevos JSON de eventos y parámetros de mensajes no incluyen folio.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T126 — Preparar limpieza acotada de JSON histórico** (25 min).
+- [x] **M5-T126 — Preparar limpieza acotada de JSON histórico** (25 min).
   - **RF:** RF-58–RF-60. **Depende de:** M5-T125.
   - **Hecho cuando:** Migración de test elimina solo propiedad folio y restablece triggers conservando demás valores y filas.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T127 — Retirar generación, columna e índice exclusivo** (25 min).
+- [x] **M5-T127 — Retirar generación, columna e índice exclusivo** (25 min).
   - **RF:** RF-58–RF-59. **Depende de:** M5-T126, M5-T124.
   - **Hecho cuando:** Migración, entidades y esquema coinciden y ambos escritores funcionan sin campo folio.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T128 — Probar recuperación después de retirar folio** (25 min).
+- [x] **M5-T128 — Probar recuperación después de retirar folio** (25 min).
   - **RF:** RF-58–RF-59, RF-62. **Depende de:** M5-T127, M5-T071.
   - **Hecho cuando:** Intentos previos y actuales recuperan la misma cita y conservan IDs, relaciones y huellas.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T129 — Verificar ausencia del folio en producto vigente** (20 min).
+- [x] **M5-T129 — Verificar ausencia del folio en producto vigente** (20 min).
   - **RF:** RF-58. **Depende de:** M5-T128.
   - **Hecho cuando:** Búsqueda en ambos repositorios solo deja referencias históricas justificadas o verificaciones de ausencia.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
 ## 13. Observabilidad, migraciones y aceptación real
 

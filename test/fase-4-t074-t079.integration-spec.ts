@@ -74,7 +74,7 @@ describe('M3-T074–T079: escritor y resolución de intentos', () => {
       const cita = (await f.db.query(`SELECT c.*,cl.nombre_completo,cl.telefono
         FROM citas c JOIN clientes cl ON cl.id=c.cliente_id AND cl.negocio_id=c.negocio_id
         WHERE c.negocio_id=? AND c.apartado_origen_id=?`, [f.negocioId, f.apartadoId]))[0];
-      expect(cita.folio).toMatch(/^P-[A-F0-9]{18}$/);
+      expect(cita).not.toHaveProperty('folio');
       expect(cita).toMatchObject({ nombre_completo: 'María Pérez',
         telefono: '6141234567', nombre_contacto: 'María Pérez',
         telefono_contacto: '6141234567', motivo_consulta: 'Primera visita',

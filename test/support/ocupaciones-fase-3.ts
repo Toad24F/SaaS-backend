@@ -68,7 +68,7 @@ export async function crearDatosOcupaciones(db: DataSource, reloj: Reloj):
       const cita = await db.getRepository(Cita).save({ negocioId, personalId,
         sucursalId, servicioId, clienteId: Number(cliente.insertId), inicioUtc, finUtc,
         zonaHorariaReserva: 'America/Chihuahua', estado: 'pendiente',
-        folio: `OC-${indice}-${numero}`, origen: 'manual', motivoConsulta: null });
+        origen: 'manual', motivoConsulta: null });
       citas.push(cita.id);
       const apartado = await db.getRepository(BloqueoTemporal).save({ negocioId, personalId,
         sucursalId, servicioId, inicioUtc, finUtc,
