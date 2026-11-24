@@ -555,33 +555,38 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 
 ## 11. Pantalla de reportes e impresión
 
-- [ ] **M5-T115 — Conectar filtros y carga de reporte** (25 min).
+Evidencia del lote [M5-T115–M5-T118](resultados-tareas/m5-t115-t118.md).
+
+- [x] **M5-T115 — Conectar filtros y carga de reporte** (25 min).
   - **RF:** RF-49–RF-50, RF-54. **Depende de:** M5-T111.
   - **Hecho cuando:** La vista crea un corte y distingue carga, vacío y error sin recurrir a demo.
 
-- [ ] **M5-T116 — Mostrar indicadores y estimaciones** (25 min).
+- [x] **M5-T116 — Mostrar indicadores y estimaciones** (25 min).
   - **RF:** RF-49–RF-53. **Depende de:** M5-T115.
   - **Hecho cuando:** Los nueve resultados de RF-49 muestran cifras/denominadores y advertencia de costo faltante.
 
-- [ ] **M5-T117 — Conectar tablas paginadas del corte** (25 min).
+- [x] **M5-T117 — Conectar tablas paginadas del corte** (25 min).
   - **RF:** RF-49, RF-53–RF-54. **Depende de:** M5-T116.
   - **Hecho cuando:** Cambiar página conserva corte y filtros; caducidad exige regenerar sin mezclar filas.
 
-- [ ] **M5-T118 — Preparar colección completa para impresión** (25 min).
+- [x] **M5-T118 — Preparar colección completa para impresión** (25 min).
   - **RF:** RF-55, RF-57. **Depende de:** M5-T117, M5-T112.
   - **Hecho cuando:** Se obtienen todas las páginas del mismo corte y se valida cantidad antes de habilitar impresión.
 
-- [ ] **M5-T119 — Aplicar presentación de impresión** (25 min).
+- [x] **M5-T119 — Aplicar presentación de impresión** (25 min).
   - **RF:** RF-55–RF-56. **Depende de:** M5-T118.
   - **Hecho cuando:** Vista de impresión incluye negocio, periodo, filtros y corte, sin navegación, controles ni folio.
+  - **Evidencia:** [M5-T119–T121](resultados-tareas/m5-t119-t121.md).
 
-- [ ] **M5-T120 — Manejar impresión incompleta y menú nativo** (25 min).
+- [x] **M5-T120 — Manejar impresión incompleta y menú nativo** (25 min).
   - **RF:** RF-54, RF-57. **Depende de:** M5-T119.
   - **Hecho cuando:** Fallo de una página impide reporte parcial y menú nativo sin preparación muestra advertencia.
+  - **Evidencia:** [M5-T119–T121](resultados-tareas/m5-t119-t121.md).
 
-- [ ] **M5-T121 — Verificar PDF guardado desde navegador** (25 min).
+- [x] **M5-T121 — Verificar PDF guardado desde navegador** (25 min).
   - **RF:** RF-55–RF-57. **Depende de:** M5-T120.
   - **Hecho cuando:** Un reporte de varias páginas conserva filas, totales y encabezados sin recortes de contenido.
+  - **Evidencia:** [M5-T119–T121](resultados-tareas/m5-t119-t121.md).
 
 ## 12. Retirada coordinada del folio
 
