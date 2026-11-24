@@ -13,6 +13,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { CorteReporte } from './entities/corte-reporte.entity';
 import { FilaCorteReporte } from './entities/fila-corte-reporte.entity';
 import { type FiltrosCorte, validarFiltrosCorte } from './filtros-corte';
+import { calcularIndicadores } from './indicadores-corte';
 
 const DIA_MS = 86_400_000;
 const TAMANO_LOTE = 500;
@@ -24,6 +25,9 @@ const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 const CAMPOS_CITA = ['id', 'sucursalId', 'personalId', 'servicioId', 'nombreSucursal',
   'nombreProfesional', 'nombreServicio', 'inicioUtc', 'finUtc', 'zonaHorariaReserva',
   'estado', 'origen', 'costoAceptado', 'causaCancelacion'] satisfies (keyof Cita)[];
+const CAMPOS_INDICADORES = ['citaId', 'finUtc', 'estado', 'origen', 'servicioId', 'nombreServicio',
+  'sucursalId', 'nombreSucursal', 'costoAceptado', 'causaCancelacion'] as const satisfies readonly (keyof FilaCorteReporte)[];
+type FilaResumen = Pick<FilaCorteReporte, typeof CAMPOS_INDICADORES[number] | 'fechaCivil'>;
 
 @Injectable()
 export class CortesReporteService {
@@ -51,12 +55,44 @@ export class CortesReporteService {
 
   /** Autoriza la cabecera antes de que un consumidor pueda consultar sus filas. */
   async obtenerCorte(actorUsuarioId: number, id: string): Promise<CorteReporte> {
-    const negocioId = await this.negocioDelAdministrador(this.db.manager, actorUsuarioId);
-    const corte = UUID.test(id) && await this.db.manager.findOneBy(CorteReporte, {
+    return this.buscarCorte(this.db.manager, actorUsuarioId, id);
+  }
+
+  async obtenerResumen(actorUsuarioId: number, id: string) {
+    // La cabecera autorizada y todas sus filas se leen en la misma fotografía, incluso entre lotes.
+    return this.db.transaction('REPEATABLE READ', async (manager) => {
+      const corte = await this.buscarCorte(manager, actorUsuarioId, id);
+      return calcularIndicadores(corte, this.leerFilas(manager, corte.id));
+    });
+  }
+
+  private async buscarCorte(manager: EntityManager, actorUsuarioId: number, id: string): Promise<CorteReporte> {
+    const negocioId = await this.negocioDelAdministrador(manager, actorUsuarioId);
+    const corte = UUID.test(id) && await manager.findOneBy(CorteReporte, {
       id, negocioId, actorUsuarioId, completo: true, expiraEn: MoreThan(this.reloj.ahora()),
     });
     if (!corte) throw new NotFoundException('Corte no disponible.');
     return corte;
+  }
+
+  private async *leerFilas(manager: EntityManager, corteId: string) {
+    const consulta = manager.createQueryBuilder(FilaCorteReporte, 'fila')
+      // Leer DATE como texto civil evita que el huso local del proceso desplace el día al hidratarlo.
+      .select('CAST(fila.fechaCivil AS CHAR)', 'fechaCivil')
+      .where('fila.corteId = :corteId', { corteId })
+      .andWhere('fila.citaId > :cursor')
+      .orderBy('fila.citaId', 'ASC')
+      .limit(TAMANO_LOTE);
+    for (const campo of CAMPOS_INDICADORES) consulta.addSelect(`fila.${campo}`, campo);
+
+    let cursor = 0;
+    for (;;) {
+      // La clave del corte y el cursor de cita evitan repetir filas o truncar el total.
+      const lote = await consulta.setParameter('cursor', cursor).getRawMany<FilaResumen>();
+      yield* lote;
+      if (lote.length < TAMANO_LOTE) return;
+      cursor = lote[lote.length - 1].citaId;
+    }
   }
 
   private async negocioDelAdministrador(manager: EntityManager, id: number): Promise<number> {

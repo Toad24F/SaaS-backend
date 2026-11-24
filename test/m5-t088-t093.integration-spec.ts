@@ -15,6 +15,7 @@ import { RegistroCitaManualService } from '../src/citas/registro-cita-manual.ser
 import { EventoCita } from '../src/citas/entities/evento-cita.entity';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
 import { OcupacionesService } from '../src/disponibilidad/ocupaciones.service';
+import { CortesReporteService } from '../src/reportes/cortes-reporte.service';
 import { Not } from 'typeorm';
 import request from 'supertest';
 import { Rol } from '../src/auth/enums/rol.enum';
@@ -395,6 +396,11 @@ describe('M5-T091–T093 · Nuevas generaciones al gestionar citas', () => {
       await situarSesion(f.db, m.actor, m.plazo);
       await m.cancelar.ejecutarLote();
       const [cancelacion] = await m.eventos();
+      const reportes = f.app.get(CortesReporteService);
+      const admin = f.actor(Rol.ADMIN_NEGOCIO).id;
+      const filtros = { desde: '2026-11-09', hasta: '2026-11-09', agrupacion: 'semana',
+        personalId: m.cita.personalId, sucursalId: m.cita.sucursalId };
+      const corteCancelada = await reportes.crear(admin, filtros);
       const { id: _id, ...cita } = await m.leer();
       const rival = await f.db.manager.save(Cita, { ...cita, folio: 'RIVAL-M5-092',
         sucursalId: f.negocios[0].sucursales[1].id, estado: 'confirmada', causaCancelacion: null,
@@ -407,6 +413,15 @@ describe('M5-T091–T093 · Nuevas generaciones al gestionar citas', () => {
         VALUES (?,1,12,12)`, [m.cita.negocioId]);
       await expect(m.cambiar('confirmada', 2)).resolves.toMatchObject({ estado: 'confirmada', version: 3 });
       expect(await m.leer()).toMatchObject({ causaCancelacion: null, generacionAutomatizacion: 2, inicioUtc: inicio, origen: 'portal_publico' });
+      // El mismo historial de cancelación existe en ambos momentos, pero solo el primer
+      // corte guarda una cancelación automática vigente.
+      const corteReactivada = await reportes.crear(admin, filtros);
+      await expect(reportes.obtenerResumen(admin, corteCancelada.id)).resolves.toMatchObject({
+        totalCitas: 1, estados: { cancelada: 1 }, cancelacionesAutomaticas: 1,
+      });
+      await expect(reportes.obtenerResumen(admin, corteReactivada.id)).resolves.toMatchObject({
+        totalCitas: 1, estados: { confirmada: 1, cancelada: 0 }, cancelacionesAutomaticas: 0,
+      });
       expect(await m.eventos()).toEqual([cancelacion, expect.objectContaining({ accion: 'reactivacion',
         valoresAntes: { estado: 'cancelada', version: 2, causaCancelacion: 'falta_confirmacion_plazo' },
         valoresDespues: { estado: 'confirmada', version: 3, causaCancelacion: null } })]);

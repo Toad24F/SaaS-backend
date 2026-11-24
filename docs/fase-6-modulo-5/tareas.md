@@ -508,25 +508,30 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
   - **Hecho cuando:** Cabecera/filas se publican completas desde una sola fotografía; fallo intermedio deja cero cortes utilizables.
   - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
-- [ ] **M5-T106 — Resolver fechas civiles y agrupaciones** (25 min).
+- [x] **M5-T106 — Resolver fechas civiles y agrupaciones** (25 min).
   - **RF:** RF-49–RF-50. **Depende de:** M5-T105, M5-T004.
   - **Hecho cuando:** Pruebas cubren zona histórica, DST, límites inclusivos, lunes y cambio de mes.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T107 — Calcular conteos, origen y evolución** (25 min).
+- [x] **M5-T107 — Calcular conteos, origen y evolución** (25 min).
   - **RF:** RF-49, RF-51, RF-53. **Depende de:** M5-T106.
   - **Hecho cuando:** Dataset conocido concilia estados, origen, servicios solicitados y evolución sin duplicar citas.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T108 — Calcular tasas y citas sin resultado** (25 min).
+- [x] **M5-T108 — Calcular tasas y citas sin resultado** (25 min).
   - **RF:** RF-49, RF-51. **Depende de:** M5-T107.
   - **Hecho cuando:** Denominador cero produce Sin datos; tasas y pasadas sin resultado coinciden con fórmulas de spec.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T109 — Calcular estimación con costo histórico** (25 min).
+- [x] **M5-T109 — Calcular estimación con costo histórico** (25 min).
   - **RF:** RF-49, RF-52–RF-53. **Depende de:** M5-T105.
   - **Hecho cuando:** Decimales se suman exactamente; null se reporta faltante y precio actual no participa.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T110 — Contar cancelaciones automáticas vigentes** (25 min).
+- [x] **M5-T110 — Contar cancelaciones automáticas vigentes** (25 min).
   - **RF:** RF-49, RF-51, RF-53. **Depende de:** M5-T107, M5-T092.
   - **Hecho cuando:** Canceladas por falta de confirmación forman subconjunto y una reactivada deja de contarse.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
 - [ ] **M5-T111 — Exponer resumen y páginas del corte** (25 min).
   - **RF:** RF-49–RF-54, RF-61. **Depende de:** M5-T108, M5-T109, M5-T110.
