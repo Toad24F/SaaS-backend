@@ -15,20 +15,20 @@ import { validarConsultaAgenda } from './consulta-agenda.entrada';
 import { intervalosCivilesUtc, proyectarHorarioCita } from './horario-agenda';
 import { ConsultaAgendaDemasiadoAmpliaException, MAX_CITAS_AGENDA } from './limites-agenda';
 
-// Proyección explícita: conserva los nulos históricos y excluye referencias de sesión/apartado.
+// La proyección operativa conserva los nulos históricos y usa el ID interno de la cita.
 const CAMPOS = ['id', 'version', 'negocioId', 'sucursalId', 'personalId', 'servicioId',
-  'clienteId', 'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen', 'folio',
+  'clienteId', 'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen',
   'nombreContacto', 'telefonoContacto', 'motivoConsulta', 'nombreNegocio', 'nombreSucursal',
   'nombreServicio', 'nombreProfesional', 'costoAceptado', 'separacionMinutos', 'finOcupacionUtc'] as const satisfies readonly (keyof Cita)[];
 
 // El calendario recibe solo lo necesario para dibujar tarjetas; contacto completo/notas/precio se leen al abrir detalle.
 const CAMPOS_RESUMEN = ['id', 'version', 'negocioId', 'sucursalId', 'personalId', 'servicioId',
-  'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen', 'folio', 'nombreContacto',
+  'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen', 'nombreContacto',
   'nombreSucursal', 'nombreServicio', 'nombreProfesional'] as const satisfies readonly (keyof Cita)[];
 
-// Solo se publica el contrato operativo: una fila JSON antigua no puede introducir contacto o secretos.
+// La lista de campos se aplica a ambos lados del evento, incluso si el JSON guardado contiene folio.
 // Estado y versión anteriores/nuevos conservan la trazabilidad de las correcciones autorizadas.
-const CAMPOS_EVENTO = new Set(['estado', 'version', 'origen', 'folio', 'clienteId', 'sucursalId', 'servicioId',
+const CAMPOS_EVENTO = new Set(['estado', 'version', 'origen', 'clienteId', 'sucursalId', 'servicioId',
   'personalId', 'inicioUtc', 'finUtc', 'separacionMinutos', 'finOcupacionUtc', 'zonaHoraria', 'costoAceptado', 'causaCancelacion']);
 function valoresOperativos(valores: Record<string, unknown> | null) {
   if (valores === null) return null;

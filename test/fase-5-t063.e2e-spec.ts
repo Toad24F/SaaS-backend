@@ -28,7 +28,7 @@ describe('M4-T063: reserva manual válida por HTTP y cupo sin fusionar fichas', 
         const respuesta = await request(f.http).post(`${RUTA_MANUAL}/${clave}/registrar`).set('Authorization', m.auth).send(seleccion).expect(201);
         expect(respuesta.headers['cache-control']).toBe('no-store');
         expect(respuesta.body).toEqual({ id: expect.any(Number), clienteId: nuevo ? expect.any(Number) : ficha.id,
-          folio: expect.stringMatching(/^M-[A-F0-9]{18}$/), estado: 'confirmada', origen: 'manual', version: 1,
+          estado: 'confirmada', origen: 'manual', version: 1,
           sucursalId: seleccion.sucursalId, personalId: seleccion.personalId, servicioId: seleccion.servicioId,
           inicioUtc: '2026-11-09T15:17:00.000Z', finUtc: '2026-11-09T16:02:00.000Z', finOcupacionUtc: '2026-11-09T16:12:00.000Z',
           separacionMinutos: 10, zonaHoraria: 'America/Chihuahua', costoAceptado: '145.75',
@@ -61,7 +61,7 @@ describe('M4-T063: reserva manual válida por HTTP y cupo sin fusionar fichas', 
     await conAgendaHttp(async (f) => {
       const m = await prepararManual(f);
       const ficha = await f.db.getRepository(Cliente).findOneByOrFail({ id: m.seleccion.clienteId });
-      const resultados: { id: number; clienteId: number; folio: string }[] = [];
+      const resultados: { id: number; clienteId: number }[] = [];
       for (const [indice, seleccion] of [m.seleccion, { ...m.nueva, horaInicio: '10:17' }, { ...m.nueva, horaInicio: '11:17' }].entries()) {
         const clave = randomUUID();
         await request(f.http).post(RUTA_MANUAL).set('Authorization', m.auth).send({ clave, seleccion }).expect(201);
@@ -74,7 +74,7 @@ describe('M4-T063: reserva manual válida por HTTP y cupo sin fusionar fichas', 
           expect(antes.intentos.find((i) => i.clave === clave)?.estado).toBe('preparado');
         }
       }
-      expect(new Set(resultados.map((r) => r.folio)).size).toBe(2);
+      expect(new Set(resultados.map((r) => r.id)).size).toBe(2);
       expect(new Set(resultados.map((r) => r.clienteId)).size).toBe(2);
       expect(await f.db.getRepository(Cliente).findOneByOrFail({ id: ficha.id })).toEqual(ficha);
     });

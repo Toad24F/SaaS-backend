@@ -590,13 +590,15 @@ Evidencia del lote [M5-T115–M5-T118](resultados-tareas/m5-t115-t118.md).
 
 ## 12. Retirada coordinada del folio
 
-- [ ] **M5-T122 — Inventariar dependencias activas del folio** (20 min).
+- [x] **M5-T122 — Inventariar dependencias activas del folio** (20 min).
   - **RF:** RF-58–RF-59, RF-62. **Depende de:** M5-T001.
   - **Hecho cuando:** Existe listado de campos, JSON, consumidores y recuperación afectados, separado de antecedentes históricos.
+  - **Evidencia:** [M5-T122–T123](resultados-tareas/m5-t122-t123.md).
 
-- [ ] **M5-T123 — Retirar folio de proyecciones backend** (25 min).
+- [x] **M5-T123 — Retirar folio de proyecciones backend** (25 min).
   - **RF:** RF-58, RF-62. **Depende de:** M5-T122, M5-T111.
   - **Hecho cuando:** Respuestas públicas/privadas y recuperación dejan de exponer folio sin alterar IDs ni claves.
+  - **Evidencia:** [M5-T122–T123](resultados-tareas/m5-t122-t123.md).
 
 - [ ] **M5-T124 — Retirar folio de vistas y estado frontend** (25 min).
   - **RF:** RF-58. **Depende de:** M5-T123, M5-T121, M5-T033.

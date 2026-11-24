@@ -107,15 +107,17 @@ describe('M5-T014–T017: identidad en los escritores reales y el directorio', (
       const antes = await filasManuales(f.db);
       const r = await p.registrar().expect(201);
       expect(r.headers['cache-control']).toBe('no-store');
-      expect(Object.keys(r.body).sort()).toEqual(['folio', 'estado', 'inicioUtc', 'finUtc', 'zonaHoraria',
-        'costo', 'nombreNegocio', 'nombreServicio', 'nombreSucursal', 'nombreProfesional'].sort());
+      expect(Object.keys(r.body).sort()).toEqual(['estado', 'inicioUtc', 'finUtc', 'zonaHoraria',
+        'costo', 'nombreNegocio', 'nombreServicio', 'nombreSucursal', 'nombreProfesional',
+        'vencimientoConfirmacionUtc', 'seguimientoManual'].sort());
       expect((await p.registrar().expect(200)).body).toEqual(r.body);
       const despues = await filasManuales(f.db);
-      expect(despues.citas.find(c => c.folio === r.body.folio))
+      const nueva = despues.citas.find(c => !antes.citas.some(anterior => anterior.id === c.id));
+      expect(nueva)
         .toMatchObject({ clienteId: propia, nombreContacto: equivalente, telefonoContacto: contacto.telefono });
       expect(despues.clientes).toEqual(antes.clientes);
       expect(despues.citas).toHaveLength(antes.citas.length + 1);
-      expect(despues.citas.filter(c => c.folio !== r.body.folio)).toEqual(antes.citas);
+      expect(despues.citas.filter(c => c.id !== nueva?.id)).toEqual(antes.citas);
     });
   });
 

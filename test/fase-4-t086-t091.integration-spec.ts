@@ -550,7 +550,7 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
         const resultado = await reserva;
         await cambio;
         const cita = (await db.query(`SELECT id,inicio_utc,fin_utc,estado FROM citas
-          WHERE negocio_id=? AND folio=?`, [base.negocioId, resultado.folio]))[0];
+          WHERE negocio_id=? AND apartado_origen_id=?`, [base.negocioId, envio.apartado.apartadoId]))[0];
         expect(cita.estado).toBe('pendiente');
         expect(new Date(cita.inicio_utc).toISOString()).toBe(resultado.inicioUtc);
         expect(new Date(cita.fin_utc).toISOString()).toBe(resultado.finUtc);

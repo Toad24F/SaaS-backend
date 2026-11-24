@@ -24,7 +24,7 @@ describe('M4-T077–T082: movimiento interno real', () => {
       const antes = await filasManuales(f.db);
       const original = antes.citas.find(c => c.id === m.cita.id)!;
       const resultado = await f.app.get(CambioHorarioCitaService).cambiar(m.identidad, String(m.cita.id), destino);
-      expect(resultado).toMatchObject({ id: original.id, folio: original.folio, version: 2,
+      expect(resultado).toMatchObject({ id: original.id, version: 2,
         inicioUtc: '2026-11-09T15:20:00.000Z', finUtc: '2026-11-09T15:50:00.000Z', finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
       const despues = await filasManuales(f.db);
       const condicion = await vinculoNuevaCondicion(f.db, original);

@@ -275,7 +275,7 @@ describe('M3-T092–T096: cierre de concurrencia del escritor público', () => {
     });
   }, 120000);
 
-  it('T094: el mismo intento concurrente devuelve una sola cita y el mismo folio', async () => {
+  it('T094: el mismo intento concurrente devuelve una sola cita y el mismo resumen', async () => {
     await conBaseMigrada(async (db, segunda) => {
       const reloj = new RelojPrueba(AHORA);
       const base = await sembrarBase(db, reloj);
@@ -424,14 +424,15 @@ describe('M3-T092–T096: cierre de concurrencia del escritor público', () => {
       // Se espera el commit, pero deliberadamente no se conserva la respuesta del escritor.
       await modulo.get(RegistroReservaPublicaService).registrar(
         base.negocioId, envio.titular, envio.clave, CONTACTO);
-      const folioPersistido = String((await db.query(`SELECT folio FROM citas
-        WHERE negocio_id=? AND origen='portal_publico'`, [base.negocioId]))[0].folio);
+      const [cita] = await db.query(`SELECT c.inicio_utc, c.fin_utc FROM citas c
+        JOIN intentos_reserva_publica i ON c.id=i.cita_id AND c.negocio_id=i.negocio_id
+        WHERE i.negocio_id=? AND i.clave=?`, [base.negocioId, envio.clave]);
       reloj.avanzar(10 * 60 * 1000);
       await db.query('UPDATE licencias SET vence_en=? WHERE id=?', [AHORA, base.licenciaId]);
       const recuperado = await modulo.get(ResolucionReservaPublicaService).resolver(
         base.negocioId, envio.titular, envio.clave, envio.apartado.apartadoId!);
       expect(recuperado).toMatchObject({ estado: 'registrado',
-        resultado: { folio: folioPersistido, estado: 'pendiente' } });
+        resultado: { inicioUtc: cita.inicio_utc.toISOString(), finUtc: cita.fin_utc.toISOString(), estado: 'pendiente' } });
       expect(await contarPublicas(db, 'citas', base.negocioId)).toBe(1);
       await modulo.close();
     });

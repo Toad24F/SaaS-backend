@@ -240,13 +240,13 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         f.otroRegistro.registrar(f.negocioId, f.titular, f.clave, CONTACTO),
       ]);
       expect(dos).toEqual(uno);
-      const [cita] = await f.segunda.query('SELECT * FROM citas WHERE folio=?', [uno.folio]);
+      const [cita] = await f.segunda.query('SELECT c.* FROM citas c JOIN intentos_reserva_publica i ON c.id=i.cita_id AND c.negocio_id=i.negocio_id WHERE i.negocio_id=? AND i.clave=?', [f.negocioId, f.clave]);
       const eventos = await f.segunda.query('SELECT * FROM eventos_cita WHERE negocio_id=? AND cita_id=?', [f.negocioId, cita.id]);
       expect(eventos).toHaveLength(1);
       expect(eventos[0]).toMatchObject({ actor_usuario_id: null, sesion_publica_id: f.sesionId,
         accion: 'alta', version_resultante: 1, valores_antes: null, motivo: null, ocurrido_en: AHORA });
       expect(json(eventos[0].valores_despues)).toEqual({ estado: 'pendiente', origen: 'portal_publico',
-        folio: uno.folio, clienteId: cita.cliente_id, sucursalId: cita.sucursal_id,
+        folio: cita.folio, clienteId: cita.cliente_id, sucursalId: cita.sucursal_id,
         servicioId: cita.servicio_id, personalId: cita.personal_id, inicioUtc: uno.inicioUtc,
         finUtc: uno.finUtc, zonaHoraria: uno.zonaHoraria, costoAceptado: uno.costoAceptado,
         separacionMinutos: cita.separacion_minutos, finOcupacionUtc: cita.fin_ocupacion_utc.toISOString() });

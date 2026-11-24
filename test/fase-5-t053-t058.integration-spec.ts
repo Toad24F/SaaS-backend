@@ -80,8 +80,8 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
           nombreNegocio: 'Negocio vigente', nombreSucursal: 'Sede vigente', nombreServicio: 'Servicio vigente',
           nombreProfesional: 'Profesional vigente', nombreContacto: 'Contacto vigente', telefonoContacto: '6140009999',
           motivoConsulta: f.entrada.notas });
-        expect(resultado.folio).toMatch(/^M-[A-F0-9]{18}$/);
         const cita = await db.getRepository(Cita).findOneByOrFail({ id: resultado.id });
+        expect(cita.folio).toMatch(/^M-[A-F0-9]{18}$/);
         expect(cita).toMatchObject({ negocioId: f.negocios[0].id, clienteId: f.entrada.clienteId,
           creadoEn: f.reloj.ahora(), apartadoOrigenId: null, costoAceptado: '145.75', estado: 'confirmada' });
         expect(await db.getRepository(Cliente).count()).toBe(clientesAntes.length);
@@ -197,7 +197,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         const seleccion = { ...f.entrada, horaInicio: '10:17' };
         await f.intentos.preparar(f.identidad(), segunda, seleccion);
         const b = await f.registro.registrar(f.identidad(), segunda, seleccion);
-        expect(b.folio).not.toBe(a.folio);
+        expect(b.id).not.toBe(a.id);
         expect(b.clienteId).not.toBe(a.clienteId);
         expect(await f.registro.registrar(f.identidad(), segunda, seleccion)).toEqual(b);
         const tercera = randomUUID();
@@ -211,7 +211,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
     });
   });
 
-  it('T054/T058 deniega intento ausente, otro actor, Profesional y resultado terminal sin filas parciales', async () => {
+  it('T054/T058 deniega intentos ausentes, de otro actor o terminales sin filas parciales', async () => {
     await conBaseOperativa(async (db) => {
       const f = await escenario(db);
       try {
@@ -220,7 +220,8 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         const antes = await filas(db);
         await expect(f.registro.registrar(f.identidad(), randomUUID(), f.nueva)).rejects.toMatchObject({ status: 404 });
         await expect(f.registro.registrar(f.identidad(Rol.RECEPCIONISTA), clave, f.nueva)).rejects.toMatchObject({ status: 404 });
-        await expect(f.registro.registrar(f.identidad(Rol.PROFESIONAL), clave, f.nueva)).rejects.toMatchObject({ status: 403 });
+        // El Profesional puede registrar citas propias, pero un intento ajeno equivale a uno ausente.
+        await expect(f.registro.registrar(f.identidad(Rol.PROFESIONAL), clave, f.nueva)).rejects.toMatchObject({ status: 404 });
         expect(await filas(db)).toEqual(antes);
         await db.getRepository(IntentoCitaManual).update(intento.id, { estado: 'no_registrado', resueltoEn: f.reloj.ahora() });
         const terminal = await filas(db);
@@ -250,7 +251,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         await f.intentos.preparar(f.identidad(), claveContigua, contigua);
         const siguiente = await f.registro.registrar(f.identidad(), claveContigua, contigua);
         expect(siguiente.inicioUtc).toBe(original.finOcupacionUtc);
-        expect(siguiente.folio).not.toBe(original.folio);
+        expect(siguiente.id).not.toBe(original.id);
       } finally { await f.modulo.close(); }
     });
   });

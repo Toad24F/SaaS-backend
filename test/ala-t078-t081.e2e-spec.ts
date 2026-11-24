@@ -93,13 +93,14 @@ describe('ALA-T078–T081: visibilidad vigente del precio en el portal real', ()
         await post('/intentos', { clave, apartadoId: id }).expect(201);
         const registrado = await post(`/intentos/${clave}/reservar`, contacto).expect(201);
         sinPrecio(registrado);
-        expect(registrado.body).toMatchObject({ estado: 'pendiente', folio: expect.any(String) });
+        expect(registrado.body).toMatchObject({ estado: 'pendiente' });
         sinPrecio(await post(`/intentos/${clave}/reservar`, contacto).expect(200));
         const resuelto = await post(`/intentos/${clave}/resolver`, { apartadoId: id }).expect(200);
         sinPrecio(resuelto);
-        expect(resuelto.body.resultado.folio).toBe(registrado.body.folio);
-        expect((await db.query('SELECT costo_aceptado FROM citas WHERE folio=?',
-          [registrado.body.folio]))[0].costo_aceptado).toBe('100.00');
+        expect(resuelto.body.resultado).toEqual(registrado.body);
+        expect(registrado.body).not.toHaveProperty('folio');
+        expect((await db.query('SELECT costo_aceptado FROM citas WHERE negocio_id=? AND apartado_origen_id=?',
+          [a.id, id]))[0].costo_aceptado).toBe('100.00');
         await post(`/intentos/${clave}/resolver`, { apartadoId: id }, otra).expect(404);
 
         // Este segundo apartado nace oculto: mostrarlo después jamás debe
@@ -118,8 +119,8 @@ describe('ALA-T078–T081: visibilidad vigente del precio en el portal real', ()
         const desdeOculto = await post(`/intentos/${otraClave}/reservar`, contacto).expect(201);
         expect(desdeOculto.body.costo).toBe('100.00');
         expect(desdeOculto.body).not.toHaveProperty('costoAceptado');
-        expect((await db.query('SELECT costo_aceptado FROM citas WHERE folio=?',
-          [desdeOculto.body.folio]))[0].costo_aceptado).toBe('100.00');
+        expect((await db.query('SELECT costo_aceptado FROM citas WHERE negocio_id=? AND apartado_origen_id=?',
+          [a.id, ocultoApartado.body.apartadoId]))[0].costo_aceptado).toBe('100.00');
         expect((await request(http).get('/servicios').auth(token, { type: 'bearer' }).expect(200))
           .body.some((servicio: { costo: string }) => servicio.costo === '100.00')).toBe(true);
         await db.query('UPDATE licencias SET vence_en=? WHERE negocio_id=?', [reloj.ahora(), a.id]);

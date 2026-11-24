@@ -9,7 +9,7 @@ import { BloqueoTemporal } from '../src/disponibilidad/entities/bloqueo-temporal
 import { OperacionApartado } from '../src/reservas-publicas/entities/operacion-apartado.entity';
 import { conAgendaHttp } from './support/agenda-http';
 import { prepararMovimiento } from './support/horario-cita';
-import { filasManuales, esperarBloqueoManual } from './support/cita-manual';
+import { filasManuales, esperarBloqueoManual, vinculoNuevaCondicion } from './support/cita-manual';
 
 const carreras = ['movimiento', 'apartado'].flatMap(primero => ['igual', 'separacion_otra_sucursal'].map(relacion => ({ primero, relacion })));
 
@@ -86,9 +86,12 @@ describe('M4-T087: movimiento HTTP contra apartado público real', () => {
         expect(movimiento.headers['cache-control']).toBe('no-store'); expect(apartado.headers['cache-control']).toBe('no-store');
         const despues = await filasManuales(f.db);
         expect(despues.clientes).toEqual(antes.clientes); expect(despues.auditoria).toEqual(antes.auditoria); expect(despues.intentos).toEqual(antes.intentos);
-        expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id && ganaMovimiento ? { ...c, version: 2,
+        // Si gana el movimiento, la siguiente condición pertenece al mismo ID y a una nueva generación.
+        const original = antes.citas.find(c => c.id === m.cita.id)!;
+        const condicion = ganaMovimiento ? await vinculoNuevaCondicion(f.db, original) : {};
+        expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id && ganaMovimiento ? { ...c, ...condicion, version: 2,
           inicioUtc: new Date('2026-11-09T14:00:00Z'), finUtc: new Date('2026-11-09T14:30:00Z'), finOcupacionUtc: new Date('2026-11-09T14:40:00Z') } : c));
-        expect(despues.citas.filter(c => c.folio === m.cita.folio)).toHaveLength(1);
+        expect(despues.citas.filter(c => c.id === m.cita.id)).toHaveLength(1);
         expect(despues.eventos.filter(e => antes.eventos.some(previo => previo.id === e.id))).toEqual(antes.eventos);
         expect(despues.eventos.length).toBe(antes.eventos.length + Number(ganaMovimiento));
         if (ganaMovimiento) expect(despues.eventos.at(-1)).toMatchObject({ accion: 'cambio_horario', actorUsuarioId: m.actor.id,

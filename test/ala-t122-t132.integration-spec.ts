@@ -392,7 +392,7 @@ describe('ALA-T122–T132: carreras del escritor público', () => {
               a.titular, a.clave, CONTACTO);
             await cambio();
             expect((await f.segundo.resolucion.resolver(f.negocioId,
-              a.titular, a.clave, a.apartadoId)).resultado.folio).toBe(resultado.folio);
+              a.titular, a.clave, a.apartadoId))).toEqual({ estado: 'registrado', resultado });
           }
           const estado = await filas(f);
           expect(estado.citas).toHaveLength(cambioPrimero ? 0 : 1);

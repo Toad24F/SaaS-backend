@@ -220,9 +220,9 @@ export class RegistroReservaPublicaService {
     await manager.getRepository(IntentoReservaPublica).update({ id: intento.id,
       negocioId: intento.negocioId }, { estado: 'registrado',
       formularioHash: huella, citaId: cita.id });
-    // El resultado usa la condición ya persistida en esta transacción, no un cálculo paralelo.
+    // El resumen usa la condición persistida en esta transacción y el intento conserva el vínculo con la cita.
     const condicion = await condicionResultadoPublico(manager, intento.negocioId, cita.id);
-    return { folio, estado: 'pendiente', inicioUtc: inicioUtc.toISOString(),
+    return { estado: 'pendiente', inicioUtc: inicioUtc.toISOString(),
       finUtc: finUtc.toISOString(), zonaHoraria: copia.zona, costoAceptado: copia.costo,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
       nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, ...condicion };

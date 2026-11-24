@@ -19,8 +19,9 @@ import { huellaUnionCliente, MAX_ENTERO_CLIENTE, validarAltaCliente, validarBusq
 
 type Identidad = Pick<JwtPayload, 'sub' | 'sesionId'>;
 const CAMPOS_FICHA = ['id', 'negocioId', 'version', 'nombreCompleto', 'telefono', 'creadoEn'] as const;
+// El historial identifica las citas con sus IDs y conserva el contacto de cada reserva.
 const CAMPOS_CITA = ['id', 'negocioId', 'clienteId', 'version', 'sucursalId', 'personalId', 'servicioId',
-  'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen', 'folio', 'nombreContacto', 'telefonoContacto',
+  'inicioUtc', 'finUtc', 'zonaHorariaReserva', 'estado', 'origen', 'nombreContacto', 'telefonoContacto',
   'motivoConsulta', 'costoAceptado', 'nombreSucursal', 'nombreServicio', 'nombreProfesional'] as const;
 const escaparLike = (valor: string) => valor.replace(/[!%_]/g, '!$&');
 function proyectarFicha(ficha: Cliente) {

@@ -78,7 +78,8 @@ export class CambioHorarioCitaService {
   }
 
   private proyectar(cita: Cita) {
-    return { id: cita.id, folio: cita.folio, estado: cita.estado, ...this.valoresHorario(cita),
+    // El resultado vincula el nuevo horario con el ID y la versión de la cita.
+    return { id: cita.id, estado: cita.estado, ...this.valoresHorario(cita),
       finOcupacionUtc: (cita.finOcupacionUtc ?? cita.finUtc).toISOString() };
   }
 }

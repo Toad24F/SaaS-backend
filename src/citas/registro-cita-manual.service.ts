@@ -15,7 +15,7 @@ import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service
 
 type Identidad = Pick<JwtPayload, 'sub' | 'sesionId'>;
 export interface ResultadoCitaManual {
-  id: number; clienteId: number; folio: string; estado: EstadoCita; origen: 'manual'; version: number;
+  id: number; clienteId: number; estado: EstadoCita; origen: 'manual'; version: number;
   sucursalId: number; personalId: number; servicioId: number;
   inicioUtc: string; finUtc: string; finOcupacionUtc: string; separacionMinutos: number; zonaHoraria: string;
   costoAceptado: string; nombreContacto: string; telefonoContacto: string; motivoConsulta: string | null;
@@ -118,7 +118,8 @@ export class RegistroCitaManualService {
       [cita.nombreContacto, cita.telefonoContacto, cita.nombreNegocio, cita.nombreSucursal, cita.nombreServicio, cita.nombreProfesional].some((v) => v === null)) {
       throw new Error('Resultado manual persistido incompleto.');
     }
-    return { id: cita.id, clienteId: cita.clienteId, folio: cita.folio, estado: cita.estado, origen: 'manual', version: cita.version,
+    // Alta y recuperación comparten los IDs y snapshots autorizados de la cita.
+    return { id: cita.id, clienteId: cita.clienteId, estado: cita.estado, origen: 'manual', version: cita.version,
       sucursalId: cita.sucursalId, personalId: cita.personalId, servicioId: cita.servicioId,
       inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(), finOcupacionUtc: cita.finOcupacionUtc.toISOString(),
       separacionMinutos: cita.separacionMinutos, zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,

@@ -178,7 +178,7 @@ describe('ALA-T116–T121: recuperación y corrección del cupo', () => {
         { clave: 'ala_120_intento_1234', apartadoId: segundoApartado.apartadoId });
       const segunda = await f.registro.registrar(f.negocioId, otro,
         'ala_120_intento_1234', { ...CONTACTO, nombre: 'Beatriz López' });
-      expect(segunda.folio).not.toBe(primera.folio);
+      expect(segunda.inicioUtc).not.toBe(primera.inicioUtc);
       expect(await f.registro.registrar(f.negocioId, f.titular,
         f.clave, CONTACTO)).toEqual(primera);
       const filas = await f.db.query(`SELECT c.nombre_contacto,cl.nombre_completo,
@@ -225,9 +225,9 @@ describe('ALA-T116–T121: recuperación y corrección del cupo', () => {
         .rejects.toMatchObject({ status: 409 });
       expect((await f.db.query(`SELECT formulario_hash FROM intentos_reserva_publica
         WHERE id=?`, [f.intentoId]))[0].formulario_hash).toBe(antes.formulario_hash);
-      expect((await f.db.query(`SELECT c.folio,i.estado FROM intentos_reserva_publica i
+      expect((await f.db.query(`SELECT c.inicio_utc,i.estado FROM intentos_reserva_publica i
         JOIN citas c ON c.id=i.cita_id WHERE i.id=?`, [f.intentoId]))[0])
-        .toMatchObject({ folio: registrada.folio, estado: 'registrado' });
+        .toMatchObject({ inicio_utc: new Date(registrada.inicioUtc), estado: 'registrado' });
     });
   });
 });

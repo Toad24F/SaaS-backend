@@ -48,7 +48,7 @@ describe('M5-T068: reserva pública y efecto inicial', () => {
         expect(primero).toMatchObject({ seguimientoManual: !autorizaWhatsapp });
         if (autorizaWhatsapp) expect(primero.vencimientoConfirmacionUtc).toMatch(/Z$/);
         else expect(primero.vencimientoConfirmacionUtc).toBeNull();
-        const [cita] = await db.query('SELECT * FROM citas WHERE folio=?', [primero.folio]);
+        const [cita] = await db.query('SELECT * FROM citas WHERE negocio_id=? AND apartado_origen_id=?', [negocio.id, apartado.apartadoId]);
         const [condicion] = await db.query('SELECT * FROM condiciones_confirmacion_cita WHERE cita_id=?', [cita.id]);
         expect(condicion).toMatchObject({ estado_politica: autorizaWhatsapp ? 'pendiente' : 'seguimiento_manual', categoria: 'proxima' });
         expect(condicion.contacto_autorizado).toBe(autorizaWhatsapp ? 1 : 0);
@@ -67,7 +67,7 @@ describe('M5-T068: reserva pública y efecto inicial', () => {
         const otraSesion = 'c'.repeat(64);
         await db.query('INSERT INTO sesiones_reserva_publica(negocio_id,titular_hash) VALUES(?,?)', [negocio.id, otraSesion]);
         await expect(intentos.reconocerResultado(negocio.id, otraSesion, clave, contacto)).rejects.toMatchObject({ status: 404 });
-        expect(await db.query('SELECT id FROM citas WHERE folio=?', [primero.folio])).toHaveLength(1);
+        expect(await db.query('SELECT id FROM citas WHERE negocio_id=? AND apartado_origen_id=?', [negocio.id, apartado.apartadoId])).toHaveLength(1);
       } finally {
         await modulo.close();
         if (secretoPrevio === undefined) delete process.env.PORTAL_FORMULARIO_HMAC_SECRET;

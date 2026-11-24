@@ -91,7 +91,9 @@ describe('M4-T066: recuperación HTTP cuando la respuesta se pierde de verdad', 
         expect(final.intentos.find((i) => i.clave === clave)).toMatchObject({ estado: 'no_registrado', citaId: null });
       } else {
         const cita = trasPerdida.citas.find((c) => !antes.citas.some((anterior) => anterior.id === c.id))!;
-        expect(resuelta.body).toMatchObject({ estado: 'registrado', resultado: { id: cita.id, folio: cita.folio, estado: 'confirmada' } });
+        expect(resuelta.body).toMatchObject({ estado: 'registrado', resultado: { id: cita.id, estado: 'confirmada' } });
+        // El intento recupera la misma cita por ID después de perder la respuesta.
+        expect(resuelta.body.resultado).not.toHaveProperty('folio');
         const repetida = await request(f.http).post(`${RUTA_MANUAL}/${clave}/registrar`).set('Authorization', m.auth).send(m.nueva).expect(200);
         expect(repetida.body).toEqual(resuelta.body.resultado);
         expect(await filasManuales(f.db)).toEqual(trasPerdida);

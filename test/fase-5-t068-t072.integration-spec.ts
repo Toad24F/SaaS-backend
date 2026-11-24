@@ -42,7 +42,7 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
       const m = await preparar(f, rol);
       const original = await f.db.getRepository(Cita).findOneByOrFail({ id: m.cita.id });
       const cambiar = (estado: string, version: number) => m.cambios.cambiar(m.identidad, String(m.cita.id), { estado, version });
-      expect(await cambiar('pendiente', 1)).toMatchObject({ id: original.id, folio: original.folio, estado: 'pendiente', version: 2 });
+      expect(await cambiar('pendiente', 1)).toMatchObject({ id: original.id, estado: 'pendiente', version: 2 });
       const antes = await filasManuales(f.db);
       expect(await cambiar('pendiente', 2)).toMatchObject({ estado: 'pendiente', version: 2 });
       expect(await filasManuales(f.db)).toEqual(antes);
@@ -146,7 +146,7 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
         try {
           const pendiente = m.cambios.cambiar(m.identidad, String(m.cita.id), { estado: 'confirmada', version: 2 });
           if (['libre', 'historico', 'zona_actual', 'cupo'].includes(caso)) {
-            expect(await pendiente).toMatchObject({ estado: 'confirmada', version: 3, folio: m.cita.folio });
+            expect(await pendiente).toMatchObject({ estado: 'confirmada', version: 3 });
             const despues = await filasManuales(f.db);
             const condicion = await vinculoNuevaCondicion(f.db, antes.citas.find((c) => c.id === m.cita.id)!);
             expect(despues.citas).toEqual(antes.citas.map((c) => c.id === m.cita.id ? { ...c, ...condicion, estado: 'confirmada', version: 3 } : c));

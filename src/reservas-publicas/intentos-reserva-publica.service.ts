@@ -170,7 +170,8 @@ export class IntentosReservaPublicaService {
     }
     // La proyección histórica procede de la cita; no consulta el catálogo vivo.
     const condicion = await condicionResultadoPublico(manager, intento.negocioId, cita.id);
-    return { folio: cita.folio, estado: 'pendiente',
+    // El intento ya identifica la cita por su vínculo durable. Se devuelve solo el resumen propio.
+    return { estado: 'pendiente',
       inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
       zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
       nombreNegocio: cita.nombreNegocio, nombreServicio: cita.nombreServicio,

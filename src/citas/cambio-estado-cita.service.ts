@@ -80,7 +80,8 @@ export class CambioEstadoCitaService {
     }, 'READ COMMITTED');
   }
 
-  private proyectar(cita: Pick<Cita, 'id' | 'folio' | 'estado' | 'version'>) {
-    return { id: cita.id, folio: cita.folio, estado: cita.estado, version: cita.version };
+  private proyectar(cita: Pick<Cita, 'id' | 'estado' | 'version'>) {
+    // El ID y la versión permiten conciliar el cambio con la cita abierta.
+    return { id: cita.id, estado: cita.estado, version: cita.version };
   }
 }

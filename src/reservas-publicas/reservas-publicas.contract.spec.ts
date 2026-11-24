@@ -13,12 +13,14 @@ describe('M3-T007: frontera de módulos públicos', () => {
       fechaLocal: '2026-10-20', horaInicio: '10:00',
     };
     const resultado: ResultadoReservaPublica = {
-      folio: 'P-1', estado: 'pendiente', inicioUtc: '2026-10-20T16:00:00.000Z',
+      estado: 'pendiente', inicioUtc: '2026-10-20T16:00:00.000Z',
       finUtc: '2026-10-20T16:30:00.000Z', zonaHoraria: 'America/Chihuahua',
       costoAceptado: '100.00', nombreNegocio: 'Uno', nombreServicio: 'Corte',
       nombreSucursal: 'Centro', nombreProfesional: 'Ana',
+      vencimientoConfirmacionUtc: null, seguimientoManual: true,
     };
     expect(seleccion.servicioId).toBe(3);
     expect(resultado.estado).toBe('pendiente');
+    expect(resultado).not.toHaveProperty('folio');
   });
 });

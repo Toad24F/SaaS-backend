@@ -21,7 +21,7 @@ describe('M4-T074–T075: cambio privado de estado y cinco estados por HTTP', ()
       const m = await prepararEstado(f, rol);
       const r = await request(f.http).patch(m.ruta).set('Authorization', m.auth).send({ estado: 'pendiente', version: 1 }).expect(200);
       expect(r.headers['cache-control']).toBe('no-store');
-      expect(r.body).toEqual({ id: m.cita.id, folio: m.cita.folio, estado: 'pendiente', version: 2 });
+      expect(r.body).toEqual({ id: m.cita.id, estado: 'pendiente', version: 2 });
       const antes = await filasManuales(f.db);
       expect((await request(f.http).patch(m.ruta).set('Authorization', m.auth).send({ estado: 'pendiente', version: 2 }).expect(200)).body).toEqual(r.body);
       await request(f.http).patch(m.ruta).set('Authorization', m.auth).send({ estado: 'cancelada', version: 1 }).expect(409);
@@ -134,8 +134,8 @@ describe('M4-T074–T075: cambio privado de estado y cinco estados por HTTP', ()
         personalId: m.seleccion.personalId, fechaLocal: m.seleccion.fechaLocal, horaInicio: '08:00' }).expect(201);
       const clave = randomUUID(); await post('/intentos', { clave, apartadoId: apartado.body.apartadoId }).expect(201);
       const registrada = await post(`/intentos/${clave}/reservar`, { nombre: 'Persona del portal', telefono: '6140007777', notas: 'Nota del portal' }).expect(201);
-      const cita = await f.db.getRepository(Cita).findOneByOrFail({ origen: 'portal_publico', negocioId: f.negocios[0].id, telefonoContacto: '6140007777' });
-      expect(cita.folio).toBe(registrada.body.folio);
+      const cita = await f.db.getRepository(Cita).findOneByOrFail({ origen: 'portal_publico', negocioId: f.negocios[0].id, apartadoOrigenId: apartado.body.apartadoId });
+      expect(cita.inicioUtc.toISOString()).toBe(registrada.body.inicioUtc);
       expect(cita.estado).toBe('pendiente');
       const ahora = new Date(cita.finUtc.getTime() + 1); await situarSesion(f.db, m.actor, ahora); f.reloj.fijar(ahora);
       const antes = await filasManuales(f.db);
