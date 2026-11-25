@@ -188,6 +188,23 @@ describe('M5-T084–T087 · Acción de confirmación desde el webhook', () => {
     });
   });
 
+  it('confirma con el prefijo mexicano 521 solo si coinciden los diez dígitos', async () => {
+    await conBaseOperativa(async (db) => {
+      const f = await escenario(db);
+      try {
+        const telefonoConPrefijo = `521${telefono.slice(2)}`;
+        await f.enviar({ messages: [boton(f.payload, 'wamid.otro-521', `${telefonoConPrefijo.slice(0, -1)}8`)] }).expect(200);
+        expect(await f.leerCita()).toMatchObject({ estado: 'pendiente', version: f.cita.version });
+        expect((await f.acciones())[0].consumidoEn).toBeNull();
+
+        await f.enviar({ messages: [boton(f.payload, 'wamid.mismo-521', telefonoConPrefijo)] }).expect(200);
+        expect(await f.leerCita()).toMatchObject({ estado: 'confirmada', version: f.cita.version + 1 });
+        expect(await f.leerCondicion()).toMatchObject({ origenConfirmacion: 'whatsapp' });
+        expect(await f.eventos()).toHaveLength(1);
+      } finally { await f.cerrar(); }
+    });
+  });
+
   it.each(['vencida', 'otra generación', 'cancelada', 'otra versión'] as const)(
     'la acción %s no consume el botón ni modifica la cita', async (caso) => {
       await conBaseOperativa(async (db) => {

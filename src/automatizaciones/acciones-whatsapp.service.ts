@@ -70,9 +70,8 @@ export class AccionesWhatsappService {
       || (condicion.estadoPolitica !== 'pendiente' && condicion.estadoPolitica !== 'seguimiento_manual')
       || ahora >= limiteAccion(cita, condicion)) return 'no_aplicable';
 
-    const remitenteEsperado = huellaRemitenteWhatsapp(secretoApp, canal.remitenteExternoId, envio.destinoE164.slice(1));
     if (!this.correspondeAlContexto(accion, envio, cita, condicion, canal) || !iguales(accion.tokenHash, accionHash)
-      || !iguales(remitenteEsperado, remitenteHash)) return 'no_aplicable';
+      || !coincideRemitente(secretoApp, canal.remitenteExternoId, envio.destinoE164, remitenteHash)) return 'no_aplicable';
     if (!envio.referenciaExterna && (envio.estado === 'incierto'
       || (envio.estado === 'en_proceso' && envio.inicioTransporteEn))) return 'esperando_envio';
     if (envio.referenciaExterna !== mensajeExternoId || envio.estado === 'pendiente' || envio.estado === 'descartado') {
@@ -114,6 +113,15 @@ export class AccionesWhatsappService {
 
 function limiteAccion(cita: Cita, condicion: CondicionConfirmacionCita): Date {
   return condicion.vencimientoUtc && condicion.vencimientoUtc < cita.inicioUtc ? condicion.vencimientoUtc : cita.inicioUtc;
+}
+
+function coincideRemitente(secretoApp: string, canalId: string, destinoE164: string, huellaRecibida: string): boolean {
+  const destino = destinoE164.slice(1);
+  if (iguales(huellaRemitenteWhatsapp(secretoApp, canalId, destino), huellaRecibida)) return true;
+
+  // Meta puede devolver 521 seguido de los diez dígitos del mismo destino mexicano.
+  return /^52\d{10}$/.test(destino)
+    && iguales(huellaRemitenteWhatsapp(secretoApp, canalId, `521${destino.slice(2)}`), huellaRecibida);
 }
 
 function iguales(a: string, b: string): boolean {
