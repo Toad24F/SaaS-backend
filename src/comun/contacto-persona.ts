@@ -1,4 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
+import { PAISES_TELEFONO } from './paises-telefono';
 
 /** Regla compartida por portal y fichas: caracteres Unicode, sin truncar ni interpretar HTML. */
 export function validarNombreContacto(valor: unknown): string {
@@ -7,11 +9,14 @@ export function validarNombreContacto(valor: unknown): string {
   return nombre;
 }
 
-/** Solo elimina separadores permitidos y el prefijo +52; el teléfono no identifica personas. */
-export function normalizarTelefonoMexicano(valor: unknown): string {
-  if (typeof valor !== 'string') throw new BadRequestException('Corrija el teléfono: use diez dígitos mexicanos.');
-  const sinSeparadores = valor.replace(/[\s-]/g, '');
-  const telefono = sinSeparadores.startsWith('+52') ? sinSeparadores.slice(3) : sinSeparadores;
-  if (!/^\d{10}$/.test(telefono)) throw new BadRequestException('Corrija el teléfono: use diez dígitos mexicanos.');
-  return telefono;
+/** Conserva los diez dígitos mexicanos históricos; los demás destinos se guardan en E.164. */
+export function normalizarTelefonoContacto(valor: unknown): string {
+  const error = () => new BadRequestException('Corrija el teléfono: elija un país admitido y escriba un número válido.');
+  if (typeof valor !== 'string' || valor.length > 40 || !/^\+?[\d\s().-]+$/.test(valor)) throw error();
+  const entrada = valor.trim();
+  const numero = parsePhoneNumberFromString(entrada, { defaultCountry: 'MX', extract: false });
+  if (!numero?.country || !PAISES_TELEFONO.has(numero.country) || !numero.isValid()) throw error();
+  // Evita que un prefijo de marcación nacional se interprete como otro destino.
+  if (!entrada.startsWith('+') && numero.country !== 'MX') throw error();
+  return numero.country === 'MX' ? numero.nationalNumber : numero.number;
 }

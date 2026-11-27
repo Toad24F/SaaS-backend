@@ -6,6 +6,7 @@ import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cit
 import { ConfiguracionAutomatizaciones } from './entities/configuracion-automatizaciones.entity';
 import { guardarEnvioCita, programarRecordatorioCita } from './envios-cita';
 import { calcularVencimientoConfirmacion } from './politica-temporal';
+import { destinoWhatsapp } from '../comun/telefono-whatsapp';
 
 /** Añade la política y los trabajos al mismo manager de la cita; nunca llama al proveedor. */
 @Injectable()
@@ -22,7 +23,7 @@ export class EfectoInicialService {
     ]);
     const politica = calcularVencimientoConfirmacion(ahora, cita.inicioUtc,
       configuracion?.plazoConfirmacionHoras ?? 12);
-    const comunicable = autorizaWhatsapp && canal?.habilitado === 1 && /^\d{10}$/.test(cita.telefonoContacto ?? '');
+    const comunicable = autorizaWhatsapp && canal?.habilitado === 1 && Boolean(destinoWhatsapp(cita.telefonoContacto));
     const manual = cita.origen === 'manual';
     const vencimientoUtc = manual || !comunicable ? null : politica.vencimientoUtc;
     const seguimiento = !comunicable || (!manual && !vencimientoUtc);

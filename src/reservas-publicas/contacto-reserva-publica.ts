@@ -1,6 +1,6 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
-import { normalizarTelefonoMexicano, validarNombreContacto } from '../comun/contacto-persona';
+import { normalizarTelefonoContacto, validarNombreContacto } from '../comun/contacto-persona';
 
 export interface ContactoReservaPublica {
   nombre: string;
@@ -27,7 +27,7 @@ export function validarContactoReservaPublica(entrada: unknown): ContactoReserva
   }
   // Portal y directorio comparten el mismo contrato de contacto; las notas siguen siendo del formulario público.
   const nombre = validarNombreContacto(datos.nombre);
-  const telefono = normalizarTelefonoMexicano(datos.telefono);
+  const telefono = normalizarTelefonoContacto(datos.telefono);
   if (datos.notas !== undefined && datos.notas !== null && typeof datos.notas !== 'string') {
     throw new BadRequestException('Corrija las notas.');
   }

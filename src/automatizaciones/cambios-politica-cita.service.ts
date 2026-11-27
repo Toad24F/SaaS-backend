@@ -6,6 +6,7 @@ import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cit
 import { ConfiguracionAutomatizaciones } from './entities/configuracion-automatizaciones.entity';
 import { descartarEnviosSinTransporte, programarAlConfirmar, programarRecordatorioCita } from './envios-cita';
 import { calcularVencimientoConfirmacion } from './politica-temporal';
+import { destinoWhatsapp } from '../comun/telefono-whatsapp';
 
 /** Las transiciones reutilizan el manager del escritor, con negocio, Profesional y cita ya bloqueados. */
 @Injectable()
@@ -36,7 +37,7 @@ export class CambiosPoliticaCitaService {
       versionConfiguracion: configuracion?.version ?? 0, confirmadoEn: confirmada ? ahora : null,
       origenConfirmacion: confirmada ? 'personal' : null });
 
-    if (confirmada && contactoAutorizado === 1 && /^\d{10}$/.test(actual.telefonoContacto ?? '')) {
+    if (confirmada && contactoAutorizado === 1 && destinoWhatsapp(actual.telefonoContacto)) {
       const canal = await manager.findOneBy(CanalWhatsapp, { negocioId });
       if (canal?.habilitado === 1) await programarRecordatorioCita(manager, actual, generacion,
         ahora, configuracion?.recordatorioHoras ?? 24, categoria === 'proxima');

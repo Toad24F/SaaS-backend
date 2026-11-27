@@ -1,6 +1,6 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
-import { normalizarTelefonoMexicano, validarNombreContacto } from '../comun/contacto-persona';
+import { normalizarTelefonoContacto, validarNombreContacto } from '../comun/contacto-persona';
 
 export interface DatosCliente { nombreCompleto: string; telefono: string }
 export interface CorreccionCliente { version: number; nombreCompleto?: string; telefono?: string }
@@ -27,14 +27,14 @@ function cambiosDeContacto(datos: Record<string, unknown>): Partial<DatosCliente
   if (!Object.hasOwn(datos, 'nombreCompleto') && !Object.hasOwn(datos, 'telefono')) throw invalida();
   return {
     ...(Object.hasOwn(datos, 'nombreCompleto') ? { nombreCompleto: validarNombreContacto(datos.nombreCompleto) } : {}),
-    ...(Object.hasOwn(datos, 'telefono') ? { telefono: normalizarTelefonoMexicano(datos.telefono) } : {}),
+    ...(Object.hasOwn(datos, 'telefono') ? { telefono: normalizarTelefonoContacto(datos.telefono) } : {}),
   };
 }
 
 /** Campos de ficha exclusivamente: no admite negocio, notas, email ni una versión elegida al crear. */
 export function validarAltaCliente(entrada: unknown): DatosCliente {
   const datos = objeto(entrada, ['nombreCompleto', 'telefono'], ['nombreCompleto', 'telefono']);
-  return { nombreCompleto: validarNombreContacto(datos.nombreCompleto), telefono: normalizarTelefonoMexicano(datos.telefono) };
+  return { nombreCompleto: validarNombreContacto(datos.nombreCompleto), telefono: normalizarTelefonoContacto(datos.telefono) };
 }
 
 /** La versión es obligatoria y se comprueba incluso cuando la normalización no cambia valores. */

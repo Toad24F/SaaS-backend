@@ -6,6 +6,7 @@ import { resumenWhatsapp } from './plantillas-whatsapp';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import type { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
 import { ConfiguracionAutomatizaciones } from './entities/configuracion-automatizaciones.entity';
+import { destinoWhatsapp } from '../comun/telefono-whatsapp';
 
 const TOLERANCIA_RECORDATORIO_MS = 5 * 60_000;
 
@@ -13,9 +14,11 @@ const TOLERANCIA_RECORDATORIO_MS = 5 * 60_000;
 export async function guardarEnvioCita(manager: EntityManager, cita: Cita, generacion: number,
   tipo: TipoEnvioWhatsapp, programadoEn: Date, utilHasta: Date): Promise<void> {
   if (utilHasta <= programadoEn) return;
+  const destinoE164 = destinoWhatsapp(cita.telefonoContacto);
+  if (!destinoE164) return;
   await manager.save(EnvioWhatsapp, { negocioId: cita.negocioId, citaId: cita.id, generacion, tipo,
     claveEfecto: `cita:${cita.negocioId}:${cita.id}:${generacion}:${tipo}`,
-    destinoE164: `+52${cita.telefonoContacto}`, parametrosPlantilla: resumenWhatsapp(cita), programadoEn, utilHasta,
+    destinoE164, parametrosPlantilla: resumenWhatsapp(cita), programadoEn, utilHasta,
     estado: 'pendiente', intentos: 0, proximoIntentoEn: programadoEn });
 }
 
@@ -32,7 +35,7 @@ export async function programarRecordatorioCita(manager: EntityManager, cita: Ci
 /** El escritor de confirmación ya tiene la barrera de negocio y cita que protege la programación. */
 export async function programarAlConfirmar(manager: EntityManager, cita: Cita,
   condicion: CondicionConfirmacionCita, ahora: Date): Promise<void> {
-  if (condicion.categoria !== 'normal' || condicion.contactoAutorizado !== 1 || !/^\d{10}$/.test(cita.telefonoContacto ?? '')) return;
+  if (condicion.categoria !== 'normal' || condicion.contactoAutorizado !== 1 || !destinoWhatsapp(cita.telefonoContacto)) return;
   const canal = await manager.findOneBy(CanalWhatsapp, { negocioId: cita.negocioId });
   if (canal?.habilitado !== 1) return;
   const configuracion = await manager.findOneBy(ConfiguracionAutomatizaciones, { negocioId: cita.negocioId });

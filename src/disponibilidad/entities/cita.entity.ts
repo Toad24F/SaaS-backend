@@ -132,7 +132,7 @@ export class Cita {
   @Column({ name: 'nombre_contacto', type: 'varchar', length: 150, nullable: true })
   nombreContacto: string | null;
 
-  @Column({ name: 'telefono_contacto', type: 'varchar', length: 10, nullable: true })
+  @Column({ name: 'telefono_contacto', type: 'varchar', length: 16, nullable: true })
   telefonoContacto: string | null;
 
   @Column({ name: 'nombre_negocio', type: 'varchar', length: 150, nullable: true })

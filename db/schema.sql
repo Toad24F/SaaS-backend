@@ -541,7 +541,7 @@ CREATE TABLE clientes (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   negocio_id INT UNSIGNED NOT NULL,
   nombre_completo VARCHAR(150) NOT NULL,
-  telefono VARCHAR(10) NOT NULL,
+  telefono VARCHAR(16) NOT NULL,
   email VARCHAR(150) NULL,
   creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
@@ -551,7 +551,7 @@ CREATE TABLE clientes (
   CONSTRAINT fk_clientes_negocio FOREIGN KEY (negocio_id)
     REFERENCES negocios(id) ON DELETE RESTRICT,
   CONSTRAINT chk_clientes_nombre CHECK (CHAR_LENGTH(TRIM(nombre_completo)) > 0),
-  CONSTRAINT chk_clientes_telefono CHECK (CHAR_LENGTH(telefono) = 10)
+  CONSTRAINT chk_clientes_telefono CHECK (telefono REGEXP '^([0-9]{10}|[+][1-9][0-9]{6,14})$')
 ) ENGINE=InnoDB;
 
 -- 9. CITAS: inicio y fin UTC preservan la duración aceptada, incluso si cambia el servicio.
@@ -573,7 +573,7 @@ CREATE TABLE citas (
   -- La copia de lo aceptado se llena solo en reservas nuevas; el legado queda NULL.
   costo_aceptado DECIMAL(10,2) NULL,
   nombre_contacto VARCHAR(150) NULL,
-  telefono_contacto VARCHAR(10) NULL,
+  telefono_contacto VARCHAR(16) NULL,
   nombre_negocio VARCHAR(150) NULL,
   nombre_servicio VARCHAR(150) NULL,
   nombre_sucursal VARCHAR(150) NULL,

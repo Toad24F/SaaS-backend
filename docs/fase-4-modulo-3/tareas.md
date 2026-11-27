@@ -1,5 +1,7 @@
 # Tareas — Fase 4, Módulo 3: Portal Público de Reservas
 
+El ajuste posterior de [teléfonos internacionales](../telefonos-internacionales-portal.md) sustituye el límite mexicano de RF-09 y de la evidencia histórica; las casillas previas conservan su significado original y no acreditan este ajuste. La [revisión y sus comandos](resultados-tareas/telefonos-internacionales-2026-11-27.md) documentan este cambio por separado.
+
 Desglose del [plan](plan.md), conforme a la [constitución](constitucion-modulo-3.md) y la [especificación](spec.md). Los RF sin prefijo son locales a la especificación del módulo 3; M01–M07, D01–D13, T01–T12 y E1–E6 remiten al plan.
 
 Hay **136 tareas de implementación y verificación**, más **una verificación diferida al módulo 4**. Todas están pendientes y estimadas entre 15 y 25 minutos, siempre menos de 30 minutos. Son estimaciones de trabajo acotado: si aparece una dificultad que exceda ese tamaño, dividir el trabajo restante y actualizar dependencias antes de marcarlo como hecho.

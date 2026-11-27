@@ -84,7 +84,7 @@ Estas convenciones forman parte de la propuesta; no se presentan como respuestas
 
 **Por qué:** comunicar el resultado real de la reserva y distinguir una acción del cliente de una simple entrega de mensaje.
 
-- **RF-31.** Cuando se registre correctamente una cita, el sistema deberá iniciar el envío de un mensaje de WhatsApp con su resumen, identificando la reserva pública como Pendiente y la cita manual como Confirmada.
+- **RF-31.** Cuando se registre correctamente una cita con autorización de contacto y canal habilitado, el sistema deberá preparar el envío de un mensaje de WhatsApp con su resumen al destino internacional validado, identificando la reserva pública como Pendiente y la cita manual como Confirmada. La preparación no confirma aceptación ni entrega por Meta; un destino no utilizable deriva a seguimiento manual.
 - **RF-32.** Cuando el mensaje corresponda a una reserva Pendiente, el sistema deberá ofrecer una acción de confirmación vinculada exclusivamente a esa cita e informar su vencimiento exacto y las consecuencias de no confirmar.
 - **RF-33.** Cuando el cliente ejecute una confirmación válida antes del vencimiento, el sistema deberá dejar la cita Confirmada y conservar evidencia del momento y origen de la confirmación.
 - **RF-34.** Si se recibe una notificación de mensaje enviado, entregado o leído, el sistema deberá actualizar el estado de comunicación sin tratarla como confirmación de asistencia.

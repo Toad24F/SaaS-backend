@@ -16,9 +16,10 @@ describe('M5-T008: identidad compartida de clientes', () => {
 
   it('devuelve NFC después de pasar a minúsculas y valida el contacto', () => {
     expect(normalizarNombreCliente('İ')).toBe('i\u0307');
-    expect(normalizarIdentidadCliente('Ana', '0000000001').telefono).toBe('0000000001');
-    expect(() => normalizarIdentidadCliente('\u0085\u0085', '0000000001')).toThrow('nombre');
-    expect(() => normalizarIdentidadCliente('Ana\ud800', '0000000001')).toThrow('nombre');
+    expect(normalizarIdentidadCliente('Ana', '6140000001').telefono).toBe('6140000001');
+    expect(() => normalizarIdentidadCliente('Ana', '0000000001')).toThrow('teléfono');
+    expect(() => normalizarIdentidadCliente('\u0085\u0085', '6140000001')).toThrow('nombre');
+    expect(() => normalizarIdentidadCliente('Ana\ud800', '6140000001')).toThrow('nombre');
     expect(() => normalizarIdentidadCliente('Ana', '123')).toThrow('teléfono');
   });
 });

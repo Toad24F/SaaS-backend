@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { normalizarTelefonoMexicano, validarNombreContacto } from '../comun/contacto-persona';
+import { normalizarTelefonoContacto, validarNombreContacto } from '../comun/contacto-persona';
 
 /** Identidad exacta del nombre. La ficha conserva su ortografía original para presentación. */
 export function normalizarNombreCliente(nombre: string): string {
@@ -13,5 +13,5 @@ export function normalizarIdentidadCliente(nombre: unknown, telefono: unknown) {
   if (!nombreNormalizado || /\p{Surrogate}/u.test(nombreNormalizado)) {
     throw new BadRequestException('Corrija el nombre: use caracteres Unicode válidos.');
   }
-  return { nombreNormalizado, telefono: normalizarTelefonoMexicano(telefono) };
+  return { nombreNormalizado, telefono: normalizarTelefonoContacto(telefono) };
 }

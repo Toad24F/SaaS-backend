@@ -17,7 +17,7 @@ describe('M3-T069–T071: contacto y huella del envío', () => {
   it.each([{ nombre: '', telefono: '6141234567', campo: 'nombre' },
     { nombre: 'a'.repeat(151), telefono: '6141234567', campo: 'nombre' },
     { nombre: 'Ana', telefono: '614123456', campo: 'telefono' },
-    { nombre: 'Ana', telefono: '+1 6141234567', campo: 'telefono' },
+    { nombre: 'Ana', telefono: '+44 2012345678', campo: 'telefono' },
     { nombre: 'Ana', telefono: '614abc4567', campo: 'telefono' },
     { nombre: 'Ana', telefono: '6141234567', notas: 'a'.repeat(2001), campo: 'notas' }])(
     'rechaza el campo $campo', ({ campo, ...entrada }) => {

@@ -81,6 +81,23 @@ async function iniciarFlujo(app: import('@nestjs/common').INestApplication, db: 
 }
 
 describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
+  it('registra un teléfono estadounidense completo sin truncarlo ni alterar su destino', async () => {
+    await conPortal(async (f) => {
+      await f.preparar().expect(201);
+      const contacto = { nombre: 'Cliente visitante', telefono: '+1 202 555 0123', notas: null,
+        autorizaWhatsapp: true };
+      const resultado = (await f.reservar(contacto).expect(201)).body;
+      expect(resultado.estado).toBe('pendiente');
+      const [cita] = await f.db.query('SELECT cliente_id,telefono_contacto FROM citas WHERE negocio_id=? AND apartado_origen_id=?',
+        [f.negocioId, f.apartado.apartadoId]);
+      expect(cita.telefono_contacto).toBe('+12025550123');
+      const [cliente] = await f.db.query('SELECT telefono FROM clientes WHERE negocio_id=? AND id=?',
+        [f.negocioId, cita.cliente_id]);
+      expect(cliente.telefono).toBe('+12025550123');
+      await f.reservar({ ...contacto, telefono: '+12025550123' }).expect(200);
+    });
+  }, 120000);
+
   it('M3-T126: el cierre detiene escrituras nuevas y conserva liberación y recuperación', async () => {
     await conPortal(async (f) => {
       const anterior = process.env.PORTAL_PUBLICO_ESCRITURAS;

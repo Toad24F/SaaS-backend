@@ -27,7 +27,7 @@ Se conservan las reglas vigentes de licencia, oferta y disponibilidad del módul
 **Por qué:** disponer de información suficiente para atender la reserva sin confundir un teléfono compartido con la identidad de una persona.
 
 - **RF-08.** Cuando el cliente envíe el formulario, el sistema deberá exigir nombre completo y teléfono, y admitir motivo de consulta o notas opcionales.
-- **RF-09.** Cuando se capture un teléfono mexicano con espacios, guiones o prefijo `+52`, el sistema deberá aceptarlo si equivale a diez dígitos nacionales; los números incompletos u otros prefijos deberán rechazarse.
+- **RF-09 (ajuste posterior).** Cuando se capture el teléfono del cliente, el portal deberá ofrecer un selector de países y regiones de América Latina, Estados Unidos y Canadá. El servidor deberá validar el prefijo, país y longitud del número; rechazará extensiones, números incompletos y países no admitidos. Los teléfonos mexicanos existentes conservarán sus diez dígitos nacionales y los destinos extranjeros se guardarán en E.164. La autorización de WhatsApp seguirá siendo opcional y no acreditará entrega.
 - **RF-10.** Si los datos obligatorios son inválidos, el sistema deberá señalar los campos que requieren corrección y conservar los datos escritos mientras el cliente permanezca en el flujo.
 - **RF-11.** Cuando el teléfono cumpla el formato permitido, el sistema deberá permitir continuar sin exigir un código de verificación.
 - **RF-12.** Si existen otras reservas con el mismo teléfono, el sistema deberá permitir una nueva reserva y conservar el nombre indicado para cada cita, sin modificar los datos de citas anteriores.

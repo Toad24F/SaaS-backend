@@ -10,7 +10,7 @@ import { Negocio } from '../../negocios/entities/negocio.entity';
 @Index('idx_clientes_fusion', ['negocioId', 'fusionadoEnId'])
 @Index('uq_clientes_identidad_activa', ['negocioId', 'nombreActivo', 'telefono'], { unique: true })
 @Check('chk_clientes_nombre', 'CHAR_LENGTH(TRIM(nombre_completo)) > 0')
-@Check('chk_clientes_telefono', 'CHAR_LENGTH(telefono) = 10')
+@Check('chk_clientes_telefono', "telefono REGEXP '^([0-9]{10}|[+][1-9][0-9]{6,14})$'")
 @Check('chk_clientes_version', 'version >= 1')
 @Check('chk_clientes_clave_activa', 'fusionado_en_id IS NOT NULL OR nombre_normalizado IS NOT NULL')
 export class Cliente {
@@ -51,7 +51,7 @@ export class Cliente {
     { name: 'fusionado_en_id', referencedColumnName: 'id' }])
   fusionadoEn: Cliente | null;
 
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ type: 'varchar', length: 16 })
   telefono: string;
 
   @Column({ type: 'varchar', length: 150, nullable: true })
