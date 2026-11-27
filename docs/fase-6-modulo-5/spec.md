@@ -84,7 +84,7 @@ Estas convenciones forman parte de la propuesta; no se presentan como respuestas
 
 **Por qué:** comunicar el resultado real de la reserva y distinguir una acción del cliente de una simple entrega de mensaje.
 
-- **RF-31.** Cuando se registre correctamente una cita, el sistema deberá iniciar el envío de un mensaje de WhatsApp con su resumen, identificando la reserva pública como Pendiente y la cita manual como Confirmada.
+- **RF-31.** Cuando se registre correctamente una cita, el sistema deberá iniciar el envío de un mensaje de WhatsApp con su resumen, identificando la reserva pública como Pendiente y la cita manual como Confirmada. El mensaje de cita Confirmada deberá mostrar el enlace de Google Maps de la sucursal después de la fecha y hora. Si la sucursal carece de un enlace configurado, se usará una búsqueda en Google Maps por su dirección.
 - **RF-32.** Cuando el mensaje corresponda a una reserva Pendiente, el sistema deberá ofrecer una acción de confirmación vinculada exclusivamente a esa cita e informar su vencimiento exacto y las consecuencias de no confirmar.
 - **RF-33.** Cuando el cliente ejecute una confirmación válida antes del vencimiento, el sistema deberá dejar la cita Confirmada y conservar evidencia del momento y origen de la confirmación.
 - **RF-34.** Si se recibe una notificación de mensaje enviado, entregado o leído, el sistema deberá actualizar el estado de comunicación sin tratarla como confirmación de asistencia.
@@ -110,7 +110,7 @@ Estas convenciones forman parte de la propuesta; no se presentan como respuestas
 
 **Por qué:** recordar compromisos confirmados sin enviar mensajes tardíos ni convertir el silencio en una cancelación.
 
-- **RF-47.** Cuando el Administrador configure recordatorios, el sistema deberá admitir una anticipación de entre 12 y 48 horas antes del inicio, con 24 horas predeterminadas; solo deberá enviar el recordatorio si la cita está Confirmada, no es próxima y el momento previsto aún era futuro al confirmarla.
+- **RF-47.** Cuando el Administrador configure recordatorios, el sistema deberá admitir una anticipación de entre 12 y 48 horas antes del inicio, con 24 horas predeterminadas; solo deberá enviar el recordatorio si la cita está Confirmada, no es próxima y el momento previsto aún era futuro al confirmarla. El recordatorio deberá mostrar el enlace de Google Maps después de la fecha y hora con la misma regla de ubicación que el mensaje de cita Confirmada.
 - **RF-48.** Cuando se reprograme una cita, el sistema deberá descartar el recordatorio anterior y evaluar el nuevo horario con la configuración vigente y el umbral de seis horas desde el cambio; al cancelarla deberá descartar el recordatorio pendiente, y la ausencia de respuesta a un recordatorio no deberá cancelarla.
 
 ### H. Reportes e indicadores

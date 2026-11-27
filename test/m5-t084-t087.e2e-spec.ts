@@ -23,6 +23,7 @@ import { CitasHttpModule } from '../src/citas/citas-http.module';
 import { ConsultaAgendaService } from '../src/citas/consulta-agenda.service';
 import { RELOJ } from '../src/comun/reloj';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
+import { Sucursal } from '../src/sucursales/entities/sucursal.entity';
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
 import { RelojPrueba } from './support/reloj';
 
@@ -333,9 +334,18 @@ describe('M5-T094–T095 · Recordatorio al confirmar', () => {
         expect(await lector()).toEqual([expect.objectContaining({ generacion: 1, programadoEn, estado: 'pendiente' })]);
         await db.manager.update(ConfiguracionAutomatizaciones, f.cita.negocioId, { recordatorioHoras: 48, version: 2 });
         expect((await lector())[0].programadoEn).toEqual(programadoEn);
+        await db.manager.update(Sucursal, { id: f.cita.sucursalId, negocioId: f.cita.negocioId },
+          { urlGoogleMaps: null, direccion: 'Av. Colón 123, Chihuahua' });
         f.reloj.fijar(typeof retraso === 'number' ? new Date(programadoEn.getTime() + retraso) : f.cita.inicioUtc);
         await f.proceso.ejecutarUna();
         expect((await lector())[0].estado).toBe(retraso === 300_000 ? 'aceptado' : 'descartado');
+        if (retraso === 300_000) {
+          expect(f.transporte.solicitudes.at(-1)).toMatchObject({ tipo: 'recordatorio',
+            plantilla: { cuerpo: [expect.any(String), expect.any(String), expect.any(String), expect.any(String),
+              expect.stringContaining(f.cita.zonaHorariaReserva),
+              'https://www.google.com/maps/search/?api=1&query=Av.+Col%C3%B3n+123%2C+Chihuahua'] },
+          });
+        }
         f.reloj.fijar(f.cita.inicioUtc);
         expect(await f.proceso.ejecutarUna()).toBe(false);
         expect(await f.leerCita()).toMatchObject({ estado: 'confirmada', version: 2 });

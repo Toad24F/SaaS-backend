@@ -352,7 +352,7 @@ Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
 - [x] **M5-T075 — Preparar parámetros de las tres plantillas** (25 min).
   - **RF:** RF-31–RF-32, RF-47. **Depende de:** M5-T074, M5-T067.
   - **Hecho cuando:** Pendiente, Confirmada y recordatorio usan resumen histórico, sin folio ni notas sensibles.
-  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md) · [Ubicación de la sucursal](resultados-tareas/m5-t074-t078.md#ubicación-de-la-sucursal).
 
 - [x] **M5-T076 — Implementar envío mediante adaptador Meta** (25 min).
   - **RF:** RF-31, RF-36, RF-61. **Depende de:** M5-T075.

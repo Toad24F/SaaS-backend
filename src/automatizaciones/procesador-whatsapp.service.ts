@@ -6,11 +6,12 @@ import { Cita } from '../disponibilidad/entities/cita.entity';
 import { Licencia } from '../licencias/entities/licencia.entity';
 import { PoliticaAccesoLicenciaService } from '../licencias/services/politica-acceso-licencia.service';
 import { Negocio } from '../negocios/entities/negocio.entity';
+import { Sucursal } from '../sucursales/entities/sucursal.entity';
 import { ArrendamientoWhatsappService, type TomaWhatsapp } from './arrendamiento-whatsapp.service';
 import { CanalWhatsapp } from './entities/canal-whatsapp.entity';
 import { CondicionConfirmacionCita } from './entities/condicion-confirmacion-cita.entity';
 import type { EnvioWhatsapp } from './entities/envio-whatsapp.entity';
-import { construirPlantillaWhatsapp } from './plantillas-whatsapp';
+import { construirPlantillaWhatsapp, type PlantillaWhatsapp } from './plantillas-whatsapp';
 import { envioVigenteHasta } from './envios-cita';
 import { derivarSeguimientoWhatsapp } from './seguimiento-whatsapp';
 import { TRANSPORTE_WHATSAPP, type ResultadoWhatsapp, type SolicitudWhatsapp, type TransporteWhatsapp } from './transporte-whatsapp';
@@ -73,14 +74,20 @@ export class ProcesadorWhatsappService {
         return null;
       }
 
-      const plantilla = construirPlantillaWhatsapp(envio.tipo, cita, condicion.vencimientoUtc);
+      let plantilla: PlantillaWhatsapp;
       if (envio.tipo === 'inicial_pendiente') {
         const accion = await this.prepararAccion?.(manager, envio, cita, condicion, canal, ahora);
         if (!accion) {
           await this.arrendamientos.cerrar(manager, envio, 'descartado', 'accion_fuera_de_vigencia');
           return null;
         }
-        plantilla.respuestaRapida = accion;
+        plantilla = construirPlantillaWhatsapp(cita, { tipo: envio.tipo, vencimientoUtc: condicion.vencimientoUtc,
+          respuestaRapida: accion });
+      } else {
+        const ubicacion = await manager.getRepository(Sucursal).findOneOrFail({
+          where: { id: cita.sucursalId, negocioId: cita.negocioId }, select: { urlGoogleMaps: true, direccion: true },
+        });
+        plantilla = construirPlantillaWhatsapp(cita, { tipo: envio.tipo, ubicacion });
       }
       const inicioTransporte = this.reloj.ahora();
       if (!esUtil(envio, cita, condicion, inicioTransporte)) {

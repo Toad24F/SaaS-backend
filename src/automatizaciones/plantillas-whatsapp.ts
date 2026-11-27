@@ -1,4 +1,5 @@
 import type { Cita } from '../disponibilidad/entities/cita.entity';
+import type { Sucursal } from '../sucursales/entities/sucursal.entity';
 import type { TipoEnvioWhatsapp } from './entities/envio-whatsapp.entity';
 
 export interface PlantillaWhatsapp {
@@ -27,16 +28,23 @@ function fechaEnZona(instante: Date, zona: string): string {
   return `${fecha} ${zona} (${desfase})`;
 }
 
-/** Los parámetros posicionales siguen el mismo orden en las tres plantillas. */
-export function construirPlantillaWhatsapp(tipo: TipoEnvioWhatsapp, cita: Cita,
-  vencimientoUtc: Date | null, respuestaRapida?: string): PlantillaWhatsapp {
+type DatosPlantillaWhatsapp =
+  | { tipo: 'inicial_pendiente'; vencimientoUtc: Date | null; respuestaRapida: string }
+  | { tipo: Exclude<TipoEnvioWhatsapp, 'inicial_pendiente'>; ubicacion: Pick<Sucursal, 'urlGoogleMaps' | 'direccion'> };
+
+/** Los cinco primeros parámetros siguen el mismo orden en las tres plantillas. */
+export function construirPlantillaWhatsapp(cita: Cita, datos: DatosPlantillaWhatsapp): PlantillaWhatsapp {
   const resumen = resumenWhatsapp(cita);
   const cuerpo = [resumen.nombreNegocio ?? 'Negocio', resumen.nombreServicio ?? 'Servicio',
     resumen.nombreSucursal ?? 'Sucursal', resumen.nombreProfesional ?? 'Profesional',
     fechaEnZona(cita.inicioUtc, resumen.zonaHoraria)];
-  if (tipo !== 'inicial_pendiente') return { cuerpo };
-  cuerpo.push(vencimientoUtc
-    ? `Confirma antes de ${fechaEnZona(vencimientoUtc, resumen.zonaHoraria)}. Si no confirmas, la cita puede quedar sujeta a cancelación.`
+  if (datos.tipo !== 'inicial_pendiente') {
+    const { urlGoogleMaps, direccion } = datos.ubicacion;
+    cuerpo.push(urlGoogleMaps ?? `https://www.google.com/maps/search/?${new URLSearchParams({ api: '1', query: direccion })}`);
+    return { cuerpo };
+  }
+  cuerpo.push(datos.vencimientoUtc
+    ? `Confirma antes de ${fechaEnZona(datos.vencimientoUtc, resumen.zonaHoraria)}. Si no confirmas, la cita puede quedar sujeta a cancelación.`
     : 'Seguimiento manual; sin cancelación automática por plazo.');
-  return { cuerpo, respuestaRapida };
+  return { cuerpo, respuestaRapida: datos.respuestaRapida };
 }

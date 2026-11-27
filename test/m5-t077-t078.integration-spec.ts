@@ -6,6 +6,7 @@ import { ProcesadorWhatsappService } from '../src/automatizaciones/procesador-wh
 import { TransporteWhatsappControlado } from '../src/automatizaciones/transporte-whatsapp';
 import { PoliticaAccesoLicenciaService } from '../src/licencias/services/politica-acceso-licencia.service';
 import { Cita } from '../src/disponibilidad/entities/cita.entity';
+import { Sucursal } from '../src/sucursales/entities/sucursal.entity';
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
 import { RelojPrueba } from './support/reloj';
 
@@ -104,15 +105,22 @@ describe('M5-T077–T078, exclusión y procesamiento durable', () => {
 
   it('una toma vencida tras iniciar HTTP permanece fuera de la cola reclamable', async () => {
     await conBaseOperativa(async (a, b) => {
-      const { reloj, envios, inicial } = await preparar(a);
+      const { reloj, cita, envios, inicial } = await preparar(a);
+      const urlGoogleMaps = 'https://maps.app.goo.gl/sucursal-centro';
+      await a.manager.update(Sucursal, { id: cita.sucursalId, negocioId: cita.negocioId }, { urlGoogleMaps });
       const otro = new ArrendamientoWhatsappService(b, reloj);
+      const enviar = jest.fn(async () => {
+        reloj.avanzar(30_000);
+        expect(await otro.tomar()).toBeNull();
+        return { estado: 'aceptado', referencia: 'wamid.tardio' } as const;
+      });
       const procesador = new ProcesadorWhatsappService(a, reloj, new ArrendamientoWhatsappService(a, reloj),
-        new PoliticaAccesoLicenciaService(), { enviar: async () => {
-          reloj.avanzar(30_000);
-          expect(await otro.tomar()).toBeNull();
-          return { estado: 'aceptado', referencia: 'wamid.tardio' };
-        } });
+        new PoliticaAccesoLicenciaService(), { enviar });
       expect(await procesador.ejecutarUna()).toBe(true);
+      expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'inicial_confirmada',
+        plantilla: { cuerpo: [expect.any(String), 'Servicio histórico', expect.any(String), expect.any(String),
+          expect.stringContaining(cita.zonaHorariaReserva), urlGoogleMaps] },
+      }));
       expect(await envios.findOneByOrFail({ id: inicial.id })).toMatchObject({ estado: 'en_proceso',
         inicioTransporteEn: ahora, referenciaExterna: null, intentos: 1 });
     });

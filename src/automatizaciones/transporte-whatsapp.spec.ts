@@ -20,7 +20,7 @@ describe('M5-T074–T076, transporte y plantillas de WhatsApp', () => {
     expect(transporte.solicitudes).toEqual(Array(3).fill(solicitud));
   });
 
-  it('arma los tres cuerpos con nombres históricos, zona y plazo solo para Pendiente', () => {
+  it('arma los cuerpos con nombres históricos, plazo para Pendiente y ubicación para Confirmada y recordatorio', () => {
     const cita = Object.assign(new Cita(), {
       nombreNegocio: 'Negocio histórico', nombreServicio: 'Servicio histórico',
       nombreSucursal: 'Sucursal histórica', nombreProfesional: 'Profesional histórico',
@@ -28,26 +28,39 @@ describe('M5-T074–T076, transporte y plantillas de WhatsApp', () => {
       folio: 'FOLIO-PRIVADO', motivoConsulta: 'nota sensible', nombreContacto: 'Contacto',
     });
     const vencimiento = new Date('2026-11-23T18:00:00Z');
-    const pendiente = construirPlantillaWhatsapp('inicial_pendiente', cita, vencimiento, 'acción');
-    const confirmada = construirPlantillaWhatsapp('inicial_confirmada', cita, null);
-    const recordatorio = construirPlantillaWhatsapp('recordatorio', cita, null);
+    const direccion = 'Av. Colón 123, Chihuahua';
+    const urlGoogleMaps = 'https://maps.app.goo.gl/sucursal-centro';
+    const pendiente = construirPlantillaWhatsapp(cita, {
+      tipo: 'inicial_pendiente', vencimientoUtc: vencimiento, respuestaRapida: 'acción',
+    });
+    const confirmada = construirPlantillaWhatsapp(cita, {
+      tipo: 'inicial_confirmada', ubicacion: { direccion, urlGoogleMaps },
+    });
+    const recordatorio = construirPlantillaWhatsapp(cita, {
+      tipo: 'recordatorio', ubicacion: { direccion, urlGoogleMaps: null },
+    });
     expect(pendiente).toMatchObject({ respuestaRapida: 'acción' });
-    expect(pendiente.cuerpo.join(' ')).toMatch(/12:00.*America\/Chihuahua.*cancelación/i);
-    expect(construirPlantillaWhatsapp('inicial_pendiente', cita, null, 'acción').cuerpo.join(' '))
+    expect(pendiente.cuerpo[5]).toMatch(/12:00.*America\/Chihuahua.*cancelación/i);
+    expect(construirPlantillaWhatsapp(cita, {
+      tipo: 'inicial_pendiente', vencimientoUtc: null, respuestaRapida: 'acción',
+    }).cuerpo[5])
       .toMatch(/seguimiento manual.*sin cancelación/i);
+    expect(confirmada.cuerpo[5]).toBe(urlGoogleMaps);
+    expect(recordatorio.cuerpo[5]).toBe('https://www.google.com/maps/search/?api=1&query=Av.+Col%C3%B3n+123%2C+Chihuahua');
     expect(confirmada).not.toHaveProperty('respuestaRapida');
     expect(recordatorio).not.toHaveProperty('respuestaRapida');
     for (const plantilla of [pendiente, confirmada, recordatorio]) {
-      expect(plantilla.cuerpo).toEqual(expect.arrayContaining([
+      expect(plantilla.cuerpo).toHaveLength(6);
+      expect(plantilla.cuerpo.slice(0, 4)).toEqual([
         'Negocio histórico', 'Servicio histórico', 'Sucursal histórica', 'Profesional histórico',
-      ]));
-      expect(plantilla.cuerpo.join(' ')).toMatch(/13:30.*America\/Chihuahua/);
+      ]);
+      expect(plantilla.cuerpo[4]).toMatch(/13:30.*America\/Chihuahua/);
       expect(JSON.stringify(plantilla)).not.toMatch(/FOLIO-PRIVADO|nota sensible|Contacto/);
     }
   });
 
   const configuracion = { versionGraph: 'v26.0', idioma: 'es_MX', plantillas: {
-    inicial_pendiente: 'cita_pendiente', inicial_confirmada: 'cita_confirmada', recordatorio: 'recordatorio',
+    inicial_pendiente: 'cita_pendiente', inicial_confirmada: 'cita_confirmada', recordatorio: 'cita_recordatorio',
   } };
 
   it('usa remitente y versión explícitos y resuelve Bearer fuera del cuerpo', async () => {
