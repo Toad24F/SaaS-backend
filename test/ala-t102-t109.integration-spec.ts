@@ -123,7 +123,7 @@ describe('ALA-T102–T109: apartado preservado, cita protegida y rollback', () =
         WHERE negocio_id=? AND personal_id=?`, [f.negocioId, f.personalId]);
       const respuesta = await f.registrar('ala_104_intento_1234');
       const [cita] = await f.db.query(`SELECT apartado_origen_id,separacion_minutos,
-        fin_utc,fin_ocupacion_utc,estado FROM citas WHERE folio=?`, [respuesta.folio]);
+        fin_utc,fin_ocupacion_utc,estado FROM citas WHERE negocio_id=? AND apartado_origen_id=?`, [f.negocioId, apartado.apartadoId]);
       expect(cita).toMatchObject({ apartado_origen_id: apartado.apartadoId,
         separacion_minutos: 10, estado: 'pendiente' });
       expect(new Date(cita.fin_utc).toISOString()).toBe('2026-10-20T14:30:00.000Z');
@@ -165,8 +165,8 @@ describe('ALA-T102–T109: apartado preservado, cita protegida y rollback', () =
     await conFlujo(async (f) => {
       const apartado = await f.conceder('ala_107_apartado_123');
       await f.preparar(apartado.apartadoId!, 'ala_107_intento_1234');
-      const reserva = await f.registrar('ala_107_intento_1234');
-      const [antes] = await f.db.query('SELECT * FROM citas WHERE folio=?', [reserva.folio]);
+      await f.registrar('ala_107_intento_1234');
+      const [antes] = await f.db.query('SELECT * FROM citas WHERE negocio_id=? AND apartado_origen_id=?', [f.negocioId, apartado.apartadoId]);
       const leer = () => f.afectadas.consultar(f.token, { desde: '2026-10-20',
         hasta: '2026-10-20', personalId: f.personalId });
       await f.db.query(`UPDATE configuracion_agenda SET tiempo_entre_citas_minutos=60

@@ -24,10 +24,10 @@ describe('M2-T039–T043: ocupaciones reales', () => {
       const estados = ['pendiente', 'confirmada', 'completada', 'no_asistio', 'cancelada'];
       for (const [indice, estado] of estados.entries()) {
         await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,servicio_id,
-          cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,folio,origen)
+          cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,origen)
           SELECT negocio_id,personal_id,sucursal_id,servicio_id,cliente_id,?,?,
-          'America/Chihuahua',?,?,'manual' FROM citas WHERE id=?`,
-        [fecha(-30), fecha(30), estado, `EST-${indice}`, a.citas[indice % 2]]);
+          'America/Chihuahua',?,'manual' FROM citas WHERE id=?`,
+        [fecha(-30), fecha(30), estado, a.citas[indice % 2]]);
       }
       const lector = new OcupacionesService();
       await db.transaction('REPEATABLE READ', async (manager) => {

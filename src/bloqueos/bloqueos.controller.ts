@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { BloqueosService } from './bloqueos.service';
-import { BloqueoIdDto, ConsultarBloqueosDto, CrearBloqueoDto,
+import { BloqueoIdDto, ConsultarBloqueosPaginaDto, CrearBloqueoDto,
   EditarBloqueoDto } from './dto/bloqueos.dto';
 
 /** La sesión identifica al actor; el servicio recupera negocio y propiedad actuales. */
@@ -18,8 +18,8 @@ export class BloqueosController {
   constructor(private readonly bloqueos: BloqueosService) {}
 
   @Get()
-  listar(@Query() filtro: ConsultarBloqueosDto, @CurrentUser() actor: JwtPayload) {
-    return this.bloqueos.listar(actor.sub, filtro);
+  listar(@Query() filtro: ConsultarBloqueosPaginaDto, @CurrentUser() actor: JwtPayload) {
+    return this.bloqueos.listarPagina(actor.sub, filtro);
   }
 
   @Post()

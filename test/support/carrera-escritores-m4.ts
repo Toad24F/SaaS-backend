@@ -9,7 +9,9 @@ import { esperarBloqueoManual } from './cita-manual';
  * Ambos pools conservan sus transacciones y consultas; la espera rival se observa en MariaDB.
  */
 export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
-  primero: () => Promise<A>, segundo: (app: typeof f.app) => Promise<B>) {
+  primero: () => Promise<A>, segundo: (app: typeof f.app) => Promise<B>,
+  opciones: { tablaPausa?: string; tablaEspera?: string; patronEspera?: string; pausarEn?: (sql: string) => boolean;
+    antesSegundo?: () => void; comprobar?: (app: typeof f.app) => Promise<void> } = {}) {
   const modulo = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(DataSource).useValue(f.segunda).overrideProvider(RELOJ).useValue(f.reloj).compile();
   const app = modulo.createNestApplication();
@@ -20,6 +22,10 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
   let conexionA = 0; let conexionB = 0;
   let a: Promise<PromiseSettledResult<A>> | undefined;
   let b: Promise<PromiseSettledResult<B>> | undefined;
+  // La unión y la edición no bloquean personal; pausan después de bloquear una ficha.
+  const tablaPausa = opciones.tablaPausa ?? 'personal';
+  const consultaDePausa = new RegExp('FROM [`]?' + tablaPausa + '[`]?\\s');
+  const pausarEn = opciones.pausarEn ?? ((sql) => consultaDePausa.test(sql) && sql.includes('FOR UPDATE'));
   const resultado = <T>(p: Promise<T>): Promise<PromiseSettledResult<T>> => p.then(value => ({ status: 'fulfilled', value }), reason => ({ status: 'rejected', reason }));
   try {
     await app.init();
@@ -28,12 +34,12 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
       espias.push(jest.spyOn(db, 'createQueryRunner').mockImplementation((...args) => {
         const runner = crear(...args); const ejecutar = runner.query.bind(runner);
         trazas.push(jest.spyOn(runner, 'query').mockImplementation(async (...consulta) => {
-          if (consulta[0].includes('FOR UPDATE')) {
+          if (consulta[0] === 'START TRANSACTION' || consulta[0].includes('FOR UPDATE')) {
             const id = Number((await ejecutar('SELECT CONNECTION_ID() id'))[0].id);
             if (esA) conexionA = id; else conexionB = id;
           }
           const filas = await ejecutar(...consulta);
-          if (esA && !pausa && /FROM [`]?personal[`]?\s/.test(consulta[0]) && consulta[0].includes('FOR UPDATE')) {
+          if (esA && !pausa && pausarEn(consulta[0])) {
             pausa = true; retenido(); await barrera;
           }
           return filas;
@@ -42,11 +48,19 @@ export async function enfrentarEscritores<A, B>(f: EscenarioManualHttp,
       }));
     }
     a = resultado(primero());
-    await Promise.race([bloqueado, a.then(() => { throw new Error('El primer escritor no alcanzó la barrera de personal.'); })]);
+    await Promise.race([bloqueado, a.then(() => { throw new Error(`El primer escritor no alcanzó la barrera de ${tablaPausa}.`); })]);
+    // Permite cruzar un límite del reloj después de ejecutar la escritura, antes del commit.
+    opciones.antesSegundo?.();
     b = resultado(segundo(app));
-    await esperarBloqueoManual(f.db, () => conexionB, 'usuarios');
+    // MariaDB también puede retener un INSERT al comprobar una clave foránea bloqueada.
+    await esperarBloqueoManual(f.db, () => conexionB, opciones.tablaEspera ?? 'usuarios', opciones.patronEspera);
     expect(conexionA).toBeGreaterThan(0); expect(conexionB).toBeGreaterThan(0); expect(conexionA).not.toBe(conexionB);
-    abrir(); return { primero: await a, segundo: await b };
+    abrir();
+    const resultados = { primero: await a, segundo: await b };
+    // Passport comparte la estrategia JWT entre aplicaciones. Los reintentos HTTP
+    // deben terminar antes de cerrar la segunda aplicación y su conexión.
+    await opciones.comprobar?.(app);
+    return resultados;
   } finally {
     abrir(); await Promise.allSettled([a, b].filter(p => p !== undefined));
     for (const espia of espias) espia.mockRestore();

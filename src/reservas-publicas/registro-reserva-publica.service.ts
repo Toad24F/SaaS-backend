@@ -1,13 +1,14 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { randomBytes } from 'node:crypto';
 import { DataSource, EntityManager } from 'typeorm';
 import { RELOJ, type Reloj } from '../comun/reloj';
 import { MotorDisponibilidadService } from '../disponibilidad/motor-disponibilidad.service';
 import { BloqueoTemporal } from '../disponibilidad/entities/bloqueo-temporal.entity';
 import { Cita } from '../disponibilidad/entities/cita.entity';
-import { Cliente } from '../disponibilidad/entities/cliente.entity';
+import { ResolucionClienteService } from '../clientes/resolucion-cliente.service';
 import { EventoCita } from '../citas/entities/evento-cita.entity';
+import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
+import { condicionResultadoPublico } from './condicion-resultado-publico';
 import { Negocio } from '../negocios/entities/negocio.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
 import { Sucursal } from '../sucursales/entities/sucursal.entity';
@@ -37,7 +38,9 @@ export class RegistroReservaPublicaService {
     private readonly intentos: IntentosReservaPublicaService,
     private readonly cupo: CupoTelefonicoService,
     private readonly motor: MotorDisponibilidadService,
-    @Inject(RELOJ) private readonly reloj: Reloj) {}
+    private readonly clientes: ResolucionClienteService,
+    @Inject(RELOJ) private readonly reloj: Reloj,
+    private readonly efectoInicial: EfectoInicialService) {}
 
   async registrar(negocioId: number, titularHash: string, clave: string,
     entrada: unknown): Promise<ResultadoReservaPublica> {
@@ -173,12 +176,11 @@ export class RegistroReservaPublicaService {
     intento: IntentoReservaPublica, apartado: BloqueoTemporal,
     contacto: ContactoReservaPublica, huella: string, inicioUtc: Date,
     finUtc: Date, copia: CopiaHistorica, ahora: Date): Promise<ResultadoReservaPublica> {
-    const cliente = await manager.getRepository(Cliente).save({
-      negocioId: intento.negocioId, nombreCompleto: contacto.nombre,
-      telefono: contacto.telefono, email: null });
-    // 18 caracteres aleatorios más prefijo caben en VARCHAR(20) y la unicidad
-    // global de folio se mantiene en la base de datos.
-    const folio = `P-${randomBytes(9).toString('hex').toUpperCase()}`;
+    // El negocio ya está bloqueado. La ficha aporta solo el vínculo interno.
+    // El snapshot sigue copiando este formulario y el portal devuelve el resumen de su propia cita.
+    const { ficha: cliente } = await this.clientes.resolverEnTransaccion(manager, intento.negocioId,
+      { nombreCompleto: contacto.nombre, telefono: contacto.telefono }, ahora);
+    // El intento conserva la identidad idempotente; la cita usa su ID interno.
     const cita = await manager.getRepository(Cita).save({ negocioId: intento.negocioId, version: 1,
       sucursalId: apartado.sucursalId, personalId: apartado.personalId,
       servicioId: apartado.servicioId, clienteId: cliente.id, inicioUtc, finUtc,
@@ -190,7 +192,7 @@ export class RegistroReservaPublicaService {
       motivoConsulta: contacto.notas, costoAceptado: copia.costo,
       nombreContacto: contacto.nombre, telefonoContacto: contacto.telefono,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
-      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, folio });
+      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional });
     // La sesión ya fue comprobada y bloqueada por el escritor. El evento comparte
     // su manager y commit: un fallo revierte también cliente, cita y consumo.
     // Se eligen valores operativos explícitos; contacto, notas, hashes y credenciales no se auditan.
@@ -198,7 +200,7 @@ export class RegistroReservaPublicaService {
       citaId: cita.id, actorUsuarioId: null, sesionPublicaId: sesion.id,
       accion: 'alta', ocurridoEn: ahora, versionResultante: cita.version,
       valoresAntes: null, motivo: null, valoresDespues: {
-        estado: cita.estado, origen: cita.origen, folio: cita.folio,
+        estado: cita.estado, origen: cita.origen,
         clienteId: cita.clienteId, sucursalId: cita.sucursalId,
         servicioId: cita.servicioId, personalId: cita.personalId,
         inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
@@ -206,6 +208,8 @@ export class RegistroReservaPublicaService {
         finOcupacionUtc: cita.finOcupacionUtc!.toISOString(),
         zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
       } });
+    // El efecto durable comparte la transacción de consumo e intento; nunca envía HTTP aquí.
+    await this.efectoInicial.preparar(manager, cita, ahora, contacto.autorizaWhatsapp);
     await manager.getRepository(BloqueoTemporal).update({ id: apartado.id,
       negocioId: intento.negocioId }, { liberadoEn: ahora });
     await manager.getRepository(SesionReservaPublica).update({ id: sesion.id,
@@ -213,9 +217,11 @@ export class RegistroReservaPublicaService {
     await manager.getRepository(IntentoReservaPublica).update({ id: intento.id,
       negocioId: intento.negocioId }, { estado: 'registrado',
       formularioHash: huella, citaId: cita.id });
-    return { folio, estado: 'pendiente', inicioUtc: inicioUtc.toISOString(),
+    // El resumen usa la condición persistida en esta transacción y el intento conserva el vínculo con la cita.
+    const condicion = await condicionResultadoPublico(manager, intento.negocioId, cita.id);
+    return { estado: 'pendiente', inicioUtc: inicioUtc.toISOString(),
       finUtc: finUtc.toISOString(), zonaHoraria: copia.zona, costoAceptado: copia.costo,
       nombreNegocio: copia.negocio, nombreServicio: copia.servicio,
-      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional };
+      nombreSucursal: copia.sucursal, nombreProfesional: copia.profesional, ...condicion };
   }
 }

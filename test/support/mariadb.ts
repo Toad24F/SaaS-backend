@@ -12,8 +12,9 @@ type OpcionesMariaDb = DataSourceOptions & {
   password?: string;
 };
 
-// Ambos prefijos pertenecen al ejecutor; nunca se admite un nombre arbitrario.
-const PATRON_BASE_TEMPORAL = /^citas_(?:persistencia|m4_test)_[a-f0-9]{32}$/;
+// Los prefijos permitidos pertenecen al ejecutor; nunca se admite un nombre arbitrario.
+type PrefijoBaseTemporal = 'citas_persistencia' | 'citas_m4_test' | 'citas_m5_test';
+const PATRON_BASE_TEMPORAL = /^citas_(?:persistencia|m[45]_test)_[a-f0-9]{32}$/;
 
 function validarBaseTemporal(nombre: string): void {
   if (!PATRON_BASE_TEMPORAL.test(nombre)) {
@@ -33,6 +34,18 @@ export async function retrocederHastaMigracion(db: DataSource, nombre: string): 
     await db.undoLastMigration({ transaction: 'each' });
   }
   return cantidad;
+}
+
+/** Fija el extremo de una prueba histórica sin modificar las migraciones del proyecto. */
+export function limitarMigracionesHasta(db: DataSource, nombre: string): void {
+  if (process.env.NODE_ENV !== 'test') throw new Error('El límite histórico requiere NODE_ENV=test.');
+  validarBaseTemporal(String(db.options.database));
+  const nombreDe = (migracion: DataSource['migrations'][number]) => migracion.name ?? migracion.constructor.name;
+  if (!db.migrations.some((migracion) => nombreDe(migracion) === nombre)) {
+    throw new Error(`No se encontró el límite histórico ${nombre}.`);
+  }
+  const hasta = nombre.slice(-13);
+  db.migrations = db.migrations.filter((migracion) => nombreDe(migracion).slice(-13) <= hasta);
 }
 
 export async function conDosConexiones<T>(
@@ -72,7 +85,8 @@ export async function conDosConexiones<T>(
  */
 export async function conBaseMigrada<T>(
   ejecutar: (primera: DataSource, segunda: DataSource) => Promise<T>,
-  prefijo: 'citas_persistencia' | 'citas_m4_test' = 'citas_persistencia',
+  prefijo: PrefijoBaseTemporal = 'citas_persistencia',
+  hastaMigracion?: string,
 ): Promise<T> {
   if (process.env.NODE_ENV !== 'test') {
     throw new Error('El ejecutor migrado requiere NODE_ENV=test.');
@@ -106,7 +120,11 @@ export async function conBaseMigrada<T>(
     primera = crearDataSource(entorno);
     segunda = crearDataSource(entorno);
     await primera.initialize();
+    // Un caso de actualización puede sembrar el corte histórico antes de aplicar las migraciones nuevas.
+    const migraciones = primera.migrations;
+    if (hastaMigracion) limitarMigracionesHasta(primera, hastaMigracion);
     await primera.runMigrations({ transaction: 'each' });
+    primera.migrations = migraciones;
     await segunda.initialize();
     resultado = await ejecutar(primera, segunda);
   } catch (error) {

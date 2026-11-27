@@ -83,17 +83,16 @@ describe('ALA-T118: corrección pública del cupo', () => {
     await conPortal(async (f) => {
       const [cliente] = await f.db.query('SELECT id FROM clientes WHERE negocio_id=?',
         [f.negocioId]);
-      for (const [indice, inicio] of ['2026-10-20T17:00:00Z',
-        '2026-10-20T18:00:00Z'].entries()) {
+      for (const inicio of ['2026-10-20T17:00:00Z', '2026-10-20T18:00:00Z']) {
         const [apartado] = await f.db.query(`SELECT personal_id,sucursal_id,servicio_id
           FROM bloqueos_temporales WHERE id=?`, [f.apartadoId]);
         await f.db.query(`INSERT INTO citas (negocio_id,sucursal_id,personal_id,
           servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
-          folio,estado,origen,telefono_contacto)
-          VALUES (?,?,?,?,?,?,?,'America/Chihuahua',?,'pendiente','manual',?)`,
+          estado,origen,telefono_contacto)
+          VALUES (?,?,?,?,?,?,?,'America/Chihuahua','pendiente','manual',?)`,
         [f.negocioId, apartado.sucursal_id, apartado.personal_id,
           apartado.servicio_id, cliente.id, new Date(inicio),
-          new Date(new Date(inicio).getTime() + 1800000), `ALA118-${indice}`,
+          new Date(new Date(inicio).getTime() + 1800000),
           CONTACTO.telefono]);
       }
       const rechazo = await f.reservar(f.clave, CONTACTO).expect(409);

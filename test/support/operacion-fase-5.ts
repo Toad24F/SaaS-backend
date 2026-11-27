@@ -15,6 +15,8 @@ export async function crearEscenarioOperativo(db: DataSource, reloj: Reloj) {
     throw new Error('La fixture exige una base operativa desechable.');
   }
   const escenario = await crearEscenarioPortal(db, reloj);
+  const tieneClave = (await db.query("SHOW COLUMNS FROM clientes LIKE 'nombre_normalizado'")).length > 0;
+  const tieneFolio = (await db.query("SHOW COLUMNS FROM citas LIKE 'folio'")).length > 0;
   const ahora = reloj.ahora();
   for (const negocio of escenario.negocios) {
     // Los roles y la licencia son datos de preparación, no evidencia de autorización M4.
@@ -33,7 +35,9 @@ export async function crearEscenarioOperativo(db: DataSource, reloj: Reloj) {
       (negocio_id,personal_id,sucursal_id,servicio_id,activo) VALUES(?,?,?,?,1)`,
     [negocio.id, negocio.profesionales[0], negocio.sucursales[1].id, servicio.id]);
     // Dos fichas comparten número; sus IDs y nombres permanecen independientes.
-    await db.query('INSERT INTO clientes(negocio_id,nombre_completo,telefono) VALUES(?,?,?)',
+    if (tieneClave) await db.query('INSERT INTO clientes(negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES(?,?,?,?)',
+      [negocio.id, `Otra persona ${negocio.id}`, `otra persona ${negocio.id}`, negocio.telefonoCliente]);
+    else await db.query('INSERT INTO clientes(negocio_id,nombre_completo,telefono) VALUES(?,?,?)',
       [negocio.id, `Otra persona ${negocio.id}`, negocio.telefonoCliente]);
     const [original] = await db.query('SELECT * FROM citas WHERE id=?', [negocio.ocupaciones[0]]);
     for (const [indice, estado] of ['confirmada', 'completada', 'cancelada', 'no_asistio'].entries()) {
@@ -45,11 +49,11 @@ export async function crearEscenarioOperativo(db: DataSource, reloj: Reloj) {
       const sede = negocio.sucursales[indice % 2];
       await db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
-         zona_horaria_reserva,folio,estado,origen,separacion_minutos,fin_ocupacion_utc,
+         zona_horaria_reserva${tieneFolio ? ',folio' : ''},estado,origen,separacion_minutos,fin_ocupacion_utc,
          costo_aceptado,nombre_contacto,telefono_contacto)
-        VALUES(?,?,?,?,?,?,?,?,?,?,'manual',5,?,100,?,?)`,
+        VALUES(?,?,?,?,?,?,?,?,${tieneFolio ? '?,' : ''}?,'manual',5,?,100,?,?)`,
       [negocio.id, sede.id, negocio.profesionales[0], servicio.id, original.cliente_id,
-        inicio, fin, sede.zona, `M4-${negocio.id}-${indice}`, estado,
+        inicio, fin, sede.zona, ...(tieneFolio ? [`M4-${negocio.id}-${indice}`] : []), estado,
         new Date(fin.getTime() + 300_000), `Cliente ${negocio.id}`, negocio.telefonoCliente]);
     }
   }

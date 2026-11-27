@@ -47,10 +47,10 @@ async function cita(db: DataSource, f: Awaited<ReturnType<typeof preparar>>,
   const filas: { id: number }[] = await db.query(
     'SELECT id FROM clientes WHERE negocio_id=? LIMIT 1', [f.negocio.id]);
   const alta = await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,
-    servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,folio,origen)
-    VALUES (?,?,?,?,?,?,?,'America/Chihuahua','confirmada',?,'manual')`,
+    servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,origen)
+    VALUES (?,?,?,?,?,?,?,'America/Chihuahua','confirmada','manual')`,
   [f.negocio.id, f.negocio.personalId, sucursal, servicio, filas[0].id,
-    inicio, fin, `CM-${randomUUID().slice(0, 12)}`]);
+    inicio, fin]);
   return Number(alta.insertId);
 }
 

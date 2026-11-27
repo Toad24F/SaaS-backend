@@ -1,5 +1,6 @@
 import { CoordinacionReservaPublicaService } from '../src/reservas-publicas/coordinacion-reserva-publica.service';
 import { IntentosReservaPublicaService } from '../src/reservas-publicas/intentos-reserva-publica.service';
+import { huellaContactoReservaPublica, validarContactoReservaPublica } from '../src/reservas-publicas/contacto-reserva-publica';
 import { conBaseMigrada } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
@@ -72,15 +73,16 @@ describe('M3-T072–T073: intento propio y resultado durable', () => {
       await db.query(`UPDATE citas SET costo_aceptado='100.00',nombre_negocio='Portal 1',
         nombre_servicio='Corte',nombre_sucursal='Sucursal 1-0',
         nombre_profesional='Profesional 1-1' WHERE id=?`, [citaId]);
-      const contacto = { nombre: 'Ana', telefono: '6141234567', notas: null };
+      // La fila registrada reproduce la huella del formulario normalizado al guardar.
+      const contacto = validarContactoReservaPublica({ nombre: 'Ana', telefono: '6141234567', notas: null });
       process.env.PORTAL_FORMULARIO_HMAC_SECRET = 'secreto-aislado-de-pruebas-1234567890';
-      const { huellaContactoReservaPublica } = await import('../src/reservas-publicas/contacto-reserva-publica');
       await db.query(`UPDATE intentos_reserva_publica SET estado='registrado',
         formulario_hash=?,cita_id=? WHERE id=?`,
       [huellaContactoReservaPublica(contacto), citaId, intento.id]);
       reloj.fijar(new Date('2026-10-20T12:10:00Z'));
-      expect(await intentos.reconocerResultado(a.id, titular, clave, contacto))
-        .toMatchObject({ folio: 'P-1', estado: 'pendiente', costoAceptado: '100.00' });
+      const resultado = await intentos.reconocerResultado(a.id, titular, clave, contacto);
+      expect(resultado).toMatchObject({ estado: 'pendiente', costoAceptado: '100.00' });
+      expect(resultado).not.toHaveProperty('folio');
       await expect(intentos.reconocerResultado(a.id, titular, clave,
         { ...contacto, nombre: 'Otra' })).rejects.toThrow();
       await expect(intentos.reconocerResultado(a.id, 'd'.repeat(64), clave, contacto))

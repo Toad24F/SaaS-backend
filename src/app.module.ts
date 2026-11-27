@@ -29,6 +29,10 @@ import { DisponibilidadHttpModule } from './disponibilidad/disponibilidad-http.m
 import { ReservasPublicasHttpModule } from './reservas-publicas/reservas-publicas-http.module';
 import { CitasHttpModule } from './citas/citas-http.module';
 import { ClientesHttpModule } from './clientes/clientes-http.module';
+import { PersonalizacionPortalHttpModule } from './personalizacion-portal/personalizacion-portal-http.module';
+import { ConfiguracionAutomatizacionesHttpModule } from './automatizaciones/configuracion-automatizaciones-http.module';
+import { EnviosWhatsappModule } from './automatizaciones/envios-whatsapp.module';
+import { ReportesHttpModule } from './reportes/reportes-http.module';
 
 @Module({
   imports: [
@@ -75,6 +79,13 @@ import { ClientesHttpModule } from './clientes/clientes-http.module';
     CitasHttpModule,
     // Habilita lista, ficha, historial, alta y corrección bajo autenticación privada.
     ClientesHttpModule,
+    // Expone carga, publicación y restauración bajo autenticación administrativa.
+    PersonalizacionPortalHttpModule,
+    // Expone la configuración versionada de plazos para administradores de negocio.
+    ConfiguracionAutomatizacionesHttpModule,
+    EnviosWhatsappModule,
+    // Materializa cortes históricos bajo la sesión administrativa.
+    ReportesHttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

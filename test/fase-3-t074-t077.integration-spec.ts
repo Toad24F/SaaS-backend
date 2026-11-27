@@ -189,10 +189,10 @@ describe('M2-T074–T077: contrato de colaboración, sin reserva real', () => {
       const cliente = await db.query('SELECT id FROM clientes WHERE negocio_id=? LIMIT 1',
         [a.id]);
       await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,servicio_id,
-        cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,folio,origen)
-        VALUES (?,?,?,?,?,?,?,'America/Chihuahua','confirmada',?,'manual')`,
+        cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,origen)
+        VALUES (?,?,?,?,?,?,?,'America/Chihuahua','confirmada','manual')`,
       [a.id, a.personalId, a.sucursales[1], a.servicios[1], cliente[0].id,
-        inicioUtc, finUtc, `COL-${randomUUID().slice(0, 8)}`]);
+        inicioUtc, finUtc]);
       expect((await validar()).motivos).toContain('ocupado');
     });
   });

@@ -1,6 +1,7 @@
 import type { DataSource } from 'typeorm';
 import { Rol } from '../../src/auth/enums/rol.enum';
 import { Cita } from '../../src/disponibilidad/entities/cita.entity';
+import { CondicionConfirmacionCita } from '../../src/automatizaciones/entities/condicion-confirmacion-cita.entity';
 import { Cliente } from '../../src/disponibilidad/entities/cliente.entity';
 import { EventoCita } from '../../src/citas/entities/evento-cita.entity';
 import { IntentoCitaManual } from '../../src/citas/entities/intento-cita-manual.entity';
@@ -36,13 +37,21 @@ export async function filasManuales(db: DataSource) {
     intentos: await db.getRepository(IntentoCitaManual).find({ order: { id: 'ASC' } }) };
 }
 
+/** Obtiene el vínculo esperado sin leerlo de la cita que se compara en la regresión. */
+export async function vinculoNuevaCondicion(db: DataSource, cita: Cita) {
+  const generacion = (cita.generacionAutomatizacion ?? 0) + 1;
+  const condicion = await db.manager.findOneByOrFail(CondicionConfirmacionCita, { negocioId: cita.negocioId, citaId: cita.id, generacion });
+  return { generacionAutomatizacion: generacion, condicionVigenteId: condicion.id };
+}
+
 /** Observar la conexión exacta esperando evita atribuir una carrera a simples promesas simultáneas. */
-export async function esperarBloqueoManual(db: DataSource, conexion: () => number, tabla: string) {
+export async function esperarBloqueoManual(db: DataSource, conexion: () => number, tabla: string,
+  patronSentencia = '%FOR UPDATE') {
   const limite = Date.now() + 6000;
   while (Date.now() < limite) {
     const filas = await db.query(`SELECT ID FROM information_schema.PROCESSLIST
-      WHERE ID=? AND COMMAND='Query' AND TIME>=1 AND INFO LIKE ? AND INFO LIKE '%FOR UPDATE'`,
-    [conexion(), `%${tabla}%`]);
+      WHERE ID=? AND COMMAND='Query' AND TIME>=1 AND INFO LIKE ? AND INFO LIKE ?`,
+    [conexion(), `%${tabla}%`, patronSentencia]);
     if (filas.length) return;
     await new Promise((r) => setTimeout(r, 20));
   }

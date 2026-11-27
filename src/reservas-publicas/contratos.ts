@@ -7,10 +7,9 @@ export interface SeleccionPublica {
   horaInicio: string;
 }
 
-/** Resumen histórico interno: el costo fijado se conserva aunque la respuesta
- * pública actual lo omita o lo presente con el nombre neutral `costo`. */
+/** Resumen de una reserva propia. La identidad de la cita se conserva en el intento.
+ * El costo fijado se proyecta según la visibilidad pública vigente. */
 export interface ResultadoReservaPublica {
-  folio: string;
   estado: 'pendiente';
   inicioUtc: string;
   finUtc: string;
@@ -20,6 +19,9 @@ export interface ResultadoReservaPublica {
   nombreServicio: string;
   nombreSucursal: string;
   nombreProfesional: string;
+  /** Hora exacta de la política de esta cita; null siempre exige seguimiento humano. */
+  vencimientoConfirmacionUtc: string | null;
+  seguimientoManual: boolean;
 }
 
 /** El importe HTTP es opcional y nunca afirma aceptación de un precio oculto. */

@@ -74,17 +74,17 @@ Estas convenciones forman parte de la propuesta; no se presentan como respuestas
 
 **Por qué:** identificar cada negocio sin perjudicar la lectura, la reserva ni el aislamiento de recursos.
 
-- **RF-26.** Cuando el Administrador personalice su portal, el sistema deberá permitirle configurar el logo y los colores del negocio, previsualizar el resultado y guardar o descartar los cambios.
+- **RF-26.** Cuando el Administrador personalice su portal, el sistema deberá permitirle configurar el logo y el color de acento, previsualizar el resultado y guardar o descartar los cambios. El fondo y el texto provienen del tema claro u oscuro.
 - **RF-27.** Cuando el Administrador solicite restaurar los valores predeterminados, el sistema deberá permitir previsualizarlos y aplicarlos únicamente a su negocio.
 - **RF-28.** Si una imagen no es válida, contiene contenido ejecutable o no puede utilizarse como logo, el sistema deberá rechazarla con un mensaje comprensible y conservar el logo anterior.
-- **RF-29.** Si los colores elegidos impiden la lectura del contenido o la identificación de controles y estados, el sistema deberá impedir su publicación e indicar las combinaciones que requieren corrección.
+- **RF-29.** El servidor deberá rechazar acentos que no sean hexadecimales opacos. La vista previa y el portal deberán ajustar el tono del acento para enlaces, bordes y foco si hace falta contraste en el tema activo. Las etiquetas de botones deben contrastar con su relleno y los estados semánticos conservan sus colores.
 - **RF-30.** Mientras se almacenen, consulten o sustituyan recursos de personalización, el sistema deberá mantenerlos separados por negocio y preservar el uso del portal en móvil y mediante teclado.
 
 ### E. WhatsApp y confirmación
 
 **Por qué:** comunicar el resultado real de la reserva y distinguir una acción del cliente de una simple entrega de mensaje.
 
-- **RF-31.** Cuando se registre correctamente una cita, el sistema deberá iniciar el envío de un mensaje de WhatsApp con su resumen, identificando la reserva pública como Pendiente y la cita manual como Confirmada.
+- **RF-31.** Cuando se registre correctamente una cita, el sistema deberá iniciar el envío de un mensaje de WhatsApp con su resumen, identificando la reserva pública como Pendiente y la cita manual como Confirmada. El mensaje de cita Confirmada deberá mostrar el enlace de Google Maps de la sucursal después de la fecha y hora. Si la sucursal carece de un enlace configurado, se usará una búsqueda en Google Maps por su dirección.
 - **RF-32.** Cuando el mensaje corresponda a una reserva Pendiente, el sistema deberá ofrecer una acción de confirmación vinculada exclusivamente a esa cita e informar su vencimiento exacto y las consecuencias de no confirmar.
 - **RF-33.** Cuando el cliente ejecute una confirmación válida antes del vencimiento, el sistema deberá dejar la cita Confirmada y conservar evidencia del momento y origen de la confirmación.
 - **RF-34.** Si se recibe una notificación de mensaje enviado, entregado o leído, el sistema deberá actualizar el estado de comunicación sin tratarla como confirmación de asistencia.
@@ -110,7 +110,7 @@ Estas convenciones forman parte de la propuesta; no se presentan como respuestas
 
 **Por qué:** recordar compromisos confirmados sin enviar mensajes tardíos ni convertir el silencio en una cancelación.
 
-- **RF-47.** Cuando el Administrador configure recordatorios, el sistema deberá admitir una anticipación de entre 12 y 48 horas antes del inicio, con 24 horas predeterminadas; solo deberá enviar el recordatorio si la cita está Confirmada, no es próxima y el momento previsto aún era futuro al confirmarla.
+- **RF-47.** Cuando el Administrador configure recordatorios, el sistema deberá admitir una anticipación de entre 12 y 48 horas antes del inicio, con 24 horas predeterminadas; solo deberá enviar el recordatorio si la cita está Confirmada, no es próxima y el momento previsto aún era futuro al confirmarla. El recordatorio deberá mostrar el enlace de Google Maps después de la fecha y hora con la misma regla de ubicación que el mensaje de cita Confirmada.
 - **RF-48.** Cuando se reprograme una cita, el sistema deberá descartar el recordatorio anterior y evaluar el nuevo horario con la configuración vigente y el umbral de seis horas desde el cambio; al cancelarla deberá descartar el recordatorio pendiente, y la ausencia de respuesta a un recordatorio no deberá cancelarla.
 
 ### H. Reportes e indicadores

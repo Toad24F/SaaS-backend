@@ -32,27 +32,26 @@ describe('M2-T017–T019: integridad y conservación de ocupaciones', () => {
       const citasAntes = await db.query('SELECT COUNT(*) total FROM citas');
       const apartadosAntes = await db.query('SELECT COUNT(*) total FROM bloqueos_temporales');
       const cita = `INSERT INTO citas (negocio_id,sucursal_id,personal_id,servicio_id,
-        cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-        SELECT ?,?,?,?,cliente_id,?,?,'America/Chihuahua',?
+        cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+        SELECT ?,?,?,?,cliente_id,?,?,'America/Chihuahua'
         FROM citas WHERE id=?`;
       const inicio = new Date('2026-10-21T15:00:00.123Z');
       const fin = new Date('2026-10-21T15:30:00.789Z');
       await expect(db.query(cita, [a.id, b.sucursales[0], a.personalId,
-        a.servicios[0], inicio, fin, 'CRUCE-SUC', a.citas[0]])).rejects.toThrow();
+        a.servicios[0], inicio, fin, a.citas[0]])).rejects.toThrow();
       await expect(db.query(cita, [a.id, a.sucursales[0], b.personalId,
-        a.servicios[0], inicio, fin, 'CRUCE-PRO', a.citas[0]])).rejects.toThrow();
+        a.servicios[0], inicio, fin, a.citas[0]])).rejects.toThrow();
       await expect(db.query(cita, [a.id, a.sucursales[0], a.personalId,
-        b.servicios[0], inicio, fin, 'CRUCE-SER', a.citas[0]])).rejects.toThrow();
+        b.servicios[0], inicio, fin, a.citas[0]])).rejects.toThrow();
       await expect(db.query(`INSERT INTO citas (negocio_id,sucursal_id,personal_id,
-        servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-        SELECT ?,?,?,?,cliente_id,?,?,'America/Chihuahua','CRUCE-CLI'
+        servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+        SELECT ?,?,?,?,cliente_id,?,?,'America/Chihuahua'
         FROM citas WHERE id=?`, [a.id, a.sucursales[0], a.personalId,
         a.servicios[0], inicio, fin, b.citas[0]])).rejects.toThrow();
       for (const [desde, hasta] of [[null, fin], [inicio, null], [fin, inicio],
         [inicio, inicio]] as const) {
         await expect(db.query(cita, [a.id, a.sucursales[0], a.personalId,
-          a.servicios[0], desde, hasta, `INVALIDA-${String(desde)}-${String(hasta)}`.slice(0, 20),
-          a.citas[0]])).rejects.toThrow();
+          a.servicios[0], desde, hasta, a.citas[0]])).rejects.toThrow();
       }
       const apartado = `INSERT INTO bloqueos_temporales (negocio_id,personal_id,
         sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)

@@ -103,9 +103,9 @@ describe('M2-T044–T049: cálculo privado con fuentes reales', () => {
         VALUES (?,?,?,1,1,690,780,1)`,
       [negocio.id, negocio.personalId, negocio.sucursales[0]]);
       const cita = await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,
-        servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,folio,origen)
+        servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,origen)
         SELECT negocio_id,?, ?, ?,id,?,?,'America/Chihuahua',
-          'confirmada','MOTOR-1','manual' FROM clientes WHERE negocio_id=? LIMIT 1`,
+          'confirmada','manual' FROM clientes WHERE negocio_id=? LIMIT 1`,
       [negocio.personalId, negocio.sucursales[1], negocio.servicios[1],
         h('10:45'), h('11:00'), negocio.id]);
       expect(cita.insertId).toBeGreaterThan(0);

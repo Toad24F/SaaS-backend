@@ -17,7 +17,7 @@ type Servicios = { apartados: ApartadosService; intentos: IntentosReservaPublica
   registro: RegistroReservaPublicaService; resolucion: ResolucionReservaPublicaService;
   coordinacion: CoordinacionReservaPublicaService };
 type Flujo = { db: DataSource; otra: DataSource; reloj: RelojPrueba;
-  negocioId: number; sucursalId: number; servicioId: number; profesionales: number[];
+  negocioId: number; sucursalId: number; servicioId: number; citaInicialId: number; profesionales: number[];
   primero: Servicios; segundo: Servicios };
 
 /** Dos módulos usan pools independientes y una base migrada que se destruye al terminar. */
@@ -63,7 +63,7 @@ async function conFlujo(ejecutar: (f: Flujo) => Promise<void>) {
         resolucion: modulos[indice].get(ResolucionReservaPublicaService),
         coordinacion: modulos[indice].get(CoordinacionReservaPublicaService),
       });
-      await ejecutar({ db, otra, reloj, negocioId, sucursalId, servicioId,
+      await ejecutar({ db, otra, reloj, negocioId, sucursalId, servicioId, citaInicialId: negocio.ocupaciones[0],
         profesionales: negocio.profesionales,
         primero: servicios(0), segundo: servicios(1) });
     } finally {
@@ -157,7 +157,7 @@ describe('ALA-T122–T132: carreras del escritor público', () => {
       const b = await preparar(f, f.segundo, 'b', f.profesionales[1], '09:00');
       // Una cita futura previa deja un único lugar del cupo de dos.
       await f.db.query(`UPDATE citas SET telefono_contacto=? WHERE id=?`,
-        [CONTACTO.telefono, (await f.db.query('SELECT id FROM citas WHERE folio=?', ['P-1']))[0].id]);
+        [CONTACTO.telefono, f.citaInicialId]);
       const resultados = await conBarrera(f, [f.primero, f.segundo], () => [
         f.primero.registro.registrar(f.negocioId, a.titular, a.clave, CONTACTO),
         f.segundo.registro.registrar(f.negocioId, b.titular, b.clave, CONTACTO),
@@ -183,12 +183,12 @@ describe('ALA-T122–T132: carreras del escritor público', () => {
       for (const [indice, inicio] of ['17:00:00', '18:00:00'].entries()) {
         await f.db.query(`INSERT INTO citas (negocio_id,sucursal_id,personal_id,
           servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
-          folio,estado,origen,telefono_contacto)
-          VALUES (?,?,?,?,?, ?,?,'America/Chihuahua',?,'pendiente','manual',?)`,
+          estado,origen,telefono_contacto)
+          VALUES (?,?,?,?,?, ?,?,'America/Chihuahua','pendiente','manual',?)`,
         [f.negocioId, f.sucursalId, f.profesionales[0], f.servicioId,
           (await f.db.query('SELECT id FROM clientes WHERE negocio_id=?', [f.negocioId]))[0].id,
           new Date(`2026-10-20T${inicio}Z`), new Date(`2026-10-20T${indice + 18}:30:00Z`),
-          `ALA123-${indice}`, CONTACTO.telefono]);
+          CONTACTO.telefono]);
       }
       await expect(f.primero.registro.registrar(f.negocioId, a.titular, a.clave, CONTACTO))
         .rejects.toMatchObject({ status: 409 });
@@ -392,7 +392,7 @@ describe('ALA-T122–T132: carreras del escritor público', () => {
               a.titular, a.clave, CONTACTO);
             await cambio();
             expect((await f.segundo.resolucion.resolver(f.negocioId,
-              a.titular, a.clave, a.apartadoId)).resultado.folio).toBe(resultado.folio);
+              a.titular, a.clave, a.apartadoId))).toEqual({ estado: 'registrado', resultado });
           }
           const estado = await filas(f);
           expect(estado.citas).toHaveLength(cambioPrimero ? 0 : 1);

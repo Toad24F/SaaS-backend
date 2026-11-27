@@ -1,7 +1,7 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { DataSource } from 'typeorm';
-import type { EntityManager } from 'typeorm';
+import type { EntityManager, SelectQueryBuilder } from 'typeorm';
 import { CodigoAcceso } from '../codigos/entities/codigo-acceso.entity';
 import { DerivadorCodigo } from '../codigos/derivador-codigo';
 import { AltaAdministrador, EstadoAltaAdministrador } from '../altas/entities/alta-administrador.entity';
@@ -18,6 +18,7 @@ import { RelojSistema } from '../comun/reloj';
 import type { Reloj } from '../comun/reloj';
 import type { MensajeCorreo, TransporteCorreo } from './transporte-correo';
 import { EnvioCorreo, EstadoEnvioCorreo, TipoEnvioCorreo } from './entities/envio-correo.entity';
+import type { ConsultarEnviosDto } from './dto/consultar-envios.dto';
 
 const ARRENDAMIENTO_MS = 300000;
 /** Vista cerrada: nunca serializa entidad de código, contenido, hash o token de trabajo. */
@@ -112,10 +113,35 @@ export class ProcesadorCorreoService {
     return resultado.affected === 1;
   }
 
-  async listar(negocioId: number, actorId: number) {//devueve la lista de envíos de correo para un negocio específico, después de autorizar al actor
-    await this.autorizar(this.db.manager, actorId, negocioId);
-    const envios = await this.db.getRepository(EnvioCorreo).find({ where: { negocioId }, order: { id: 'ASC' } });
-    return envios.map(vista);
+  async listar(negocioId: number, actorId: number, filtros: ConsultarEnviosDto = {}) {
+    if (filtros.desde && filtros.hasta && filtros.desde > filtros.hasta) {
+      throw new BadRequestException('El periodo de registro está invertido.');
+    }
+    const pagina = filtros.pagina ?? 1, limite = filtros.limite ?? 25;
+    // REPEATABLE READ comparte una instantánea entre contadores y filas, incluso si llegan envíos nuevos.
+    return this.db.transaction('REPEATABLE READ', async manager => {
+      await this.autorizar(manager, actorId, negocioId);
+      const consulta = manager.getRepository(EnvioCorreo).createQueryBuilder('envio')
+        .where('envio.negocioId = :negocioId', { negocioId });
+      this.filtrarEnvios(consulta, filtros);
+      const grupos = await consulta.clone().select('envio.estado', 'estado')
+        .addSelect('COUNT(*)', 'cantidad').groupBy('envio.estado')
+        .getRawMany<{ estado: EstadoEnvioCorreo; cantidad: string }>();
+      const contadores = Object.fromEntries(Object.values(EstadoEnvioCorreo)
+        .map(estado => [estado, Number(grupos.find(grupo => grupo.estado === estado)?.cantidad ?? 0)])) as Record<EstadoEnvioCorreo, number>;
+      const total = Object.values(contadores).reduce((suma, cantidad) => suma + cantidad, 0);
+      const envios = await consulta.orderBy('envio.creadoEn', 'DESC').addOrderBy('envio.id', 'DESC')
+        .skip((pagina - 1) * limite).take(limite).getMany();
+      return { envios: envios.map(vista), pagina, limite, total, contadores };
+    });
+  }
+
+  private filtrarEnvios(consulta: SelectQueryBuilder<EnvioCorreo>, filtros: ConsultarEnviosDto) {
+    // Una misma consulta base alimenta página y totales; hasta incluye todo el último día UTC.
+    if (filtros.estado) consulta.andWhere('envio.estado = :estado', { estado: filtros.estado });
+    if (filtros.tipo) consulta.andWhere('envio.tipo = :tipo', { tipo: filtros.tipo });
+    if (filtros.desde) consulta.andWhere('envio.creadoEn >= :desde', { desde: `${filtros.desde} 00:00:00` });
+    if (filtros.hasta) consulta.andWhere('envio.creadoEn <= :hasta', { hasta: `${filtros.hasta} 23:59:59.999999` });
   }
 
   async reintentar(negocioId: number, envioId: string, actorId: number) {//permite a un superadministrador reintentar un envío de correo específico, después de autorizar al actor y bloquear el código asociado

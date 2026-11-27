@@ -86,7 +86,9 @@ describe('M4-T024: frontera HTTP de autorización operativa', () => {
         }
         const gestor = u.rol === Rol.ADMIN_NEGOCIO || u.rol === Rol.RECEPCIONISTA;
         await request(f.http).get('/_prueba_m4_operativo/clientes').set('Authorization', auth).expect(gestor ? 200 : 403);
-        await request(f.http).post('/_prueba_m4_operativo/gestion').set('Authorization', auth).expect(gestor ? 201 : 403);
+        // M5 permite al Profesional gestionar sus citas; Superadmin sigue sin acceso operativo.
+        await request(f.http).post('/_prueba_m4_operativo/gestion').set('Authorization', auth)
+          .expect(u.rol === Rol.SUPERADMIN ? 403 : 201);
       }
       const anonimo = await request(f.http).get('/_prueba_m4_operativo/citas').expect(401);
       expect(anonimo.headers['cache-control']).toBe('no-store');

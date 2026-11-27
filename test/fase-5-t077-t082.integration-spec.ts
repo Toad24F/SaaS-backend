@@ -6,7 +6,7 @@ import { MotorDisponibilidadService } from '../src/disponibilidad/motor-disponib
 import { Rol } from '../src/auth/enums/rol.enum';
 import { conAgendaHttp } from './support/agenda-http';
 import { prepararEstado } from './support/estado-cita';
-import { filasManuales } from './support/cita-manual';
+import { filasManuales, vinculoNuevaCondicion } from './support/cita-manual';
 import { situarSesion } from './support/acceso-operativo';
 
 const destino = { fechaLocal: '2026-11-09', horaInicio: '09:20', version: 1 };
@@ -24,10 +24,11 @@ describe('M4-T077–T082: movimiento interno real', () => {
       const antes = await filasManuales(f.db);
       const original = antes.citas.find(c => c.id === m.cita.id)!;
       const resultado = await f.app.get(CambioHorarioCitaService).cambiar(m.identidad, String(m.cita.id), destino);
-      expect(resultado).toMatchObject({ id: original.id, folio: original.folio, version: 2,
+      expect(resultado).toMatchObject({ id: original.id, version: 2,
         inicioUtc: '2026-11-09T15:20:00.000Z', finUtc: '2026-11-09T15:50:00.000Z', finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
       const despues = await filasManuales(f.db);
-      expect(despues.citas).toEqual(antes.citas.map(c => c.id === original.id ? { ...c, version: 2,
+      const condicion = await vinculoNuevaCondicion(f.db, original);
+      expect(despues.citas).toEqual(antes.citas.map(c => c.id === original.id ? { ...c, ...condicion, version: 2,
         inicioUtc: new Date(resultado.inicioUtc), finUtc: new Date(resultado.finUtc), finOcupacionUtc: new Date(resultado.finOcupacionUtc) } : c));
       expect(despues.clientes).toEqual(antes.clientes); expect(despues.intentos).toEqual(antes.intentos); expect(despues.auditoria).toEqual(antes.auditoria);
       expect(despues.eventos.slice(0, -1)).toEqual(antes.eventos);
@@ -55,7 +56,8 @@ describe('M4-T077–T082: movimiento interno real', () => {
         finUtc: '2026-11-09T17:50:00.000Z', finOcupacionUtc: '2026-11-09T18:00:00.000Z', version: 2 });
       const despues = await filasManuales(f.db);
       const original = antes.citas.find(c => c.id === m.cita.id)!;
-      expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, version: 2,
+      const condicion = await vinculoNuevaCondicion(f.db, original);
+      expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, ...condicion, version: 2,
         inicioUtc: new Date(resultado.inicioUtc), finUtc: new Date(resultado.finUtc), finOcupacionUtc: new Date(resultado.finOcupacionUtc), zonaHorariaReserva: 'America/Tijuana' } : c));
       const historial = await f.agenda.historial(m.identidad, String(m.cita.id), {});
       expect(historial.eventos.at(-1)).toMatchObject({ valoresAntes: { zonaHoraria: original.zonaHorariaReserva },
@@ -75,8 +77,8 @@ describe('M4-T077–T082: movimiento interno real', () => {
           VALUES(?,?,?,?,'emergencia','2026-11-09','2026-11-09',550,600,'Prueba')`, [f.negocios[0].id, s.personalId, s.sucursalId, m.actor.id]);
         // El rival en otra sede invade únicamente la separación del destino, después de la atención.
         if (caso === 'cita') await f.db.query(`INSERT INTO citas
-          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-          VALUES(?,?,?,?,?,'2026-11-09 15:55:00','2026-11-09 16:20:00','America/Mexico_City','RIVAL-MOV')`,
+          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+          VALUES(?,?,?,?,?,'2026-11-09 15:55:00','2026-11-09 16:20:00','America/Mexico_City')`,
           [f.negocios[0].id, f.negocios[0].sucursales[1].id, s.personalId, s.servicioId, s.clienteId]);
         if (caso === 'apartado') await f.db.query(`INSERT INTO bloqueos_temporales
           (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)
@@ -103,9 +105,10 @@ describe('M4-T077–T082: movimiento interno real', () => {
     await conAgendaHttp(async f => {
       const m = await prepararEstado(f); const servicio = f.app.get(CambioHorarioCitaService);
       const antes = await filasManuales(f.db);
-      for (const rol of [Rol.PROFESIONAL, Rol.SUPERADMIN]) {
-        const actor = f.actores.find(a => a.rol === rol)!;
-        await expect(servicio.cambiar({ sub: actor.id, sesionId: actor.sesionId }, String(m.cita.id), destino)).rejects.toMatchObject({ status: 403 });
+      // El Profesional con permiso solo puede modificar sus propias citas.
+      for (const actor of f.actores.filter((a) => a.rol === Rol.SUPERADMIN || (a.rol === Rol.PROFESIONAL && a.id !== m.cita.personalId))) {
+        await expect(servicio.cambiar({ sub: actor.id, sesionId: actor.sesionId }, String(m.cita.id), destino))
+          .rejects.toMatchObject({ status: actor.rol === Rol.SUPERADMIN ? 403 : 404 });
       }
       for (const id of [f.negocios[1].ocupaciones[0], 4294967295]) {
         await expect(servicio.cambiar(m.identidad, String(id), destino)).rejects.toMatchObject({ status: 404 });

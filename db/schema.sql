@@ -568,7 +568,6 @@ CREATE TABLE citas (
   estado ENUM('pendiente','confirmada','completada','cancelada','no_asistio')
     NOT NULL DEFAULT 'pendiente',
   motivo_consulta TEXT NULL,
-  folio VARCHAR(20) NOT NULL,
   origen ENUM('portal_publico','manual') NOT NULL DEFAULT 'portal_publico',
   creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   -- La copia de lo aceptado se llena solo en reservas nuevas; el legado queda NULL.
@@ -581,7 +580,6 @@ CREATE TABLE citas (
   nombre_profesional VARCHAR(150) NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_citas_negocio_id (negocio_id, id),
-  UNIQUE KEY uq_citas_folio (folio),
   INDEX idx_citas_personal_inicio (negocio_id, personal_id, inicio_utc),
   INDEX idx_citas_sucursal_inicio (negocio_id, sucursal_id, inicio_utc),
   INDEX idx_citas_cliente (negocio_id, cliente_id),
@@ -695,7 +693,7 @@ CREATE TABLE operaciones_apartado (
 ) ENGINE=InnoDB;
 
 -- El intento conserva el resultado de registro y permite recuperar un
--- envío incierto con su clave, sin usar teléfono o folio como identidad.
+-- envío incierto con su clave, sin usar teléfono como identidad.
 CREATE TABLE intentos_reserva_publica (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   negocio_id INT UNSIGNED NOT NULL,
@@ -1223,3 +1221,343 @@ ALTER TABLE eventos_cita
     REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT,
   ADD CONSTRAINT fk_ec_sesion FOREIGN KEY (negocio_id,sesion_publica_id)
     REFERENCES sesiones_reserva_publica(negocio_id,id) ON DELETE RESTRICT;
+
+-- M5-T009–T010: identidad UTF-8 binaria y referencia de fusión por negocio.
+-- La unicidad de identidad se añade al final, después de conciliar duplicados heredados.
+ALTER TABLE clientes
+  ADD nombre_normalizado VARBINARY(1800) NULL,
+  ADD fusionado_en_id INT UNSIGNED NULL,
+  ADD INDEX idx_clientes_fusion (negocio_id,fusionado_en_id),
+  ADD CONSTRAINT fk_clientes_fusion FOREIGN KEY (negocio_id,fusionado_en_id)
+    REFERENCES clientes(negocio_id,id) ON DELETE RESTRICT;
+
+-- M5-T011: operación por actor y clave exacta. Guarda referencias y versiones.
+CREATE TABLE uniones_cliente (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  origen_id INT UNSIGNED NOT NULL,
+  destino_id INT UNSIGNED NOT NULL,
+  actor_usuario_id INT UNSIGNED NOT NULL,
+  version_origen INT UNSIGNED NOT NULL,
+  version_destino INT UNSIGNED NOT NULL,
+  clave VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  ocurrido_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_uc_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_uc_actor_clave (negocio_id,actor_usuario_id,clave),
+  INDEX idx_uc_origen (negocio_id,origen_id),
+  INDEX idx_uc_destino (negocio_id,destino_id),
+  CONSTRAINT chk_uc_fichas CHECK (origen_id <> destino_id),
+  CONSTRAINT chk_uc_versiones CHECK (version_origen >= 1 AND version_destino >= 1),
+  CONSTRAINT chk_uc_clave CHECK (CHAR_LENGTH(clave) BETWEEN 16 AND 64 AND BINARY clave = BINARY TRIM(clave)),
+  CONSTRAINT fk_uc_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_uc_origen FOREIGN KEY (negocio_id,origen_id)
+    REFERENCES clientes(negocio_id,id) ON DELETE RESTRICT,
+  CONSTRAINT fk_uc_destino FOREIGN KEY (negocio_id,destino_id)
+    REFERENCES clientes(negocio_id,id) ON DELETE RESTRICT,
+  CONSTRAINT fk_uc_actor FOREIGN KEY (negocio_id,actor_usuario_id)
+    REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- M5-T021: huella de la aceptación. Los datos propuestos no se conservan en la operación.
+ALTER TABLE uniones_cliente
+  ADD contenido_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  ADD CONSTRAINT chk_uc_contenido_hash CHECK (contenido_hash IS NULL OR contenido_hash REGEXP '^[0-9a-f]{64}$');
+
+-- M5-T027: solo la ficha activa participa en la identidad única del negocio.
+-- La instalación de actualización comprueba antes las claves faltantes y duplicadas.
+ALTER TABLE clientes
+  ADD nombre_activo VARBINARY(1800)
+    GENERATED ALWAYS AS (IF(fusionado_en_id IS NULL, nombre_normalizado, NULL)) PERSISTENT,
+  ADD CONSTRAINT chk_clientes_clave_activa CHECK (fusionado_en_id IS NOT NULL OR nombre_normalizado IS NOT NULL),
+  ADD UNIQUE KEY uq_clientes_identidad_activa (negocio_id,nombre_activo,telefono);
+
+-- M5-T044: recursos raster separados por negocio. La caducidad aplica mientras
+-- el recurso no está referenciado por la configuración publicada.
+CREATE TABLE recursos_portal (
+  negocio_id INT UNSIGNED NOT NULL,
+  id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  contenido MEDIUMBLOB NOT NULL,
+  mime VARCHAR(10) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  ancho SMALLINT UNSIGNED NOT NULL,
+  alto SMALLINT UNSIGNED NOT NULL,
+  creado_en DATETIME(6) NOT NULL,
+  expira_en DATETIME(6) NOT NULL,
+  PRIMARY KEY (negocio_id,id),
+  INDEX idx_recursos_portal_expiracion (negocio_id,expira_en),
+  CONSTRAINT chk_recursos_portal_mime CHECK (mime IN ('image/png', 'image/jpeg', 'image/webp')),
+  CONSTRAINT chk_recursos_portal_dimensiones CHECK (ancho BETWEEN 1 AND 2048 AND alto BETWEEN 1 AND 2048),
+  CONSTRAINT chk_recursos_portal_tamano CHECK (OCTET_LENGTH(contenido) BETWEEN 1 AND 2097152),
+  CONSTRAINT chk_recursos_portal_expiracion CHECK (expira_en > creado_en),
+  CONSTRAINT fk_recursos_portal_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- La referencia compuesta identifica el logo publicado del propio negocio.
+CREATE TABLE personalizacion_portal (
+  negocio_id INT UNSIGNED NOT NULL,
+  version INT UNSIGNED NOT NULL,
+  fondo CHAR(7) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  texto CHAR(7) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  acento CHAR(7) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  logo_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (negocio_id),
+  INDEX idx_personalizacion_portal_logo (negocio_id,logo_id),
+  CONSTRAINT chk_personalizacion_portal_version CHECK (version >= 1),
+  CONSTRAINT chk_personalizacion_portal_colores CHECK (
+    fondo REGEXP '^#[0-9A-Fa-f]{6}$' AND texto REGEXP '^#[0-9A-Fa-f]{6}$' AND acento REGEXP '^#[0-9A-Fa-f]{6}$'),
+  CONSTRAINT fk_personalizacion_portal_negocio FOREIGN KEY (negocio_id)
+    REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_personalizacion_portal_logo FOREIGN KEY (negocio_id,logo_id)
+    REFERENCES recursos_portal(negocio_id,id) ON DELETE RESTRICT
+-- Esta tabla termina antes de declarar los plazos de automatización.
+) ENGINE=InnoDB;
+-- M5-T054: plazos versionados por negocio. Los defaults solo aplican a filas nuevas.
+CREATE TABLE configuracion_automatizaciones (
+  negocio_id INT UNSIGNED NOT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  plazo_confirmacion_horas TINYINT UNSIGNED NOT NULL DEFAULT 12,
+  recordatorio_horas TINYINT UNSIGNED NOT NULL DEFAULT 24,
+  PRIMARY KEY (negocio_id),
+  CONSTRAINT fk_ca_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ca_version CHECK (version >= 1),
+  CONSTRAINT chk_ca_plazo CHECK (plazo_confirmacion_horas BETWEEN 6 AND 24),
+  CONSTRAINT chk_ca_recordatorio CHECK (recordatorio_horas BETWEEN 12 AND 48)
+) ENGINE=InnoDB;
+
+-- M5-T055/T072: el DDL inicia vacío; la migración T072 clasifica citas ya existentes
+-- como manual_heredada sin plazos ni trabajos retroactivos.
+CREATE TABLE condiciones_confirmacion_cita (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  generacion INT UNSIGNED NOT NULL,
+  categoria ENUM('normal','proxima','manual_heredada') NOT NULL,
+  instante_base DATETIME(3) NOT NULL,
+  plazo_aplicado_minutos SMALLINT UNSIGNED NULL,
+  vencimiento_utc DATETIME(3) NULL,
+  motivo_seguimiento VARCHAR(500) NULL,
+  contacto_autorizado TINYINT NOT NULL DEFAULT 0,
+  estado_politica ENUM('pendiente','confirmada','seguimiento_manual','cancelada','anulada') NOT NULL DEFAULT 'pendiente',
+  version_configuracion INT UNSIGNED NULL,
+  confirmado_en DATETIME(3) NULL,
+  origen_confirmacion ENUM('personal','whatsapp') NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ccc_negocio_cita_generacion (negocio_id,cita_id,generacion),
+  UNIQUE KEY uq_ccc_referencia_vigente (negocio_id,cita_id,generacion,id),
+  INDEX idx_ccc_vencimiento (estado_politica,vencimiento_utc),
+  CONSTRAINT fk_ccc_cita FOREIGN KEY (negocio_id,cita_id) REFERENCES citas(negocio_id,id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ccc_generacion CHECK (generacion >= 1),
+  CONSTRAINT chk_ccc_plazo CHECK (plazo_aplicado_minutos IS NULL OR plazo_aplicado_minutos > 0),
+  CONSTRAINT chk_ccc_vencimiento CHECK (vencimiento_utc IS NULL OR plazo_aplicado_minutos IS NOT NULL),
+  CONSTRAINT chk_ccc_contacto_autorizado CHECK (contacto_autorizado IN (0,1)),
+  CONSTRAINT chk_ccc_confirmacion CHECK ((confirmado_en IS NULL AND origen_confirmacion IS NULL)
+    OR (confirmado_en IS NOT NULL AND origen_confirmacion IS NOT NULL))
+) ENGINE=InnoDB;
+
+-- M5-T056: la FK compuesta impide apuntar a otra cita, generación o negocio.
+ALTER TABLE citas
+  ADD generacion_automatizacion INT UNSIGNED NULL,
+  ADD condicion_vigente_id BIGINT UNSIGNED NULL,
+  ADD causa_cancelacion ENUM('falta_confirmacion_plazo') NULL,
+  ADD INDEX idx_citas_condicion_vigente (negocio_id,id,generacion_automatizacion,condicion_vigente_id),
+  ADD CONSTRAINT chk_citas_condicion_vigente CHECK (
+    (generacion_automatizacion IS NULL AND condicion_vigente_id IS NULL)
+    OR (generacion_automatizacion >= 1 AND condicion_vigente_id IS NOT NULL)),
+  ADD CONSTRAINT chk_citas_causa_cancelacion CHECK (causa_cancelacion IS NULL OR estado='cancelada'),
+  ADD CONSTRAINT fk_citas_condicion_vigente FOREIGN KEY
+    (negocio_id,id,generacion_automatizacion,condicion_vigente_id)
+    REFERENCES condiciones_confirmacion_cita(negocio_id,cita_id,generacion,id) ON DELETE RESTRICT;
+
+-- M5-T057: el actor derivado clasifica historia sin actualizar eventos inmutables.
+ALTER TABLE eventos_cita
+  DROP CONSTRAINT chk_ec_actor,
+  ADD referencia_whatsapp VARCHAR(128) NULL,
+  ADD proceso_sistema VARCHAR(80) NULL,
+  ADD actor_tipo VARCHAR(20) AS (CASE
+    WHEN actor_usuario_id IS NOT NULL THEN 'usuario'
+    WHEN sesion_publica_id IS NOT NULL THEN 'sesion_publica'
+    WHEN referencia_whatsapp IS NOT NULL THEN 'cliente_whatsapp'
+    WHEN proceso_sistema IS NOT NULL THEN 'sistema'
+    ELSE NULL END) PERSISTENT,
+  ADD INDEX idx_ec_referencia_whatsapp (negocio_id,referencia_whatsapp),
+  ADD CONSTRAINT chk_ec_actor CHECK (
+    (actor_usuario_id IS NOT NULL) + (sesion_publica_id IS NOT NULL)
+    + (referencia_whatsapp IS NOT NULL) + (proceso_sistema IS NOT NULL) = 1),
+  ADD CONSTRAINT chk_ec_referencia_whatsapp CHECK (
+    referencia_whatsapp IS NULL OR CHAR_LENGTH(TRIM(referencia_whatsapp)) > 0),
+  ADD CONSTRAINT chk_ec_proceso_sistema CHECK (
+    proceso_sistema IS NULL OR CHAR_LENGTH(TRIM(proceso_sistema)) > 0),
+  ADD CONSTRAINT chk_ec_accion_whatsapp CHECK (referencia_whatsapp IS NULL OR accion='cambio_estado'),
+  ADD CONSTRAINT chk_ec_accion_sistema CHECK (proceso_sistema IS NULL OR accion='cancelacion');
+
+-- M5-T059: un remitente por negocio y solo una referencia a secreto externo.
+CREATE TABLE canales_whatsapp (
+  negocio_id INT UNSIGNED NOT NULL,
+  remitente_externo_id VARCHAR(100) NOT NULL,
+  secreto_ref VARCHAR(200) NOT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  habilitado TINYINT(1) NOT NULL DEFAULT 0,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (negocio_id),
+  UNIQUE KEY uq_cw_remitente (remitente_externo_id),
+  CONSTRAINT fk_cw_negocio FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE RESTRICT,
+  CONSTRAINT chk_cw_remitente CHECK (CHAR_LENGTH(TRIM(remitente_externo_id)) > 0),
+  CONSTRAINT chk_cw_secreto_ref CHECK (secreto_ref REGEXP '^secret://[A-Za-z0-9/_-]+$'),
+  CONSTRAINT chk_cw_version CHECK (version >= 1),
+  CONSTRAINT chk_cw_habilitado CHECK (habilitado IN (0,1))
+) ENGINE=InnoDB;
+
+-- M5-T060: efecto durable con generación, programación, reintentos y lease.
+CREATE TABLE envios_whatsapp (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  generacion INT UNSIGNED NOT NULL,
+  tipo ENUM('inicial_pendiente','inicial_confirmada','recordatorio') NOT NULL,
+  clave_efecto VARCHAR(160) NOT NULL,
+  destino_e164 VARCHAR(16) NOT NULL,
+  parametros_plantilla JSON NOT NULL,
+  programado_en DATETIME(3) NOT NULL,
+  util_hasta DATETIME(3) NOT NULL,
+  estado ENUM('pendiente','en_proceso','aceptado','entregado','leido','fallido','incierto','descartado') NOT NULL DEFAULT 'pendiente',
+  intentos INT UNSIGNED NOT NULL DEFAULT 0,
+  proximo_intento_en DATETIME(3) NOT NULL,
+  arrendamiento_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  arrendado_hasta DATETIME(3) NULL,
+  inicio_transporte_en DATETIME(3) NULL,
+  correlacion_proveedor CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  referencia_externa VARCHAR(128) NULL,
+  aceptado_en DATETIME(3) NULL,
+  entregado_en DATETIME(3) NULL,
+  leido_en DATETIME(3) NULL,
+  ultimo_error VARCHAR(255) NULL,
+  creado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  actualizado_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ew_negocio_id (negocio_id,id),
+  UNIQUE KEY uq_ew_accion_referencia (negocio_id,cita_id,generacion,tipo,id),
+  UNIQUE KEY uq_ew_clave_efecto (negocio_id,clave_efecto),
+  UNIQUE KEY uq_ew_generacion_tipo (negocio_id,cita_id,generacion,tipo),
+  UNIQUE KEY uq_ew_referencia_externa (negocio_id,referencia_externa),
+  UNIQUE KEY uq_ew_correlacion (negocio_id,correlacion_proveedor),
+  INDEX idx_ew_trabajo (estado,proximo_intento_en,arrendado_hasta),
+  INDEX idx_ew_cita (negocio_id,cita_id,generacion),
+  CONSTRAINT fk_ew_canal FOREIGN KEY (negocio_id) REFERENCES canales_whatsapp(negocio_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ew_condicion FOREIGN KEY (negocio_id,cita_id,generacion)
+    REFERENCES condiciones_confirmacion_cita(negocio_id,cita_id,generacion) ON DELETE RESTRICT,
+  CONSTRAINT chk_ew_clave CHECK (BINARY clave_efecto = BINARY TRIM(clave_efecto) AND CHAR_LENGTH(clave_efecto) > 0),
+  CONSTRAINT chk_ew_destino CHECK (destino_e164 REGEXP '^[+][1-9][0-9]{6,14}$'),
+  CONSTRAINT chk_ew_utilidad CHECK (util_hasta > programado_en),
+  CONSTRAINT chk_ew_inicio_transporte CHECK (inicio_transporte_en IS NULL OR (estado='en_proceso' AND intentos > 0)),
+  CONSTRAINT chk_ew_arrendamiento CHECK (
+    (estado='en_proceso' AND arrendamiento_id IS NOT NULL AND arrendado_hasta IS NOT NULL)
+    OR (estado<>'en_proceso' AND arrendamiento_id IS NULL AND arrendado_hasta IS NULL))
+) ENGINE=InnoDB;
+
+-- M5-T061: el webhook conserva recibos mínimos y rechaza duplicados de la misma huella.
+CREATE TABLE eventos_whatsapp (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  huella_evento CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  evento_externo_id VARCHAR(128) NULL,
+  mensaje_externo_id VARCHAR(128) NULL,
+  correlacion_proveedor CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  tipo ENUM('enviado','entregado','leido','respuesta','fallo') NOT NULL,
+  recibido_en DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  proveedor_en DATETIME(6) NULL,
+  remitente_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  accion_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  estado_procesamiento ENUM('pendiente','en_proceso','procesado','fallido') NOT NULL DEFAULT 'pendiente',
+  procesado_en DATETIME(6) NULL,
+  ultimo_error VARCHAR(255) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_evw_huella (negocio_id,huella_evento),
+  INDEX idx_evw_trabajo (estado_procesamiento,recibido_en),
+  INDEX idx_evw_mensaje (negocio_id,mensaje_externo_id),
+  CONSTRAINT fk_evw_canal FOREIGN KEY (negocio_id) REFERENCES canales_whatsapp(negocio_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_evw_huella CHECK (huella_evento REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_evw_remitente CHECK (remitente_hash IS NULL OR remitente_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_evw_accion CHECK (accion_hash IS NULL OR accion_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_evw_procesado CHECK (estado_procesamiento='procesado' AND procesado_en IS NOT NULL
+    OR estado_procesamiento<>'procesado' AND procesado_en IS NULL)
+) ENGINE=InnoDB;
+
+-- M5-T062: solo el hash de la acción; la FK impide cruzar cita, negocio o generación.
+CREATE TABLE acciones_confirmacion (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  negocio_id INT UNSIGNED NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  generacion INT UNSIGNED NOT NULL,
+  tipo_envio ENUM('inicial_pendiente','inicial_confirmada','recordatorio') NOT NULL DEFAULT 'inicial_pendiente',
+  envio_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  expira_en DATETIME(3) NOT NULL,
+  consumido_en DATETIME(3) NULL,
+  creado_en DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ac_hash (token_hash),
+  UNIQUE KEY uq_ac_envio (negocio_id,envio_id),
+  INDEX idx_ac_generacion (negocio_id,cita_id,generacion),
+  CONSTRAINT fk_ac_envio FOREIGN KEY (negocio_id,cita_id,generacion,tipo_envio,envio_id)
+    REFERENCES envios_whatsapp(negocio_id,cita_id,generacion,tipo,id) ON DELETE RESTRICT,
+  CONSTRAINT chk_ac_tipo CHECK (tipo_envio='inicial_pendiente'),
+  CONSTRAINT chk_ac_hash CHECK (token_hash REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_ac_vencimiento CHECK (expira_en > creado_en),
+  CONSTRAINT chk_ac_consumo CHECK (consumido_en IS NULL OR consumido_en >= creado_en)
+) ENGINE=InnoDB;
+
+-- M5-T103: cabecera del actor y filas históricas sin referencias a catálogos vivos.
+CREATE TABLE cortes_reporte (
+  id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  negocio_id INT UNSIGNED NOT NULL,
+  actor_usuario_id INT UNSIGNED NOT NULL,
+  filtros JSON NOT NULL,
+  fecha_corte DATETIME(3) NOT NULL,
+  expira_en DATETIME(3) NOT NULL,
+  completo BOOLEAN NOT NULL DEFAULT FALSE,
+  PRIMARY KEY (id),
+  INDEX idx_cr_actor (negocio_id,actor_usuario_id),
+  INDEX idx_cr_expira (expira_en),
+  CONSTRAINT fk_cr_actor FOREIGN KEY (negocio_id,actor_usuario_id)
+    REFERENCES usuarios(negocio_id,id) ON DELETE RESTRICT,
+  CONSTRAINT chk_cr_expira CHECK (expira_en = DATE_ADD(fecha_corte, INTERVAL 1 DAY)),
+  CONSTRAINT chk_cr_completo CHECK (completo IN (0,1))
+) ENGINE=InnoDB;
+
+CREATE TABLE filas_corte_reporte (
+  corte_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  cita_id INT UNSIGNED NOT NULL,
+  sucursal_id INT UNSIGNED NOT NULL,
+  personal_id INT UNSIGNED NOT NULL,
+  servicio_id INT UNSIGNED NOT NULL,
+  nombre_sucursal VARCHAR(150) NULL,
+  nombre_profesional VARCHAR(150) NULL,
+  nombre_servicio VARCHAR(150) NULL,
+  fecha_civil DATE NOT NULL,
+  inicio_utc DATETIME(3) NOT NULL,
+  fin_utc DATETIME(3) NOT NULL,
+  estado ENUM('pendiente','confirmada','completada','cancelada','no_asistio') NOT NULL,
+  origen ENUM('portal_publico','manual') NOT NULL,
+  costo_aceptado DECIMAL(10,2) NULL,
+  causa_cancelacion ENUM('falta_confirmacion_plazo') NULL,
+  PRIMARY KEY (corte_id,cita_id),
+  INDEX idx_fcr_orden (corte_id,fecha_civil,inicio_utc,cita_id),
+  CONSTRAINT fk_fcr_corte FOREIGN KEY (corte_id) REFERENCES cortes_reporte(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Se puede eliminar el corte completo por caducidad mediante el borrado en cascada.
+CREATE TRIGGER trg_fcr_no_actualizar BEFORE UPDATE ON filas_corte_reporte
+FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La fila del corte es inmutable';
+
+CREATE TRIGGER trg_fcr_no_borrar BEFORE DELETE ON filas_corte_reporte
+FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La fila del corte es inmutable';
+
+CREATE TRIGGER trg_fcr_corte_abierto BEFORE INSERT ON filas_corte_reporte
+FOR EACH ROW SET NEW.corte_id = (
+  SELECT id FROM cortes_reporte WHERE id=NEW.corte_id AND completo=0 FOR UPDATE
+);

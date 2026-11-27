@@ -5,7 +5,7 @@ import { validarAltaCliente, type DatosCliente } from '../clientes/clientes.entr
 
 export type SeleccionManual = {
   sucursalId: number; personalId: number; servicioId: number;
-  fechaLocal: string; horaInicio: string; notas: string | null;
+  fechaLocal: string; horaInicio: string; notas: string | null; autorizaWhatsapp: boolean;
 } & ({ clienteId: number; clienteNuevo?: never } | { clienteId?: never; clienteNuevo: DatosCliente });
 
 const invalida = () => new BadRequestException('Entrada operativa inválida.');
@@ -18,7 +18,7 @@ function id(valor: unknown): number {
 export function validarSeleccionManual(entrada: unknown): SeleccionManual {
   if (!entrada || typeof entrada !== 'object' || Array.isArray(entrada)) throw invalida();
   const datos = entrada as Record<string, unknown>;
-  const campos = ['clienteId', 'clienteNuevo', 'sucursalId', 'personalId', 'servicioId', 'fechaLocal', 'horaInicio', 'notas'];
+  const campos = ['clienteId', 'clienteNuevo', 'sucursalId', 'personalId', 'servicioId', 'fechaLocal', 'horaInicio', 'notas', 'autorizaWhatsapp'];
   if (Object.keys(datos).some((k) => !campos.includes(k)) ||
     Object.hasOwn(datos, 'clienteId') === Object.hasOwn(datos, 'clienteNuevo')) throw invalida();
   if (typeof datos.fechaLocal !== 'string' || typeof datos.horaInicio !== 'string' ||
@@ -27,10 +27,13 @@ export function validarSeleccionManual(entrada: unknown): SeleccionManual {
   if (datos.notas !== undefined && datos.notas !== null && typeof datos.notas !== 'string') throw invalida();
   const notas = typeof datos.notas === 'string' ? datos.notas.trim() : '';
   if ([...notas].length > 2000) throw invalida();
+  // El personal consigna la respuesta comunicada por el paciente; un campo ausente es rechazo.
+  if (datos.autorizaWhatsapp !== undefined && typeof datos.autorizaWhatsapp !== 'boolean') throw invalida();
   const cliente = Object.hasOwn(datos, 'clienteId') ? { clienteId: id(datos.clienteId) }
     : { clienteNuevo: validarAltaCliente(datos.clienteNuevo) };
   return { ...cliente, sucursalId: id(datos.sucursalId), personalId: id(datos.personalId),
-    servicioId: id(datos.servicioId), fechaLocal: datos.fechaLocal, horaInicio: datos.horaInicio, notas: notas || null };
+    servicioId: id(datos.servicioId), fechaLocal: datos.fechaLocal, horaInicio: datos.horaInicio,
+    notas: notas || null, autorizaWhatsapp: datos.autorizaWhatsapp === true };
 }
 
 /** La clave estable pertenece al actor y negocio; su comparación binaria conserva mayúsculas. */
@@ -48,5 +51,6 @@ export function huellaSeleccionManual(entrada: SeleccionManual, secreto = proces
     entrada.sucursalId, entrada.personalId, entrada.servicioId, entrada.fechaLocal, entrada.horaInicio,
     entrada.clienteId !== undefined ? ['existente', entrada.clienteId]
       : ['nuevo', entrada.clienteNuevo.nombreCompleto, entrada.clienteNuevo.telefono], entrada.notas,
+    entrada.autorizaWhatsapp,
   ])).digest('hex');
 }

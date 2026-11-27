@@ -10,6 +10,7 @@ import { CoordinacionReservaPublicaService } from './coordinacion-reserva-public
 import { IntentoReservaPublica } from './entities/intento-reserva-publica.entity';
 import { huellaContactoReservaPublica, validarContactoReservaPublica } from './contacto-reserva-publica';
 import type { ResultadoReservaPublica } from './contratos';
+import { condicionResultadoPublico } from './condicion-resultado-publico';
 import { exigirEscriturasPublicas } from './control-escrituras-publicas';
 import { CupoTelefonicoExcedidoException, esCausaCupoTelefonico } from './cupo-telefonico.service';
 
@@ -168,10 +169,12 @@ export class IntentosReservaPublicaService {
       throw new Error('Resultado de intento incompleto.');
     }
     // La proyección histórica procede de la cita; no consulta el catálogo vivo.
-    return { folio: cita.folio, estado: 'pendiente',
+    const condicion = await condicionResultadoPublico(manager, intento.negocioId, cita.id);
+    // El intento ya identifica la cita por su vínculo durable. Se devuelve solo el resumen propio.
+    return { estado: 'pendiente',
       inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
       zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,
       nombreNegocio: cita.nombreNegocio, nombreServicio: cita.nombreServicio,
-      nombreSucursal: cita.nombreSucursal, nombreProfesional: cita.nombreProfesional };
+      nombreSucursal: cita.nombreSucursal, nombreProfesional: cita.nombreProfesional, ...condicion };
   }
 }

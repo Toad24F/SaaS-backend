@@ -22,8 +22,10 @@ export async function conNavegadorOperativo(rol: Rol, ejecutar: (f: NavegadorOpe
       if (rol === Rol.PROFESIONAL) {
         // Tres citas visibles por fecha: propia, otro Profesional y otro negocio.
         // El navegador debe recibir exclusivamente la primera desde la API.
+        const [{ id: otra }] = await f.db.query('SELECT MAX(id) id FROM citas');
         await f.db.query(`UPDATE citas SET inicio_utc='2026-11-09 18:00:00',fin_utc='2026-11-09 18:30:00',
-          fin_ocupacion_utc='2026-11-09 18:30:00' WHERE folio IN ('P-1','P-2','M4-OTRO-PROF')`);
+          fin_ocupacion_utc='2026-11-09 18:30:00' WHERE id IN (?,?,?)`,
+        [f.negocios[0].ocupaciones[0], f.negocios[1].ocupaciones[0], otra]);
       }
       await f.app.listen(0, '127.0.0.1');
       const apiUrl = await f.app.getUrl();

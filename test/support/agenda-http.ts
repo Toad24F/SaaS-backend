@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
@@ -26,6 +27,8 @@ async function preparar(db: DataSource, segunda: DataSource) {
     // Vite y la API efímera usan puertos distintos en las pruebas conectadas.
     // Registrar CORS antes de init reproduce la configuración administrativa de main.ts.
     app.enableCors({ credentials: false });
+    // El navegador usa los mismos DTO transformados y validados que main.ts.
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     await app.init();
     const jwt = modulo.get(JwtService);
     // Los claims incorrectos prueban que el servidor vuelve a leer rol y negocio persistidos.

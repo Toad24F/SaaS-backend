@@ -62,14 +62,14 @@ async function conFlujo(ejecutar: (f: {
 
 /** Siembra citas históricas de distintos profesionales sin crear apartados. */
 async function sembrarCita(f: { db: DataSource; negocioId: number; sucursalId: number;
-  personalId: number; servicioId: number }, folio: string, inicio: Date,
+  personalId: number; servicioId: number }, _referencia: string, inicio: Date,
   telefono = '6141234567', estado = 'pendiente') {
   const [cliente] = await f.db.query('SELECT id FROM clientes WHERE negocio_id=?', [f.negocioId]);
   await f.db.query(`INSERT INTO citas (negocio_id,sucursal_id,personal_id,servicio_id,
-    cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio,estado,origen,telefono_contacto)
-    VALUES (?,?,?,?,?,?,?,?,?,?,'manual',?)`,
+    cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,origen,telefono_contacto)
+    VALUES (?,?,?,?,?,?,?,?,?,'manual',?)`,
   [f.negocioId, f.sucursalId, f.personalId, f.servicioId, cliente.id,
-    inicio, new Date(inicio.getTime() + 1800000), 'America/Chihuahua', folio, estado, telefono]);
+    inicio, new Date(inicio.getTime() + 1800000), 'America/Chihuahua', estado, telefono]);
 }
 
 describe('ALA-T110–T115: cupo telefónico y sucesión de intentos', () => {

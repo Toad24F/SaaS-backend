@@ -18,6 +18,8 @@ export async function crearEscenarioPortal(db: DataSource, reloj: Reloj):
     throw new Error('El escenario público exige una base desechable migrada.');
   }
   const negocios: EscenarioNegocio[] = [];
+  const tieneClave = (await db.query("SHOW COLUMNS FROM clientes LIKE 'nombre_normalizado'")).length > 0;
+  const tieneFolio = (await db.query("SHOW COLUMNS FROM citas LIKE 'folio'")).length > 0;
   // Creación y activación comparten el reloj de la fixture: usar CURRENT_TIMESTAMP
   // hacía fallar el CHECK de activación cuando la fecha fija quedaba en el pasado.
   const ahora = reloj.ahora();
@@ -61,16 +63,21 @@ export async function crearEscenarioPortal(db: DataSource, reloj: Reloj):
       }
     }
     const telefonoCliente = '6141234567';
-    const cliente = await db.query('INSERT INTO clientes (negocio_id,nombre_completo,telefono) VALUES (?,?,?)',
-      [id, `Cliente ${numero}`, telefonoCliente]);
+    // Las pruebas de actualización histórica siembran antes de que exista la columna.
+    const cliente = tieneClave
+      ? await db.query('INSERT INTO clientes (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,?,?,?)',
+        [id, `Cliente ${numero}`, `cliente ${numero}`, telefonoCliente])
+      : await db.query('INSERT INTO clientes (negocio_id,nombre_completo,telefono) VALUES (?,?,?)',
+        [id, `Cliente ${numero}`, telefonoCliente]);
     const inicio = new Date(reloj.ahora().getTime() + 3_600_000);
     const fin = new Date(inicio.getTime() + 1_800_000);
+    // La misma semilla sirve para cortes históricos y esquema actual sin inventar un identificador.
     const cita = await db.query(`INSERT INTO citas
       (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
-       zona_horaria_reserva,folio,estado,origen)
-      VALUES (?,?,?,?,?,?,?,?,?,'pendiente','manual')`,
+       zona_horaria_reserva${tieneFolio ? ',folio' : ''},estado,origen)
+      VALUES (?,?,?,?,?,?,?,?,${tieneFolio ? '?,' : ''}'pendiente','manual')`,
     [id, sucursales[0].id, profesionales[0], servicioId, Number(cliente.insertId),
-      inicio, fin, sucursales[0].zona, `P-${numero}`]);
+      inicio, fin, sucursales[0].zona, ...(tieneFolio ? [`P-${numero}`] : [])]);
     const apartado = await db.query(`INSERT INTO bloqueos_temporales
       (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)
       VALUES (?,?,?,?,?,?,?,?)`,

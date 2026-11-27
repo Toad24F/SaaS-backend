@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Permiso } from '../auth/services/autorizacion.service';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -40,6 +40,7 @@ export class IntentosCitaManualService {
       // El usuario excluye también la primera inserción cuando todavía no existe fila de intento.
       await this.bloquearUsuarios(inicial, [inicial.actorId]);
       const ctx = await this.acceso.resolverEnTransaccion(inicial.manager, identidad, Permiso.CREAR_CITA_MANUAL);
+      this.exigirSeleccionPropia(ctx, seleccion);
       const existente = await this.leerIntento(ctx, clave);
       if (existente) {
         this.exigirHuella(existente, contenidoHash);
@@ -63,11 +64,13 @@ export class IntentosCitaManualService {
   async resolver<T>(identidad: Identidad, entradaClave: unknown, entrada: unknown,
     recuperar: (ctx: ContextoOperativo, intento: IntentoCitaManual) => Promise<T>) {
     const clave = validarClaveManual(entradaClave);
-    const contenidoHash = huellaSeleccionManual(validarSeleccionManual(entrada));
+    const seleccion = validarSeleccionManual(entrada);
+    const contenidoHash = huellaSeleccionManual(seleccion);
     return this.acceso.ejecutar(identidad, Permiso.CREAR_CITA_MANUAL, async (inicial) => {
       // El actor precede al intento igual que en preparar/registrar. Esperar aquí excluye
       // también una inserción tardía; no se infiere ausencia mediante una lectura sin bloqueo.
       await this.bloquearUsuarios(inicial, [inicial.actorId]);
+      this.exigirSeleccionPropia(inicial, seleccion);
       const intento = await this.leerIntento(inicial, clave);
       const ctx = await this.acceso.resolverEnTransaccion(inicial.manager, identidad, Permiso.CREAR_CITA_MANUAL);
       if (intento) {
@@ -100,6 +103,8 @@ export class IntentosCitaManualService {
     const seleccion = validarSeleccionManual(entrada);
     const contenidoHash = huellaSeleccionManual(seleccion);
     return this.acceso.ejecutar(identidad, Permiso.CREAR_CITA_MANUAL, async (inicial) => {
+      // Rechazar un perfil ajeno antes de tomar su fila; el servidor resuelve el perfil propio.
+      this.exigirSeleccionPropia(inicial, seleccion);
       // Todos los usuarios se toman en orden ascendente ANTES del intento y de cualquier perfil.
       await this.bloquearUsuarios(inicial, [inicial.actorId, seleccion.personalId]);
       const antes = await this.acceso.resolverEnTransaccion(inicial.manager, identidad, Permiso.CREAR_CITA_MANUAL);
@@ -123,6 +128,7 @@ export class IntentosCitaManualService {
       // READ COMMITTED relee después de TODAS las esperas. El instante de este acceso se comparte
       // con ficha, motor y cupo para que los límites temporales pertenezcan a la misma decisión.
       const ctx = await this.acceso.resolverEnTransaccion(antes.manager, identidad, Permiso.CREAR_CITA_MANUAL);
+      this.exigirSeleccionPropia(ctx, seleccion);
       const contacto = await this.contacto(ctx, identidad, seleccion);
       const validacion = await this.motor.revalidarEnTransaccion(ctx.manager, identidad, {
         personalId: seleccion.personalId, sucursalId: seleccion.sucursalId, servicioId: seleccion.servicioId,
@@ -143,6 +149,13 @@ export class IntentosCitaManualService {
         .select('usuario.id').setLock('pessimistic_write').where({ id, negocioId: ctx.negocioId }).getOne();
       if (!usuario) throw new NotFoundException();
     }
+  }
+
+  private exigirSeleccionPropia(ctx: ContextoOperativo, seleccion: SeleccionManual): void {
+    if (ctx.personalId === null) return;
+    // El Profesional captura contacto; un ID de ficha no le concede acceso al directorio.
+    if (seleccion.clienteId !== undefined) throw new ForbiddenException();
+    if (seleccion.personalId !== ctx.personalId) throw new NotFoundException();
   }
 
   private leerIntento(ctx: ContextoOperativo, clave: string) {

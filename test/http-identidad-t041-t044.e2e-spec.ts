@@ -126,7 +126,8 @@ describe('M1-T041–T044: HTTP completo sin secretos', () => {
       expect((await procesador.procesarUno())!.estado).toBe('fallido');
       const consulta = await request(ctx.app.getHttpServer()).get(`/negocios/${ctx.alta.negocioId}/envios`)
         .auth(ctx.token, { type: 'bearer' }).expect(200);
-      expect(consulta.body.at(-1)).toMatchObject({ estado: 'fallido', confirmadoEn: null, ultimoError: 'No se pudo entregar el correo.' });
+      expect(consulta.body.envios.find((envio: { estado: string }) => envio.estado === 'fallido'))
+        .toMatchObject({ estado: 'fallido', confirmadoEn: null, ultimoError: 'No se pudo entregar el correo.' });
       ctx.reloj.avanzar(60000);
       await request(ctx.app.getHttpServer()).post('/auth/recuperar-contrasena').send({ codigo, password: passwordPrueba + '-nueva' }).expect(204);
       const [admin] = await ctx.db.query('SELECT activo FROM usuarios WHERE id = ?', [activado.body.id]);

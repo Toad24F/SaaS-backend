@@ -3,7 +3,7 @@ import { Rol } from '../src/auth/enums/rol.enum';
 import { CambioHorarioCitaService } from '../src/citas/cambio-horario-cita.service';
 import { conAgendaHttp } from './support/agenda-http';
 import { prepararMovimiento, DESTINO_HORARIO } from './support/horario-cita';
-import { filasManuales } from './support/cita-manual';
+import { filasManuales, vinculoNuevaCondicion } from './support/cita-manual';
 import { situarSesion } from './support/acceso-operativo';
 
 /** La frontera HTTP usa JWT y MariaDB reales; las comparaciones completas detectan escrituras parciales. */
@@ -18,10 +18,11 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
       const antes = await filasManuales(f.db); const original = antes.citas.find(c => c.id === m.cita.id)!;
       const r = await request(f.http).patch(m.ruta).set('Authorization', m.auth).send(DESTINO_HORARIO).expect(200);
       expect(r.headers['cache-control']).toBe('no-store');
-      expect(r.body).toEqual({ id: m.cita.id, folio: m.cita.folio, estado: 'confirmada', version: 2, zonaHoraria: m.cita.zonaHoraria,
+      expect(r.body).toEqual({ id: m.cita.id, estado: 'confirmada', version: 2, zonaHoraria: m.cita.zonaHoraria,
         inicioUtc: '2026-11-09T15:20:00.000Z', finUtc: '2026-11-09T15:50:00.000Z', finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
       const despues = await filasManuales(f.db);
-      expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, version: 2,
+      const condicion = await vinculoNuevaCondicion(f.db, original);
+      expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, ...condicion, version: 2,
         inicioUtc: new Date(r.body.inicioUtc), finUtc: new Date(r.body.finUtc), finOcupacionUtc: new Date(r.body.finOcupacionUtc) } : c));
       expect(despues.clientes).toEqual(antes.clientes); expect(despues.intentos).toEqual(antes.intentos); expect(despues.auditoria).toEqual(antes.auditoria);
       expect(despues.eventos.slice(0, -1)).toEqual(antes.eventos);
@@ -29,9 +30,26 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
         valoresAntes: { inicioUtc: original.inicioUtc.toISOString(), finUtc: original.finUtc.toISOString(), finOcupacionUtc: original.finOcupacionUtc!.toISOString(), zonaHoraria: original.zonaHorariaReserva, version: 1 },
         valoresDespues: { inicioUtc: r.body.inicioUtc, finUtc: r.body.finUtc, finOcupacionUtc: r.body.finOcupacionUtc, zonaHoraria: original.zonaHorariaReserva, version: 2 } });
       const h = await request(f.http).get(`/citas/${m.cita.id}/historial`).set('Authorization', m.auth).expect(200);
+      // La migración conservó el evento de alta y retiró solo el dato de presentación.
+      expect(antes.eventos.find(evento => evento.citaId === original.id)?.valoresDespues)
+        .not.toHaveProperty('folio');
+      const alta = h.body.eventos.find((evento: { versionResultante: number }) => evento.versionResultante === 1);
+      expect(alta.valoresDespues).toMatchObject({ estado: 'confirmada', clienteId: original.clienteId });
+      expect(alta.valoresDespues).not.toHaveProperty('folio');
       expect(h.body.eventos.at(-1)).toMatchObject({ accion: 'cambio_horario', versionResultante: 2, valoresAntes: { version: 1 }, valoresDespues: { version: 2 } });
       const detalle = await request(f.http).get(`/citas/${m.cita.id}`).set('Authorization', m.auth).expect(200);
-      expect(detalle.body).toMatchObject({ id: original.id, folio: original.folio, version: 2, inicioUtc: r.body.inicioUtc });
+      expect(detalle.body).toMatchObject({ id: original.id, version: 2, inicioUtc: r.body.inicioUtc });
+      expect(detalle.body).not.toHaveProperty('folio');
+      // La misma cita se localiza por ID en el periodo y en la ficha del cliente.
+      const agenda = await request(f.http).get('/citas').set('Authorization', m.auth)
+        .query({ desde: '2026-11-09', hasta: '2026-11-09' }).expect(200);
+      const ficha = await request(f.http).get(`/clientes/${original.clienteId}/citas`)
+        .set('Authorization', m.auth).expect(200);
+      for (const listado of [agenda.body.citas, ficha.body.citas]) {
+        const cita = listado.find((fila: { id: number }) => fila.id === original.id);
+        expect(cita).toMatchObject({ id: original.id, inicioUtc: r.body.inicioUtc });
+        expect(cita).not.toHaveProperty('folio');
+      }
       // Repetir el mismo horario vigente no crea evento; un segundo actor con versión antigua recibe conflicto.
       expect((await request(f.http).patch(m.ruta).set('Authorization', m.auth).send({ ...DESTINO_HORARIO, version: 2 }).expect(200)).body).toEqual(r.body);
       const otro = f.actor(rol === Rol.ADMIN_NEGOCIO ? Rol.RECEPCIONISTA : Rol.ADMIN_NEGOCIO);
@@ -45,8 +63,11 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
     await conAgendaHttp(async f => {
       const m = await prepararMovimiento(f); const antes = await filasManuales(f.db);
       expect((await request(f.http).patch(m.ruta).send(DESTINO_HORARIO).expect(401)).headers['cache-control']).toBe('no-store');
-      for (const actor of f.actores.filter(a => [Rol.PROFESIONAL, Rol.SUPERADMIN].includes(a.rol))) {
-        expect((await request(f.http).patch(m.ruta).set('Authorization', `Bearer ${f.token(actor.id)}`).send(DESTINO_HORARIO).expect(403)).headers['cache-control']).toBe('no-store');
+      // El Profesional ajeno recibe la misma protección que cualquier otra cita fuera de su alcance.
+      for (const actor of f.actores.filter((a) => a.rol === Rol.SUPERADMIN || (a.rol === Rol.PROFESIONAL && a.id !== m.cita.personalId))) {
+        const denegada = await request(f.http).patch(m.ruta).set('Authorization', `Bearer ${f.token(actor.id)}`).send(DESTINO_HORARIO)
+          .expect(actor.rol === Rol.SUPERADMIN ? 403 : 404);
+        expect(denegada.headers['cache-control']).toBe('no-store');
       }
       const ajena = await request(f.http).patch(`/citas/${f.negocios[1].ocupaciones[0]}/horario`).set('Authorization', m.auth).send(DESTINO_HORARIO).expect(404);
       const ausente = await request(f.http).patch('/citas/4294967295/horario').set('Authorization', m.auth).send(DESTINO_HORARIO).expect(404);
@@ -111,12 +132,12 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
       });
     });
 
-  it('T084 interpreta la zona vigente, guarda la anterior/nueva y conserva el folio', async () => {
+  it('T084 interpreta la zona vigente y guarda la anterior y nueva', async () => {
     await conAgendaHttp(async f => {
       const m = await prepararMovimiento(f);
       await f.db.query("UPDATE sucursales SET zona_horaria='America/Tijuana' WHERE id=?", [m.seleccion.sucursalId]);
       const r = await request(f.http).patch(m.ruta).set('Authorization', m.auth).send(DESTINO_HORARIO).expect(200);
-      expect(r.body).toMatchObject({ folio: m.cita.folio, zonaHoraria: 'America/Tijuana', inicioUtc: '2026-11-09T17:20:00.000Z', finOcupacionUtc: '2026-11-09T18:00:00.000Z' });
+      expect(r.body).toMatchObject({ id: m.cita.id, zonaHoraria: 'America/Tijuana', inicioUtc: '2026-11-09T17:20:00.000Z', finOcupacionUtc: '2026-11-09T18:00:00.000Z' });
       const h = await request(f.http).get(`/citas/${m.cita.id}/historial`).set('Authorization', m.auth).expect(200);
       expect(h.body.eventos.at(-1)).toMatchObject({ valoresAntes: { zonaHoraria: m.cita.zonaHoraria }, valoresDespues: { zonaHoraria: 'America/Tijuana' } });
     });
@@ -129,8 +150,8 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
         const inicio = relacion === 'parcial' ? '2026-11-09 15:55:00' : '2026-11-09 16:00:00';
         // El rival invade solo la separación del destino o empieza exactamente en su fin protegido.
         if (tipo === 'cita') await f.db.query(`INSERT INTO citas
-          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-          VALUES(?,?,?,?,?,?,'2026-11-09 16:30:00','America/Mexico_City','RIVAL-T085')`,
+          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+          VALUES(?,?,?,?,?,?,'2026-11-09 16:30:00','America/Mexico_City')`,
           [f.negocios[0].id, f.negocios[0].sucursales[1].id, s.personalId, s.servicioId, s.clienteId, inicio]);
         else await f.db.query(`INSERT INTO bloqueos_temporales
           (negocio_id,sucursal_id,personal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)
@@ -140,10 +161,11 @@ describe('M4-T083–T086: cambio privado de horario por HTTP', () => {
         const r = await request(f.http).patch(m.ruta).set('Authorization', m.auth).send(DESTINO_HORARIO).expect(relacion === 'parcial' ? 409 : 200);
         if (relacion === 'parcial') expect(await filasManuales(f.db)).toEqual(antes);
         else {
-          expect(r.body).toMatchObject({ id: m.cita.id, folio: m.cita.folio, version: 2, finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
+          expect(r.body).toMatchObject({ id: m.cita.id, version: 2, finOcupacionUtc: '2026-11-09T16:00:00.000Z' });
           const despues = await filasManuales(f.db);
-          expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, version: 2, inicioUtc: new Date(r.body.inicioUtc), finUtc: new Date(r.body.finUtc), finOcupacionUtc: new Date(r.body.finOcupacionUtc) } : c));
-          expect(despues.citas.filter(c => c.folio === m.cita.folio)).toHaveLength(1);
+          const condicion = await vinculoNuevaCondicion(f.db, antes.citas.find((c) => c.id === m.cita.id)!);
+          expect(despues.citas).toEqual(antes.citas.map(c => c.id === m.cita.id ? { ...c, ...condicion, version: 2, inicioUtc: new Date(r.body.inicioUtc), finUtc: new Date(r.body.finUtc), finOcupacionUtc: new Date(r.body.finOcupacionUtc) } : c));
+          expect(despues.citas.filter(c => c.id === m.cita.id)).toHaveLength(1);
         }
         expect(await f.db.query('SELECT * FROM bloqueos_temporales ORDER BY id')).toEqual(apartados);
       });

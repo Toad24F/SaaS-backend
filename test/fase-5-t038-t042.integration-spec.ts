@@ -18,7 +18,8 @@ describe('M4-T038–T042: fichas propias, versión y auditoría atómica', () =>
       const f = await crearClientesOperativos(db, segunda);
       const actor = f.identidad(Rol.ADMIN_NEGOCIO);
       const a = await f.clientes.crear(actor, { nombreCompleto: 'Ana %_!\\', telefono: '6141234567' });
-      const b = await f.clientes.crear(actor, { nombreCompleto: 'Ana %_!\\', telefono: '+52 614-123-4567' });
+      // Mantener el empate de nombre para probar el desempate por ID, con identidades distintas.
+      const b = await f.clientes.crear(actor, { nombreCompleto: 'Ana %_!\\', telefono: '+52 614-123-4568' });
       expect(a.id).not.toBe(b.id);
       const primera = await f.clientes.listar(actor, { busqueda: '%_!\\', limite: '1' });
       const siguiente = await f.clientes.listar(actor, { busqueda: '%_!\\', limite: '1', pagina: '2' });
@@ -27,7 +28,7 @@ describe('M4-T038–T042: fichas propias, versión y auditoría atómica', () =>
       expect(primera.hayMas).toBe(true);
       expect(siguiente.hayMas).toBe(false);
       const telefono = await f.clientes.listar(actor, { busqueda: '+52 614-123-4567' });
-      expect(telefono.clientes).toHaveLength(4);
+      expect(telefono.clientes).toHaveLength(3);
       expect(telefono.clientes.every((c) => c.negocioId === f.negocios[0].id)).toBe(true);
       expect((await f.clientes.listar(actor, { busqueda: "' OR 1=1 --" })).clientes).toEqual([]);
     });

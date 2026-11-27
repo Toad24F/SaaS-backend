@@ -87,7 +87,13 @@ describe('M4-T076: cancelación/reactivación HTTP contra escritor manual real',
         const original = despues.citas.find((c) => c.id === m.cita.id)!;
         expect(original.estado).toBe(reactivar && !ganaReserva ? 'confirmada' : 'cancelada');
         expect(original.version).toBe(reactivar && !ganaReserva ? 3 : 2);
-        expect(original).toEqual({ ...antes.citas.find((c) => c.id === m.cita.id), estado: original.estado, version: original.version });
+        const citaAntes = antes.citas.find((c) => c.id === m.cita.id)!;
+        // M5 crea una nueva condición y generación al reactivar; el resto de la cita sigue intacto.
+        expect(original).toEqual({ ...citaAntes, estado: original.estado, version: original.version,
+          condicionVigenteId: original.condicionVigenteId,
+          generacionAutomatizacion: original.generacionAutomatizacion });
+        expect(original.generacionAutomatizacion)
+          .toBe(reactivar && !ganaReserva ? citaAntes.generacionAutomatizacion + 1 : citaAntes.generacionAutomatizacion);
         expect(despues.citas.filter((c) => ![m.cita.id, reserva.body.id].includes(c.id)))
           .toEqual(antes.citas.filter((c) => c.id !== m.cita.id));
         expect(despues.clientes.length).toBe(antes.clientes.length + Number(ganaReserva));

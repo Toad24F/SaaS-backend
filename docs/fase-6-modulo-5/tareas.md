@@ -14,543 +14,621 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion-modulo-
 
 ## 1. Preparación y contratos
 
-- [ ] **M5-T001 — Revisar dependencias normativas y evidencias previas** (15 min).
+Evidencia del lote [M5-T001–M5-T007](resultados-tareas/m5-t001-t007.md).
+
+- [x] **M5-T001 — Revisar dependencias normativas y evidencias previas** (15 min).
   - **RF:** RF-01–RF-62. **Depende de:** ninguna.
   - **Hecho cuando:** Existe una nota que identifica contratos vigentes, tareas previas pendientes y restricciones aplicables.
 
-- [ ] **M5-T002 — Preparar matriz de aceptación** (20 min).
+- [x] **M5-T002 — Preparar matriz de aceptación** (20 min).
   - **RF:** RF-01–RF-62. **Depende de:** M5-T001.
   - **Hecho cuando:** La matriz contiene los 62 RF y los 15 criterios de spec, sin atribuir resultados todavía.
 
-- [ ] **M5-T003 — Preparar datos reutilizables de prueba** (25 min).
+- [x] **M5-T003 — Preparar datos reutilizables de prueba** (25 min).
   - **RF:** RF-02, RF-15, RF-61. **Depende de:** M5-T001.
   - **Hecho cuando:** Una base desechable identificada como test admite dos negocios, cuatro roles y dos profesionales sin utilizar datos reales.
 
-- [ ] **M5-T004 — Preparar reloj y barreras reutilizables** (25 min).
+- [x] **M5-T004 — Preparar reloj y barreras reutilizables** (25 min).
   - **RF:** RF-07, RF-45, RF-62. **Depende de:** M5-T003.
   - **Hecho cuando:** Un caso de prueba demuestra avance controlado del reloj y sincronización de dos conexiones.
 
-- [ ] **M5-T005 — Registrar contratos HTTP y errores del módulo** (25 min).
+- [x] **M5-T005 — Registrar contratos HTTP y errores del módulo** (25 min).
   - **RF:** RF-01–RF-62. **Depende de:** M5-T001.
   - **Hecho cuando:** La nota enumera entradas, salidas, permisos y errores de las rutas previstas sin presentarlas como implementadas.
 
-- [ ] **M5-T006 — Verificar contrato vigente del proveedor** (25 min).
+- [x] **M5-T006 — Verificar contrato vigente del proveedor** (25 min).
   - **RF:** RF-31–RF-38, RF-61. **Depende de:** M5-T005.
   - **Hecho cuando:** Se registran versión Graph elegida, fuentes oficiales, payload del botón, firma y requisitos de consentimiento; faltantes externos quedan explícitos.
 
-- [ ] **M5-T007 — Seleccionar dependencia de saneado raster** (25 min).
+- [x] **M5-T007 — Seleccionar dependencia de saneado raster** (25 min).
   - **RF:** RF-28, RF-30. **Depende de:** M5-T005.
   - **Hecho cuando:** Se documentan compatibilidad con Node, formatos admitidos y alternativa descartada, sin cambiar el stack del frontend.
 
 ## 2. Clientes: persistencia y resolución
 
-- [ ] **M5-T008 — Implementar normalización compartida de identidad** (25 min).
+Evidencia del lote [M5-T008–M5-T013](resultados-tareas/m5-t008-t013.md).
+
+- [x] **M5-T008 — Implementar normalización compartida de identidad** (25 min).
   - **RF:** RF-15–RF-16, RF-19. **Depende de:** M5-T003.
   - **Hecho cuando:** Casos focalizados demuestran NFC, espacios y mayúsculas equivalentes, y distinción de acentos, ñ y signos.
 
-- [ ] **M5-T009 — Preparar migración aditiva de clientes** (25 min).
+- [x] **M5-T009 — Preparar migración aditiva de clientes** (25 min).
   - **RF:** RF-15, RF-23–RF-24, RF-59. **Depende de:** M5-T008.
   - **Hecho cuando:** La migración añade normalización y referencia de fusión sin índice único prematuro, sin borrar filas.
 
-- [ ] **M5-T010 — Alinear entidad y esquema de clientes** (25 min).
+- [x] **M5-T010 — Alinear entidad y esquema de clientes** (25 min).
   - **RF:** RF-15, RF-23–RF-24, RF-59. **Depende de:** M5-T009.
   - **Hecho cuando:** Entidad y schema.sql reflejan los mismos campos, tipos binarios, versiones y referencias.
 
-- [ ] **M5-T011 — Preparar persistencia de operaciones de unión** (25 min).
+- [x] **M5-T011 — Preparar persistencia de operaciones de unión** (25 min).
   - **RF:** RF-20–RF-22, RF-60–RF-62. **Depende de:** M5-T010.
   - **Hecho cuando:** Migración, entidad y esquema contienen origen, destino, versiones, actor y unicidad de operación.
 
-- [ ] **M5-T012 — Preparar relleno normalizado y detección de duplicados** (25 min).
+- [x] **M5-T012 — Preparar relleno normalizado y detección de duplicados** (25 min).
   - **RF:** RF-15–RF-16, RF-24, RF-59. **Depende de:** M5-T010.
   - **Hecho cuando:** El ensayo en test normaliza sin fusionar y devuelve grupos duplicados sin alterar snapshots.
 
-- [ ] **M5-T013 — Crear resolución transaccional de ficha** (25 min).
+- [x] **M5-T013 — Crear resolución transaccional de ficha** (25 min).
   - **RF:** RF-15–RF-19, RF-24. **Depende de:** M5-T012.
   - **Hecho cuando:** La resolución devuelve ficha única, crea cuando no existe y rechaza ambigüedad sin selección arbitraria.
 
-- [ ] **M5-T014 — Integrar resolución en registro manual** (25 min).
+Evidencia del lote [M5-T014–M5-T017](resultados-tareas/m5-t014-t017.md).
+
+- [x] **M5-T014 — Integrar resolución en registro manual** (25 min).
   - **RF:** RF-17–RF-19, RF-23, RF-62. **Depende de:** M5-T013.
   - **Hecho cuando:** El escritor manual reutiliza o crea dentro de su transacción y conserva selección explícita autorizada.
 
-- [ ] **M5-T015 — Integrar resolución en registro público** (25 min).
+- [x] **M5-T015 — Integrar resolución en registro público** (25 min).
   - **RF:** RF-17–RF-19, RF-23, RF-25, RF-62. **Depende de:** M5-T013.
   - **Hecho cuando:** La reserva pública reutiliza la ficha sin revelar antecedentes y revierte cliente/cita ante fallo.
 
-- [ ] **M5-T016 — Integrar alta independiente y fichas fusionadas** (25 min).
+- [x] **M5-T016 — Integrar alta independiente y fichas fusionadas** (25 min).
   - **RF:** RF-15, RF-17, RF-19, RF-25. **Depende de:** M5-T013, M5-T011.
   - **Hecho cuando:** El alta coincidente devuelve ficha existente; una ficha fusionada no aparece como seleccionable.
 
-- [ ] **M5-T017 — Probar carrera de identidad público/manual** (25 min).
+- [x] **M5-T017 — Probar carrera de identidad público/manual** (25 min).
   - **RF:** RF-15–RF-18, RF-62. **Depende de:** M5-T014, M5-T015, M5-T004.
   - **Hecho cuando:** Dos escritores reales simultáneos dejan una única ficha activa y resultados de cita coherentes.
 
 ## 3. Clientes: edición, unión y unicidad final
 
-- [ ] **M5-T018 — Detectar colisión al editar cliente** (25 min).
+Evidencia del lote [M5-T018–M5-T023](resultados-tareas/m5-t018-t023.md).
+Evidencia del lote [M5-T024–M5-T029](resultados-tareas/m5-t024-t029.md), con implementación de interfaz en el repositorio hermano.
+
+- [x] **M5-T018 — Detectar colisión al editar cliente** (25 min).
   - **RF:** RF-20, RF-22, RF-61. **Depende de:** M5-T016, M5-T005.
   - **Hecho cuando:** Una edición coincidente devuelve 409 y destino mínimo solo a Administración/Recepción, sin guardar cambios.
 
-- [ ] **M5-T019 — Validar solicitud de unión** (25 min).
+- [x] **M5-T019 — Validar solicitud de unión** (25 min).
   - **RF:** RF-20–RF-22, RF-61. **Depende de:** M5-T018, M5-T011.
   - **Hecho cuando:** Pruebas rechazan auto-unión, otro negocio, versiones obsoletas, destino fusionado y ausencia de coincidencia.
 
-- [ ] **M5-T020 — Implementar traslado atómico de relaciones** (25 min).
+- [x] **M5-T020 — Implementar traslado atómico de relaciones** (25 min).
   - **RF:** RF-21–RF-23, RF-59. **Depende de:** M5-T019.
   - **Hecho cuando:** Una unión conserva destino, referencia histórica del origen y snapshots de todas las citas.
 
-- [ ] **M5-T021 — Añadir idempotencia y auditoría de unión** (25 min).
+- [x] **M5-T021 — Añadir idempotencia y auditoría de unión** (25 min).
   - **RF:** RF-21–RF-22, RF-60–RF-62. **Depende de:** M5-T020.
   - **Hecho cuando:** La misma clave recupera un resultado único; otra carga con igual clave produce conflicto sin repetir efectos.
 
-- [ ] **M5-T022 — Exponer operación autorizada de unión** (25 min).
+- [x] **M5-T022 — Exponer operación autorizada de unión** (25 min).
   - **RF:** RF-20–RF-22, RF-61. **Depende de:** M5-T021.
   - **Hecho cuando:** El endpoint admite Administrador/Recepción y rechaza Profesional y recursos ajenos.
 
-- [ ] **M5-T023 — Probar rollback y carreras de unión** (25 min).
+- [x] **M5-T023 — Probar rollback y carreras de unión** (25 min).
   - **RF:** RF-22–RF-23, RF-62. **Depende de:** M5-T022, M5-T004.
   - **Hecho cuando:** Un fallo intermedio y una edición simultánea dejan relaciones íntegras y ninguna unión parcial.
 
-- [ ] **M5-T024 — Añadir advertencia de coincidencia al editor** (25 min).
+- [x] **M5-T024 — Añadir advertencia de coincidencia al editor** (25 min).
   - **RF:** RF-20, RF-22. **Depende de:** M5-T022.
   - **Hecho cuando:** La vista conectada muestra el destino y permite volver a editar sin modificar registros.
 
-- [ ] **M5-T025 — Conectar aceptación y recuperación de unión** (25 min).
+- [x] **M5-T025 — Conectar aceptación y recuperación de unión** (25 min).
   - **RF:** RF-21–RF-23, RF-62. **Depende de:** M5-T024.
   - **Hecho cuando:** Aceptar actualiza el historial; doble clic o respuesta perdida recupera la misma operación.
 
-- [ ] **M5-T026 — Permitir conciliación de grupos heredados** (25 min).
+- [x] **M5-T026 — Permitir conciliación de grupos heredados** (25 min).
   - **RF:** RF-20–RF-24, RF-61. **Depende de:** M5-T025, M5-T012.
   - **Hecho cuando:** Un grupo duplicado de test puede revisarse y resolverse expresamente sin elegir destino automáticamente.
 
-- [ ] **M5-T027 — Preparar migración de unicidad activa** (25 min).
+- [x] **M5-T027 — Preparar migración de unicidad activa** (25 min).
   - **RF:** RF-15, RF-24, RF-59. **Depende de:** M5-T026, M5-T017.
   - **Hecho cuando:** La migración rechaza grupos pendientes y crea el índice solo después de conciliarlos en test.
 
-- [ ] **M5-T028 — Probar índice, collation y fichas absorbidas** (25 min).
+- [x] **M5-T028 — Probar índice, collation y fichas absorbidas** (25 min).
   - **RF:** RF-15–RF-19, RF-23–RF-24. **Depende de:** M5-T027.
   - **Hecho cuando:** SQL de prueba rechaza duplicados activos, admite nombres distintos y mantiene filas históricas fusionadas.
 
-- [ ] **M5-T029 — Verificar unión desde navegador** (25 min).
+- [x] **M5-T029 — Verificar unión desde navegador** (25 min).
   - **RF:** RF-20–RF-25, RF-61–RF-62. **Depende de:** M5-T025, M5-T028.
   - **Hecho cuando:** Administrador y Recepción aceptan/rechazan con teclado; Profesional no accede y snapshots permanecen iguales.
 
 ## 4. Profesional y consultas administrativas
 
-- [ ] **M5-T030 — Ampliar permisos explícitos del Profesional** (25 min).
+- [x] **M5-T030 — Ampliar permisos explícitos del Profesional** (25 min).
   - **RF:** RF-01–RF-03, RF-61. **Depende de:** M5-T014, M5-T005.
   - **Hecho cuando:** La matriz permite escrituras propias sin otorgar permisos de directorio.
 
-- [ ] **M5-T031 — Imponer alcance propio en escritores** (25 min).
+- [x] **M5-T031 — Imponer alcance propio en escritores** (25 min).
   - **RF:** RF-01–RF-04, RF-61. **Depende de:** M5-T030.
   - **Hecho cuando:** Crear, mover y cambiar estado resuelven el perfil servidor y rechazan citas/perfiles ajenos.
 
-- [ ] **M5-T032 — Verificar restricciones de estado y disponibilidad** (25 min).
+- [x] **M5-T032 — Verificar restricciones de estado y disponibilidad** (25 min).
   - **RF:** RF-04–RF-07. **Depende de:** M5-T031, M5-T004.
   - **Hecho cuando:** Casos focalizados rechazan falta de licencia, empalme y resultado antes de fin; no dejan cambios parciales.
 
-- [ ] **M5-T033 — Mostrar acciones propias en agenda conectada** (25 min).
+- [x] **M5-T033 — Mostrar acciones propias en agenda conectada** (25 min).
   - **RF:** RF-01–RF-03. **Depende de:** M5-T031.
   - **Hecho cuando:** El Profesional dispone de acciones para sus citas y formulario de contacto sin directorio.
 
-- [ ] **M5-T034 — Probar permisos del Profesional por HTTP** (25 min).
+- [x] **M5-T034 — Probar permisos del Profesional por HTTP** (25 min).
   - **RF:** RF-01–RF-05, RF-61. **Depende de:** M5-T032.
   - **Hecho cuando:** Casos de dos negocios y dos profesionales rechazan IDs manipulados, cliente arbitrario y sesión revocada.
 
-- [ ] **M5-T035 — Validar filtros y páginas de correos** (25 min).
+- [x] **M5-T035 — Validar filtros y páginas de correos** (25 min).
   - **RF:** RF-08, RF-14. **Depende de:** M5-T005.
   - **Hecho cuando:** Se aceptan filtros combinados y límites previstos y se rechazan tipos/fechas/rangos inválidos.
 
-- [ ] **M5-T036 — Implementar consulta y totales de correos** (25 min).
+- [x] **M5-T036 — Implementar consulta y totales de correos** (25 min).
   - **RF:** RF-08–RF-09. **Depende de:** M5-T035.
   - **Hecho cuando:** Filas, total y contadores aplican los mismos filtros en una lectura consistente.
 
-- [ ] **M5-T037 — Verificar paginación y contadores de correos** (25 min).
+- [x] **M5-T037 — Verificar paginación y contadores de correos** (25 min).
   - **RF:** RF-08–RF-09, RF-14, RF-61. **Depende de:** M5-T036, M5-T003.
   - **Hecho cuando:** Más de una página, estado filtrado y página vacía mantienen contadores correctos y aislamiento.
 
-- [ ] **M5-T038 — Conectar filtros y paginador de correos** (25 min).
+- [x] **M5-T038 — Conectar filtros y paginador de correos** (25 min).
   - **RF:** RF-08–RF-09, RF-14. **Depende de:** M5-T037.
   - **Hecho cuando:** La pantalla reinicia página al filtrar y muestra total/error sin contar solo filas visibles.
 
-- [ ] **M5-T039 — Implementar clasificación temporal de bloqueos** (25 min).
+- [x] **M5-T039 — Implementar clasificación temporal de bloqueos** (25 min).
   - **RF:** RF-10–RF-12. **Depende de:** M5-T004, M5-T005.
   - **Hecho cuando:** Pruebas cubren fin exclusivo, día completo y bloqueos colectivos con zonas distintas.
 
-- [ ] **M5-T040 — Paginar bloqueos con filtros y totales** (25 min).
+- [x] **M5-T040 — Paginar bloqueos con filtros y totales** (25 min).
   - **RF:** RF-10–RF-12, RF-14. **Depende de:** M5-T039.
   - **Hecho cuando:** El endpoint devuelve por defecto vigentes/próximos y conserva filtros por solapamiento y alcance.
 
-- [ ] **M5-T041 — Separar listado paginado de cálculo del motor** (25 min).
+- [x] **M5-T041 — Separar listado paginado de cálculo del motor** (25 min).
   - **RF:** RF-13. **Depende de:** M5-T040.
   - **Hecho cuando:** El motor obtiene todos los bloqueos aplicables sin invocar el listado paginado.
 
-- [ ] **M5-T042 — Verificar bloqueos y regresión de disponibilidad** (25 min).
+- [x] **M5-T042 — Verificar bloqueos y regresión de disponibilidad** (25 min).
   - **RF:** RF-10–RF-14, RF-61. **Depende de:** M5-T041, M5-T003.
   - **Hecho cuando:** Cambiar páginas no cambia disponibilidad y bloques colectivos se cuentan una sola vez.
 
-- [ ] **M5-T043 — Adaptar consumidores del listado de bloqueos** (25 min).
+- [x] **M5-T043 — Adaptar consumidores del listado de bloqueos** (25 min).
   - **RF:** RF-10–RF-14. **Depende de:** M5-T042.
   - **Hecho cuando:** Administrador filtra anteriores/todos y el Profesional conserva su alcance con el nuevo sobre.
 
 ## 5. Personalización del portal
 
-- [ ] **M5-T044 — Crear persistencia de personalización** (25 min).
+Evidencia del lote [M5-T044–M5-T047](resultados-tareas/m5-t044-t047.md).
+Evidencia del lote [M5-T048–M5-T050](resultados-tareas/m5-t048-t050.md).
+Evidencia del lote [M5-T051–M5-T053](resultados-tareas/m5-t051-t053.md).
+
+- [x] **M5-T044 — Crear persistencia de personalización** (25 min).
   - **RF:** RF-26–RF-27, RF-30, RF-61. **Depende de:** M5-T007.
   - **Hecho cuando:** Migración, entidades y esquema definen configuración versionada y recursos separados por negocio.
 
-- [ ] **M5-T045 — Validar contenido y límites de imágenes** (25 min).
+- [x] **M5-T045 — Validar contenido y límites de imágenes** (25 min).
   - **RF:** RF-28. **Depende de:** M5-T044.
   - **Hecho cuando:** Casos focalizados rechazan MIME falso, SVG, animación, tamaño/dimensiones excesivos y archivo truncado.
 
-- [ ] **M5-T046 — Sanear y guardar logo provisional** (25 min).
+- [x] **M5-T046 — Sanear y guardar logo provisional** (25 min).
   - **RF:** RF-28, RF-30. **Depende de:** M5-T045.
   - **Hecho cuando:** La recodificación elimina metadatos y respeta límite de salida sin sustituir el logo publicado.
 
-- [ ] **M5-T047 — Implementar validación de colores y contraste** (25 min).
+- [x] **M5-T047 — Implementar validación de colores y contraste** (25 min).
   - **RF:** RF-29–RF-30. **Depende de:** M5-T044.
   - **Hecho cuando:** Pruebas de límites 4.5:1 y 3:1 cubren texto, controles, enlaces y foco sin alterar colores semánticos.
 
-- [ ] **M5-T048 — Publicar configuración atómicamente** (25 min).
+- [x] **M5-T048 — Publicar configuración atómicamente** (25 min).
   - **RF:** RF-26, RF-28–RF-30, RF-62. **Depende de:** M5-T046, M5-T047.
   - **Hecho cuando:** Logo y colores se publican juntos con versión; error o versión obsoleta conserva configuración anterior.
 
-- [ ] **M5-T049 — Implementar restauración y limpieza provisional** (25 min).
+- [x] **M5-T049 — Implementar restauración y limpieza provisional** (25 min).
   - **RF:** RF-27–RF-28, RF-30. **Depende de:** M5-T048.
   - **Hecho cuando:** Restaurar afecta un solo negocio y limpiar provisionales vencidos no elimina recursos vigentes.
 
-- [ ] **M5-T050 — Exponer marca publicada por slug** (25 min).
+- [x] **M5-T050 — Exponer marca publicada por slug** (25 min).
   - **RF:** RF-26, RF-30, RF-61. **Depende de:** M5-T048.
   - **Hecho cuando:** El catálogo y recurso público solo permiten el logo publicado del negocio resuelto.
 
-- [ ] **M5-T051 — Construir vista previa y edición conectada** (25 min).
+- [x] **M5-T051 — Construir vista previa y edición conectada** (25 min).
   - **RF:** RF-26–RF-29. **Depende de:** M5-T050.
   - **Hecho cuando:** El Administrador previsualiza, descarta y guarda usando validaciones equivalentes al servidor.
 
-- [ ] **M5-T052 — Conectar restauración en vista previa** (25 min).
+- [x] **M5-T052 — Conectar restauración en vista previa** (25 min).
   - **RF:** RF-27. **Depende de:** M5-T051, M5-T049.
   - **Hecho cuando:** Restaurar puede previsualizarse y cancelarse sin cambios persistidos.
 
-- [ ] **M5-T053 — Probar marca en móvil y teclado** (25 min).
+- [x] **M5-T053 — Probar marca en móvil y teclado** (25 min).
   - **RF:** RF-26–RF-30, RF-61–RF-62. **Depende de:** M5-T052.
   - **Hecho cuando:** Dos negocios conservan marcas separadas; errores, foco, contraste y publicación pasan el recorrido.
 
 ## 6. Persistencia de automatizaciones
 
-- [ ] **M5-T054 — Crear configuración de automatizaciones** (25 min).
+- [x] **M5-T054 — Crear configuración de automatizaciones** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T005.
   - **Hecho cuando:** Migración, entidad y esquema imponen rangos enteros y valores 12/24 sin modificar citas previas.
 
-- [ ] **M5-T055 — Crear generaciones de condiciones por cita** (25 min).
+- [x] **M5-T055 — Crear generaciones de condiciones por cita** (25 min).
   - **RF:** RF-40–RF-46, RF-59. **Depende de:** M5-T054.
   - **Hecho cuando:** La persistencia admite vencimiento nulo, generación histórica y motivo de seguimiento con FKs de negocio.
 
-- [ ] **M5-T056 — Añadir generación y causa vigente a cita** (25 min).
+- [x] **M5-T056 — Añadir generación y causa vigente a cita** (25 min).
   - **RF:** RF-43–RF-46, RF-49, RF-59. **Depende de:** M5-T055.
   - **Hecho cuando:** Entidad, esquema y migración conservan snapshots y referencian condiciones dentro del mismo negocio.
 
-- [ ] **M5-T057 — Ampliar actores de eventos de cita** (25 min).
+- [x] **M5-T057 — Ampliar actores de eventos de cita** (25 min).
   - **RF:** RF-33, RF-44, RF-60–RF-61. **Depende de:** M5-T056.
   - **Hecho cuando:** Restricciones admiten usuario/sesión/WhatsApp/sistema de forma excluyente sin usuarios ficticios.
 
-- [ ] **M5-T058 — Probar invariantes de eventos ampliados** (25 min).
+- [x] **M5-T058 — Probar invariantes de eventos ampliados** (25 min).
   - **RF:** RF-33, RF-44, RF-60–RF-62. **Depende de:** M5-T057.
   - **Hecho cuando:** Se rechazan actores incompatibles y cambios a eventos; sigue habiendo una versión única por cita.
 
-- [ ] **M5-T059 — Crear configuración de canales** (25 min).
+- [x] **M5-T059 — Crear configuración de canales** (25 min).
   - **RF:** RF-31–RF-38, RF-61. **Depende de:** M5-T006.
   - **Hecho cuando:** Persistencia admite un canal por negocio y referencia a secreto sin almacenar credenciales utilizables.
 
-- [ ] **M5-T060 — Crear bandeja durable de envíos** (25 min).
+- [x] **M5-T060 — Crear bandeja durable de envíos** (25 min).
   - **RF:** RF-31, RF-36, RF-47–RF-48, RF-62. **Depende de:** M5-T055, M5-T059.
   - **Hecho cuando:** Migración, entidad y esquema definen efecto único, generación, programación, lease e índices de trabajo.
 
-- [ ] **M5-T061 — Crear bandeja de eventos entrantes** (25 min).
+- [x] **M5-T061 — Crear bandeja de eventos entrantes** (25 min).
   - **RF:** RF-33–RF-38, RF-62. **Depende de:** M5-T059.
   - **Hecho cuando:** Duplicar el mismo evento no crea otra entrada y se conservan horas de recepción/proveedor separadas.
 
-- [ ] **M5-T062 — Crear persistencia de acciones de confirmación** (25 min).
+- [x] **M5-T062 — Crear persistencia de acciones de confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61–RF-62. **Depende de:** M5-T060.
   - **Hecho cuando:** Hash, consumo, vencimiento y pertenencia a generación quedan definidos sin token utilizable persistido.
 
-- [ ] **M5-T063 — Exponer lectura/escritura de configuración** (25 min).
+- [x] **M5-T063 — Exponer lectura/escritura de configuración** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T054.
   - **Hecho cuando:** Solo Administrador modifica con versión y rango válido; trabajos anteriores permanecen iguales.
+  - **Evidencia:** [M5-T063](resultados-tareas/m5-t063.md).
 
-- [ ] **M5-T064 — Conectar formulario de plazos y recordatorios** (25 min).
+- [x] **M5-T064 — Conectar formulario de plazos y recordatorios** (25 min).
   - **RF:** RF-39, RF-43, RF-47. **Depende de:** M5-T063.
   - **Hecho cuando:** La pantalla muestra valores vigentes y errores de rango/conflicto sin cambios retroactivos.
+  - **Evidencia:** [M5-T064](resultados-tareas/m5-t064.md).
 
 ## 7. Política temporal y creación de trabajos
 
-- [ ] **M5-T065 — Implementar cálculo puro de vencimiento** (25 min).
+- [x] **M5-T065 — Implementar cálculo puro de vencimiento** (25 min).
   - **RF:** RF-39–RF-43. **Depende de:** M5-T004, M5-T055.
   - **Hecho cuando:** Pruebas cubren seis horas ±1 ms, plazo normal y corte de una hora, y 15 minutos que terminan al inicio.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T066 — Implementar elegibilidad del recordatorio** (25 min).
+- [x] **M5-T066 — Implementar elegibilidad del recordatorio** (25 min).
   - **RF:** RF-47–RF-48. **Depende de:** M5-T065.
   - **Hecho cuando:** Pruebas omiten próximas y momento igual/pasado y admiten límites 12/24/48.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T067 — Preparar efecto inicial transaccional** (25 min).
+- [x] **M5-T067 — Preparar efecto inicial transaccional** (25 min).
   - **RF:** RF-31–RF-32, RF-36, RF-62. **Depende de:** M5-T060, M5-T062, M5-T065.
   - **Hecho cuando:** El servicio crea condiciones y envío único con el manager recibido, sin HTTP externo.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T068 — Integrar condiciones y efecto en reserva pública** (25 min).
+- [x] **M5-T068 — Integrar condiciones y efecto en reserva pública** (25 min).
   - **RF:** RF-31–RF-32, RF-40–RF-43, RF-62. **Depende de:** M5-T067, M5-T015, M5-T058.
   - **Hecho cuando:** Cita Pendiente, plazo y trabajo comparten commit y resultado recuperable.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T069 — Integrar efecto en cita manual** (25 min).
+- [x] **M5-T069 — Integrar efecto en cita manual** (25 min).
   - **RF:** RF-31, RF-47, RF-62. **Depende de:** M5-T067, M5-T014, M5-T066.
   - **Hecho cuando:** Cita Confirmada crea mensaje correcto y recordatorio elegible sin plazo de cancelación.
+  - **Evidencia:** [M5-T065–T069](resultados-tareas/m5-t065-t069.md).
 
-- [ ] **M5-T070 — Integrar autorización de contacto WhatsApp** (25 min).
+- [x] **M5-T070 — Integrar autorización de contacto WhatsApp** (25 min).
   - **RF:** RF-31, RF-37–RF-38. **Depende de:** M5-T068, M5-T069.
   - **Hecho cuando:** Ambos canales guardan autorización sin impedir cita si falta; ausencia deriva a seguimiento.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
-- [ ] **M5-T071 — Probar fallo durante creación de efectos** (25 min).
+- [x] **M5-T071 — Probar fallo durante creación de efectos** (25 min).
   - **RF:** RF-18, RF-31, RF-36, RF-62. **Depende de:** M5-T070, M5-T004.
   - **Hecho cuando:** Fallo tras cada escritura crítica revierte cita/cliente/efectos y repetir intento no los duplica.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
-- [ ] **M5-T072 — Preparar condiciones manuales heredadas** (25 min).
+- [x] **M5-T072 — Preparar condiciones manuales heredadas** (25 min).
   - **RF:** RF-42–RF-43, RF-59. **Depende de:** M5-T055.
   - **Hecho cuando:** La migración de test no asigna plazos ni envíos retroactivos a citas existentes.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
-- [ ] **M5-T073 — Mostrar condiciones en resultado público** (25 min).
+- [x] **M5-T073 — Mostrar condiciones en resultado público** (25 min).
   - **RF:** RF-32, RF-42–RF-43. **Depende de:** M5-T068.
   - **Hecho cuando:** El resultado muestra hora exacta con zona o seguimiento manual sin fecha inventada.
+  - **Evidencia:** [M5-T070–T073](resultados-tareas/m5-t070-t073.md).
 
 ## 8. Transporte, reintentos y recepción WhatsApp
 
-- [ ] **M5-T074 — Definir adaptador y transporte controlado** (25 min).
+- [x] **M5-T074 — Definir adaptador y transporte controlado** (25 min).
   - **RF:** RF-31, RF-36. **Depende de:** M5-T006, M5-T059.
   - **Hecho cuando:** El contrato distingue aceptación, rechazo e incertidumbre y permite pruebas sin envíos reales.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T075 — Preparar parámetros de las tres plantillas** (25 min).
+- [x] **M5-T075 — Preparar parámetros de las tres plantillas** (25 min).
   - **RF:** RF-31–RF-32, RF-47. **Depende de:** M5-T074, M5-T067.
   - **Hecho cuando:** Pendiente, Confirmada y recordatorio usan resumen histórico, sin folio ni notas sensibles.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md) · [Ubicación de la sucursal](resultados-tareas/m5-t074-t078.md#ubicación-de-la-sucursal).
 
-- [ ] **M5-T076 — Implementar envío mediante adaptador Meta** (25 min).
+- [x] **M5-T076 — Implementar envío mediante adaptador Meta** (25 min).
   - **RF:** RF-31, RF-36, RF-61. **Depende de:** M5-T075.
   - **Hecho cuando:** Pruebas del adaptador verifican remitente, versión, secreto externo y clasificación de respuestas.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T077 — Implementar toma y renovación de trabajo** (25 min).
+- [x] **M5-T077 — Implementar toma y renovación de trabajo** (25 min).
   - **RF:** RF-36, RF-62. **Depende de:** M5-T060, M5-T004.
   - **Hecho cuando:** Dos trabajadores no poseen simultáneamente el mismo lease válido y su token protege finalización.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T078 — Conectar procesador de envíos** (25 min).
+- [x] **M5-T078 — Conectar procesador de envíos** (25 min).
   - **RF:** RF-31, RF-36, RF-47–RF-48. **Depende de:** M5-T076, M5-T077, M5-T070.
   - **Hecho cuando:** Antes del envío se revalida generación/utilidad y HTTP no mantiene la transacción del registro.
+  - **Evidencia:** [M5-T074–T078](resultados-tareas/m5-t074-t078.md).
 
-- [ ] **M5-T079 — Implementar política de reintentos conocidos** (25 min).
+- [x] **M5-T079 — Implementar política de reintentos conocidos** (25 min).
   - **RF:** RF-36–RF-38. **Depende de:** M5-T078.
   - **Hecho cuando:** Tres intentos máximos y esperas 1/5 minutos respetan utilidad y espera del proveedor; permanentes no se repiten.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T080 — Gestionar timeout y lease vencido tras HTTP** (25 min).
+- [x] **M5-T080 — Gestionar timeout y lease vencido tras HTTP** (25 min).
   - **RF:** RF-36–RF-38, RF-62. **Depende de:** M5-T079.
   - **Hecho cuando:** El posible envío queda incierto sin reenvío automático; un acuse posterior puede conciliarlo.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T081 — Implementar verificación y firma de webhook** (25 min).
+- [x] **M5-T081 — Implementar verificación y firma de webhook** (25 min).
   - **RF:** RF-33–RF-38, RF-61. **Depende de:** M5-T006, M5-T061.
   - **Hecho cuando:** Firma inválida se rechaza antes de procesar; canal se resuelve desde datos autenticados.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T082 — Persistir eventos antes del acuse** (25 min).
+- [x] **M5-T082 — Persistir eventos antes del acuse** (25 min).
   - **RF:** RF-34–RF-36, RF-62. **Depende de:** M5-T081.
   - **Hecho cuando:** Duplicados se reconocen sin repetir entrada y fallo de persistencia no devuelve éxito.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T083 — Procesar estados de entrega** (25 min).
+- [x] **M5-T083 — Procesar estados de entrega** (25 min).
   - **RF:** RF-34, RF-36–RF-38. **Depende de:** M5-T082, M5-T060.
   - **Hecho cuando:** Entregado/leído actualiza comunicación sin confirmar asistencia ni degradarse por evento atrasado.
+  - **Evidencia:** [M5-T079–T083](resultados-tareas/m5-t079-t083.md).
 
-- [ ] **M5-T084 — Generar y verificar payload de confirmación** (25 min).
+- [x] **M5-T084 — Generar y verificar payload de confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61. **Depende de:** M5-T062, M5-T075.
   - **Hecho cuando:** Payload alterado, destinatario/canal ajeno o generación incorrecta se rechaza; secretos no se persisten.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
-- [ ] **M5-T085 — Aplicar confirmación transaccional** (25 min).
+- [x] **M5-T085 — Aplicar confirmación transaccional** (25 min).
   - **RF:** RF-33, RF-35, RF-45, RF-62. **Depende de:** M5-T084, M5-T083, M5-T058, M5-T066.
   - **Hecho cuando:** Bajo bloqueo, acción válida futura confirma una vez y guarda evento con actor correcto.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
-- [ ] **M5-T086 — Conectar respuesta rápida con confirmación** (25 min).
+- [x] **M5-T086 — Conectar respuesta rápida con confirmación** (25 min).
   - **RF:** RF-32–RF-35, RF-61–RF-62. **Depende de:** M5-T085, M5-T082.
   - **Hecho cuando:** Evento autenticado llega al servicio; texto libre y acuses no cambian la cita.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
-- [ ] **M5-T087 — Probar límites y repetición de confirmación** (25 min).
+- [x] **M5-T087 — Probar límites y repetición de confirmación** (25 min).
   - **RF:** RF-33–RF-35, RF-42, RF-45. **Depende de:** M5-T086, M5-T004.
   - **Hecho cuando:** Acción al vencimiento, antigua o repetida no reactiva ni duplica; manual sin plazo solo confirma antes del inicio.
+  - **Evidencia:** [M5-T084–T087](resultados-tareas/m5-t084-t087.md).
 
 ## 9. Cancelador, cambios y recordatorios
 
-- [ ] **M5-T088 — Seleccionar condiciones vencidas** (25 min).
+- [x] **M5-T088 — Seleccionar condiciones vencidas** (25 min).
   - **RF:** RF-39–RF-44. **Depende de:** M5-T055, M5-T077.
   - **Hecho cuando:** Trabajos candidatos se toman por lotes y tiempo del servidor sin tratar consulta previa como autorización.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T089 — Aplicar cancelación automática segura** (25 min).
+- [x] **M5-T089 — Aplicar cancelación automática segura** (25 min).
   - **RF:** RF-37–RF-38, RF-44–RF-45, RF-60. **Depende de:** M5-T088, M5-T083, M5-T058.
   - **Hecho cuando:** Solo Pendiente futura con entrega válida se cancela una vez, con causa y liberación de su ocupación.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T090 — Derivar excepciones a seguimiento manual** (25 min).
+- [x] **M5-T090 — Derivar excepciones a seguimiento manual** (25 min).
   - **RF:** RF-37–RF-38, RF-42, RF-44. **Depende de:** M5-T089.
   - **Hecho cuando:** Sin entrega, entrega tardía o inicio alcanzado queda seguimiento terminal para esa generación.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T091 — Invalidar generación al reprogramar** (25 min).
+- [x] **M5-T091 — Invalidar generación al reprogramar** (25 min).
   - **RF:** RF-06–RF-07, RF-35, RF-43, RF-48. **Depende de:** M5-T085, M5-T066, M5-T031.
   - **Hecho cuando:** Mover deja Confirmada, invalida acción anterior y calcula nueva programación preservando origen/snapshots.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T092 — Integrar reactivación y limpieza de causa** (25 min).
+- [x] **M5-T092 — Integrar reactivación y limpieza de causa** (25 min).
   - **RF:** RF-06–RF-07, RF-44, RF-48, RF-49. **Depende de:** M5-T091, M5-T089.
   - **Hecho cuando:** Reactivar revalida disponibilidad, deja Confirmada y limpia causa vigente sin borrar historial.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T093 — Tratar vuelta de Confirmada a Pendiente** (25 min).
+- [x] **M5-T093 — Tratar vuelta de Confirmada a Pendiente** (25 min).
   - **RF:** RF-46, RF-48. **Depende de:** M5-T092.
   - **Hecho cuando:** La transición anula recordatorio y genera seguimiento manual sin reutilizar vencimiento.
+  - **Evidencia:** [M5-T088–T093](resultados-tareas/m5-t088-t093.md).
 
-- [ ] **M5-T094 — Programar recordatorio al confirmar** (25 min).
+- [x] **M5-T094 — Programar recordatorio al confirmar** (25 min).
   - **RF:** RF-47–RF-48, RF-62. **Depende de:** M5-T085, M5-T069.
   - **Hecho cuando:** Confirmación elegible crea un único trabajo por generación; configuración posterior no lo mueve.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T095 — Descartar recordatorios obsoletos** (25 min).
+- [x] **M5-T095 — Descartar recordatorios obsoletos** (25 min).
   - **RF:** RF-47–RF-48. **Depende de:** M5-T094, M5-T093, M5-T078.
   - **Hecho cuando:** Cancelar, mover, inicio alcanzado y retraso mayor a cinco minutos descartan; silencio no altera estado.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T096 — Registrar ciclos de procesadores** (25 min).
+- [x] **M5-T096 — Registrar ciclos de procesadores** (25 min).
   - **RF:** RF-36–RF-38, RF-44, RF-47–RF-48. **Depende de:** M5-T090, M5-T095.
   - **Hecho cuando:** Inicio/parada y ciclo de 15 segundos con lotes de 50 usan trabajo durable y no duplican ejecuciones.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T097 — Mostrar seguimiento y estado de comunicación** (25 min).
+- [x] **M5-T097 — Mostrar seguimiento y estado de comunicación** (25 min).
   - **RF:** RF-34, RF-37–RF-38, RF-43. **Depende de:** M5-T090, M5-T083.
   - **Hecho cuando:** Personal autorizado distingue plazo activo, seguimiento y fallo sin confundir entrega con asistencia.
+  - **Evidencia:** [M5-T094–T097](resultados-tareas/m5-t094-t097.md).
 
-- [ ] **M5-T098 — Probar confirmación contra cancelador** (25 min).
+- [x] **M5-T098 — Probar confirmación contra cancelador** (25 min).
   - **RF:** RF-33, RF-35, RF-44–RF-45, RF-62. **Depende de:** M5-T096, M5-T087, M5-T004.
   - **Hecho cuando:** Ambos órdenes con dos conexiones dejan un único resultado y ninguna Confirmada cancelada por silencio.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T099 — Probar reprogramación contra cancelador** (25 min).
+- [x] **M5-T099 — Probar reprogramación contra cancelador** (25 min).
   - **RF:** RF-06–RF-07, RF-35, RF-45, RF-48. **Depende de:** M5-T098, M5-T091.
   - **Hecho cuando:** El horario nuevo no recibe efectos de la generación antigua y no queda una ocupación parcial.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T100 — Probar reactivación y liberación contra reservas** (25 min).
+- [x] **M5-T100 — Probar reactivación y liberación contra reservas** (25 min).
   - **RF:** RF-04, RF-07, RF-44–RF-45, RF-62. **Depende de:** M5-T092, M5-T098.
   - **Hecho cuando:** Dos escritores reales conservan como máximo una ocupación incompatible entre sucursales.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T101 — Probar reinicio e incertidumbre del procesador** (25 min).
+- [x] **M5-T101 — Probar reinicio e incertidumbre del procesador** (25 min).
   - **RF:** RF-36–RF-38, RF-62. **Depende de:** M5-T096, M5-T080.
   - **Hecho cuando:** Reiniciar antes/después de aceptación o commit no pierde trabajo ni reenvía ciegamente.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
-- [ ] **M5-T102 — Verificar licencia, canal inhabilitado y acuses** (25 min).
+- [x] **M5-T102 — Verificar licencia, canal inhabilitado y acuses** (25 min).
   - **RF:** RF-04, RF-33–RF-38, RF-61. **Depende de:** M5-T101, M5-T086.
   - **Hecho cuando:** Nuevos envíos respetan acceso y fallos; recepción/recuperación no concede permisos administrativos.
+  - **Evidencia:** [M5-T098–T102](resultados-tareas/m5-t098-t102.md).
 
 ## 10. Reportes: persistencia, consultas y cálculos
 
-- [ ] **M5-T103 — Crear cabecera de corte y filas inmutables** (25 min).
+- [x] **M5-T103 — Crear cabecera de corte y filas inmutables** (25 min).
   - **RF:** RF-49–RF-57, RF-61. **Depende de:** M5-T056, M5-T005.
   - **Hecho cuando:** Migración, entidades y esquema contienen actor/negocio, filtros, expiración y datos mínimos sin contacto/notas.
+  - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
-- [ ] **M5-T104 — Validar filtros y acceso a reportes** (25 min).
+- [x] **M5-T104 — Validar filtros y acceso a reportes** (25 min).
   - **RF:** RF-49–RF-50, RF-54, RF-61. **Depende de:** M5-T103.
   - **Hecho cuando:** Solo Administrador consulta recursos propios; rangos inválidos y filtros ajenos se rechazan.
+  - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
-- [ ] **M5-T105 — Materializar corte consistente** (25 min).
+- [x] **M5-T105 — Materializar corte consistente** (25 min).
   - **RF:** RF-49–RF-53. **Depende de:** M5-T104.
   - **Hecho cuando:** Cabecera/filas se publican completas desde una sola fotografía; fallo intermedio deja cero cortes utilizables.
+  - **Evidencia:** [M5-T103–T105](resultados-tareas/m5-t103-t105.md).
 
-- [ ] **M5-T106 — Resolver fechas civiles y agrupaciones** (25 min).
+- [x] **M5-T106 — Resolver fechas civiles y agrupaciones** (25 min).
   - **RF:** RF-49–RF-50. **Depende de:** M5-T105, M5-T004.
   - **Hecho cuando:** Pruebas cubren zona histórica, DST, límites inclusivos, lunes y cambio de mes.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T107 — Calcular conteos, origen y evolución** (25 min).
+- [x] **M5-T107 — Calcular conteos, origen y evolución** (25 min).
   - **RF:** RF-49, RF-51, RF-53. **Depende de:** M5-T106.
   - **Hecho cuando:** Dataset conocido concilia estados, origen, servicios solicitados y evolución sin duplicar citas.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T108 — Calcular tasas y citas sin resultado** (25 min).
+- [x] **M5-T108 — Calcular tasas y citas sin resultado** (25 min).
   - **RF:** RF-49, RF-51. **Depende de:** M5-T107.
   - **Hecho cuando:** Denominador cero produce Sin datos; tasas y pasadas sin resultado coinciden con fórmulas de spec.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T109 — Calcular estimación con costo histórico** (25 min).
+- [x] **M5-T109 — Calcular estimación con costo histórico** (25 min).
   - **RF:** RF-49, RF-52–RF-53. **Depende de:** M5-T105.
   - **Hecho cuando:** Decimales se suman exactamente; null se reporta faltante y precio actual no participa.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T110 — Contar cancelaciones automáticas vigentes** (25 min).
+- [x] **M5-T110 — Contar cancelaciones automáticas vigentes** (25 min).
   - **RF:** RF-49, RF-51, RF-53. **Depende de:** M5-T107, M5-T092.
   - **Hecho cuando:** Canceladas por falta de confirmación forman subconjunto y una reactivada deja de contarse.
+  - **Evidencia:** [M5-T106–T110](resultados-tareas/m5-t106-t110.md).
 
-- [ ] **M5-T111 — Exponer resumen y páginas del corte** (25 min).
+- [x] **M5-T111 — Exponer resumen y páginas del corte** (25 min).
   - **RF:** RF-49–RF-54, RF-61. **Depende de:** M5-T108, M5-T109, M5-T110.
   - **Hecho cuando:** Páginas estables y resumen usan el mismo corte y revalidan actor/negocio en cada petición.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
-- [ ] **M5-T112 — Gestionar caducidad y limpieza de cortes** (25 min).
+- [x] **M5-T112 — Gestionar caducidad y limpieza de cortes** (25 min).
   - **RF:** RF-54, RF-57, RF-61. **Depende de:** M5-T111.
   - **Hecho cuando:** Un corte a 24 horas ya no es accesible y su limpieza no afecta cortes vigentes.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
-- [ ] **M5-T113 — Probar fallos, volumen y límites de consulta** (25 min).
+- [x] **M5-T113 — Probar fallos, volumen y límites de consulta** (25 min).
   - **RF:** RF-54, RF-57. **Depende de:** M5-T111, M5-T003.
   - **Hecho cuando:** Un conjunto representativo deja tiempos registrados; fallo no devuelve ceros ni tablas truncadas como completas.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
-- [ ] **M5-T114 — Probar corte ante cambios concurrentes** (25 min).
+- [x] **M5-T114 — Probar corte ante cambios concurrentes** (25 min).
   - **RF:** RF-51–RF-53, RF-57. **Depende de:** M5-T111, M5-T004.
   - **Hecho cuando:** Editar citas, precios o nombres entre páginas no altera el corte existente.
+  - **Evidencia:** [M5-T111–T114](resultados-tareas/m5-t111-t114.md).
 
 ## 11. Pantalla de reportes e impresión
 
-- [ ] **M5-T115 — Conectar filtros y carga de reporte** (25 min).
+Evidencia del lote [M5-T115–M5-T118](resultados-tareas/m5-t115-t118.md).
+
+- [x] **M5-T115 — Conectar filtros y carga de reporte** (25 min).
   - **RF:** RF-49–RF-50, RF-54. **Depende de:** M5-T111.
   - **Hecho cuando:** La vista crea un corte y distingue carga, vacío y error sin recurrir a demo.
 
-- [ ] **M5-T116 — Mostrar indicadores y estimaciones** (25 min).
+- [x] **M5-T116 — Mostrar indicadores y estimaciones** (25 min).
   - **RF:** RF-49–RF-53. **Depende de:** M5-T115.
   - **Hecho cuando:** Los nueve resultados de RF-49 muestran cifras/denominadores y advertencia de costo faltante.
 
-- [ ] **M5-T117 — Conectar tablas paginadas del corte** (25 min).
+- [x] **M5-T117 — Conectar tablas paginadas del corte** (25 min).
   - **RF:** RF-49, RF-53–RF-54. **Depende de:** M5-T116.
   - **Hecho cuando:** Cambiar página conserva corte y filtros; caducidad exige regenerar sin mezclar filas.
 
-- [ ] **M5-T118 — Preparar colección completa para impresión** (25 min).
+- [x] **M5-T118 — Preparar colección completa para impresión** (25 min).
   - **RF:** RF-55, RF-57. **Depende de:** M5-T117, M5-T112.
   - **Hecho cuando:** Se obtienen todas las páginas del mismo corte y se valida cantidad antes de habilitar impresión.
 
-- [ ] **M5-T119 — Aplicar presentación de impresión** (25 min).
+- [x] **M5-T119 — Aplicar presentación de impresión** (25 min).
   - **RF:** RF-55–RF-56. **Depende de:** M5-T118.
   - **Hecho cuando:** Vista de impresión incluye negocio, periodo, filtros y corte, sin navegación, controles ni folio.
+  - **Evidencia:** [M5-T119–T121](resultados-tareas/m5-t119-t121.md).
 
-- [ ] **M5-T120 — Manejar impresión incompleta y menú nativo** (25 min).
+- [x] **M5-T120 — Manejar impresión incompleta y menú nativo** (25 min).
   - **RF:** RF-54, RF-57. **Depende de:** M5-T119.
   - **Hecho cuando:** Fallo de una página impide reporte parcial y menú nativo sin preparación muestra advertencia.
+  - **Evidencia:** [M5-T119–T121](resultados-tareas/m5-t119-t121.md).
 
-- [ ] **M5-T121 — Verificar PDF guardado desde navegador** (25 min).
+- [x] **M5-T121 — Verificar PDF guardado desde navegador** (25 min).
   - **RF:** RF-55–RF-57. **Depende de:** M5-T120.
   - **Hecho cuando:** Un reporte de varias páginas conserva filas, totales y encabezados sin recortes de contenido.
+  - **Evidencia:** [M5-T119–T121](resultados-tareas/m5-t119-t121.md).
 
 ## 12. Retirada coordinada del folio
 
-- [ ] **M5-T122 — Inventariar dependencias activas del folio** (20 min).
+- [x] **M5-T122 — Inventariar dependencias activas del folio** (20 min).
   - **RF:** RF-58–RF-59, RF-62. **Depende de:** M5-T001.
   - **Hecho cuando:** Existe listado de campos, JSON, consumidores y recuperación afectados, separado de antecedentes históricos.
+  - **Evidencia:** [M5-T122–T123](resultados-tareas/m5-t122-t123.md).
 
-- [ ] **M5-T123 — Retirar folio de proyecciones backend** (25 min).
+- [x] **M5-T123 — Retirar folio de proyecciones backend** (25 min).
   - **RF:** RF-58, RF-62. **Depende de:** M5-T122, M5-T111.
   - **Hecho cuando:** Respuestas públicas/privadas y recuperación dejan de exponer folio sin alterar IDs ni claves.
+  - **Evidencia:** [M5-T122–T123](resultados-tareas/m5-t122-t123.md).
 
-- [ ] **M5-T124 — Retirar folio de vistas y estado frontend** (25 min).
+- [x] **M5-T124 — Retirar folio de vistas y estado frontend** (25 min).
   - **RF:** RF-58. **Depende de:** M5-T123, M5-T121, M5-T033.
   - **Hecho cuando:** Portal, agenda, clientes, reportes y demo no dependen ni muestran folio.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T125 — Retirar folio de nuevos eventos y mensajes** (25 min).
+- [x] **M5-T125 — Retirar folio de nuevos eventos y mensajes** (25 min).
   - **RF:** RF-58, RF-60. **Depende de:** M5-T123, M5-T075, M5-T058.
   - **Hecho cuando:** Los nuevos JSON de eventos y parámetros de mensajes no incluyen folio.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T126 — Preparar limpieza acotada de JSON histórico** (25 min).
+- [x] **M5-T126 — Preparar limpieza acotada de JSON histórico** (25 min).
   - **RF:** RF-58–RF-60. **Depende de:** M5-T125.
   - **Hecho cuando:** Migración de test elimina solo propiedad folio y restablece triggers conservando demás valores y filas.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T127 — Retirar generación, columna e índice exclusivo** (25 min).
+- [x] **M5-T127 — Retirar generación, columna e índice exclusivo** (25 min).
   - **RF:** RF-58–RF-59. **Depende de:** M5-T126, M5-T124.
   - **Hecho cuando:** Migración, entidades y esquema coinciden y ambos escritores funcionan sin campo folio.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T128 — Probar recuperación después de retirar folio** (25 min).
+- [x] **M5-T128 — Probar recuperación después de retirar folio** (25 min).
   - **RF:** RF-58–RF-59, RF-62. **Depende de:** M5-T127, M5-T071.
   - **Hecho cuando:** Intentos previos y actuales recuperan la misma cita y conservan IDs, relaciones y huellas.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
-- [ ] **M5-T129 — Verificar ausencia del folio en producto vigente** (20 min).
+- [x] **M5-T129 — Verificar ausencia del folio en producto vigente** (20 min).
   - **RF:** RF-58. **Depende de:** M5-T128.
   - **Hecho cuando:** Búsqueda en ambos repositorios solo deja referencias históricas justificadas o verificaciones de ausencia.
+  - **Evidencia:** [Retirada coordinada M5-T124–T129](resultados-tareas/m5-t124-t129.md).
 
 ## 13. Observabilidad, migraciones y aceptación real
 
@@ -649,4 +727,3 @@ Desglose del [plan](plan.md), conforme a la [constitución](constitucion-modulo-
 Backend: `npm run build`, `npm run lint`, `npm test -- --runInBand`, `npm run test:integration -- --runInBand` y `npm run test:e2e -- --runInBand`. Frontend: `npm run build`, `npm test` y `npm run test:browser`; no hay lint de frontend declarado.
 
 La matriz de aceptación enlazará los grupos T01–T13 del plan con casos concretos y las tareas M5 de este documento. Los 62 RF y los 15 criterios de finalización de spec deben tener evidencia propia. Las tareas con RF-01–RF-62 representan comprobaciones transversales y no sustituyen las verificaciones particulares de cada bloque.
-

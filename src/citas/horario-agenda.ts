@@ -1,12 +1,27 @@
 import type { Cita } from '../disponibilidad/entities/cita.entity';
 
+const formatosPorZona = new Map<string, Intl.DateTimeFormat>();
+
 function formateador(zona: string): Intl.DateTimeFormat {
+  const anterior = formatosPorZona.get(zona);
+  if (anterior) return anterior;
   // Una zona persistida inválida es corrupción/fallo técnico, nunca una agenda vacía.
-  return new Intl.DateTimeFormat('en-US', { timeZone: zona, year: 'numeric', month: '2-digit',
+  const formato = new Intl.DateTimeFormat('en-US', { timeZone: zona, year: 'numeric', month: '2-digit',
     day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+  formatosPorZona.set(zona, formato);
+  return formato;
 }
 function partes(formato: Intl.DateTimeFormat, instante: number) {
   return Object.fromEntries(formato.formatToParts(instante).filter((p) => p.type !== 'literal').map((p) => [p.type, p.value]));
+}
+
+function fecha(p: Record<string, string>): string {
+  return `${p.year.padStart(4, '0')}-${p.month}-${p.day}`;
+}
+
+/** Obtiene la fecha del inicio con la zona guardada al reservar. */
+export function fechaCivilCita(cita: Pick<Cita, 'inicioUtc' | 'zonaHorariaReserva'>): string {
+  return fecha(partes(formateador(cita.zonaHorariaReserva), cita.inicioUtc.getTime()));
 }
 
 /** Convierte un rango civil semiabierto en intervalos UTC, sin suponer fechas monótonas.
@@ -68,7 +83,6 @@ export function proyectarHorarioCita(cita: Pick<Cita, 'inicioUtc' | 'finUtc' | '
   const formato = formateador(cita.zonaHorariaReserva);
   const inicio = partes(formato, cita.inicioUtc.getTime());
   const fin = partes(formato, cita.finUtc.getTime());
-  const fecha = (p: Record<string, string>) => `${p.year.padStart(4, '0')}-${p.month}-${p.day}`;
   const hora = (p: Record<string, string>) => `${p.hour}:${p.minute}:${p.second}`;
   return { fechaLocal: fecha(inicio), horaInicio: hora(inicio), fechaFinLocal: fecha(fin),
     horaFin: hora(fin), zonaHoraria: cita.zonaHorariaReserva };

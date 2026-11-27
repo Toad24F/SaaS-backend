@@ -1,5 +1,4 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ClientesService } from '../clientes/clientes.service';
 import { Cita, type EstadoCita } from '../disponibilidad/entities/cita.entity';
@@ -11,10 +10,11 @@ import type { ContextoOperativo } from './acceso-operativo.service';
 import { EventoCita } from './entities/evento-cita.entity';
 import { IntentoCitaManual } from './entities/intento-cita-manual.entity';
 import { IntentosCitaManualService, type SeleccionManualRevalidada } from './intentos-cita-manual.service';
+import { EfectoInicialService } from '../automatizaciones/efecto-inicial.service';
 
 type Identidad = Pick<JwtPayload, 'sub' | 'sesionId'>;
 export interface ResultadoCitaManual {
-  id: number; clienteId: number; folio: string; estado: EstadoCita; origen: 'manual'; version: number;
+  id: number; clienteId: number; estado: EstadoCita; origen: 'manual'; version: number;
   sucursalId: number; personalId: number; servicioId: number;
   inicioUtc: string; finUtc: string; finOcupacionUtc: string; separacionMinutos: number; zonaHoraria: string;
   costoAceptado: string; nombreContacto: string; telefonoContacto: string; motivoConsulta: string | null;
@@ -25,7 +25,8 @@ interface RegistroConMeta { resultado: ResultadoCitaManual; repetida: boolean }
 /** Escritor privado real: confirma cliente, cita, evento e intento juntos, sin efectos externos. */
 @Injectable()
 export class RegistroCitaManualService {
-  constructor(private readonly intentos: IntentosCitaManualService, private readonly clientes: ClientesService) {}
+  constructor(private readonly intentos: IntentosCitaManualService, private readonly clientes: ClientesService,
+    private readonly efectoInicial: EfectoInicialService) {}
 
   async registrar(identidad: Identidad, clave: unknown, entrada: unknown): Promise<ResultadoCitaManual> {
     return (await this.registrarConMeta(identidad, clave, entrada)).resultado;
@@ -50,16 +51,15 @@ export class RegistroCitaManualService {
     // Los recursos y el Profesional permanecen bloqueados: solo se copian valores del servidor
     // leídos después de esperar. La duración y separación son las de la revalidación del motor.
     const copia = await this.copiaHistorica(ctx);
-    const clienteId = seleccion.clienteId !== undefined ? seleccion.clienteId
-      : (await this.clientes.crearParaCitaEnTransaccion(manager, identidad, contacto, ctx.ahora)).id;
-    // La ficha existente y su contacto ya se releían por ID/negocio dentro de esta transacción.
-    // Para una persona nueva la inserción y su auditoría comparten ahora el commit de la cita.
+    // El ID explícito ya fue revalidado. Para contacto capturado, la identidad decide el vínculo
+    // y la cita conserva lo escrito en su propio snapshot, incluso si reutiliza una ficha.
+    const clienteId = seleccion.clienteId ??
+      (await this.clientes.resolverContactoParaCitaEnTransaccion(manager, identidad, contacto, ctx.ahora)).id;
     const repositorio = manager.getRepository(Cita);
     const cita = await repositorio.save(repositorio.create({ negocioId: ctx.negocioId, clienteId,
       sucursalId: seleccion.sucursalId, personalId: seleccion.personalId, servicioId: seleccion.servicioId,
-      // Dieciocho dígitos hexadecimales más prefijo caben en VARCHAR(20).
-      // La restricción global del esquema impide cualquier folio duplicado, también ante concurrencia.
-      folio: `M-${randomBytes(9).toString('hex').toUpperCase()}`, estado: 'confirmada', origen: 'manual', version: 1,
+      // La identidad durable queda en el ID de cita y la clave del intento.
+      estado: 'confirmada', origen: 'manual', version: 1,
       apartadoOrigenId: null, inicioUtc: validacion.inicioUtc, finUtc: validacion.finUtc,
       zonaHorariaReserva: validacion.zonaHoraria, separacionMinutos: validacion.reglasAplicadas.tiempoEntreCitasMinutos,
       finOcupacionUtc: ctx.finOcupacionUtc, nombreContacto: contacto.nombreCompleto, telefonoContacto: contacto.telefono,
@@ -68,12 +68,14 @@ export class RegistroCitaManualService {
     await manager.getRepository(EventoCita).insert({ negocioId: ctx.negocioId, citaId: cita.id,
       actorUsuarioId: ctx.actorId, sesionPublicaId: null, accion: 'alta', versionResultante: 1,
       ocurridoEn: ctx.ahora, valoresAntes: null, motivo: null, valoresDespues: {
-        estado: cita.estado, origen: cita.origen, folio: cita.folio, clienteId,
+        estado: cita.estado, origen: cita.origen, clienteId,
         sucursalId: cita.sucursalId, personalId: cita.personalId, servicioId: cita.servicioId,
         inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(),
         finOcupacionUtc: ctx.finOcupacionUtc.toISOString(), separacionMinutos: cita.separacionMinutos,
         zonaHoraria: cita.zonaHorariaReserva, costoAceptado: copia.costoAceptado,
       } });
+    // Condición, mensaje y recordatorio se confirman con la cita; repetir el intento no reentra aquí.
+    await this.efectoInicial.preparar(manager, cita, ctx.ahora, seleccion.autorizaWhatsapp);
     // El resultado durable se confirma al final con su huella intacta. Un fallo en cualquiera
     // de estas escrituras revierte también el cliente nuevo, su auditoría, la cita y su evento.
     const cambio = await manager.getRepository(IntentoCitaManual).update({ id: ctx.intento.id,
@@ -114,7 +116,8 @@ export class RegistroCitaManualService {
       [cita.nombreContacto, cita.telefonoContacto, cita.nombreNegocio, cita.nombreSucursal, cita.nombreServicio, cita.nombreProfesional].some((v) => v === null)) {
       throw new Error('Resultado manual persistido incompleto.');
     }
-    return { id: cita.id, clienteId: cita.clienteId, folio: cita.folio, estado: cita.estado, origen: 'manual', version: cita.version,
+    // Alta y recuperación comparten los IDs y snapshots autorizados de la cita.
+    return { id: cita.id, clienteId: cita.clienteId, estado: cita.estado, origen: 'manual', version: cita.version,
       sucursalId: cita.sucursalId, personalId: cita.personalId, servicioId: cita.servicioId,
       inicioUtc: cita.inicioUtc.toISOString(), finUtc: cita.finUtc.toISOString(), finOcupacionUtc: cita.finOcupacionUtc.toISOString(),
       separacionMinutos: cita.separacionMinutos, zonaHoraria: cita.zonaHorariaReserva, costoAceptado: cita.costoAceptado,

@@ -24,10 +24,11 @@ export async function crearAccesoOperativo(db: DataSource) {
   // Hay contacto y notas propios, otro Profesional del mismo negocio y registros de otro negocio.
   await db.query("UPDATE citas SET nombre_contacto='Paciente propio',telefono_contacto='6141234567',motivo_consulta='Nota propia'");
   const a = negocios[0];
+  const tieneFolio = (await db.query("SHOW COLUMNS FROM citas LIKE 'folio'")).length > 0;
   await db.query(`INSERT INTO citas(negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,
-    inicio_utc,fin_utc,zona_horaria_reserva,folio,nombre_contacto,telefono_contacto,motivo_consulta)
+    inicio_utc,fin_utc,zona_horaria_reserva${tieneFolio ? ',folio' : ''},nombre_contacto,telefono_contacto,motivo_consulta)
     SELECT negocio_id,sucursal_id,?,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
-    'M4-OTRO-PROF','Paciente ajeno','6149999999','Nota ajena' FROM citas WHERE id=?`,
+    ${tieneFolio ? "'M4-OTRO-PROF'," : ''}'Paciente ajeno','6149999999','Nota ajena' FROM citas WHERE id=?`,
   [a.profesionales[1], a.ocupaciones[0]]);
   return { reloj, negocios, actores, superadmin: actores.find((u) => u.rol === Rol.SUPERADMIN)! };
 }

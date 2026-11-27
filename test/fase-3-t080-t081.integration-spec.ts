@@ -61,8 +61,8 @@ describe('M2-T080–T081: duración histórica y lectura coherente', () => {
         [negocioId]);
       const cita = await primera.query(`INSERT INTO citas
         (negocio_id,personal_id,sucursal_id,servicio_id,cliente_id,inicio_utc,
-        fin_utc,zona_horaria_reserva,estado,folio,origen)
-        VALUES (?,?,?,?,?,? ,?,'America/Chihuahua','confirmada','T080-HIST','manual')`,
+        fin_utc,zona_horaria_reserva,estado,origen)
+        VALUES (?,?,?,?,?,? ,?,'America/Chihuahua','confirmada','manual')`,
       [negocioId, personalId, sucursalId, servicioId, cliente[0].id,
         new Date('2026-07-06T16:00:00Z'), new Date('2026-07-06T16:30:00Z')]);
       const apartado = await primera.query(`INSERT INTO bloqueos_temporales

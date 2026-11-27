@@ -462,12 +462,12 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
       const reloj = new RelojPrueba(AHORA);
       const base = await sembrarBase(db, reloj);
       const cliente = await db.query(`INSERT INTO clientes
-        (negocio_id,nombre_completo,telefono) VALUES (?,'Ocupación','6140000000')`, [base.negocioId]);
+        (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,'Ocupación','ocupación','6140000000')`, [base.negocioId]);
       await db.query(`INSERT INTO citas
         (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,
-         zona_horaria_reserva,folio,estado,origen)
+         zona_horaria_reserva,estado,origen)
         VALUES (?,?,?,?,?,'2026-10-20 15:00:00','2026-10-20 15:30:00',
-          'America/Chihuahua','COMPACTA-1','pendiente','manual')`,
+          'America/Chihuahua','pendiente','manual')`,
       [base.negocioId, base.sucursales[0], base.profesionalId,
         base.servicioId, Number(cliente.insertId)]);
       const [moduloA, moduloB] = await Promise.all([
@@ -550,7 +550,7 @@ describe('M3-T086–T091: carreras del escritor público real', () => {
         const resultado = await reserva;
         await cambio;
         const cita = (await db.query(`SELECT id,inicio_utc,fin_utc,estado FROM citas
-          WHERE negocio_id=? AND folio=?`, [base.negocioId, resultado.folio]))[0];
+          WHERE negocio_id=? AND apartado_origen_id=?`, [base.negocioId, envio.apartado.apartadoId]))[0];
         expect(cita.estado).toBe('pendiente');
         expect(new Date(cita.inicio_utc).toISOString()).toBe(resultado.inicioUtc);
         expect(new Date(cita.fin_utc).toISOString()).toBe(resultado.finUtc);

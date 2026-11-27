@@ -117,8 +117,19 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
         await f.preparar().expect(201);
         const registrada = (await f.reservar().expect(201)).body;
         process.env.PORTAL_PUBLICO_ESCRITURAS = 'cerradas';
-        expect((await f.reservar().expect(200)).body).toEqual(registrada);
-        expect((await f.resolver().expect(200)).body.resultado).toEqual(registrada);
+        const repetida = (await f.reservar().expect(200)).body;
+        const recuperada = (await f.resolver().expect(200)).body.resultado;
+        expect(repetida).toEqual(registrada);
+        expect(recuperada).toEqual(registrada);
+        // El vínculo durable usa la clave original y el ID interno de la cita.
+        const [intento] = await f.db.query(`SELECT i.cita_id
+          FROM intentos_reserva_publica i JOIN citas c ON c.id=i.cita_id AND c.negocio_id=i.negocio_id
+          WHERE i.negocio_id=? AND i.clave=?`, [f.negocioId, f.clave]);
+        expect(intento).toMatchObject({ cita_id: expect.any(Number) });
+        for (const respuesta of [registrada, repetida, recuperada]) {
+          expect(respuesta).not.toHaveProperty('folio');
+          expect(respuesta).not.toHaveProperty('id');
+        }
         expect(f.app.get(MetricasPortalService).consultar().recuperacion).toBe(2);
       } finally {
         if (anterior === undefined) delete process.env.PORTAL_PUBLICO_ESCRITURAS;
@@ -174,12 +185,12 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       await f.reservar({ ...CONTACTO, telefono: '+1 6141234567' }).expect(400);
       await f.reservar({ ...CONTACTO, notas: 'x'.repeat(2001) }).expect(400);
       const r = await f.reservar().expect(201);
-      expect(r.body).toEqual({ folio: expect.any(String), estado: 'pendiente',
+      expect(r.body).toEqual({ estado: 'pendiente',
         costo: '100.00', nombreNegocio: 'Portal 1', nombreServicio: 'Corte',
         nombreSucursal: 'Sucursal 1-0', nombreProfesional: 'Profesional 1-1',
         zonaHoraria: 'America/Chihuahua', inicioUtc: '2026-10-20T14:00:00.000Z',
-        finUtc: '2026-10-20T14:30:00.000Z' });
-      expect(r.body.folio).toMatch(/^P-[A-F0-9]{18}$/);
+        finUtc: '2026-10-20T14:30:00.000Z',
+        vencimientoConfirmacionUtc: null, seguimientoManual: true });
       expect(r.headers['cache-control']).toBe('no-store');
       const persistido = (await f.db.query(`SELECT i.estado,i.cita_id,s.apartado_actual_id,
         b.liberado_en FROM intentos_reserva_publica i
@@ -204,7 +215,7 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       const otra = 'intento_otro_1234567890';
       await f.preparar(otra, siguiente.apartadoId).expect(201);
       const segunda = (await f.reservar({ nombre: 'Luis Pérez', telefono: '6141234567', notas: '<b>Texto</b>' }, otra).expect(201)).body;
-      expect(segunda.folio).not.toBe(primera.folio);
+      expect(segunda.inicioUtc).not.toBe(primera.inicioUtc);
       const filas = await f.db.query(`SELECT c.*,cl.nombre_completo,cl.telefono FROM citas c
         JOIN clientes cl ON cl.id=c.cliente_id AND cl.negocio_id=c.negocio_id
         WHERE c.negocio_id=? AND c.origen='portal_publico' ORDER BY c.id`, [f.negocioId]);
@@ -224,7 +235,7 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
         personalId: f.personalId, sucursalId: f.sucursalId, servicioId: f.servicioId,
         fechaLocal: '2026-10-20', horaInicio: '08:00' }, f.ajena);
       expect(ocupado.status).toBe(409);
-      expect((await f.db.query("SELECT estado FROM citas WHERE folio=?", [primera.folio]))[0].estado).toBe('pendiente');
+      expect((await f.db.query("SELECT estado FROM citas WHERE negocio_id=? AND inicio_utc=? AND origen='portal_publico'", [f.negocioId, new Date(primera.inicioUtc)]))[0].estado).toBe('pendiente');
     });
   }, 120000);
 
@@ -242,7 +253,7 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       await f.db.query('UPDATE licencias SET vence_en=? WHERE negocio_id=?', [f.reloj.ahora(), f.negocioId]);
       expect((await f.resolver().expect(200)).body).toEqual({ estado: 'registrado', resultado: original });
       expect((await f.reservar().expect(200)).body).toEqual(original);
-      const cita = (await f.db.query('SELECT nombre_contacto,telefono_contacto,motivo_consulta FROM citas WHERE folio=?', [original.folio]))[0];
+      const cita = (await f.db.query('SELECT nombre_contacto,telefono_contacto,motivo_consulta FROM citas WHERE negocio_id=? AND apartado_origen_id=?', [f.negocioId, f.apartado.apartadoId]))[0];
       expect(cita).toEqual({ nombre_contacto: 'María Pérez', telefono_contacto: '6141234567', motivo_consulta: 'Primera visita' });
     });
   }, 120000);
@@ -297,7 +308,6 @@ describe('M3-T080–T085: reserva y recuperación públicas reales', () => {
       expect((await f.resolver(f.clave, f.apartado.apartadoId, f.ajena).expect(404)).body)
         .not.toHaveProperty('resultado');
       await f.resolver('clave_inexistente_123456', f.apartado.apartadoId, f.ajena).expect(404);
-      await request(f.http).get(`${RUTA}/intentos/${r.body.folio}`).expect(404);
       expect((await f.resolver().expect(200)).body.resultado).toEqual(r.body);
     });
   }, 120000);

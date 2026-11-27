@@ -10,11 +10,13 @@ import { AccesoOperativoService } from './acceso-operativo.service';
 import { validarCambioEstado } from './cambio-estado.entrada';
 import { validarIdCita } from './consulta-cita.entrada';
 import { EventoCita } from './entities/evento-cita.entity';
+import { CambiosPoliticaCitaService } from '../automatizaciones/cambios-politica-cita.service';
 
 /** Escritor de estados: versión y evento comparten commit y el bloqueo común del Profesional. */
 @Injectable()
 export class CambioEstadoCitaService {
-  constructor(private readonly acceso: AccesoOperativoService, private readonly motor: MotorDisponibilidadService) {}
+  constructor(private readonly acceso: AccesoOperativoService, private readonly motor: MotorDisponibilidadService,
+    private readonly politica: CambiosPoliticaCitaService) {}
 
   async cambiar(identidad: Pick<JwtPayload, 'sub' | 'sesionId'>, entradaId: unknown, entrada: unknown) {
     const id = validarIdCita(entradaId);
@@ -25,6 +27,7 @@ export class CambioEstadoCitaService {
       // La fila y su versión se releen bajo bloqueo después del Profesional.
       const referencia = await manager.getRepository(Cita).findOneBy({ id, negocioId: inicial.negocioId });
       if (!referencia) throw new NotFoundException();
+      if (inicial.personalId !== null && referencia.personalId !== inicial.personalId) throw new NotFoundException();
       for (const usuarioId of [...new Set([inicial.actorId, referencia.personalId])].sort((a, b) => a - b)) {
         const usuario = await manager.getRepository(Usuario).createQueryBuilder('usuario').setLock('pessimistic_write')
           .where({ id: usuarioId, negocioId: inicial.negocioId }).getOne();
@@ -42,12 +45,14 @@ export class CambioEstadoCitaService {
       if (!cita) throw new NotFoundException();
       // READ COMMITTED y este nuevo acceso comparten un reloj posterior a todas las esperas.
       const ctx = await this.acceso.resolverEnTransaccion(manager, identidad, Permiso.CAMBIAR_ESTADO_CITA);
-      if (ctx.negocioId !== cita.negocioId) throw new NotFoundException();
+      // Releer propiedad con el perfil servidor después de todos los bloqueos.
+      if (ctx.negocioId !== cita.negocioId || (ctx.personalId !== null && cita.personalId !== ctx.personalId)) throw new NotFoundException();
       if (cita.version !== datos.version) throw new ConflictException();
       if (cita.estado === datos.estado) return this.proyectar(cita);
       if (cita.version === 4294967295) throw new ConflictException();
       if ((datos.estado === 'completada' || datos.estado === 'no_asistio') && ctx.ahora < cita.finUtc) throw new ConflictException();
       if (cita.estado === 'cancelada') {
+        if (datos.estado !== 'confirmada') throw new ConflictException();
         // No se consulta cupo telefónico al reactivar. El motor verifica el intervalo histórico
         // sin excluir ninguna cita activa ni aceptar duración/separación procedentes del formulario.
         if (cita.inicioUtc <= ctx.ahora) throw new ConflictException();
@@ -55,19 +60,28 @@ export class CambioEstadoCitaService {
         if (!validacion.valido) throw new ConflictException();
       }
       const version = cita.version + 1;
+      const cambiaGeneracion = cita.estado === 'cancelada' || (cita.estado === 'confirmada' && datos.estado === 'pendiente');
+      // El motor dio luz verde antes de sustituir la generación de una reactivación.
+      const condicion = cambiaGeneracion ? await this.politica.sustituir(manager, cita, cita, ctx.ahora,
+        datos.estado === 'confirmada' ? 'confirmada' : 'seguimiento_manual') : {};
+      if (!cambiaGeneracion && (datos.estado === 'cancelada' || (cita.estado === 'pendiente' && datos.estado === 'confirmada'))) {
+        await this.politica.cerrarCondicion(manager, cita, ctx.ahora, datos.estado);
+      }
       const actualizada = await manager.getRepository(Cita).update({ id, negocioId: ctx.negocioId, version: cita.version },
-        { estado: datos.estado, version });
+        { estado: datos.estado, version, causaCancelacion: null, ...condicion });
       if (actualizada.affected !== 1) throw new ConflictException();
       // Se auditan solo los valores operativos que cambian; contacto y notas de atención permanecen en su snapshot.
-      await manager.getRepository(EventoCita).insert({ negocioId: ctx.negocioId, citaId: id, actorUsuarioId: ctx.actorId,
+      await manager.save(EventoCita, { negocioId: ctx.negocioId, citaId: id, actorUsuarioId: ctx.actorId,
         sesionPublicaId: null, accion: datos.estado === 'cancelada' ? 'cancelacion' : cita.estado === 'cancelada' ? 'reactivacion' : 'cambio_estado',
-        ocurridoEn: ctx.ahora, versionResultante: version, valoresAntes: { estado: cita.estado, version: cita.version },
-        valoresDespues: { estado: datos.estado, version }, motivo: datos.motivo });
+        ocurridoEn: ctx.ahora, versionResultante: version, valoresAntes: { estado: cita.estado, version: cita.version,
+          ...(cita.causaCancelacion ? { causaCancelacion: cita.causaCancelacion } : {}) },
+        valoresDespues: { estado: datos.estado, version, ...(cita.causaCancelacion ? { causaCancelacion: null } : {}) }, motivo: datos.motivo });
       return this.proyectar({ ...cita, estado: datos.estado, version });
     }, 'READ COMMITTED');
   }
 
-  private proyectar(cita: Pick<Cita, 'id' | 'folio' | 'estado' | 'version'>) {
-    return { id: cita.id, folio: cita.folio, estado: cita.estado, version: cita.version };
+  private proyectar(cita: Pick<Cita, 'id' | 'estado' | 'version'>) {
+    // El ID y la versión permiten conciliar el cambio con la cita abierta.
+    return { id: cita.id, estado: cita.estado, version: cita.version };
   }
 }

@@ -8,7 +8,7 @@ import { ApartadosService } from '../src/reservas-publicas/apartados.service';
 import { IntentosReservaPublicaService } from '../src/reservas-publicas/intentos-reserva-publica.service';
 import { RegistroReservaPublicaService } from '../src/reservas-publicas/registro-reserva-publica.service';
 import { conBaseOperativa, crearEscenarioOperativo } from './support/operacion-fase-5';
-import { retrocederHastaMigracion } from './support/mariadb';
+import { limitarMigracionesHasta, retrocederHastaMigracion } from './support/mariadb';
 import { crearEscenarioPortal } from './support/escenario-portal';
 import { RelojPrueba } from './support/reloj';
 
@@ -125,7 +125,8 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         expect(fk.onDelete).toBe('RESTRICT');
       }
       expect(meta!.foreignKeys).toHaveLength(tabla === 'eventos_cita' ? 4 : 3);
-      expect(meta!.indices).toHaveLength(tabla === 'eventos_cita' ? 5 : 4);
+      // M5 amplía el historial con la búsqueda por referencia externa no secreta.
+      expect(meta!.indices).toHaveLength(tabla === 'eventos_cita' ? 6 : 4);
     });
   });
 
@@ -151,6 +152,8 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
   it('T017 conserva una base de fase 4 con intento registrado, folio, snapshots y teléfono compartido', async () => {
     await conBaseOperativa(async (db) => {
       await retrocederHastaMigracion(db, 'SucesionIntentos1760000042000');
+      // Este ensayo compara exactamente el cambio M3 → M4. M5 tiene su propia prueba de actualización.
+      limitarMigracionesHasta(db, 'ReferenciasGestionOperativa1760000048000');
       // Semilla histórica por SQL: las entidades actuales no se usan sobre columnas aún ausentes.
       const { negocios: [a] } = await crearEscenarioPortal(db, new RelojPrueba(AHORA));
       const sesion = await db.query('INSERT INTO sesiones_reserva_publica(negocio_id,titular_hash,generacion) VALUES(?,?,1)', [a.id, 'c'.repeat(64)]);
@@ -189,8 +192,9 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         expect(despues[tabla]).toEqual(antes[tabla]);
       }
       expect(await db.getRepository('eventos_cita').count()).toBe(0);
-      expect(await db.getRepository(Cita).findOneByOrFail({ id: a.ocupaciones[0] }))
-        .toMatchObject({ version: 1, costoAceptado: '99.50', nombreContacto: 'Contacto histórico' });
+      // El corte histórico termina en M4; consultar SQL evita exigir columnas de M5.
+      expect((await db.query('SELECT version,costo_aceptado,nombre_contacto FROM citas WHERE id=?', [a.ocupaciones[0]]))[0])
+        .toMatchObject({ version: 1, costo_aceptado: '99.50', nombre_contacto: 'Contacto histórico' });
     });
   });
 
@@ -200,9 +204,10 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
       const tablas = ['clientes', 'citas', 'intentos_cita_manual', 'eventos_cita'];
       const antes = await fotografiar(segunda, tablas);
       await expect(db.transaction('READ COMMITTED', async (manager) => {
-        const cliente = await manager.getRepository(Cliente).save({ negocioId: a.id, nombreCompleto: 'Revertir', telefono: '6141234567' });
+        const cliente = await manager.getRepository(Cliente).save({ negocioId: a.id, nombreCompleto: 'Revertir',
+          nombreNormalizado: Buffer.from('revertir'), telefono: '6141234567' });
         const base = await manager.getRepository(Cita).findOneByOrFail({ id: a.ocupaciones[0] });
-        const cita = await manager.getRepository(Cita).save({ ...base, id: undefined, clienteId: cliente.id, folio: 'M4-ROLLBACK-018' });
+        const cita = await manager.getRepository(Cita).save({ ...base, id: undefined, clienteId: cliente.id });
         await manager.getRepository('intentos_cita_manual').insert({ negocioId: a.id, actorUsuarioId: a.profesionales[0],
           clave: 'intento_rollback_018', contenidoHash: 'f'.repeat(64) });
         await manager.getRepository('eventos_cita').insert({ negocioId: a.id,
@@ -235,13 +240,13 @@ describe('M4-T013–T019: modelo completo y alta pública auditada', () => {
         f.otroRegistro.registrar(f.negocioId, f.titular, f.clave, CONTACTO),
       ]);
       expect(dos).toEqual(uno);
-      const [cita] = await f.segunda.query('SELECT * FROM citas WHERE folio=?', [uno.folio]);
+      const [cita] = await f.segunda.query('SELECT c.* FROM citas c JOIN intentos_reserva_publica i ON c.id=i.cita_id AND c.negocio_id=i.negocio_id WHERE i.negocio_id=? AND i.clave=?', [f.negocioId, f.clave]);
       const eventos = await f.segunda.query('SELECT * FROM eventos_cita WHERE negocio_id=? AND cita_id=?', [f.negocioId, cita.id]);
       expect(eventos).toHaveLength(1);
       expect(eventos[0]).toMatchObject({ actor_usuario_id: null, sesion_publica_id: f.sesionId,
         accion: 'alta', version_resultante: 1, valores_antes: null, motivo: null, ocurrido_en: AHORA });
       expect(json(eventos[0].valores_despues)).toEqual({ estado: 'pendiente', origen: 'portal_publico',
-        folio: uno.folio, clienteId: cita.cliente_id, sucursalId: cita.sucursal_id,
+        clienteId: cita.cliente_id, sucursalId: cita.sucursal_id,
         servicioId: cita.servicio_id, personalId: cita.personal_id, inicioUtc: uno.inicioUtc,
         finUtc: uno.finUtc, zonaHoraria: uno.zonaHoraria, costoAceptado: uno.costoAceptado,
         separacionMinutos: cita.separacion_minutos, finOcupacionUtc: cita.fin_ocupacion_utc.toISOString() });

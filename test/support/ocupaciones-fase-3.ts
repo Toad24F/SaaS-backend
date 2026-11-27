@@ -34,8 +34,8 @@ export async function crearDatosOcupaciones(db: DataSource, reloj: Reloj):
     await db.query('INSERT INTO personal (id,negocio_id) VALUES (?,?)',
       [personalId, negocioId]);
     const cliente = await db.query(`INSERT INTO clientes
-      (negocio_id,nombre_completo,telefono) VALUES (?,?,'6141234567')`,
-    [negocioId, `Cliente ${indice}`]);
+      (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,?,?,'6141234567')`,
+    [negocioId, `Cliente ${indice}`, `cliente ${indice}`]);
     const sucursales: number[] = [];
     const servicios: number[] = [];
     const citas: number[] = [];
@@ -68,7 +68,7 @@ export async function crearDatosOcupaciones(db: DataSource, reloj: Reloj):
       const cita = await db.getRepository(Cita).save({ negocioId, personalId,
         sucursalId, servicioId, clienteId: Number(cliente.insertId), inicioUtc, finUtc,
         zonaHorariaReserva: 'America/Chihuahua', estado: 'pendiente',
-        folio: `OC-${indice}-${numero}`, origen: 'manual', motivoConsulta: null });
+        origen: 'manual', motivoConsulta: null });
       citas.push(cita.id);
       const apartado = await db.getRepository(BloqueoTemporal).save({ negocioId, personalId,
         sucursalId, servicioId, inicioUtc, finUtc,

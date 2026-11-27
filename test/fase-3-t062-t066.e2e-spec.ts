@@ -85,10 +85,9 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
         [a.id]);
       const cita = await db.query(`INSERT INTO citas (negocio_id,personal_id,
         sucursal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
-        estado,folio,origen) VALUES (?,?,?,?,?,'2026-07-06 16:00:00',
-        '2026-07-06 16:30:00','America/Chihuahua','confirmada',?,'manual')`,
-      [a.id, a.personalId, a.sucursales[0], a.servicios[0], cliente[0].id,
-        'T080-HTTP']);
+        estado,origen) VALUES (?,?,?,?,?,'2026-07-06 16:00:00',
+        '2026-07-06 16:30:00','America/Chihuahua','confirmada','manual')`,
+      [a.id, a.personalId, a.sucursales[0], a.servicios[0], cliente[0].id]);
       const hash = 'e'.repeat(64);
       const apartado = await db.query(`INSERT INTO bloqueos_temporales
         (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,
@@ -146,10 +145,9 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
       const hash = 'f'.repeat(64);
       await db.query(`INSERT INTO citas (negocio_id,personal_id,sucursal_id,
         servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,
-        estado,folio,origen) VALUES (?,?,?,?,?,'2026-07-06 16:30:00',
-        '2026-07-06 17:00:00','America/Chihuahua','confirmada',?,'manual')`,
-      [a.id, a.personalId, a.sucursales[0], a.servicios[0], cliente[0].id,
-        'FOLIO-PRIVADO-T083']);
+        estado,origen) VALUES (?,?,?,?,?,'2026-07-06 16:30:00',
+        '2026-07-06 17:00:00','America/Chihuahua','confirmada','manual')`,
+      [a.id, a.personalId, a.sucursales[0], a.servicios[0], cliente[0].id]);
       await db.query(`INSERT INTO bloqueos_temporales
         (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,
         fin_utc,expira_en,titular_hash) VALUES (?,?,?,?,?,?,?,?)`,
@@ -175,7 +173,7 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
         .query({ desde: '2026-07-06', hasta: '2026-07-06' }).expect(200)).body);
       // Las respuestas solo transportan estado operativo; tampoco exponen secretos en errores.
       for (const cuerpo of cuerpos) {
-        expect(JSON.stringify(cuerpo)).not.toMatch(/CLIENTE-PRIVADO-T083|FOLIO-PRIVADO-T083|titular_hash|titularHash|password_hash|stack|SELECT/i);
+        expect(JSON.stringify(cuerpo)).not.toMatch(/CLIENTE-PRIVADO-T083|titular_hash|titularHash|password_hash|stack|SELECT/i);
         expect(JSON.stringify(cuerpo)).not.toContain(hash);
         expect(JSON.stringify(cuerpo)).not.toContain(tokens.admin);
       }
@@ -190,7 +188,7 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
         FROM eventos_auditoria WHERE negocio_id=? AND accion='configuracion_agenda_modificada'`,
       [a.id]);
       expect(eventos).toHaveLength(1);
-      expect(JSON.stringify(eventos)).not.toMatch(/CLIENTE-PRIVADO-T083|FOLIO-PRIVADO-T083|titular_hash|titularHash|password_hash|token|SELECT/i);
+      expect(JSON.stringify(eventos)).not.toMatch(/CLIENTE-PRIVADO-T083|titular_hash|titularHash|password_hash|token|SELECT/i);
       expect(JSON.stringify(eventos)).not.toContain(hash);
       expect(JSON.stringify(eventos)).not.toContain(tokens.admin);
     });
@@ -240,17 +238,17 @@ describe('M2-T062–T066: validación y errores HTTP', () => {
         hasta: '2026-07-07' }).expect(200);
       expect(vacio.body.ranuras).toEqual([]);
       // Una cita que ocupa toda la atención produce un 200 vacío, no un 503.
-      await db.query(`INSERT INTO citas
+      const ocupacion = await db.query(`INSERT INTO citas
         (negocio_id,personal_id,sucursal_id,servicio_id,cliente_id,
-        inicio_utc,fin_utc,zona_horaria_reserva,estado,folio,origen)
+        inicio_utc,fin_utc,zona_horaria_reserva,estado,origen)
         SELECT ?,?,?,?,id,'2026-07-06 15:00:00','2026-07-06 19:00:00',
-          'America/Chihuahua','confirmada','T062-LLENO','manual'
+          'America/Chihuahua','confirmada','manual'
         FROM clientes WHERE negocio_id=? LIMIT 1`,
       [a.id, a.personalId, a.sucursales[0], a.servicios[0], a.id]);
       expect((await leer(tokens.admin).expect(200)).body.ranuras).toEqual([]);
       expect((await validar(tokens.admin).expect(200)).body).toMatchObject({
         valido: false, motivos: expect.arrayContaining(['ocupado']) });
-      await db.query("DELETE FROM citas WHERE folio='T062-LLENO'");
+      await db.query('DELETE FROM citas WHERE id=?', [ocupacion.insertId]);
       await db.query('UPDATE servicios SET activo=0 WHERE id=?', [a.servicios[0]]);
       expect((await validar(tokens.admin).expect(200)).body).toMatchObject({
         valido: false, motivos: expect.arrayContaining([expect.any(String)]) });

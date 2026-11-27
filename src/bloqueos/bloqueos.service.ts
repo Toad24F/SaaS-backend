@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import type { EntityManager } from 'typeorm';
@@ -13,13 +13,18 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { BloqueoHorario } from './entities/bloqueo-horario.entity';
 import { intervaloBloqueo } from './calculo-bloqueos';
 import { DatosBloqueo, validarBloqueo } from './validar-bloqueo';
+import { RELOJ, RelojSistema, type Reloj } from '../comun/reloj';
+import { clasificarBloqueo, solapaPeriodoBloqueo } from './clasificacion-bloqueo';
+import { intervaloBloqueo as intervaloParaOrden } from './calculo-bloqueos';
+import type { ConsultarBloqueosPaginaDto } from './dto/bloqueos.dto';
 
 /** Persiste cada restricción por separado; la atención calcula su unión al consultar. */
 @Injectable()
 export class BloqueosService {
   constructor(@InjectRepository(BloqueoHorario)
     private readonly bloqueos: Repository<BloqueoHorario>,
-    private readonly autorizacion: AutorizacionService) {}
+    private readonly autorizacion: AutorizacionService,
+    @Optional() @Inject(RELOJ) private readonly reloj: Reloj = new RelojSistema()) {}
 
   async crear(actorId: number, entrada: DatosBloqueo): Promise<BloqueoHorario> {
     const datos = validarBloqueo(entrada);
@@ -108,6 +113,41 @@ export class BloqueosService {
     const filas = await consulta.orderBy('b.id', 'ASC').getMany();
     await this.fechasCiviles(manager, actor.negocioId!, filas);
     return this.filtrar(filas, filtro);
+  }
+
+  async listarPagina(actorId: number, filtro: ConsultarBloqueosPaginaDto = {}) {
+    const pagina = filtro.pagina ?? 1, limite = filtro.limite ?? 25;
+    if (!Number.isSafeInteger(pagina) || pagina < 1 || !Number.isSafeInteger(limite) || limite < 1 || limite > 100 ||
+      (filtro.desde && filtro.hasta && filtro.desde > filtro.hasta)) {
+      throw new BadRequestException('Filtros de bloqueos inválidos.');
+    }
+    // El listado reutiliza el alcance ya autorizado; el motor lee por otra ruta sin paginación.
+    const filas = await this.listar(actorId, filtro);
+    const actor = await this.actor(this.bloqueos.manager, actorId);
+    const ids = actor.rol === Rol.PROFESIONAL
+      ? (await this.bloqueos.manager.getRepository(PersonalSucursal).findBy({ negocioId: actor.negocioId!, personalId: actor.id })).map(sede => sede.sucursalId)
+      : (await this.bloqueos.manager.getRepository(Sucursal).findBy({ negocioId: actor.negocioId! })).map(sede => sede.id);
+    const zonas = await this.bloqueos.manager.getRepository(Sucursal).findBy({ negocioId: actor.negocioId!, id: In(ids) });
+    const porSede = new Map(zonas.map(sede => [sede.id, sede.zonaHoraria]));
+    const ahora = this.reloj.ahora();
+    const motivo = filtro.motivo?.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() || '';
+    const coincidencias = filas.flatMap(fila => {
+      const zonasFila = fila.sucursalId === null ? [...porSede.values()] :
+        porSede.has(fila.sucursalId) ? [porSede.get(fila.sucursalId)!] : [];
+      if (!zonasFila.length || filtro.tipo && fila.tipo !== filtro.tipo ||
+        motivo && !fila.motivo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(motivo) ||
+        !solapaPeriodoBloqueo(fila, zonasFila, filtro.desde, filtro.hasta)) return [];
+      const vigencia = clasificarBloqueo(fila, zonasFila, ahora);
+      if (filtro.vigencia !== 'todos' &&
+        (filtro.vigencia === 'anteriores' ? vigencia !== 'anterior' : vigencia === 'anterior')) return [];
+      const inicio = Math.min(...zonasFila.map(zona => intervaloParaOrden(fila, zona).inicio.getTime()));
+      return [{ ...fila, vigencia, inicio }];
+    }).sort((a, b) => a.inicio - b.inicio || a.id - b.id);
+    const total = coincidencias.length;
+    // inicio es solo clave de orden; la proyección pública conserva la entidad y su vigencia.
+    const bloqueos = coincidencias.slice((pagina - 1) * limite, pagina * limite)
+      .map(({ inicio: _inicio, ...fila }) => fila);
+    return { bloqueos, pagina, limite, total };
   }
 
   /** Lectura interna para proyectar atención; no concede gestión ni expone motivos por HTTP. */

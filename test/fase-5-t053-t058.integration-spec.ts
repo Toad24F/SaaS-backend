@@ -80,8 +80,8 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
           nombreNegocio: 'Negocio vigente', nombreSucursal: 'Sede vigente', nombreServicio: 'Servicio vigente',
           nombreProfesional: 'Profesional vigente', nombreContacto: 'Contacto vigente', telefonoContacto: '6140009999',
           motivoConsulta: f.entrada.notas });
-        expect(resultado.folio).toMatch(/^M-[A-F0-9]{18}$/);
         const cita = await db.getRepository(Cita).findOneByOrFail({ id: resultado.id });
+        expect(cita).not.toHaveProperty('folio');
         expect(cita).toMatchObject({ negocioId: f.negocios[0].id, clienteId: f.entrada.clienteId,
           creadoEn: f.reloj.ahora(), apartadoOrigenId: null, costoAceptado: '145.75', estado: 'confirmada' });
         expect(await db.getRepository(Cliente).count()).toBe(clientesAntes.length);
@@ -89,8 +89,9 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         expect(eventos).toHaveLength(1);
         expect(eventos[0]).toMatchObject({ negocioId: cita.negocioId, actorUsuarioId: actor.sub, sesionPublicaId: null,
           accion: 'alta', versionResultante: 1, ocurridoEn: f.reloj.ahora(), valoresAntes: null, motivo: null,
-          valoresDespues: { estado: 'confirmada', origen: 'manual', folio: cita.folio,
+          valoresDespues: { estado: 'confirmada', origen: 'manual',
             inicioUtc: resultado.inicioUtc, finUtc: resultado.finUtc, finOcupacionUtc: resultado.finOcupacionUtc, costoAceptado: '145.75' } });
+        expect(eventos[0].valoresDespues).not.toHaveProperty('folio');
         expect(JSON.stringify(eventos)).not.toMatch(/Contacto vigente|6140009999|Nota privada|contenidoHash|sesionId|password/);
         const intento = await db.getRepository(IntentoCitaManual).findOneByOrFail({ clave });
         expect(intento).toMatchObject({ estado: 'registrado', citaId: cita.id, resueltoEn: f.reloj.ahora() });
@@ -99,12 +100,14 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
     });
   });
 
-  it('T054/T056 cliente nuevo no fusiona teléfono ni nombre; su auditoría y cita se guardan juntos', async () => {
+  it('T054/T056 cliente nuevo con otro nombre comparte teléfono; su auditoría y cita se guardan juntos', async () => {
     await conBaseOperativa(async (db) => {
       const f = await escenario(db);
       try {
         const ficha = await db.getRepository(Cliente).findOneByOrFail({ id: f.entrada.clienteId });
-        const entrada = { ...f.nueva, clienteNuevo: { nombreCompleto: ficha.nombreCompleto, telefono: ficha.telefono } };
+        // El nombre distinto mantiene la cobertura de alta real y teléfono compartido.
+        const nombreCompleto = `${ficha.nombreCompleto} Segunda persona`;
+        const entrada = { ...f.nueva, clienteNuevo: { nombreCompleto, telefono: ficha.telefono } };
         const clave = randomUUID();
         await f.intentos.preparar(f.identidad(), clave, entrada);
         const antes = await db.getRepository(Cliente).find();
@@ -113,7 +116,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         expect(await db.getRepository(Cliente).count()).toBe(antes.length + 1);
         expect(await db.getRepository(Cliente).findBy({ id: ficha.id })).toEqual([ficha]);
         expect(await db.getRepository(Cliente).findOneByOrFail({ id: resultado.clienteId })).toMatchObject({
-          negocioId: f.negocios[0].id, version: 1, nombreCompleto: ficha.nombreCompleto, telefono: ficha.telefono, creadoEn: f.reloj.ahora() });
+          negocioId: f.negocios[0].id, version: 1, nombreCompleto, telefono: ficha.telefono, creadoEn: f.reloj.ahora() });
         const auditoria = await db.getRepository(EventoAuditoria).findBy({ recursoTipo: 'cliente', recursoId: resultado.clienteId });
         expect(auditoria).toHaveLength(1);
         expect(auditoria[0]).toMatchObject({ accion: 'cliente_creado', actorUsuarioId: f.identidad().sub, ocurridoEn: f.reloj.ahora() });
@@ -195,7 +198,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         const seleccion = { ...f.entrada, horaInicio: '10:17' };
         await f.intentos.preparar(f.identidad(), segunda, seleccion);
         const b = await f.registro.registrar(f.identidad(), segunda, seleccion);
-        expect(b.folio).not.toBe(a.folio);
+        expect(b.id).not.toBe(a.id);
         expect(b.clienteId).not.toBe(a.clienteId);
         expect(await f.registro.registrar(f.identidad(), segunda, seleccion)).toEqual(b);
         const tercera = randomUUID();
@@ -209,7 +212,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
     });
   });
 
-  it('T054/T058 deniega intento ausente, otro actor, Profesional y resultado terminal sin filas parciales', async () => {
+  it('T054/T058 deniega intentos ausentes, de otro actor o terminales sin filas parciales', async () => {
     await conBaseOperativa(async (db) => {
       const f = await escenario(db);
       try {
@@ -218,7 +221,8 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         const antes = await filas(db);
         await expect(f.registro.registrar(f.identidad(), randomUUID(), f.nueva)).rejects.toMatchObject({ status: 404 });
         await expect(f.registro.registrar(f.identidad(Rol.RECEPCIONISTA), clave, f.nueva)).rejects.toMatchObject({ status: 404 });
-        await expect(f.registro.registrar(f.identidad(Rol.PROFESIONAL), clave, f.nueva)).rejects.toMatchObject({ status: 403 });
+        // El Profesional puede registrar citas propias, pero un intento ajeno equivale a uno ausente.
+        await expect(f.registro.registrar(f.identidad(Rol.PROFESIONAL), clave, f.nueva)).rejects.toMatchObject({ status: 404 });
         expect(await filas(db)).toEqual(antes);
         await db.getRepository(IntentoCitaManual).update(intento.id, { estado: 'no_registrado', resueltoEn: f.reloj.ahora() });
         const terminal = await filas(db);
@@ -248,7 +252,7 @@ describe('M4-T053–T058: registro manual real y repetición durable', () => {
         await f.intentos.preparar(f.identidad(), claveContigua, contigua);
         const siguiente = await f.registro.registrar(f.identidad(), claveContigua, contigua);
         expect(siguiente.inicioUtc).toBe(original.finOcupacionUtc);
-        expect(siguiente.folio).not.toBe(original.folio);
+        expect(siguiente.id).not.toBe(original.id);
       } finally { await f.modulo.close(); }
     });
   });

@@ -151,10 +151,10 @@ describe('M4-T026–T030: agenda persistida y acotada', () => {
       // Las filas adicionales comparten inicio para comprobar el desempate por ID.
       for (let i = 0; i < 105; i++) {
         await db.query(`INSERT INTO citas(negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,
-          inicio_utc,fin_utc,zona_horaria_reserva,folio,nombre_contacto)
+          inicio_utc,fin_utc,zona_horaria_reserva,nombre_contacto)
           SELECT negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,
-          '2026-01-15 12:00:00','2026-01-15 12:30:00',zona_horaria_reserva,?,'Paciente paginado'
-          FROM citas WHERE id=?`, [`PAG-${i}`, a.ocupaciones[0]]);
+          '2026-01-15 12:00:00','2026-01-15 12:30:00',zona_horaria_reserva,'Paciente paginado'
+          FROM citas WHERE id=?`, [a.ocupaciones[0]]);
       }
       const actor = f.actor(Rol.RECEPCIONISTA);
       const completa = await f.agenda.listar(actor, rango);

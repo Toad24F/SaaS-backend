@@ -13,7 +13,6 @@ export type OrigenCita = 'portal_publico' | 'manual';
 /** Compromiso con extremos UTC persistidos: la duración del catálogo no los recalcula. */
 @Entity({ name: 'citas' })
 @Index('uq_citas_negocio_id', ['negocioId', 'id'], { unique: true })
-@Index('uq_citas_folio', ['folio'], { unique: true })
 @Index('idx_citas_personal_inicio', ['negocioId', 'personalId', 'inicioUtc'])
 @Index('idx_citas_sucursal_inicio', ['negocioId', 'sucursalId', 'inicioUtc'])
 @Index('idx_citas_cliente', ['negocioId', 'clienteId'])
@@ -27,6 +26,9 @@ export type OrigenCita = 'portal_publico' | 'manual';
 @Check('chk_citas_costo_aceptado', 'costo_aceptado IS NULL OR costo_aceptado >= 0')
 @Check('chk_citas_separacion', 'separacion_minutos BETWEEN 0 AND 60 AND separacion_minutos MOD 5 = 0')
 @Check('chk_citas_fin_ocupacion', 'fin_ocupacion_utc IS NULL OR fin_ocupacion_utc = DATE_ADD(fin_utc, INTERVAL separacion_minutos MINUTE)')
+@Check('chk_citas_condicion_vigente', '(generacion_automatizacion IS NULL AND condicion_vigente_id IS NULL) OR (generacion_automatizacion >= 1 AND condicion_vigente_id IS NOT NULL)')
+@Check('chk_citas_causa_cancelacion', "causa_cancelacion IS NULL OR estado='cancelada'")
+@Index('idx_citas_condicion_vigente', ['negocioId', 'id', 'generacionAutomatizacion', 'condicionVigenteId'])
 export class Cita {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
@@ -35,6 +37,16 @@ export class Cita {
   // No usar VersionColumn: guardar una entidad no debe aumentar la versión automáticamente.
   @Column({ type: 'int', unsigned: true, default: 1 })
   version: number;
+
+  // Las citas heredadas siguen sin generación; el snapshot y la versión anteriores se conservan.
+  @Column({ name: 'generacion_automatizacion', type: 'int', unsigned: true, nullable: true })
+  generacionAutomatizacion: number | null;
+
+  @Column({ name: 'condicion_vigente_id', type: 'bigint', unsigned: true, nullable: true })
+  condicionVigenteId: string | null;
+
+  @Column({ name: 'causa_cancelacion', type: 'enum', enum: ['falta_confirmacion_plazo'], nullable: true })
+  causaCancelacion: 'falta_confirmacion_plazo' | null;
 
   @Column({ name: 'negocio_id', type: 'int', unsigned: true })
   negocioId: number;
@@ -134,9 +146,6 @@ export class Cita {
 
   @Column({ name: 'nombre_profesional', type: 'varchar', length: 150, nullable: true })
   nombreProfesional: string | null;
-
-  @Column({ type: 'varchar', length: 20 })
-  folio: string;
 
   @Column({ type: 'enum', enum: ['portal_publico', 'manual'], default: 'portal_publico' })
   origen: OrigenCita;

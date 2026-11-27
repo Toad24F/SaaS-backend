@@ -80,7 +80,7 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
       const { negocios } = await crearEscenarioPortal(db,
         new RelojPrueba(new Date('2026-10-20T12:00:00Z')));
       const previo = await db.query('SELECT id,negocio_id,nombre_completo,telefono FROM clientes ORDER BY id');
-      const citas = await db.query('SELECT id,folio,estado,inicio_utc,fin_utc FROM citas ORDER BY id');
+      const citas = await db.query('SELECT id,estado,inicio_utc,fin_utc FROM citas ORDER BY id');
       const apartados = await db.query('SELECT id,inicio_utc,fin_utc,expira_en,titular_hash FROM bloqueos_temporales ORDER BY id');
       // La ocupación heredada depende del plazo y de la liberación, no de los
       // nuevos campos públicos que todavía no existían en fase 3.
@@ -91,7 +91,7 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
       await db.runMigrations({ transaction: 'each' });
       expect(await db.query('SELECT id,negocio_id,nombre_completo,telefono FROM clientes ORDER BY id'))
         .toEqual(previo);
-      expect(await db.query('SELECT id,folio,estado,inicio_utc,fin_utc FROM citas ORDER BY id'))
+      expect(await db.query('SELECT id,estado,inicio_utc,fin_utc FROM citas ORDER BY id'))
         .toEqual(citas);
       expect(await db.query('SELECT id,inicio_utc,fin_utc,expira_en,titular_hash FROM bloqueos_temporales ORDER BY id'))
         .toEqual(apartados);
@@ -106,7 +106,7 @@ describe('M3-T008–T013: migraciones iniciales del portal', () => {
         apartado.sesion_id, apartado.generacion, apartado.operacion_id])
         .toEqual(Array(5).fill(null));
       const duplicado = await db.query(`INSERT INTO clientes
-        (negocio_id,nombre_completo,telefono) VALUES (?,'Otra persona','6141234567')`,
+        (negocio_id,nombre_completo,nombre_normalizado,telefono) VALUES (?,'Otra persona','otra persona','6141234567')`,
       [negocios[0].id]);
       expect(Number(duplicado.insertId)).toBeGreaterThan(0);
       // Los valores futuros se guardan como decimal exacto sin tocar el historial viejo.

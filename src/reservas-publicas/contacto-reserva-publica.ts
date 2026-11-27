@@ -6,6 +6,7 @@ export interface ContactoReservaPublica {
   nombre: string;
   telefono: string;
   notas: string | null;
+  autorizaWhatsapp: boolean;
 }
 
 const MAX_CUERPO_BYTES = 32 * 1024;
@@ -21,7 +22,7 @@ export function validarContactoReservaPublica(entrada: unknown): ContactoReserva
     throw new BadRequestException('El formulario excede 32 KiB.');
   }
   const datos = entrada as Record<string, unknown>;
-  if (Object.keys(datos).some((campo) => !['nombre', 'telefono', 'notas'].includes(campo))) {
+  if (Object.keys(datos).some((campo) => !['nombre', 'telefono', 'notas', 'autorizaWhatsapp'].includes(campo))) {
     throw new BadRequestException('Corrija los campos del formulario.');
   }
   // Portal y directorio comparten el mismo contrato de contacto; las notas siguen siendo del formulario público.
@@ -31,10 +32,14 @@ export function validarContactoReservaPublica(entrada: unknown): ContactoReserva
     throw new BadRequestException('Corrija las notas.');
   }
   const notas = typeof datos.notas === 'string' ? datos.notas.trim() : '';
+  // La omisión equivale a no autorizar; nunca se interpreta texto o un número como consentimiento.
+  if (datos.autorizaWhatsapp !== undefined && typeof datos.autorizaWhatsapp !== 'boolean') {
+    throw new BadRequestException('Corrija la autorización de WhatsApp.');
+  }
   if ([...notas].length > 2000) {
     throw new BadRequestException('Corrija las notas: máximo 2000 caracteres.');
   }
-  return { nombre, telefono, notas: notas || null };
+  return { nombre, telefono, notas: notas || null, autorizaWhatsapp: datos.autorizaWhatsapp === true };
 }
 
 /** La huella solo compara reintentos; el secreto impide enumerar teléfonos. */
@@ -44,6 +49,6 @@ export function huellaContactoReservaPublica(contacto: ContactoReservaPublica,
     throw new ServiceUnavailableException('Portal no configurado.');
   }
   return createHmac('sha256', secreto)
-    .update(JSON.stringify([contacto.nombre, contacto.telefono, contacto.notas]))
+    .update(JSON.stringify([contacto.nombre, contacto.telefono, contacto.notas, contacto.autorizaWhatsapp]))
     .digest('hex');
 }

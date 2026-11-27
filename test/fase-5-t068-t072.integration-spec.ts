@@ -15,7 +15,7 @@ import { OcupacionesService } from '../src/disponibilidad/ocupaciones.service';
 import { CupoTelefonicoService } from '../src/reservas-publicas/cupo-telefonico.service';
 import { situarSesion } from './support/acceso-operativo';
 import { conAgendaHttp } from './support/agenda-http';
-import { prepararManual, filasManuales, esperarBloqueoManual, type EscenarioManualHttp } from './support/cita-manual';
+import { prepararManual, filasManuales, esperarBloqueoManual, vinculoNuevaCondicion, type EscenarioManualHttp } from './support/cita-manual';
 
 /** Cada cita del lote nace con el escritor manual real, su snapshot y evento inicial. */
 async function preparar(f: EscenarioManualHttp, rol = Rol.ADMIN_NEGOCIO) {
@@ -42,7 +42,7 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
       const m = await preparar(f, rol);
       const original = await f.db.getRepository(Cita).findOneByOrFail({ id: m.cita.id });
       const cambiar = (estado: string, version: number) => m.cambios.cambiar(m.identidad, String(m.cita.id), { estado, version });
-      expect(await cambiar('pendiente', 1)).toMatchObject({ id: original.id, folio: original.folio, estado: 'pendiente', version: 2 });
+      expect(await cambiar('pendiente', 1)).toMatchObject({ id: original.id, estado: 'pendiente', version: 2 });
       const antes = await filasManuales(f.db);
       expect(await cambiar('pendiente', 2)).toMatchObject({ estado: 'pendiente', version: 2 });
       expect(await filasManuales(f.db)).toEqual(antes);
@@ -51,7 +51,7 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
       expect(await filasManuales(f.db)).toEqual(antes);
       expect(await cambiar('confirmada', 2)).toMatchObject({ estado: 'confirmada', version: 3 });
       const persistida = await f.db.getRepository(Cita).findOneByOrFail({ id: original.id });
-      expect(persistida).toEqual({ ...original, estado: 'confirmada', version: 3 });
+      expect(persistida).toEqual({ ...original, ...await vinculoNuevaCondicion(f.db, original), estado: 'confirmada', version: 3 });
       const eventos = await f.db.getRepository(EventoCita).find({ where: { citaId: original.id }, order: { versionResultante: 'ASC' } });
       expect(eventos.map((e) => e.versionResultante)).toEqual([1, 2, 3]);
       expect(eventos[1]).toMatchObject({ accion: 'cambio_estado', actorUsuarioId: m.actor.id, ocurridoEn: f.reloj.ahora(),
@@ -119,9 +119,9 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
         }
         if (caso === 'cupo') {
           for (const hora of [18, 19]) await f.db.query(`INSERT INTO citas
-            (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio,telefono_contacto)
-            VALUES(?,?,?,?,?,?,?,'America/Chihuahua',?,'6141234567')`, [f.negocios[0].id, s.sucursalId, f.negocios[0].profesionales[1], s.servicioId,
-            s.clienteId, `2026-11-09 ${hora}:00:00`, `2026-11-09 ${hora}:30:00`, `CUPO-${hora}`]);
+            (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,telefono_contacto)
+            VALUES(?,?,?,?,?,?,?,'America/Chihuahua','6141234567')`, [f.negocios[0].id, s.sucursalId, f.negocios[0].profesionales[1], s.servicioId,
+            s.clienteId, `2026-11-09 ${hora}:00:00`, `2026-11-09 ${hora}:30:00`]);
         }
         if (caso === 'oferta') await f.db.query('UPDATE personal_servicios_sucursales SET activo=0 WHERE negocio_id=?', [f.negocios[0].id]);
         if (caso === 'horario') await f.db.query('UPDATE horarios_personal SET fin_minutos=580 WHERE negocio_id=?', [f.negocios[0].id]);
@@ -129,8 +129,8 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
           (negocio_id,personal_id,sucursal_id,creador_usuario_id,tipo,fecha_inicio,fecha_fin,inicio_minutos,fin_minutos,motivo)
           VALUES(?,?,?,?,'emergencia','2026-11-09','2026-11-09',540,600,'Prueba')`, [f.negocios[0].id, s.personalId, s.sucursalId, m.actor.id]);
         if (caso === 'cita_otra_sucursal') await f.db.query(`INSERT INTO citas
-          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio)
-          VALUES(?,?,?,?,?,'2026-11-09 15:50:00','2026-11-09 16:20:00','America/Mexico_City','RIVAL')`,
+          (negocio_id,sucursal_id,personal_id,servicio_id,cliente_id,inicio_utc,fin_utc,zona_horaria_reserva)
+          VALUES(?,?,?,?,?,'2026-11-09 15:50:00','2026-11-09 16:20:00','America/Mexico_City')`,
         [f.negocios[0].id, f.negocios[0].sucursales[1].id, s.personalId, s.servicioId, s.clienteId]);
         if (caso === 'apartado_otra_sucursal') await f.db.query(`INSERT INTO bloqueos_temporales
           (negocio_id,personal_id,sucursal_id,servicio_id,inicio_utc,fin_utc,expira_en,titular_hash)
@@ -146,9 +146,10 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
         try {
           const pendiente = m.cambios.cambiar(m.identidad, String(m.cita.id), { estado: 'confirmada', version: 2 });
           if (['libre', 'historico', 'zona_actual', 'cupo'].includes(caso)) {
-            expect(await pendiente).toMatchObject({ estado: 'confirmada', version: 3, folio: m.cita.folio });
+            expect(await pendiente).toMatchObject({ estado: 'confirmada', version: 3 });
             const despues = await filasManuales(f.db);
-            expect(despues.citas).toEqual(antes.citas.map((c) => c.id === m.cita.id ? { ...c, estado: 'confirmada', version: 3 } : c));
+            const condicion = await vinculoNuevaCondicion(f.db, antes.citas.find((c) => c.id === m.cita.id)!);
+            expect(despues.citas).toEqual(antes.citas.map((c) => c.id === m.cita.id ? { ...c, ...condicion, estado: 'confirmada', version: 3 } : c));
             expect(despues.eventos.at(-1)).toMatchObject({ accion: 'reactivacion', versionResultante: 3 });
             expect((await ocupadas(f, m.cita)).some((o) => o.tipo === 'cita' && o.id === m.cita.id)).toBe(true);
             if (caso === 'cupo') {
@@ -169,8 +170,10 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
     await conAgendaHttp(async (f) => {
       const m = await preparar(f);
       const antes = await filasManuales(f.db);
-      for (const actor of f.actores.filter((a) => [Rol.PROFESIONAL, Rol.SUPERADMIN].includes(a.rol))) {
-        await expect(m.cambios.cambiar({ sub: actor.id, sesionId: actor.sesionId }, String(m.cita.id), { estado: 'cancelada', version: 1 })).rejects.toMatchObject({ status: 403 });
+      // El permiso vigente habilita al Profesional sobre su agenda y oculta la cita ajena.
+      for (const actor of f.actores.filter((a) => a.rol === Rol.SUPERADMIN || (a.rol === Rol.PROFESIONAL && a.id !== m.cita.personalId))) {
+        await expect(m.cambios.cambiar({ sub: actor.id, sesionId: actor.sesionId }, String(m.cita.id), { estado: 'cancelada', version: 1 }))
+          .rejects.toMatchObject({ status: actor.rol === Rol.SUPERADMIN ? 403 : 404 });
       }
       for (const id of [String(f.negocios[1].ocupaciones[0]), '4294967295']) {
         await expect(m.cambios.cambiar(m.identidad, id, { estado: 'cancelada', version: 1 })).rejects.toMatchObject({ status: 404 });
@@ -303,7 +306,8 @@ describe('M4-T068–T072: estados, versión, atomicidad y reactivación reales',
         expect(await a).toMatchObject({ valor: { estado: 'pendiente', version: 2 } });
         expect(await b).toMatchObject({ error: { status: 409 } });
         const despues = await filasManuales(f.db);
-        expect(despues.citas).toEqual(antes.citas.map((c) => c.id === m.cita.id ? { ...c, estado: 'pendiente', version: 2 } : c));
+        const condicion = await vinculoNuevaCondicion(f.db, antes.citas.find((c) => c.id === m.cita.id)!);
+        expect(despues.citas).toEqual(antes.citas.map((c) => c.id === m.cita.id ? { ...c, ...condicion, estado: 'pendiente', version: 2 } : c));
         expect(despues.eventos).toHaveLength(antes.eventos.length + 1);
         expect(despues.eventos.at(-1)).toMatchObject({ actorUsuarioId: m.actor.id, accion: 'cambio_estado', versionResultante: 2 });
       } finally {

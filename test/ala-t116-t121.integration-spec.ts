@@ -73,14 +73,14 @@ async function conFlujo(ejecutar: (f: Flujo) => Promise<void>) {
   });
 }
 
-async function cita(f: Flujo, folio: string, inicio: Date,
+async function cita(f: Flujo, _referencia: string, inicio: Date,
   estado = 'pendiente', telefono = CONTACTO.telefono) {
   const [cliente] = await f.db.query('SELECT id FROM clientes WHERE negocio_id=?', [f.negocioId]);
   await f.db.query(`INSERT INTO citas (negocio_id,sucursal_id,personal_id,servicio_id,
-    cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,folio,estado,origen,telefono_contacto)
-    VALUES (?,?,?,?,?,?,?,?,?,?,'manual',?)`,
+    cliente_id,inicio_utc,fin_utc,zona_horaria_reserva,estado,origen,telefono_contacto)
+    VALUES (?,?,?,?,?,?,?,?,?,'manual',?)`,
   [f.negocioId, f.sucursalId, f.personalId, f.servicioId, cliente.id,
-    inicio, new Date(inicio.getTime() + 1800000), 'America/Chihuahua', folio,
+    inicio, new Date(inicio.getTime() + 1800000), 'America/Chihuahua',
     estado, telefono]);
 }
 
@@ -178,7 +178,7 @@ describe('ALA-T116–T121: recuperación y corrección del cupo', () => {
         { clave: 'ala_120_intento_1234', apartadoId: segundoApartado.apartadoId });
       const segunda = await f.registro.registrar(f.negocioId, otro,
         'ala_120_intento_1234', { ...CONTACTO, nombre: 'Beatriz López' });
-      expect(segunda.folio).not.toBe(primera.folio);
+      expect(segunda.inicioUtc).not.toBe(primera.inicioUtc);
       expect(await f.registro.registrar(f.negocioId, f.titular,
         f.clave, CONTACTO)).toEqual(primera);
       const filas = await f.db.query(`SELECT c.nombre_contacto,cl.nombre_completo,
@@ -225,9 +225,9 @@ describe('ALA-T116–T121: recuperación y corrección del cupo', () => {
         .rejects.toMatchObject({ status: 409 });
       expect((await f.db.query(`SELECT formulario_hash FROM intentos_reserva_publica
         WHERE id=?`, [f.intentoId]))[0].formulario_hash).toBe(antes.formulario_hash);
-      expect((await f.db.query(`SELECT c.folio,i.estado FROM intentos_reserva_publica i
+      expect((await f.db.query(`SELECT c.inicio_utc,i.estado FROM intentos_reserva_publica i
         JOIN citas c ON c.id=i.cita_id WHERE i.id=?`, [f.intentoId]))[0])
-        .toMatchObject({ folio: registrada.folio, estado: 'registrado' });
+        .toMatchObject({ inicio_utc: new Date(registrada.inicioUtc), estado: 'registrado' });
     });
   });
 });
